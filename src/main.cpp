@@ -211,6 +211,7 @@ int main()
             glUniform1f(rotLoc, 0.0f);
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
 
+            //std::cout << "Passing " << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << " \n";
             theScene.players[theScene.myPlayerIndex]->collisionCage.updateToSpot(&world, camera.transform.position);
 
 

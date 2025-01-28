@@ -15,7 +15,8 @@ uint32_t PerlinWorldGenMethod::get(IntTup spot)
     float no = noise.GetNoise(
         spot.x * blockScaleInPerlin,
         spot.y * blockScaleInPerlin,
-        spot.z * blockScaleInPerlin);
+        spot.z * blockScaleInPerlin)
+  ;
 
     return no > 0.02f ? STONE : AIR;
 }

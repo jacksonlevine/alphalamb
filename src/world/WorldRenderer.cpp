@@ -72,12 +72,13 @@ void WorldRenderer::mainThreadDraw()
             }
             buffer.ready = false;
             freeChangeBuffers.push(i);  // Return to free list
+            break; //Only do one per frame
         }
     }
     for (const auto & [spot, index] : activeChunks)
     {
         auto glInfo = chunkPool[index];
-        //drawFromDrawInstructions(glInfo.drawInstructions);
+        drawFromDrawInstructions(glInfo.drawInstructions);
     }
 }
 
@@ -95,30 +96,43 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         {
             for (int j = -renderDistance; j <= renderDistance; j++)
             {
-                IntTup spotHere = playerChunkPosition + IntTup(i, j);
-                if (!myActiveChunks.contains(spotHere))
-                {
-                    //std::cout << "Spot " << i << " " << j << std::endl;
-                    if (chunkPool.size() < maxChunks)
+
+                    IntTup spotHere = playerChunkPosition + IntTup(i,j);
+                    if (!myActiveChunks.contains(spotHere))
                     {
-                        size_t changeBufferIndex;
-                        while (!freeChangeBuffers.pop(changeBufferIndex)) {
-                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        //std::cout << "Spot " << i << " " << j << std::endl;
+                        if (chunkPool.size() < maxChunks)
+                        {
+                            size_t changeBufferIndex;
+                            while (!freeChangeBuffers.pop(changeBufferIndex)) {
+                                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                            }
+                            auto& buffer = changeBuffers[changeBufferIndex];
+                            buffer.in_use = true;
+
+                            buffer.mesh = fromChunk(spotHere, world, chunkSize);
+
+                            // if(buffer.mesh.positions.size() > 0)
+                            // {
+
+                                buffer.chunkIndex = addUninitializedChunkBuffer();
+                                buffer.from = std::nullopt;
+                                buffer.to = spotHere;
+                            buffer.ready = true;   // Signal that data is ready
+                            // } else
+                            // {
+                            //     freeChangeBuffers.push(changeBufferIndex);
+                            // }
+
+                            myActiveChunks.insert_or_assign(spotHere, 0);
+
+                            buffer.in_use = false;
+
                         }
-                        auto& buffer = changeBuffers[changeBufferIndex];
-                        buffer.in_use = true;
-                        buffer.chunkIndex = addUninitializedChunkBuffer();
-                        buffer.from = std::nullopt;
-                        buffer.to = spotHere;
-                        // ... write to buffer ...
-                        buffer.mesh = fromChunk(spotHere, world, chunkSize);
+                        //todo: else reuse
 
-                        buffer.ready = true;   // Signal that data is ready
-                        buffer.in_use = false;
                     }
-                    //todo: else reuse
 
-                }
             }
         }
     }
@@ -158,6 +172,8 @@ UsableMesh fromChunk(IntTup spot, World* world, int chunkSize)
     PxU32 index = 0;
 
     IntTup start(spot.x * chunkSize, spot.z * chunkSize);
+
+
     for (int x = 0; x < chunkSize; x++)
     {
         for (int z = 0; z < chunkSize; z++)

@@ -16,24 +16,20 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
         lastBlockSpot = blockSpot;
         UsableMesh mesh = {};
 
-        PxU32 index;
+        PxU32 index = 0;
 
-        for(int x = -6; x < 6; x++)
+        for(int x = -2; x < 2; x++)
         {
-            for(int z = -6; z < 6; z++)
+            for(int z = -2; z < 2; z++)
             {
-                for(int y = 6; y > -6; y--)
+                for(int y = 3; y > -3; y--)
                 {
                     IntTup spotHere = blockSpot + IntTup(x,y,z);
                     if(world->get(spotHere) != AIR)
                     {
-                        for (int i = 0; i < std::size(neighborSpots); i++)
+                        for (int i = 0; i < 6; i++)
                         {
-                            auto neigh = neighborSpots[i];
-                            if (world->get(neigh + spotHere) == AIR)
-                            {
-                                addFace(PxVec3(spotHere.x, spotHere.y, spotHere.z), (Side)i, GRASS, 1, mesh, index);
-                            }
+                            addFace(PxVec3(spotHere.x, spotHere.y, spotHere.z), (Side)i, GRASS, 1, mesh, index);
                         }
                     }
                 }
@@ -41,13 +37,8 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
         }
 
 
-        modifyOrInitializeDrawInstructions(cgl.vvbo, cgl.uvvbo, cgl.ebo, cgl.drawInstructions, mesh, cgl.bvbo);
+//modifyOrInitializeDrawInstructions(cgl.vvbo, cgl.uvvbo, cgl.ebo, cgl.drawInstructions, mesh, cgl.bvbo);
 
-        // for(auto & pos : mesh.positions)
-        // {
-        //     std::cout << pos.x << " " << pos.y << " " << pos.z << " \n";
-        // }
-        std::cout << "Positions count : " << mesh.positions.size() << " \n";
 
         if(collider == nullptr)
         {
@@ -57,9 +48,9 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
             editStaticMeshCollider(collider, PxVec3(0,0,0), mesh.positions, mesh.indices);
         }
     }
-    if(cgl.drawInstructions.vao != 0)
-    {
-        drawFromDrawInstructions(cgl.drawInstructions);
-    }
+    // if(cgl.drawInstructions.vao != 0)
+    // {
+    //     drawFromDrawInstructions(cgl.drawInstructions);
+    // }
 
 }

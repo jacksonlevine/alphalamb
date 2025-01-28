@@ -94,7 +94,7 @@ class WorldRenderer {
 public:
     static constexpr int chunkSize = 16;
     static constexpr int renderDistance = 5;
-    static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2)) + renderDistance*5;
+    static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2)) + renderDistance*10;
 
     std::vector<ChunkGLInfo> chunkPool;
     std::unordered_map<IntTup, size_t, IntTupHash> activeChunks = {};
@@ -102,8 +102,8 @@ public:
     ///ONLY FOR THE CHUNK THREAD TO ACCESS
     std::unordered_map<IntTup, size_t, IntTupHash> myActiveChunks = {};
 
-    std::array<ChangeBuffer, 4> changeBuffers = {};
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<4>> freeChangeBuffers = {};
+    std::array<ChangeBuffer, 10> changeBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<10>> freeChangeBuffers = {};
 
     void mainThreadDraw();
     void meshBuildCoroutine(jl::Camera* playerCamera, World* world);
@@ -132,8 +132,8 @@ public:
     IntTup worldToChunkPos(IntTup worldPos)
     {
         return IntTup(
-            worldPos.x >= 0 ? worldPos.x / chunkSize : (worldPos.x - chunkSize + 1) / chunkSize,
-            worldPos.z >= 0 ? worldPos.z / chunkSize : (worldPos.z - chunkSize + 1) / chunkSize
+            std::floor((float)worldPos.x / chunkSize),
+            std::floor((float)worldPos.z / chunkSize)
         );
     }
 
