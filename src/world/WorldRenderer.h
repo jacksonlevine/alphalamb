@@ -5,6 +5,7 @@
 #ifndef WORLDRENDERER_H
 #define WORLDRENDERER_H
 
+#include "MaterialName.h"
 #include "World.h"
 #include "../Camera.h"
 #include "../IntTup.h"
@@ -45,11 +46,13 @@ void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo
 
 void drawFromDrawInstructions(const DrawInstructions& drawInstructions);
 
-
 enum Side
 {
     Front = 0,Right,Back,Left,Top,Bottom
 };
+
+void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index);
+
 
 inline static PxVec3 cubefaces[6][4] = {
     {//front

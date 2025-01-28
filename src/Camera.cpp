@@ -11,7 +11,7 @@ namespace jl
             glm::radians(fov),
             static_cast<float>(screenwidth) / static_cast<float>(screenheight),
             0.1f,
-            450.0f
+            2000.0f
             );
         mvp = projection * view * model;
     }

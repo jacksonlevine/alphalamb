@@ -11,7 +11,6 @@ void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo
 {
     if(drawInstructions.vao == 0)
     {
-
         glGenVertexArrays(1, &drawInstructions.vao);
         glBindVertexArray(drawInstructions.vao);
         glGenBuffers(1, &vvbo);
@@ -32,7 +31,6 @@ void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo
     glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.brightness) * sizeof(float), usable_mesh.brightness.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
     glEnableVertexAttribArray(2);
-
 
     glBindBuffer(GL_ARRAY_BUFFER, uvvbo);
     glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.texcoords) * sizeof(glm::vec2), usable_mesh.texcoords.data(), GL_STATIC_DRAW);
@@ -79,7 +77,7 @@ void WorldRenderer::mainThreadDraw()
     for (const auto & [spot, index] : activeChunks)
     {
         auto glInfo = chunkPool[index];
-        drawFromDrawInstructions(glInfo.drawInstructions);
+        //drawFromDrawInstructions(glInfo.drawInstructions);
     }
 }
 
@@ -126,39 +124,38 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
     }
 }
 
-
-
-UsableMesh fromChunk(IntTup spot, World* world, int chunkSize)
+///Call this with an external index and UsableMesh to mutate them
+void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, PxU32& index)
 {
-    UsableMesh mesh;
-    PxU32 index = 0;
-
-    auto addFace = [&](PxVec3 offset, Side side, MaterialName material, int sideHeight)
-    {
-        std::ranges::transform(cubefaces[side], std::back_inserter(mesh.positions), [&offset, &sideHeight](const auto& v) {
+    std::ranges::transform(cubefaces[side], std::back_inserter(mesh.positions), [&offset, &sideHeight](const auto& v) {
             auto newv = v;
             newv.y *= sideHeight;
             return newv + offset;
         });
 
-        std::ranges::transform(cwindices, std::back_inserter(mesh.indices), [&index](const auto& i) {
-            return index + i;
-        });
+    std::ranges::transform(cwindices, std::back_inserter(mesh.indices), [&index](const auto& i) {
+        return index + i;
+    });
 
-        mesh.texcoords.insert(mesh.texcoords.end(),
-            {glm::vec2(0.0 + ((float)material / 16.0f), 0.0), glm::vec2(0.0625f + ((float)material / 16.0f), 0.0),
-             glm::vec2(0.0625f + ((float)material / 16.0f), 1.0 * sideHeight), glm::vec2(0.0 + ((float)material / 16.0f), 1.0 * sideHeight)});
+    mesh.texcoords.insert(mesh.texcoords.end(),
+        {glm::vec2(0.0 + ((float)material / 16.0f), 0.0), glm::vec2(0.0625f + ((float)material / 16.0f), 0.0),
+         glm::vec2(0.0625f + ((float)material / 16.0f), 1.0 * sideHeight), glm::vec2(0.0 + ((float)material / 16.0f), 1.0 * sideHeight)});
 
-        switch(side) {
-        case Side::Top:    mesh.brightness.insert(mesh.brightness.end(), {1.0f, 1.0f, 1.0f, 1.0f}); break;
-        case Side::Left:   mesh.brightness.insert(mesh.brightness.end(), {0.7f, 0.7f, 0.7f, 0.7f}); break;
-        case Side::Bottom: mesh.brightness.insert(mesh.brightness.end(), {0.4f, 0.4f, 0.4f, 0.4f}); break;
-        case Side::Right:  mesh.brightness.insert(mesh.brightness.end(), {0.8f, 0.8f, 0.8f, 0.8f}); break;
-        default:          mesh.brightness.insert(mesh.brightness.end(), {0.9f, 0.9f, 0.9f, 0.9f});
-        }
+    switch(side) {
+    case Side::Top:    mesh.brightness.insert(mesh.brightness.end(), {1.0f, 1.0f, 1.0f, 1.0f}); break;
+    case Side::Left:   mesh.brightness.insert(mesh.brightness.end(), {0.7f, 0.7f, 0.7f, 0.7f}); break;
+    case Side::Bottom: mesh.brightness.insert(mesh.brightness.end(), {0.4f, 0.4f, 0.4f, 0.4f}); break;
+    case Side::Right:  mesh.brightness.insert(mesh.brightness.end(), {0.8f, 0.8f, 0.8f, 0.8f}); break;
+    default:          mesh.brightness.insert(mesh.brightness.end(), {0.9f, 0.9f, 0.9f, 0.9f});
+    }
 
-        index += 4;
-    };
+    index += 4;
+}
+
+UsableMesh fromChunk(IntTup spot, World* world, int chunkSize)
+{
+    UsableMesh mesh;
+    PxU32 index = 0;
 
     IntTup start(spot.x * chunkSize, spot.z * chunkSize);
     for (int x = 0; x < chunkSize; x++)
@@ -176,7 +173,7 @@ UsableMesh fromChunk(IntTup spot, World* world, int chunkSize)
                         auto neigh = neighborSpots[i];
                         if (world->get(neigh + here) == AIR)
                         {
-                            addFace(PxVec3(here.x, here.y, here.z), (Side)i, (MaterialName)blockHere, 1);
+                            addFace(PxVec3(here.x, here.y, here.z), (Side)i, (MaterialName)blockHere, 1, mesh, index);
                         }
                     }
                 }

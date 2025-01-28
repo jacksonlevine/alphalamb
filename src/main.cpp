@@ -209,9 +209,11 @@ int main()
             glUniform1i(texture1Loc, 0);
             glUniform3f(posLoc, 0.0, 0.0, 0.0);
             glUniform1f(rotLoc, 0.0f);
-
-
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
+
+            theScene.players[theScene.myPlayerIndex]->collisionCage.updateToSpot(&world, camera.transform.position);
+
+
             renderer.mainThreadDraw();
         }
 

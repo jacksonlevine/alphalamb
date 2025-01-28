@@ -6,12 +6,14 @@
 #define PLAYER_H
 
 #include "Camera.h"
+#include "CollisionCage.h"
 #include "Controls.h"
 
 struct Player {
     jl::Camera camera;
     Controls controls;
     physx::PxController* controller;
+    CollisionCage collisionCage = {};
     void update(float deltaTime);
     Player();
     ~Player();

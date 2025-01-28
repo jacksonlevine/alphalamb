@@ -73,6 +73,8 @@ add_executable(DistantGarden
         src/world/World.h
         src/world/WorldRenderer.cpp
         src/world/WorldRenderer.h
+        src/CollisionCage.cpp
+        src/CollisionCage.h
 
 )
 
