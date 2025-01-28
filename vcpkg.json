@@ -1,0 +1,13 @@
+{
+    "name": "distantgarden",
+    "version": "0.0.0",
+    "builtin-baseline": "96b5ced82828ecaf67e6010a892c98d3e96ed1c2",
+    "dependencies": [ "glfw3", "glm", "glew", "tinygltf", "portaudio", "libsndfile", "boost-asio", "boost-uuid", "boost-lockfree",
+        {
+            "name": "imgui",
+            "features": [ "glfw-binding", "opengl3-binding" ]
+        },
+        "physx",
+        "cereal"
+    ]
+}
