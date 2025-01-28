@@ -16,7 +16,7 @@ uint32_t PerlinWorldGenMethod::get(IntTup spot)
         spot.x * blockScaleInPerlin,
         spot.y * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-  ;
+    - ((spot.y - 30.0) * 0.017);
 
     return no > 0.02f ? STONE : AIR;
 }
