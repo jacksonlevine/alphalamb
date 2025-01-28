@@ -124,7 +124,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                             //     freeChangeBuffers.push(changeBufferIndex);
                             // }
 
-                            myActiveChunks.insert_or_assign(spotHere, 0);
+                            ///This shouldnt cause issues
+                            //myActiveChunks.insert_or_assign(spotHere, 0);
 
                             buffer.in_use = false;
 
