@@ -5,6 +5,7 @@
 #ifndef WORLDRENDERER_H
 #define WORLDRENDERER_H
 
+#include "../Camera.h"
 #include "../IntTup.h"
 #include "../PrecompHeader.h"
 
@@ -29,6 +30,16 @@ struct ChunkGLInfo
     DrawInstructions drawInstructions = {};
 };
 
+struct ChangeBuffer
+{
+    UsableMesh mesh;
+    size_t chunkIndex;
+    std::atomic<bool> ready = false;  // true when data is ready to be consumed
+    std::atomic<bool> in_use = false;
+    std::optional<IntTup> from = std::nullopt;
+    IntTup to = {};
+};
+
 void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo, DrawInstructions& drawInstructions, UsableMesh& usable_mesh, GLuint& bvbo);
 
 void drawFromDrawInstructions(const DrawInstructions& drawInstructions);
@@ -44,6 +55,12 @@ public:
 
     ///ONLY FOR THE CHUNK THREAD TO ACCESS
     std::unordered_map<IntTup, size_t, IntTupHash> myActiveChunks;
+
+    std::array<ChangeBuffer, 4> changeBuffers;
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<4>> freeChangeBuffers;
+
+    void mainThreadDraw();
+    void meshBuildCoroutine(jl::Camera* playerCamera);
 
     size_t addChunkBuffer()
     {
