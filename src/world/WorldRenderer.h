@@ -89,18 +89,18 @@ UsableMesh fromChunk(IntTup spot, World* world, int chunkSize);
 
 class WorldRenderer {
 public:
-    constexpr int chunkSize = 16;
-    constexpr int renderDistance = 5;
-    constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2)) + renderDistance*5;
+    static constexpr int chunkSize = 16;
+    static constexpr int renderDistance = 5;
+    static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2)) + renderDistance*5;
 
     std::vector<ChunkGLInfo> chunkPool;
-    std::unordered_map<IntTup, size_t, IntTupHash> activeChunks;
+    std::unordered_map<IntTup, size_t, IntTupHash> activeChunks = {};
 
     ///ONLY FOR THE CHUNK THREAD TO ACCESS
-    std::unordered_map<IntTup, size_t, IntTupHash> myActiveChunks;
+    std::unordered_map<IntTup, size_t, IntTupHash> myActiveChunks = {};
 
-    std::array<ChangeBuffer, 4> changeBuffers;
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<4>> freeChangeBuffers;
+    std::array<ChangeBuffer, 4> changeBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<4>> freeChangeBuffers = {};
 
     void mainThreadDraw();
     void meshBuildCoroutine(jl::Camera* playerCamera, World* world);
@@ -115,6 +115,13 @@ public:
         glGenBuffers(1, &chunk.bvbo);
         glGenBuffers(1, &chunk.ebo);
 
+        chunkPool.push_back(chunk);
+        return chunkPool.size() - 1;
+    }
+
+    size_t addUninitializedChunkBuffer()
+    {
+        ChunkGLInfo chunk;
         chunkPool.push_back(chunk);
         return chunkPool.size() - 1;
     }

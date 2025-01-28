@@ -85,35 +85,42 @@ void WorldRenderer::mainThreadDraw()
 
 void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 {
-    IntTup playerChunkPosition = worldToChunkPos(
+    for(size_t i = 0; i < changeBuffers.size(); i++) {
+        freeChangeBuffers.push(i);
+    }
+    while(true)
+    {
+        IntTup playerChunkPosition = worldToChunkPos(
         IntTup(std::floor(playerCamera->transform.position.x),
             std::floor(playerCamera->transform.position.z)));
-    for (int i = -renderDistance; i <= renderDistance; i++)
-    {
-        for (int j = -renderDistance; j <= renderDistance; j++)
+        for (int i = -renderDistance; i <= renderDistance; i++)
         {
-            IntTup spotHere = playerChunkPosition + IntTup(i, j);
-            if (!myActiveChunks.contains(spotHere))
+            for (int j = -renderDistance; j <= renderDistance; j++)
             {
-                if (chunkPool.size() < maxChunks)
+                IntTup spotHere = playerChunkPosition + IntTup(i, j);
+                if (!myActiveChunks.contains(spotHere))
                 {
-                    size_t changeBufferIndex;
-                    while (!freeChangeBuffers.pop(changeBufferIndex)) {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    //std::cout << "Spot " << i << " " << j << std::endl;
+                    if (chunkPool.size() < maxChunks)
+                    {
+                        size_t changeBufferIndex;
+                        while (!freeChangeBuffers.pop(changeBufferIndex)) {
+                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        }
+                        auto& buffer = changeBuffers[changeBufferIndex];
+                        buffer.in_use = true;
+                        buffer.chunkIndex = addUninitializedChunkBuffer();
+                        buffer.from = std::nullopt;
+                        buffer.to = spotHere;
+                        // ... write to buffer ...
+                        buffer.mesh = fromChunk(spotHere, world, chunkSize);
+
+                        buffer.ready = true;   // Signal that data is ready
+                        buffer.in_use = false;
                     }
-                    auto& buffer = changeBuffers[changeBufferIndex];
-                    buffer.in_use = true;
-                    buffer.chunkIndex = addChunkBuffer();
-                    buffer.from = std::nullopt;
-                    buffer.to = spotHere;
-                    // ... write to buffer ...
-                    buffer.mesh = fromChunk(spotHere, world, chunkSize);
+                    //todo: else reuse
 
-                    buffer.ready = true;   // Signal that data is ready
-                    buffer.in_use = false;
                 }
-                //todo: else reuse
-
             }
         }
     }

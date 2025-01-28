@@ -19,6 +19,10 @@
 #include <stb_image.h>
 
 #include "PhysXStuff.h"
+#include "world/World.h"
+#include "world/WorldRenderer.h"
+#include "world/userdatamapmethods/HashMapUserDataMap.h"
+#include "world/worldgenmethods/PerlinWorldGenMethod.h"
 
 struct Scene
 {
@@ -142,6 +146,7 @@ int main()
 
     glfwSetKeyCallback(window, keyCallback);
     glfwSetCursorPosCallback(window, cursorPosCallback);
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -161,6 +166,15 @@ int main()
 
     //Add ourselves to the scene
     theScene.myPlayerIndex = theScene.addPlayer();
+
+    World world(
+        new HashMapUserDataMap(),
+        new PerlinWorldGenMethod());
+    WorldRenderer renderer;
+
+    std::thread chunkWorker(&WorldRenderer::meshBuildCoroutine, &renderer,
+        &(theScene.players[theScene.myPlayerIndex]->camera), &world);
+    chunkWorker.detach();
 
     while (!glfwWindowShouldClose(window))
     {
@@ -198,7 +212,7 @@ int main()
 
 
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
-
+            renderer.mainThreadDraw();
         }
 
         glfwPollEvents();

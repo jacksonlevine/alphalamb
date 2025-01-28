@@ -10,7 +10,7 @@
 
 class World {
 public:
-    World::World(UserDataMap* udm, WorldGenMethod* wm) :
+    World(UserDataMap* udm, WorldGenMethod* wm) :
     userDataMap(udm), worldGenMethod(wm) {};
 
     UserDataMap* userDataMap;
