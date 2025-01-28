@@ -92,9 +92,9 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         IntTup playerChunkPosition = worldToChunkPos(
         IntTup(std::floor(playerCamera->transform.position.x),
             std::floor(playerCamera->transform.position.z)));
-        for (int i = -renderDistance; i <= renderDistance; i++)
+        for (int i = -renderDistance; i < renderDistance; i++)
         {
-            for (int j = -renderDistance; j <= renderDistance; j++)
+            for (int j = -renderDistance; j < renderDistance; j++)
             {
 
                     IntTup spotHere = playerChunkPosition + IntTup(i,j);
