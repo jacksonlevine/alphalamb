@@ -71,6 +71,8 @@ add_executable(DistantGarden
         src/world/MaterialName.h
         src/world/World.cpp
         src/world/World.h
+        src/world/WorldRenderer.cpp
+        src/world/WorldRenderer.h
 
 )
 
