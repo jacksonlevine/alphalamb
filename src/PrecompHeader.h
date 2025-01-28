@@ -28,5 +28,6 @@
 #include <ranges>
 #include <iterator>
 #include <algorithm>
+#include "FastNoiseLite.h"
 
 #endif //PRECOMPHEADER_H
