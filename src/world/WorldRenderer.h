@@ -87,7 +87,14 @@ inline static IntTup neighborSpots[6] = {
 };
 
 
-UsableMesh fromChunk(IntTup spot, World* world, int chunkSize);
+UsableMesh fromChunk(IntTup spot, World* world, int chunkSize);\
+
+struct UsedChunkInfo
+{
+    bool confirmedByMainThread = false;
+    size_t chunkIndex = 0;
+    UsedChunkInfo(size_t index) : chunkIndex(index) {}
+};
 
 
 class WorldRenderer {
@@ -97,31 +104,29 @@ public:
     static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2)) + renderDistance*10;
 
     std::vector<ChunkGLInfo> chunkPool;
+
+    ///Only for Main Thread access. The main thread will make changes to this as it buffers incoming geometry, so they will only be on this once theyre officially ready to be drawn.
+    ///The main thread will also use this as its list of what chunks to draw
     std::unordered_map<IntTup, size_t, IntTupHash> activeChunks = {};
 
-    ///ONLY FOR THE CHUNK THREAD TO ACCESS
-    std::unordered_map<IntTup, size_t, IntTupHash> myActiveChunks = {};
+    ///Only for Mesh Building thread access. Its internal record of what spots it has generated & sent out the geometry for.
+    std::unordered_map<IntTup, UsedChunkInfo, IntTupHash> myActiveChunks = {};
 
+    ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffer
+    ///by adding its index to freeChangeBuffers.
     std::array<ChangeBuffer, 10> changeBuffers = {};
+    ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
     boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<10>> freeChangeBuffers = {};
+
+    ///After being added to myActiveChunks, we await a confirmation back in this before we know we can reuse that chunk again
+    ///One way queue, from main thread to mesh building thread, to notify of myActiveChunks entries that have been confirmed/entered into activeChunks.
+    boost::lockfree::spsc_queue<IntTup, boost::lockfree::capacity<128>> confirmedQueue = {};
 
     void mainThreadDraw();
     void meshBuildCoroutine(jl::Camera* playerCamera, World* world);
 
-    size_t addChunkBuffer()
-    {
-        ChunkGLInfo chunk;
-        glGenVertexArrays(1, &chunk.drawInstructions.vao);
-        glBindVertexArray(chunk.drawInstructions.vao);
-        glGenBuffers(1, &chunk.vvbo);
-        glGenBuffers(1, &chunk.uvvbo);
-        glGenBuffers(1, &chunk.bvbo);
-        glGenBuffers(1, &chunk.ebo);
-
-        chunkPool.push_back(chunk);
-        return chunkPool.size() - 1;
-    }
-
+    ///Add a chunk gl info with the vao == 0 (not generated yet). Calling modifyOrInitializeDrawInstructions with it and geometry will initialize it.
+    ///Returns the index in chunkPool of the new chunk.
     size_t addUninitializedChunkBuffer()
     {
         ChunkGLInfo chunk;

@@ -6,7 +6,7 @@
 
 #include "MaterialName.h"
 
-
+///Prepare vbos and DrawInstructions info (vao, number of indices) so that it can be then drawn with drawFromDrawInstructions()
 void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo, DrawInstructions& drawInstructions, UsableMesh& usable_mesh, GLuint& bvbo)
 {
     if(drawInstructions.vao == 0)
@@ -50,6 +50,8 @@ void drawFromDrawInstructions(const DrawInstructions& drawInstructions)
     glDrawElements(GL_TRIANGLES, drawInstructions.indiceCount, GL_UNSIGNED_INT, 0);
 }
 
+
+//MAIN THREAD COROUTINE
 void WorldRenderer::mainThreadDraw()
 {
     for(size_t i = 0; i < changeBuffers.size(); i++) {
@@ -61,15 +63,14 @@ void WorldRenderer::mainThreadDraw()
 
             if (buffer.from == std::nullopt)
             {
-
                 activeChunks.insert_or_assign(buffer.to, buffer.chunkIndex);
-                //chunkPool[buffer.chunkIndex].renderer.collider = makePhysicsObjectFromMesh(buffer.mesh);
+
             } else
             {
-                //moveChunkIndex(buffer.oldSpotKey.value(), buffer.spotKey);
-                //chunkPool[buffer.chunkIndex].renderer.collider = editStaticMeshCollider(chunkPool[buffer.chunkIndex].renderer.collider, PxVec3(0,0,0), buffer.mesh.positions,
-                //buffer.mesh.indices);
+                activeChunks.erase(buffer.from.value());
+                activeChunks.insert_or_assign(buffer.to, buffer.chunkIndex);
             }
+            confirmedQueue.push(buffer.to);
             buffer.ready = false;
             freeChangeBuffers.push(i);  // Return to free list
             break; //Only do one per frame
@@ -82,6 +83,9 @@ void WorldRenderer::mainThreadDraw()
     }
 }
 
+
+
+//SECOND THREAD MESH BUILDING COROUTINE
 void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 {
     for(size_t i = 0; i < changeBuffers.size(); i++) {
@@ -89,6 +93,13 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
     }
     while(true)
     {
+
+        IntTup confirmedChunk;
+        while (confirmedQueue.pop(confirmedChunk)) {
+            myActiveChunks.at(confirmedChunk).confirmedByMainThread = true;
+        }
+
+
         IntTup playerChunkPosition = worldToChunkPos(
         IntTup(std::floor(playerCamera->transform.position.x),
             std::floor(playerCamera->transform.position.z)));
@@ -101,36 +112,117 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                     if (!myActiveChunks.contains(spotHere))
                     {
                         //std::cout << "Spot " << i << " " << j << std::endl;
+
+                        //IF we havent reached the max chunks yet, we can just make a new one for this spot.
+                        //ELSE, we reuse the furthest one from the player, ONLY IF the new distance will be shorter than the last distance!
                         if (chunkPool.size() < maxChunks)
                         {
                             size_t changeBufferIndex;
                             while (!freeChangeBuffers.pop(changeBufferIndex)) {
                                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                             }
+
+                            //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
+
                             auto& buffer = changeBuffers[changeBufferIndex];
                             buffer.in_use = true;
-
                             buffer.mesh = fromChunk(spotHere, world, chunkSize);
 
-                            // if(buffer.mesh.positions.size() > 0)
-                            // {
+                            buffer.chunkIndex = addUninitializedChunkBuffer();
+                            buffer.from = std::nullopt;
+                            buffer.to = spotHere;
 
-                                buffer.chunkIndex = addUninitializedChunkBuffer();
-                                buffer.from = std::nullopt;
-                                buffer.to = spotHere;
                             buffer.ready = true;   // Signal that data is ready
-                            // } else
-                            // {
-                            //     freeChangeBuffers.push(changeBufferIndex);
-                            // }
-
-                            ///This shouldnt cause issues
-                            //myActiveChunks.insert_or_assign(spotHere, 0);
-
                             buffer.in_use = false;
 
+                            myActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(buffer.chunkIndex));
+
+                        } else
+                        {
+                            constexpr float MIN_DISTANCE = (float)(renderDistance + 1) * (chunkSize);
+
+                            std::vector<std::pair<float,IntTup>> chunksWithDistances;
+
+                            for (const auto& [chunkPos, usedChunkInfo] : myActiveChunks) {
+
+                                if (!usedChunkInfo.confirmedByMainThread)
+                                {
+                                    //We only want ones confirmed by main thread, we know we can repurpose those
+                                    continue;
+                                }
+                                // Convert IntTup to world position (assuming Chunk::WIDTH is defined)
+                                glm::vec3 worldPosition = glm::vec3(
+                                    chunkPos.x * chunkSize,
+                                    0, // IntTup Y is 0 for chunkPos
+                                    chunkPos.z * chunkSize
+                                );
+
+                                // Calculate distance to yourPosition
+                                float distance = glm::distance(worldPosition, playerCamera->transform.position);
+
+                                // Filter out chunks closer than MIN_DISTANCE
+                                if (distance > MIN_DISTANCE) {
+                                    chunksWithDistances.emplace_back(distance, chunkPos);
+                                }
+
+                            }
+
+
+
+                            //If any still matching the criteria
+                            if(chunksWithDistances.size() > 0)
+                            {
+                                // Sort chunks by distance
+                                std::sort(chunksWithDistances.begin(), chunksWithDistances.end(),
+                                          [](const std::pair<float, IntTup>& a, const std::pair<float, IntTup>& b) {
+                                              return a.first > b.first;
+                                });
+
+                                for (const auto& [oldDistance, spot] : chunksWithDistances)
+                                {
+                                    //If the place we're going will afford a shorter distance from player, choose this one.
+                                    glm::vec3 newWorldPosition = glm::vec3(
+                                        spotHere.x * chunkSize,
+                                        0, // IntTup Y is 0 for chunkPos
+                                        spotHere.z * chunkSize
+                                    );
+                                    float newDistance = glm::distance(newWorldPosition, playerCamera->transform.position);
+
+                                    if (newDistance < oldDistance)
+                                    {
+                                        size_t chunkIndex = myActiveChunks.at(spot).chunkIndex;
+
+                                        size_t changeBufferIndex;
+                                        while (!freeChangeBuffers.pop(changeBufferIndex)) {
+                                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                                        }
+
+                                        //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
+
+                                        auto& buffer = changeBuffers[changeBufferIndex];
+                                        buffer.in_use = true;
+                                        buffer.mesh = fromChunk(spotHere, world, chunkSize);
+
+                                        buffer.chunkIndex = chunkIndex;
+                                        buffer.from = spot;
+                                        buffer.to = spotHere;
+
+                                        buffer.ready = true;   // Signal that data is ready
+                                        buffer.in_use = false;
+
+                                        myActiveChunks.erase(spot);
+                                        myActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
+
+
+                                        break;
+                                    }
+
+                                }
+                            }
+
+
+
                         }
-                        //todo: else reuse
 
                     }
 
@@ -167,6 +259,8 @@ void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, Us
     index += 4;
 }
 
+///Create a UsableMesh from the specified chunk spot
+///This gets called in the mesh building coroutine
 UsableMesh fromChunk(IntTup spot, World* world, int chunkSize)
 {
     UsableMesh mesh;

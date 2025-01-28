@@ -39,7 +39,7 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
         }
 
 #ifdef DEBUGDRAW
-    modifyOrInitializeDrawInstructions(cgl.vvbo, cgl.uvvbo, cgl.ebo, cgl.drawInstructions, mesh, cgl.bvbo);
+        modifyOrInitializeDrawInstructions(cgl.vvbo, cgl.uvvbo, cgl.ebo, cgl.drawInstructions, mesh, cgl.bvbo);
 #endif
 
         if(collider == nullptr)
