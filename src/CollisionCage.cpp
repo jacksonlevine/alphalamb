@@ -7,6 +7,8 @@
 #include "PhysXStuff.h"
 #include "world/WorldRenderer.h"
 
+
+
 void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
 {
     IntTup blockSpot(std::floor(spot.x), std::floor(spot.y), std::floor(spot.z));
@@ -36,9 +38,9 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
             }
         }
 
-
-//modifyOrInitializeDrawInstructions(cgl.vvbo, cgl.uvvbo, cgl.ebo, cgl.drawInstructions, mesh, cgl.bvbo);
-
+#ifdef DEBUGDRAW
+    modifyOrInitializeDrawInstructions(cgl.vvbo, cgl.uvvbo, cgl.ebo, cgl.drawInstructions, mesh, cgl.bvbo);
+#endif
 
         if(collider == nullptr)
         {
@@ -48,9 +50,11 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
             editStaticMeshCollider(collider, PxVec3(0,0,0), mesh.positions, mesh.indices);
         }
     }
-    // if(cgl.drawInstructions.vao != 0)
-    // {
-    //     drawFromDrawInstructions(cgl.drawInstructions);
-    // }
+#ifdef DEBUGDRAW
+    if(cgl.drawInstructions.vao != 0)
+    {
+        drawFromDrawInstructions(cgl.drawInstructions);
+    }
+#endif
 
 }

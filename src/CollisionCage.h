@@ -17,8 +17,9 @@ public:
 private:
     IntTup lastBlockSpot = IntTup(-9999,9999,-9999);
     PxRigidStatic* collider = nullptr;
-
+#ifdef DEBUGDRAW
     ChunkGLInfo cgl = {};
+#endif
 };
 
 
