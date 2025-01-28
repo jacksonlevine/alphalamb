@@ -15,6 +15,8 @@ public:
 
     UserDataMap* userDataMap;
     WorldGenMethod* worldGenMethod;
+
+    uint32_t get(IntTup spot);
 };
 
 
