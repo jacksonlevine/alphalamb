@@ -30,10 +30,43 @@ struct Scene
         players.push_back(new Player());
         return index;
     }
+    bool mouseCaptured = false;
+    bool firstMouse = true;
 };
 
 Scene theScene = {};
 
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+    Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
+    if(action)
+    {
+        if(button == GLFW_MOUSE_BUTTON_LEFT)
+        {
+
+            if(!scene->mouseCaptured)
+            {
+                // if(imguiio->WantCaptureMouse)
+                // {
+                //     return;
+                // }
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                scene->mouseCaptured = true;
+            } else
+            {
+                //addShootLine();
+                //sendShootLineMessage();
+            }
+
+        }
+        else
+        {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            scene->mouseCaptured = false;
+            scene->firstMouse = true;
+        }
+    }
+}
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
@@ -61,7 +94,40 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         }
     }
 }
+void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
+{
+    static double lastx = 0.0;
+    static double lasty = 0.0;
+    Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
+    if(scene->mouseCaptured)
+    {
 
+        if(scene->firstMouse)
+        {
+            lastx = xpos;
+            lasty = ypos;
+            scene->firstMouse = false;
+        }
+
+
+        //ADD SENSITIVITY HERE
+        const double xOffset = (xpos - lastx) * (30.0f/100.0f);
+        const double yOffset = (lasty - ypos) * (30.0f/100.0f);
+
+        //std::cout << "Yaw: " << std::to_string(CAMERA.transform.yaw) << " Pitch: " << std::to_string(CAMERA.transform.pitch) << "\n";
+
+        if (scene->myPlayerIndex != -1)
+        {
+            // print(cout, "xOffset: {}, yOffset: {} \n", xOffset, yOffset);
+            auto & camera = scene->players.at(scene->myPlayerIndex)->camera;
+
+            camera.setYawPitch(camera.transform.yaw + static_cast<float>(xOffset), camera.transform.pitch + static_cast<float>(yOffset));
+        }
+
+        lastx = xpos;
+        lasty = ypos;
+    }
+}
 
 int main()
 {
@@ -75,6 +141,7 @@ int main()
     };
 
     glfwSetKeyCallback(window, keyCallback);
+    glfwSetCursorPosCallback(window, cursorPosCallback);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
