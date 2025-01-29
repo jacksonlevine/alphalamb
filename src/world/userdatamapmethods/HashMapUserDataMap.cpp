@@ -6,6 +6,7 @@ std::optional<uint32_t> HashMapUserDataMap::get(IntTup spot) const {
     auto start = std::chrono::high_resolution_clock::now();
 #endif
 
+    std::shared_lock<std::shared_mutex> lock(mutex);
     std::optional<uint32_t> block = std::nullopt;
     if (map.contains(spot)) {
         block = map.at(spot);
@@ -27,4 +28,10 @@ std::optional<uint32_t> HashMapUserDataMap::get(IntTup spot) const {
 #endif
 
     return block;
+}
+
+void HashMapUserDataMap::set(IntTup spot, uint32_t block)
+{
+    std::unique_lock<std::shared_mutex> lock(mutex);
+    map.insert_or_assign(spot, block);
 }

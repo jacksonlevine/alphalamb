@@ -4,6 +4,7 @@
 
 #ifndef USERDATAMAP_H
 #define USERDATAMAP_H
+#include "MaterialName.h"
 #include "../IntTup.h"
 #include "../PrecompHeader.h"
 
@@ -11,7 +12,7 @@
 class UserDataMap {
 public:
   virtual std::optional<uint32_t> get(IntTup spot) const = 0;
-
+  virtual void set(IntTup spot, uint32_t block) = 0;
 };
 
 #endif //USERDATAMAP_H

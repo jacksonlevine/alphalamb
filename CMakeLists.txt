@@ -75,6 +75,9 @@ add_executable(DistantGarden
         src/world/WorldRenderer.h
         src/CollisionCage.cpp
         src/CollisionCage.h
+        src/world/WorldGizmo.h
+        src/world/gizmos/BlockSelectGizmo.cpp
+        src/world/gizmos/BlockSelectGizmo.h
 
 )
 

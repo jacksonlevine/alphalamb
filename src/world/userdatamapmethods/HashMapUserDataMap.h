@@ -14,10 +14,10 @@
 class HashMapUserDataMap : public UserDataMap {
 public:
     std::optional<uint32_t> get(IntTup spot) const override;
-
+    void set(IntTup spot, uint32_t block) override;
 private:
     std::unordered_map<IntTup, uint32_t, IntTupHash> map;
-
+    mutable std::shared_mutex mutex = {};
 #ifdef MEASURE_LOOKUP
     mutable size_t lookup_count = 0;
     mutable std::chrono::duration<double> cumulative_lookup_time = std::chrono::duration<double>::zero();

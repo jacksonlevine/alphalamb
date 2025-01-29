@@ -20,7 +20,9 @@
 
 #include "PhysXStuff.h"
 #include "world/World.h"
+#include "world/WorldGizmo.h"
 #include "world/WorldRenderer.h"
+#include "world/gizmos/BlockSelectGizmo.h"
 #include "world/userdatamapmethods/HashMapUserDataMap.h"
 #include "world/worldgenmethods/PerlinWorldGenMethod.h"
 
@@ -36,6 +38,7 @@ struct Scene
     }
     bool mouseCaptured = false;
     bool firstMouse = true;
+    std::vector<WorldGizmo*> gizmos;
 };
 
 Scene theScene = {};
@@ -151,7 +154,7 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
 
     initializePhysX();
 
@@ -166,6 +169,13 @@ int main()
 
     //Add ourselves to the scene
     theScene.myPlayerIndex = theScene.addPlayer();
+
+    theScene.gizmos.push_back(new BlockSelectGizmo());
+
+    for(auto & gizmo : theScene.gizmos)
+    {
+        gizmo->init();
+    }
 
     World world(
         new HashMapUserDataMap(),
@@ -216,6 +226,11 @@ int main()
 
 
             renderer.mainThreadDraw();
+
+            for(auto & gizmo : theScene.gizmos)
+            {
+                gizmo->draw(&world, theScene.players[theScene.myPlayerIndex]);
+            }
         }
 
         glfwPollEvents();
