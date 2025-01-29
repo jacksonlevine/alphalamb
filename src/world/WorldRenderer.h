@@ -110,17 +110,17 @@ public:
     std::unordered_map<IntTup, size_t, IntTupHash> activeChunks = {};
 
     ///Only for Mesh Building thread access. Its internal record of what spots it has generated & sent out the geometry for.
-    std::unordered_map<IntTup, UsedChunkInfo, IntTupHash> myActiveChunks = {};
+    std::unordered_map<IntTup, UsedChunkInfo, IntTupHash> mbtActiveChunks = {};
 
-    ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffer
+    ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
     std::array<ChangeBuffer, 10> changeBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<10>> freeChangeBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<10>> freedChangeBuffers = {};
 
-    ///After being added to myActiveChunks, we await a confirmation back in this before we know we can reuse that chunk again
-    ///One way queue, from main thread to mesh building thread, to notify of myActiveChunks entries that have been confirmed/entered into activeChunks.
-    boost::lockfree::spsc_queue<IntTup, boost::lockfree::capacity<128>> confirmedQueue = {};
+    ///After being added to mbtActiveChunks, we await a confirmation back in this before we know we can reuse that chunk again
+    ///One way queue, from main thread to mesh building thread, to notify of mbtActiveChunks entries that have been confirmed/entered into activeChunks.
+    boost::lockfree::spsc_queue<IntTup, boost::lockfree::capacity<128>> confirmedActiveChunksQueue = {};
 
     void mainThreadDraw();
     void meshBuildCoroutine(jl::Camera* playerCamera, World* world);

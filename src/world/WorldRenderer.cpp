@@ -70,9 +70,9 @@ void WorldRenderer::mainThreadDraw()
                 activeChunks.erase(buffer.from.value());
                 activeChunks.insert_or_assign(buffer.to, buffer.chunkIndex);
             }
-            confirmedQueue.push(buffer.to);
+            confirmedActiveChunksQueue.push(buffer.to);
             buffer.ready = false;
-            freeChangeBuffers.push(i);  // Return to free list
+            freedChangeBuffers.push(i);  // Return to free list
             break; //Only do one per frame
         }
     }
@@ -89,27 +89,28 @@ void WorldRenderer::mainThreadDraw()
 void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 {
     for(size_t i = 0; i < changeBuffers.size(); i++) {
-        freeChangeBuffers.push(i);
+        freedChangeBuffers.push(i);
     }
     while(true)
     {
 
         IntTup confirmedChunk;
-        while (confirmedQueue.pop(confirmedChunk)) {
-            myActiveChunks.at(confirmedChunk).confirmedByMainThread = true;
+        while (confirmedActiveChunksQueue.pop(confirmedChunk)) {
+            mbtActiveChunks.at(confirmedChunk).confirmedByMainThread = true;
         }
 
 
         IntTup playerChunkPosition = worldToChunkPos(
         IntTup(std::floor(playerCamera->transform.position.x),
             std::floor(playerCamera->transform.position.z)));
+
         for (int i = -renderDistance; i < renderDistance; i++)
         {
             for (int j = -renderDistance; j < renderDistance; j++)
             {
 
                     IntTup spotHere = playerChunkPosition + IntTup(i,j);
-                    if (!myActiveChunks.contains(spotHere))
+                    if (!mbtActiveChunks.contains(spotHere))
                     {
                         //std::cout << "Spot " << i << " " << j << std::endl;
 
@@ -118,7 +119,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                         if (chunkPool.size() < maxChunks)
                         {
                             size_t changeBufferIndex;
-                            while (!freeChangeBuffers.pop(changeBufferIndex)) {
+                            while (!freedChangeBuffers.pop(changeBufferIndex)) {
                                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                             }
 
@@ -135,30 +136,25 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                             buffer.ready = true;   // Signal that data is ready
                             buffer.in_use = false;
 
-                            myActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(buffer.chunkIndex));
+                            mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(buffer.chunkIndex));
 
                         } else
                         {
-                            constexpr float MIN_DISTANCE = (float)(renderDistance + 1) * (chunkSize);
+                            constexpr int MIN_DISTANCE = renderDistance + 1;
 
-                            std::vector<std::pair<float,IntTup>> chunksWithDistances;
+                            std::vector<std::pair<int,IntTup>> chunksWithDistances;
 
-                            for (const auto& [chunkPos, usedChunkInfo] : myActiveChunks) {
+                            for (const auto& [chunkPos, usedChunkInfo] : mbtActiveChunks) {
 
                                 if (!usedChunkInfo.confirmedByMainThread)
                                 {
                                     //We only want ones confirmed by main thread, we know we can repurpose those
                                     continue;
                                 }
-                                // Convert IntTup to world position (assuming Chunk::WIDTH is defined)
-                                glm::vec3 worldPosition = glm::vec3(
-                                    chunkPos.x * chunkSize,
-                                    0, // IntTup Y is 0 for chunkPos
-                                    chunkPos.z * chunkSize
-                                );
 
                                 // Calculate distance to yourPosition
-                                float distance = glm::distance(worldPosition, playerCamera->transform.position);
+                                int distance = abs(chunkPos.x - playerChunkPosition.x) + abs(chunkPos.z - playerChunkPosition.z);
+
 
                                 // Filter out chunks closer than MIN_DISTANCE
                                 if (distance > MIN_DISTANCE) {
@@ -170,7 +166,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
 
                             //If any still matching the criteria
-                            if(chunksWithDistances.size() > 0)
+                            if(!chunksWithDistances.empty())
                             {
                                 // Sort chunks by distance
                                 std::sort(chunksWithDistances.begin(), chunksWithDistances.end(),
@@ -178,22 +174,18 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                               return a.first > b.first;
                                 });
 
-                                for (const auto& [oldDistance, spot] : chunksWithDistances)
+                                for (const auto& [oldDistance, oldSpot] : chunksWithDistances)
                                 {
                                     //If the place we're going will afford a shorter distance from player, choose this one.
-                                    glm::vec3 newWorldPosition = glm::vec3(
-                                        spotHere.x * chunkSize,
-                                        0, // IntTup Y is 0 for chunkPos
-                                        spotHere.z * chunkSize
-                                    );
-                                    float newDistance = glm::distance(newWorldPosition, playerCamera->transform.position);
+
+                                    int newDistance = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
 
                                     if (newDistance < oldDistance)
                                     {
-                                        size_t chunkIndex = myActiveChunks.at(spot).chunkIndex;
+                                        size_t chunkIndex = mbtActiveChunks.at(oldSpot).chunkIndex;
 
                                         size_t changeBufferIndex;
-                                        while (!freeChangeBuffers.pop(changeBufferIndex)) {
+                                        while (!freedChangeBuffers.pop(changeBufferIndex)) {
                                             std::this_thread::sleep_for(std::chrono::milliseconds(100));
                                         }
 
@@ -204,14 +196,14 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                         buffer.mesh = fromChunk(spotHere, world, chunkSize);
 
                                         buffer.chunkIndex = chunkIndex;
-                                        buffer.from = spot;
+                                        buffer.from = oldSpot;
                                         buffer.to = spotHere;
 
                                         buffer.ready = true;   // Signal that data is ready
                                         buffer.in_use = false;
 
-                                        myActiveChunks.erase(spot);
-                                        myActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
+                                        mbtActiveChunks.erase(oldSpot);
+                                        mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
 
 
                                         break;
@@ -228,7 +220,14 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
             }
         }
+        std::this_thread::sleep_for(std::chrono::seconds(4));
+
+
     }
+
+
+
+
 }
 
 ///Call this with an external index and UsableMesh to mutate them
