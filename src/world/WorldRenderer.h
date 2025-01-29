@@ -34,9 +34,9 @@ struct ChunkGLInfo
 
 struct ChangeBuffer
 {
-    UsableMesh mesh;
-    size_t chunkIndex;
-    std::atomic<bool> ready = false;  // true when data is ready to be consumed
+    UsableMesh mesh = {};
+    size_t chunkIndex = 0;
+    std::atomic<bool> ready = false;
     std::atomic<bool> in_use = false;
     std::optional<TwoIntTup> from = std::nullopt;
     TwoIntTup to = {};

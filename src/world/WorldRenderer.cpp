@@ -88,6 +88,8 @@ void WorldRenderer::mainThreadDraw()
 //SECOND THREAD MESH BUILDING COROUTINE
 void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 {
+    constexpr int MIN_DISTANCE = renderDistance + 1;
+
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         freedChangeBuffers.push(i);
     }
@@ -109,8 +111,13 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
             for (int j = -renderDistance; j < renderDistance; j++)
             {
 
+
                     TwoIntTup spotHere = playerChunkPosition + TwoIntTup(i,j);
-                    if (!mbtActiveChunks.contains(spotHere))
+
+                    int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
+                    if(dist <= MIN_DISTANCE)
+                    {
+                        if (!mbtActiveChunks.contains(spotHere))
                     {
                         //std::cout << "Spot " << i << " " << j << std::endl;
 
@@ -133,14 +140,16 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                             buffer.from = std::nullopt;
                             buffer.to = spotHere;
 
+                            mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(buffer.chunkIndex));
+
                             buffer.ready = true;   // Signal that data is ready
                             buffer.in_use = false;
 
-                            mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(buffer.chunkIndex));
+
 
                         } else
                         {
-                            constexpr int MIN_DISTANCE = renderDistance + 1;
+
 
                             std::vector<std::pair<int,TwoIntTup>> chunksWithDistances;
 
@@ -199,12 +208,13 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                         buffer.from = oldSpot;
                                         buffer.to = spotHere;
 
-                                        buffer.ready = true;   // Signal that data is ready
-                                        buffer.in_use = false;
+
 
                                         mbtActiveChunks.erase(oldSpot);
                                         mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
 
+                                        buffer.ready = true;   // Signal that data is ready
+                                        buffer.in_use = false;
 
                                         break;
                                     }
@@ -217,6 +227,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                         }
 
                     }
+                    }
+
 
             }
         }

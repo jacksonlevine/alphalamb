@@ -142,7 +142,7 @@ PxRigidStatic* _createStaticMeshCollider(const PxVec3& position,
         // Cook the mesh
         PxTolerancesScale scale;
         PxCookingParams cookingParams(scale);
-        //cookingParams.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
+        cookingParams.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
         //cookingParams.meshWeldTolerance = 0.0f;
         PxDefaultMemoryOutputStream writeBuffer;
         PxTriangleMeshCookingResult::Enum result;
@@ -224,7 +224,7 @@ PxRigidStatic* editStaticMeshCollider(PxRigidStatic* existing, const PxVec3& pos
 
     PxTolerancesScale scale;
     PxCookingParams cookingParams(scale);
-    //cookingParams.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
+    cookingParams.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
     //cookingParams.meshWeldTolerance = 0.0f;
     PxDefaultMemoryOutputStream writeBuffer;
     PxTriangleMeshCookingResult::Enum result;

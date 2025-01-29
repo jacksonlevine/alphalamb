@@ -20,11 +20,11 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
 
         PxU32 index = 0;
 
-        for(int x = -2; x < 2; x++)
+        for(int x = -6; x < 6; x++)
         {
-            for(int z = -2; z < 2; z++)
+            for(int z = -6; z < 6; z++)
             {
-                for(int y = 3; y > -3; y--)
+                for(int y = 6; y > -6; y--)
                 {
                     IntTup spotHere = blockSpot + IntTup(x,y,z);
                     if(world->get(spotHere) != AIR)

@@ -12,11 +12,22 @@ PerlinWorldGenMethod::PerlinWorldGenMethod()
 
 uint32_t PerlinWorldGenMethod::get(IntTup spot)
 {
+
     float no = noise.GetNoise(
         spot.x * blockScaleInPerlin,
         spot.y * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-    - ((spot.y - 30.0) * 0.017);
+    - ((spot.y - 90.0) * 0.007);
 
-    return no > 0.02f ? STONE : AIR;
+    float noabove = noise.GetNoise(
+        spot.x * blockScaleInPerlin,
+        (spot.y + 2) * blockScaleInPerlin,
+        spot.z * blockScaleInPerlin)
+    - ((spot.y - 90.0) * 0.007);
+
+    return no > 0.02f ? (
+        noabove > 0.02f ? (DIRT) : (spot.y < 10 ? SAND : GRASS)
+        ) : 0;
+
+
 }

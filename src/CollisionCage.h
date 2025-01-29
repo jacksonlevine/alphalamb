@@ -11,6 +11,8 @@
 
 using namespace physx;
 
+#define DEBUGDRAW 1
+
 class CollisionCage {
 public:
     void updateToSpot(World* world, glm::vec3 spot);
