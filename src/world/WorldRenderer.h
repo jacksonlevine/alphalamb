@@ -38,8 +38,8 @@ struct ChangeBuffer
     size_t chunkIndex;
     std::atomic<bool> ready = false;  // true when data is ready to be consumed
     std::atomic<bool> in_use = false;
-    std::optional<IntTup> from = std::nullopt;
-    IntTup to = {};
+    std::optional<TwoIntTup> from = std::nullopt;
+    TwoIntTup to = {};
 };
 
 void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo, DrawInstructions& drawInstructions, UsableMesh& usable_mesh, GLuint& bvbo);
@@ -87,7 +87,7 @@ inline static IntTup neighborSpots[6] = {
 };
 
 
-UsableMesh fromChunk(IntTup spot, World* world, int chunkSize);\
+UsableMesh fromChunk(TwoIntTup spot, World* world, int chunkSize);\
 
 struct UsedChunkInfo
 {
@@ -107,10 +107,10 @@ public:
 
     ///Only for Main Thread access. The main thread will make changes to this as it buffers incoming geometry, so they will only be on this once theyre officially ready to be drawn.
     ///The main thread will also use this as its list of what chunks to draw
-    std::unordered_map<IntTup, size_t, IntTupHash> activeChunks = {};
+    std::unordered_map<TwoIntTup, size_t, TwoIntTupHash> activeChunks = {};
 
     ///Only for Mesh Building thread access. Its internal record of what spots it has generated & sent out the geometry for.
-    std::unordered_map<IntTup, UsedChunkInfo, IntTupHash> mbtActiveChunks = {};
+    std::unordered_map<TwoIntTup, UsedChunkInfo, TwoIntTupHash> mbtActiveChunks = {};
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
@@ -120,7 +120,7 @@ public:
 
     ///After being added to mbtActiveChunks, we await a confirmation back in this before we know we can reuse that chunk again
     ///One way queue, from main thread to mesh building thread, to notify of mbtActiveChunks entries that have been confirmed/entered into activeChunks.
-    boost::lockfree::spsc_queue<IntTup, boost::lockfree::capacity<128>> confirmedActiveChunksQueue = {};
+    boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<128>> confirmedActiveChunksQueue = {};
 
     void mainThreadDraw();
     void meshBuildCoroutine(jl::Camera* playerCamera, World* world);
@@ -134,9 +134,9 @@ public:
         return chunkPool.size() - 1;
     }
 
-    IntTup worldToChunkPos(IntTup worldPos)
+    TwoIntTup worldToChunkPos(TwoIntTup worldPos)
     {
-        return IntTup(
+        return TwoIntTup(
             std::floor((float)worldPos.x / chunkSize),
             std::floor((float)worldPos.z / chunkSize)
         );

@@ -94,14 +94,14 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
     while(true)
     {
 
-        IntTup confirmedChunk;
+        TwoIntTup confirmedChunk;
         while (confirmedActiveChunksQueue.pop(confirmedChunk)) {
             mbtActiveChunks.at(confirmedChunk).confirmedByMainThread = true;
         }
 
 
-        IntTup playerChunkPosition = worldToChunkPos(
-        IntTup(std::floor(playerCamera->transform.position.x),
+        TwoIntTup playerChunkPosition = worldToChunkPos(
+        TwoIntTup(std::floor(playerCamera->transform.position.x),
             std::floor(playerCamera->transform.position.z)));
 
         for (int i = -renderDistance; i < renderDistance; i++)
@@ -109,7 +109,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
             for (int j = -renderDistance; j < renderDistance; j++)
             {
 
-                    IntTup spotHere = playerChunkPosition + IntTup(i,j);
+                    TwoIntTup spotHere = playerChunkPosition + TwoIntTup(i,j);
                     if (!mbtActiveChunks.contains(spotHere))
                     {
                         //std::cout << "Spot " << i << " " << j << std::endl;
@@ -142,7 +142,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                         {
                             constexpr int MIN_DISTANCE = renderDistance + 1;
 
-                            std::vector<std::pair<int,IntTup>> chunksWithDistances;
+                            std::vector<std::pair<int,TwoIntTup>> chunksWithDistances;
 
                             for (const auto& [chunkPos, usedChunkInfo] : mbtActiveChunks) {
 
@@ -170,7 +170,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                             {
                                 // Sort chunks by distance
                                 std::sort(chunksWithDistances.begin(), chunksWithDistances.end(),
-                                          [](const std::pair<float, IntTup>& a, const std::pair<float, IntTup>& b) {
+                                          [](const std::pair<float, TwoIntTup>& a, const std::pair<float, TwoIntTup>& b) {
                                               return a.first > b.first;
                                 });
 
@@ -260,7 +260,7 @@ void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, Us
 
 ///Create a UsableMesh from the specified chunk spot
 ///This gets called in the mesh building coroutine
-UsableMesh fromChunk(IntTup spot, World* world, int chunkSize)
+UsableMesh fromChunk(TwoIntTup spot, World* world, int chunkSize)
 {
     UsableMesh mesh;
     PxU32 index = 0;

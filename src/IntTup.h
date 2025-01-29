@@ -33,6 +33,38 @@ struct IntTupHash {
     std::size_t operator()(const IntTup& tup) const;
 };
 
+
+
+
+
+
+struct TwoIntTup {
+public:
+    int x;
+    int z;
+    TwoIntTup(int x, int z);
+    TwoIntTup();
+    void set(int x, int z);
+    bool operator==(const TwoIntTup& other) const;
+    bool operator!=(const TwoIntTup& other) const;
+    TwoIntTup& operator=(const TwoIntTup& other);
+    TwoIntTup& operator+=(const TwoIntTup& other);
+};
+
+TwoIntTup operator+(TwoIntTup first, const TwoIntTup& second);
+
+inline TwoIntTup operator+(TwoIntTup first, const TwoIntTup& second)
+{
+    return first += second;
+}
+
+TwoIntTup operator-(TwoIntTup first, const TwoIntTup& second);
+
+struct TwoIntTupHash {
+    std::size_t operator()(const TwoIntTup& tup) const;
+};
+
+
 std::string getIntTupHashAsString(const IntTup& tup);
 
 #endif //INTTUP_H

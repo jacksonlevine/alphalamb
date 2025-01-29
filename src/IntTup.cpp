@@ -81,11 +81,55 @@ IntTup::IntTup(int x, int z)
 }
 
 std::size_t IntTupHash::operator()(const IntTup& tup) const {
-    std::size_t hash = 0;
-    hash ^= std::hash<int> {}(tup.x) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-    hash ^= std::hash<int> {}(tup.y) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-    hash ^= std::hash<int> {}(tup.z) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-    return hash;
+    return (std::hash<int>{}(tup.x) ^ (std::hash<int>{}(tup.y) << 1)) ^ (std::hash<int>{}(tup.z) << 2);
+}
+
+
+
+TwoIntTup::TwoIntTup(int x, int z) : x(x), z(z)
+{
+}
+
+TwoIntTup::TwoIntTup() : x(0), z(0)
+{
+}
+
+void TwoIntTup::set(int x, int z)
+{
+    this->x = x;
+    this->z = z;
+}
+
+bool TwoIntTup::operator==(const TwoIntTup& other) const
+{
+    return (x == other.x) && (z == other.z);
+}
+
+bool TwoIntTup::operator!=(const TwoIntTup& other) const
+{
+    return (x != other.x) || (z != other.z);
+}
+
+TwoIntTup& TwoIntTup::operator=(const TwoIntTup& other)
+{
+    if (this != &other)
+    {
+        this->x = other.x;
+        this->z = other.z;
+    }
+    return *this;
+}
+
+TwoIntTup& TwoIntTup::operator+=(const TwoIntTup& other)
+{
+    this->x += other.x;
+    this->z += other.z;
+    return *this;
+}
+
+std::size_t TwoIntTupHash::operator()(const TwoIntTup& tup) const
+{
+    return std::hash<int>{}(tup.x) ^ (std::hash<int>{}(tup.z) << 1);
 }
 
 std::string getIntTupHashAsString(const IntTup& tup) {
