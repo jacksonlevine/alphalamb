@@ -51,7 +51,7 @@ enum Side
     Front = 0,Right,Back,Left,Top,Bottom
 };
 
-void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index);
+__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index);
 
 
 inline static PxVec3 cubefaces[6][4] = {
@@ -101,7 +101,8 @@ class WorldRenderer {
 public:
     static constexpr int chunkSize = 16;
     static constexpr int renderDistance = 10;
-    static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2)) + renderDistance*10;
+    static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2));
+    static constexpr int MIN_DISTANCE = renderDistance + 1;
 
     std::vector<ChunkGLInfo> chunkPool;
 
@@ -122,7 +123,7 @@ public:
     ///One way queue, from main thread to mesh building thread, to notify of mbtActiveChunks entries that have been confirmed/entered into activeChunks.
     boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<128>> confirmedActiveChunksQueue = {};
 
-    void mainThreadDraw();
+    void mainThreadDraw(jl::Camera* playerCamera);
     void meshBuildCoroutine(jl::Camera* playerCamera, World* world);
 
     ///Add a chunk gl info with the vao == 0 (not generated yet). Calling modifyOrInitializeDrawInstructions with it and geometry will initialize it.

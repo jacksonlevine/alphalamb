@@ -50,9 +50,32 @@ void drawFromDrawInstructions(const DrawInstructions& drawInstructions)
     glDrawElements(GL_TRIANGLES, drawInstructions.indiceCount, GL_UNSIGNED_INT, 0);
 }
 
+bool isChunkInFrustum(const TwoIntTup& chunkSpot, const glm::vec3& cameraPosition, const glm::vec3& cameraDirection) {
+
+    glm::vec3 chunkBottomPos = glm::vec3(
+        chunkSpot.x * WorldRenderer::chunkSize + WorldRenderer::chunkSize / 2.0f,
+        cameraPosition.y + cameraDirection.y * 125,
+        chunkSpot.z * WorldRenderer::chunkSize + WorldRenderer::chunkSize / 2.0f
+    );
+
+    glm::vec3 toChunk = chunkBottomPos - cameraPosition;
+
+    glm::vec3 normalizedToChunk = glm::normalize(toChunk);
+    glm::vec3 normalizedDirection = glm::normalize(cameraDirection);
+
+
+    float dotProduct1 = glm::dot(normalizedToChunk, normalizedDirection);
+    dotProduct1 = glm::clamp(dotProduct1, -1.0f, 1.0f);
+    float angle1 = glm::degrees(std::acos(dotProduct1));
+
+
+    const float FOV_ANGLE = 65.0f; // Half of your camera's total FOV
+
+    return angle1 <= FOV_ANGLE;
+}
 
 //MAIN THREAD COROUTINE
-void WorldRenderer::mainThreadDraw()
+void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera)
 {
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         auto& buffer = changeBuffers[i];
@@ -71,15 +94,24 @@ void WorldRenderer::mainThreadDraw()
                 activeChunks.insert_or_assign(buffer.to, buffer.chunkIndex);
             }
             confirmedActiveChunksQueue.push(buffer.to);
-            buffer.ready = false;
+
             freedChangeBuffers.push(i);  // Return to free list
+            buffer.ready = false;
             break; //Only do one per frame
         }
     }
-    for (const auto & [spot, index] : activeChunks)
-    {
-        auto glInfo = chunkPool[index];
-        drawFromDrawInstructions(glInfo.drawInstructions);
+    TwoIntTup playerChunkPosition = worldToChunkPos(
+        TwoIntTup(std::floor(playerCamera->transform.position.x),
+            std::floor(playerCamera->transform.position.z)));
+    for (const auto& [spot, index] : activeChunks) {
+        // Check if the chunk is within the frustum
+        if (isChunkInFrustum(spot, playerCamera->transform.position - (playerCamera->transform.direction * (float)chunkSize), playerCamera->transform.direction)) {
+            int dist = abs(spot.x - playerChunkPosition.x) + abs(spot.z - playerChunkPosition.z);
+            if (dist <= MIN_DISTANCE) {
+                auto glInfo = chunkPool[index];
+                drawFromDrawInstructions(glInfo.drawInstructions);
+            }
+        }
     }
 }
 
@@ -88,7 +120,7 @@ void WorldRenderer::mainThreadDraw()
 //SECOND THREAD MESH BUILDING COROUTINE
 void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 {
-    constexpr int MIN_DISTANCE = renderDistance + 1;
+
 
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         freedChangeBuffers.push(i);
@@ -243,7 +275,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 }
 
 ///Call this with an external index and UsableMesh to mutate them
-void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, PxU32& index)
+__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, PxU32& index)
 {
     std::ranges::transform(cubefaces[side], std::back_inserter(mesh.positions), [&offset, &sideHeight](const auto& v) {
             auto newv = v;

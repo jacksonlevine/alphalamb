@@ -225,7 +225,7 @@ int main()
             theScene.players[theScene.myPlayerIndex]->collisionCage.updateToSpot(&world, camera.transform.position);
 
 
-            renderer.mainThreadDraw();
+            renderer.mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera);
 
             for(auto & gizmo : theScene.gizmos)
             {

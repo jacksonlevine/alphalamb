@@ -11,7 +11,7 @@
 
 using namespace physx;
 
-#define DEBUGDRAW 1
+//#define DEBUGDRAW 1
 
 class CollisionCage {
 public:
