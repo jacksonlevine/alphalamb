@@ -19,6 +19,7 @@
 #include <stb_image.h>
 
 #include "PhysXStuff.h"
+#include "Sky.h"
 #include "world/World.h"
 #include "world/WorldGizmo.h"
 #include "world/WorldRenderer.h"
@@ -207,6 +208,12 @@ int main()
         {
             auto & camera = theScene.players.at(theScene.myPlayerIndex)->camera;
             camera.updateWithYawPitch(camera.transform.yaw, camera.transform.pitch);
+
+            drawSky(glm::vec4(0.3, 0.65, 1.0, 1.0),
+                glm::vec4(1.0, 1.0, 1.0, 1.0),
+                1.0f, &theScene.players[theScene.myPlayerIndex]->camera);
+
+
             glUseProgram(gltfShader.shaderID);
 
             static GLuint mvpLoc = glGetUniformLocation(gltfShader.shaderID, "mvp");
@@ -219,10 +226,13 @@ int main()
             glUniform1i(texture1Loc, 0);
             glUniform3f(posLoc, 0.0, 0.0, 0.0);
             glUniform1f(rotLoc, 0.0f);
+
+
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
 
             //std::cout << "Passing " << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << " \n";
             theScene.players[theScene.myPlayerIndex]->collisionCage.updateToSpot(&world, camera.transform.position);
+
 
 
             renderer.mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera);
@@ -231,6 +241,8 @@ int main()
             {
                 gizmo->draw(&world, theScene.players[theScene.myPlayerIndex]);
             }
+
+
         }
 
         glfwPollEvents();

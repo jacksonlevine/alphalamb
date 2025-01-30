@@ -78,6 +78,7 @@ add_executable(DistantGarden
         src/world/WorldGizmo.h
         src/world/gizmos/BlockSelectGizmo.cpp
         src/world/gizmos/BlockSelectGizmo.h
+        src/Sky.h
 
 )
 
