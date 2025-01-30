@@ -125,6 +125,10 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         freedChangeBuffers.push(i);
     }
+    chunkPool.reserve(maxChunks);
+    mbtActiveChunks.reserve(maxChunks);
+    activeChunks.reserve(maxChunks);
+
     while(true)
     {
 

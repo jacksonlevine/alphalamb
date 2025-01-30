@@ -115,9 +115,9 @@ public:
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
-    std::array<ChangeBuffer, 10> changeBuffers = {};
+    std::array<ChangeBuffer, 3> changeBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<10>> freedChangeBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<3>> freedChangeBuffers = {};
 
     ///After being added to mbtActiveChunks, we await a confirmation back in this before we know we can reuse that chunk again
     ///One way queue, from main thread to mesh building thread, to notify of mbtActiveChunks entries that have been confirmed/entered into activeChunks.
