@@ -100,7 +100,7 @@ struct UsedChunkInfo
 class WorldRenderer {
 public:
     static constexpr int chunkSize = 16;
-    static constexpr int renderDistance = 10;
+    static constexpr int renderDistance = 14;
     static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2));
     static constexpr int MIN_DISTANCE = renderDistance + 1;
 

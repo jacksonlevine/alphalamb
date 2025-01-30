@@ -220,11 +220,14 @@ int main()
             static GLuint texture1Loc = glGetUniformLocation(gltfShader.shaderID, "texture1");
             static GLuint posLoc = glGetUniformLocation(gltfShader.shaderID, "pos");
             static GLuint rotLoc = glGetUniformLocation(gltfShader.shaderID, "rot");
+            static GLuint camPosLoc = glGetUniformLocation(gltfShader.shaderID, "camPos");
 
             glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera.mvp));
             glActiveTexture(GL_TEXTURE0);
             glUniform1i(texture1Loc, 0);
             glUniform3f(posLoc, 0.0, 0.0, 0.0);
+            const glm::vec3 campos = theScene.players[theScene.myPlayerIndex]->camera.transform.position;
+            glUniform3f(camPosLoc, campos.x, campos.y, campos.z);
             glUniform1f(rotLoc, 0.0f);
 
 
