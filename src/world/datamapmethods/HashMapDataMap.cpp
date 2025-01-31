@@ -1,6 +1,6 @@
-#include "HashMapUserDataMap.h"
+#include "HashMapDataMap.h"
 
-std::optional<uint32_t> HashMapUserDataMap::get(IntTup spot) const {
+std::optional<uint32_t> HashMapDataMap::get(IntTup spot) const {
 
 #ifdef MEASURE_LOOKUP
     auto start = std::chrono::high_resolution_clock::now();
@@ -30,7 +30,7 @@ std::optional<uint32_t> HashMapUserDataMap::get(IntTup spot) const {
     return block;
 }
 
-void HashMapUserDataMap::set(IntTup spot, uint32_t block)
+void HashMapDataMap::set(IntTup spot, uint32_t block)
 {
     std::unique_lock<std::shared_mutex> lock(mutex);
     map.insert_or_assign(spot, block);

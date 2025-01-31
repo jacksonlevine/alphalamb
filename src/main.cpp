@@ -24,7 +24,7 @@
 #include "world/WorldGizmo.h"
 #include "world/WorldRenderer.h"
 #include "world/gizmos/BlockSelectGizmo.h"
-#include "world/userdatamapmethods/HashMapUserDataMap.h"
+#include "world/datamapmethods/HashMapDataMap.h"
 #include "world/worldgenmethods/PerlinWorldGenMethod.h"
 
 struct Scene
@@ -179,7 +179,7 @@ int main()
     }
 
     World world(
-        new HashMapUserDataMap(),
+        new HashMapDataMap(),
         new PerlinWorldGenMethod());
     WorldRenderer renderer;
 

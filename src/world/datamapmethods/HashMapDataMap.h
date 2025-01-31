@@ -6,12 +6,12 @@
 #ifndef HASHMAPUSERDATAMAP_H
 #define HASHMAPUSERDATAMAP_H
 
-#include "../UserDataMap.h"
+#include "../DataMap.h"
 
 //#define MEASURE_LOOKUP 1
 
 ///A simple implementation of UserDataMap using an unordered_map (And with optionally enabled measuring of lookup time)
-class HashMapUserDataMap : public UserDataMap {
+class HashMapDataMap : public DataMap {
 public:
     std::optional<uint32_t> get(IntTup spot) const override;
     void set(IntTup spot, uint32_t block) override;

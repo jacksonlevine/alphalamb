@@ -4,16 +4,16 @@
 
 #ifndef WORLD_H
 #define WORLD_H
-#include "UserDataMap.h"
+#include "DataMap.h"
 #include "WorldGenMethod.h"
 
 
 class World {
 public:
-    World(UserDataMap* udm, WorldGenMethod* wm) :
+    World(DataMap* udm, WorldGenMethod* wm) :
     userDataMap(udm), worldGenMethod(wm) {};
 
-    UserDataMap* userDataMap;
+    DataMap* userDataMap;
     WorldGenMethod* worldGenMethod;
 
     uint32_t get(IntTup spot);

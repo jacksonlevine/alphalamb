@@ -9,10 +9,11 @@
 #include "../PrecompHeader.h"
 
 ///The interface the user block data storage mechanism must satisfy
-class UserDataMap {
+class DataMap
+{
 public:
-  virtual std::optional<uint32_t> get(IntTup spot) const = 0;
-  virtual void set(IntTup spot, uint32_t block) = 0;
+    virtual std::optional<uint32_t> get(IntTup spot) const = 0;
+    virtual void set(IntTup spot, uint32_t block) = 0;
 };
 
 #endif //USERDATAMAP_H

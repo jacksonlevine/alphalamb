@@ -62,12 +62,12 @@ add_executable(DistantGarden
         src/PhysXStuff.cpp
         src/Transform.h
         src/Transform.cpp
-        src/world/UserDataMap.h
+        src/world/DataMap.h
         src/world/WorldGenMethod.h
         src/world/worldgenmethods/PerlinWorldGenMethod.cpp
         src/world/worldgenmethods/PerlinWorldGenMethod.h
-        src/world/userdatamapmethods/HashMapUserDataMap.cpp
-        src/world/userdatamapmethods/HashMapUserDataMap.h
+        src/world/datamapmethods/HashMapDataMap.cpp
+        src/world/datamapmethods/HashMapDataMap.h
         src/world/MaterialName.h
         src/world/World.cpp
         src/world/World.h
