@@ -106,12 +106,36 @@ public:
 
     std::vector<ChunkGLInfo> chunkPool;
 
+
+    // Preallocated memory pool for activeChunks and mbtActiveChunks
+    std::vector<char> activeChunksMemoryPool;
+    std::vector<char> mbtActiveChunksMemoryPool;
+
+    // Monotonic buffer resources for memory management
+    boost::container::pmr::monotonic_buffer_resource activeChunksMemoryResource;
+    boost::container::pmr::monotonic_buffer_resource mbtActiveChunksMemoryResource;
+
+    // Polymorphic allocators for the unordered_maps
+    using ActiveChunksAllocator = boost::container::pmr::polymorphic_allocator<std::pair<const TwoIntTup, size_t>>;
+    using MBTActiveChunksAllocator = boost::container::pmr::polymorphic_allocator<std::pair<const TwoIntTup, UsedChunkInfo>>;
+
     ///Only for Main Thread access. The main thread will make changes to this as it buffers incoming geometry, so they will only be on this once theyre officially ready to be drawn.
     ///The main thread will also use this as its list of what chunks to draw
-    std::unordered_map<TwoIntTup, size_t, TwoIntTupHash> activeChunks = {};
+    boost::unordered_map<TwoIntTup, size_t, TwoIntTupHash, std::equal_to<TwoIntTup>, ActiveChunksAllocator> activeChunks;
 
     ///Only for Mesh Building thread access. Its internal record of what spots it has generated & sent out the geometry for.
-    std::unordered_map<TwoIntTup, UsedChunkInfo, TwoIntTupHash> mbtActiveChunks = {};
+    boost::unordered_map<TwoIntTup, UsedChunkInfo, TwoIntTupHash, std::equal_to<TwoIntTup>, MBTActiveChunksAllocator> mbtActiveChunks;
+
+
+    WorldRenderer()
+        : activeChunksMemoryPool(maxChunks * sizeof(std::pair<TwoIntTup, size_t>)), // 1 MB preallocated pool for activeChunks
+          mbtActiveChunksMemoryPool(maxChunks * sizeof(std::pair<TwoIntTup, size_t>)), // 1 MB preallocated pool for mbtActiveChunks
+          activeChunksMemoryResource(activeChunksMemoryPool.data(), activeChunksMemoryPool.size()),
+          mbtActiveChunksMemoryResource(mbtActiveChunksMemoryPool.data(), mbtActiveChunksMemoryPool.size()),
+          activeChunks(&activeChunksMemoryResource),
+          mbtActiveChunks(&mbtActiveChunksMemoryResource) {}
+
+
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.

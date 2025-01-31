@@ -26,7 +26,7 @@ find_package(portaudio CONFIG REQUIRED)
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
 
-find_package(Boost REQUIRED COMPONENTS asio uuid lockfree)
+find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container)
 message(STATUS "Boost version: ${Boost_VERSION}")
 find_package(imgui CONFIG REQUIRED)
 find_package(cereal CONFIG REQUIRED)
