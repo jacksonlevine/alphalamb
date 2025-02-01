@@ -15,6 +15,14 @@ uint32_t OverworldWorldGenMethod::get(IntTup spot)
 
     MaterialName floorBlock = getFloorBlockInClimate(getClimate(spot));
 
+    MaterialName underDirt = STONE;
+    MaterialName surface = floorBlock;
+    MaterialName underSurface = DIRT;
+    MaterialName liquid = WATER;
+    MaterialName beach = SAND;
+
+    static float WL = 60.0f;
+
     float no = noise.GetNoise(
         spot.x * blockScaleInPerlin,
         spot.y * blockScaleInPerlin,
@@ -27,9 +35,56 @@ uint32_t OverworldWorldGenMethod::get(IntTup spot)
         spot.z * blockScaleInPerlin)
     - ((spot.y - 90.0) * 0.007);
 
-    return no > 0.02f ? (
-        noabove > 0.02f ? (DIRT) : (spot.y < 10 ? SAND : GRASS)
-        ) : 0;
+    float no5up = noise.GetNoise(
+        spot.x * blockScaleInPerlin,
+        (spot.y + 6) * blockScaleInPerlin,
+        spot.z * blockScaleInPerlin)
+    - ((spot.y - 90.0) * 0.007);
+
+    float no10up = noise.GetNoise(
+        spot.x * blockScaleInPerlin,
+        (spot.y + 12) * blockScaleInPerlin,
+        spot.z * blockScaleInPerlin)
+    - ((spot.y - 90.0) * 0.007);
+
+    static float THRESHOLD = 0.02f;
+
+    if (no > THRESHOLD)
+    {
+        if (no10up > THRESHOLD)
+        {
+            return underDirt;
+        } else
+        {
+            float beachNoise = noise.GetNoise(
+                spot.x * beachNoiseScale,
+                spot.y * beachNoiseScale,
+                spot.z * beachNoiseScale);
+            if (spot.y > (WL + beachNoise) ||
+                no5up > THRESHOLD)
+            {
+                if (noabove > THRESHOLD)
+                {
+                    return underSurface;
+                } else
+                {
+                    return surface;
+                }
+            } else
+            {
+                return beach;
+            }
+        }
+    } else
+    {
+        if (spot.y < WL)
+        {
+            return liquid;
+        } else
+        {
+            return AIR;
+        }
+    }
 
 
 }

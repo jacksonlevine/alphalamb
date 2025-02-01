@@ -33,6 +33,7 @@ private:
     static constexpr float blockScaleInPerlin = 1.7f;
     static constexpr float tempNoiseScale = 0.002f;
     static constexpr float humidityNoiseScale = 0.004f;
+    static constexpr float beachNoiseScale = 0.13f;
 };
 
 
