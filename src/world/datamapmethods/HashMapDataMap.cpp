@@ -1,12 +1,17 @@
 #include "HashMapDataMap.h"
 
+std::shared_mutex& HashMapDataMap::mutex()
+{
+    return this->mapmutex;
+}
+
 std::optional<uint32_t> HashMapDataMap::get(const IntTup& spot) const {
 
 #ifdef MEASURE_LOOKUP
     auto start = std::chrono::high_resolution_clock::now();
 #endif
 
-    std::shared_lock<std::shared_mutex> lock(mutex);
+    std::shared_lock<std::shared_mutex> lock(mapmutex);
     std::optional<uint32_t> block = std::nullopt;
     if (map.contains(spot)) {
         block = map.at(spot);
@@ -30,8 +35,17 @@ std::optional<uint32_t> HashMapDataMap::get(const IntTup& spot) const {
     return block;
 }
 
+std::optional<uint32_t> HashMapDataMap::getLocked(const IntTup& spot) const
+{
+    std::optional<uint32_t> block = std::nullopt;
+    if (map.contains(spot)) {
+        block = map.at(spot);
+    }
+    return block;
+}
+
 void HashMapDataMap::set(const IntTup& spot, uint32_t block)
 {
-    std::unique_lock<std::shared_mutex> lock(mutex);
+    std::unique_lock<std::shared_mutex> lock(mapmutex);
     map.insert_or_assign(spot, block);
 }

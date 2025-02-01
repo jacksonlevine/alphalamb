@@ -22,3 +22,21 @@ uint32_t World::get(IntTup spot)
 
     return id.value();
 }
+
+uint32_t World::getLocked(IntTup spot)
+{
+    auto id = userDataMap->getLocked(spot);
+    if (id == std::nullopt)
+    {
+        auto nid = nonUserDataMap->getLocked(spot);
+        if (nid == std::nullopt)
+        {
+            return worldGenMethod->get(spot);
+        } else
+        {
+            return nid.value();
+        }
+    }
+
+    return id.value();
+}
