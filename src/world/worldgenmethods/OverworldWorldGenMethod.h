@@ -31,9 +31,9 @@ public:
 private:
     FastNoiseLite noise = {};
     static constexpr float blockScaleInPerlin = 1.7f;
-    static constexpr float tempNoiseScale = 0.002f;
-    static constexpr float humidityNoiseScale = 0.004f;
-    static constexpr float beachNoiseScale = 0.13f;
+    static constexpr float tempNoiseScale = 0.02f;
+    static constexpr float humidityNoiseScale = 0.04f;
+    static constexpr float beachNoiseScale = 2.7f;
 };
 
 
