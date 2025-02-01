@@ -159,6 +159,8 @@ int main()
 
     initializePhysX();
 
+    loadGameVoxelModels();
+
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
@@ -180,7 +182,10 @@ int main()
 
     World world(
         new HashMapDataMap(),
-        new OverworldWorldGenMethod());
+        new OverworldWorldGenMethod(),
+        new HashMapDataMap());
+
+
     WorldRenderer renderer;
 
     std::thread chunkWorker(&WorldRenderer::meshBuildCoroutine, &renderer,

@@ -10,8 +10,8 @@
 
 class World {
 public:
-    World(DataMap* udm, WorldGenMethod* wm) :
-    userDataMap(udm), worldGenMethod(wm) {};
+    World(DataMap* udm, WorldGenMethod* wm, DataMap* nudm) :
+    userDataMap(udm), worldGenMethod(wm), nonUserDataMap(nudm) {};
 
     DataMap* userDataMap;
     DataMap* nonUserDataMap;

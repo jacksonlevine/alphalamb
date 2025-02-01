@@ -65,7 +65,7 @@ class OverworldWorldGenMethod : public WorldGenMethod {
 public:
     OverworldWorldGenMethod();
     uint32_t get(IntTup spot) override;
-    Climate getClimate(IntTup spot);
+    Climate getClimate(IntTup spot) override;
     static MaterialName getFloorBlockInClimate(const Climate& climate);
     float getHumidityNoise(const IntTup& spot) override;
     float getTemperatureNoise(const IntTup& spot) override;

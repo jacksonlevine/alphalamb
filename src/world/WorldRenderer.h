@@ -126,6 +126,9 @@ public:
     ///Only for Mesh Building thread access. Its internal record of what spots it has generated & sent out the geometry for.
     boost::unordered_map<TwoIntTup, UsedChunkInfo, TwoIntTupHash, std::equal_to<TwoIntTup>, MBTActiveChunksAllocator> mbtActiveChunks;
 
+    ///Chunks that have had their terrain features generated already.
+    std::unordered_set<TwoIntTup, TwoIntTupHash> generatedChunks;
+    void generateChunk(World* world, TwoIntTup& chunkSpot);
 
     WorldRenderer()
         : activeChunksMemoryPool(maxChunks * sizeof(std::pair<TwoIntTup, size_t>)), // 1 MB preallocated pool for activeChunks

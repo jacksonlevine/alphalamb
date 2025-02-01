@@ -127,17 +127,9 @@ uint32_t OverworldWorldGenMethod::get(IntTup spot)
 
 Climate OverworldWorldGenMethod::getClimate(IntTup spot)
 {
-    const float tempNoise = noise.GetNoise(
-        (spot.x + 1000) * blockScaleInPerlin,
-        (spot.y + 1000) * blockScaleInPerlin,
-        spot.z * blockScaleInPerlin)
-    * 2.0 - ((spot.y - 60) / 500.0f);
+    const float tempNoise = getTemperatureNoise(spot);
 
-    const float humidityNoise = noise.GetNoise(
-        spot.x * blockScaleInPerlin,
-        spot.y * blockScaleInPerlin,
-        spot.z * blockScaleInPerlin)
-    * 2.0 - ((spot.y - 60) / 500.0f);
+    const float humidityNoise = getHumidityNoise(spot);
 
     const float tempClamped = glm::clamp(tempNoise, -1.0f, 1.0f);
     const float humClamped = glm::clamp(humidityNoise, -1.0f, 1.0f);

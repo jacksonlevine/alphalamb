@@ -5,6 +5,7 @@
 #include "WorldRenderer.h"
 
 #include "MaterialName.h"
+#include "worldgenmethods/OverworldWorldGenMethod.h"
 
 ///Prepare vbos and DrawInstructions info (vao, number of indices) so that it can be then drawn with drawFromDrawInstructions()
 void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo, DrawInstructions& drawInstructions, UsableMesh& usable_mesh, GLuint& bvbo)
@@ -162,6 +163,10 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                     {
                         if (!mbtActiveChunks.contains(spotHere))
                     {
+                            if(!generatedChunks.contains(spotHere))
+                            {
+                                generateChunk(world, spotHere);
+                            }
                         //std::cout << "Spot " << i << " " << j << std::endl;
 
                         //IF we havent reached the max chunks yet, we can just make a new one for this spot.
@@ -283,6 +288,44 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
 
 
+}
+
+void WorldRenderer::generateChunk(World* world, TwoIntTup& chunkSpot)
+{
+
+    srand(chunkSpot.x + chunkSpot.z);
+    int y = 50;
+    IntTup realSpot(chunkSpot.x * chunkSize, chunkSpot.z * chunkSize);
+    bool surfaceBlockFound = false;
+    while(y < 170 && !surfaceBlockFound)
+    {
+        realSpot.y = y;
+        if(world->get(realSpot) == GRASS)
+        {
+            surfaceBlockFound = true;
+        }
+        y++;
+    }
+    if(surfaceBlockFound)
+    {
+        Climate climate = world->worldGenMethod->getClimate(realSpot);
+        std::vector<TerrainFeature>& possibleFeatures = getTerrainFeaturesFromClimate(climate);
+        size_t selectedIndex = (int)(((float)rand()/(float)RAND_MAX) * (float)(possibleFeatures.size()-1));
+        TerrainFeature selectedFeature = possibleFeatures[selectedIndex];
+
+        std::vector<VoxelModelName>& possibleModels = getVoxelModelNamesFromTerrainFeatureName(selectedFeature);
+        size_t selectedModelIndex = (int)(((float)rand()/(float)RAND_MAX) * (float)(possibleModels.size()-1));
+        VoxelModelName selectedModel = possibleModels[selectedModelIndex];
+
+        for(auto & point : voxelModels[selectedModel])
+        {
+            if(point.colorIndex != AIR)
+            {
+                world->nonUserDataMap->set(realSpot + point.localSpot, point.colorIndex);
+            }
+        }
+    }
+    generatedChunks.insert(chunkSpot);
 }
 
 ///Call this with an external index and UsableMesh to mutate them

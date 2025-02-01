@@ -10,7 +10,15 @@ uint32_t World::get(IntTup spot)
     auto id = userDataMap->get(spot);
     if (id == std::nullopt)
     {
-        return worldGenMethod->get(spot);
+        auto nid = nonUserDataMap->get(spot);
+        if (nid == std::nullopt)
+        {
+            return worldGenMethod->get(spot);
+        } else
+        {
+            return nid.value();
+        }
     }
+
     return id.value();
 }
