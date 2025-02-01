@@ -226,6 +226,7 @@ int main()
             static GLuint posLoc = glGetUniformLocation(gltfShader.shaderID, "pos");
             static GLuint rotLoc = glGetUniformLocation(gltfShader.shaderID, "rot");
             static GLuint camPosLoc = glGetUniformLocation(gltfShader.shaderID, "camPos");
+            static GLuint grcLoc = glGetUniformLocation(gltfShader.shaderID, "grassRedChange");
 
             glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera.mvp));
             glActiveTexture(GL_TEXTURE0);
@@ -234,7 +235,7 @@ int main()
             const glm::vec3 campos = theScene.players[theScene.myPlayerIndex]->camera.transform.position;
             glUniform3f(camPosLoc, campos.x, campos.y, campos.z);
             glUniform1f(rotLoc, 0.0f);
-
+            glUniform1f(grcLoc, 0.0f);
 
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
 
