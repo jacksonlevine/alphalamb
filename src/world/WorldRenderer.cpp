@@ -29,8 +29,11 @@ void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo
 
     glBindBuffer(GL_ARRAY_BUFFER, bvbo);
     glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.brightness) * sizeof(float), usable_mesh.brightness.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, (void*)0);
     glEnableVertexAttribArray(2);
+
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, (void*)(1*sizeof(float)));
+    glEnableVertexAttribArray(3);
 
     glBindBuffer(GL_ARRAY_BUFFER, uvvbo);
     glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.texcoords) * sizeof(glm::vec2), usable_mesh.texcoords.data(), GL_STATIC_DRAW);
@@ -75,7 +78,7 @@ bool isChunkInFrustum(const TwoIntTup& chunkSpot, const glm::vec3& cameraPositio
 }
 
 //MAIN THREAD COROUTINE
-void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera)
+void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod)
 {
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         auto& buffer = changeBuffers[i];
@@ -109,6 +112,10 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera)
             int dist = abs(spot.x - playerChunkPosition.x) + abs(spot.z - playerChunkPosition.z);
             if (dist <= MIN_DISTANCE) {
                 auto glInfo = chunkPool[index];
+                static GLuint grassRedChangeLoc = glGetUniformLocation(shader, "grassRedChange");
+                IntTup chunkRealSpot = IntTup(spot.x * chunkSize, spot.z * chunkSize);
+                float grassRedChange = (worldGenMethod->getTemperatureNoise(chunkRealSpot) - worldGenMethod->getHumidityNoise(chunkRealSpot));
+                glUniform1f(grassRedChangeLoc, grassRedChange);
                 drawFromDrawInstructions(glInfo.drawInstructions);
             }
         }
@@ -295,12 +302,14 @@ __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideH
         {glm::vec2(0.0 + ((float)material / 16.0f), 0.0), glm::vec2(0.0625f + ((float)material / 16.0f), 0.0),
          glm::vec2(0.0625f + ((float)material / 16.0f), 1.0 * sideHeight), glm::vec2(0.0 + ((float)material / 16.0f), 1.0 * sideHeight)});
 
+    float isGrass = material == GRASS ? 1.0f : 0.0f;
+
     switch(side) {
-    case Side::Top:    mesh.brightness.insert(mesh.brightness.end(), {1.0f, 1.0f, 1.0f, 1.0f}); break;
-    case Side::Left:   mesh.brightness.insert(mesh.brightness.end(), {0.7f, 0.7f, 0.7f, 0.7f}); break;
-    case Side::Bottom: mesh.brightness.insert(mesh.brightness.end(), {0.4f, 0.4f, 0.4f, 0.4f}); break;
-    case Side::Right:  mesh.brightness.insert(mesh.brightness.end(), {0.8f, 0.8f, 0.8f, 0.8f}); break;
-    default:          mesh.brightness.insert(mesh.brightness.end(), {0.9f, 0.9f, 0.9f, 0.9f});
+    case Side::Top:    mesh.brightness.insert(mesh.brightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
+    case Side::Left:   mesh.brightness.insert(mesh.brightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
+    case Side::Bottom: mesh.brightness.insert(mesh.brightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
+    case Side::Right:  mesh.brightness.insert(mesh.brightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
+    default:          mesh.brightness.insert(mesh.brightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
     }
 
     index += 4;

@@ -37,6 +37,7 @@ IntTup& IntTup::operator+=(const IntTup& other)
     return *this;
 }
 
+
 IntTup& IntTup::operator=(const IntTup& other) {
     if (this != &other) {
         x = other.x;
@@ -104,6 +105,8 @@ bool TwoIntTup::operator==(const TwoIntTup& other) const
 {
     return (x == other.x) && (z == other.z);
 }
+
+
 
 bool TwoIntTup::operator!=(const TwoIntTup& other) const
 {

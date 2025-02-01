@@ -238,7 +238,7 @@ int main()
 
 
 
-            renderer.mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera);
+            renderer.mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, gltfShader.shaderID, world.worldGenMethod);
 
             for(auto & gizmo : theScene.gizmos)
             {

@@ -14,6 +14,8 @@ public:
     userDataMap(udm), worldGenMethod(wm) {};
 
     DataMap* userDataMap;
+    DataMap* nonUserDataMap;
+
     WorldGenMethod* worldGenMethod;
 
     uint32_t get(IntTup spot);
