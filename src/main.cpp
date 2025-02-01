@@ -25,7 +25,7 @@
 #include "world/WorldRenderer.h"
 #include "world/gizmos/BlockSelectGizmo.h"
 #include "world/datamapmethods/HashMapDataMap.h"
-#include "world/worldgenmethods/PerlinWorldGenMethod.h"
+#include "world/worldgenmethods/OverworldWorldGenMethod.h"
 
 struct Scene
 {
@@ -180,7 +180,7 @@ int main()
 
     World world(
         new HashMapDataMap(),
-        new PerlinWorldGenMethod());
+        new OverworldWorldGenMethod());
     WorldRenderer renderer;
 
     std::thread chunkWorker(&WorldRenderer::meshBuildCoroutine, &renderer,

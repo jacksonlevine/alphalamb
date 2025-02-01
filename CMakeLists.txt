@@ -64,8 +64,8 @@ add_executable(DistantGarden
         src/Transform.cpp
         src/world/DataMap.h
         src/world/WorldGenMethod.h
-        src/world/worldgenmethods/PerlinWorldGenMethod.cpp
-        src/world/worldgenmethods/PerlinWorldGenMethod.h
+        src/world/worldgenmethods/OverworldWorldGenMethod.cpp
+        src/world/worldgenmethods/OverworldWorldGenMethod.h
         src/world/datamapmethods/HashMapDataMap.cpp
         src/world/datamapmethods/HashMapDataMap.h
         src/world/MaterialName.h
@@ -79,6 +79,8 @@ add_executable(DistantGarden
         src/world/gizmos/BlockSelectGizmo.cpp
         src/world/gizmos/BlockSelectGizmo.h
         src/Sky.h
+        src/world/VoxelModels.cpp
+        src/world/VoxelModels.h
 
 )
 

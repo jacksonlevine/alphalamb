@@ -12,8 +12,8 @@
 class DataMap
 {
 public:
-    virtual std::optional<uint32_t> get(IntTup spot) const = 0;
-    virtual void set(IntTup spot, uint32_t block) = 0;
+    virtual std::optional<uint32_t> get(const IntTup& spot) const = 0;
+    virtual void set(const IntTup& spot, uint32_t block) = 0;
 };
 
 #endif //USERDATAMAP_H

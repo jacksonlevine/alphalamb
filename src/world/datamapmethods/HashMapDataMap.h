@@ -13,8 +13,8 @@
 ///A simple implementation of UserDataMap using an unordered_map (And with optionally enabled measuring of lookup time)
 class HashMapDataMap : public DataMap {
 public:
-    std::optional<uint32_t> get(IntTup spot) const override;
-    void set(IntTup spot, uint32_t block) override;
+    std::optional<uint32_t> get(const IntTup& spot) const override;
+    void set(const IntTup& spot, uint32_t block) override;
 private:
     std::unordered_map<IntTup, uint32_t, IntTupHash> map;
     mutable std::shared_mutex mutex = {};
