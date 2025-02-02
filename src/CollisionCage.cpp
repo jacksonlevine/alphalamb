@@ -19,6 +19,7 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
         UsableMesh mesh = {};
 
         PxU32 index = 0;
+        PxU32 tindex = 0;
         auto lock = world->tryToGetReadLockOnDMs();
         if(lock != std::nullopt)
         {
@@ -33,7 +34,7 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
                         {
                             for (int i = 0; i < 6; i++)
                             {
-                                addFace(PxVec3(spotHere.x, spotHere.y, spotHere.z), (Side)i, GRASS, 1, mesh, index);
+                                addFace(PxVec3(spotHere.x, spotHere.y, spotHere.z), (Side)i, GRASS, 1, mesh, index, tindex);
                             }
                         }
                     }
@@ -44,7 +45,7 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
 
 
 #ifdef DEBUGDRAW
-        modifyOrInitializeDrawInstructions(cgl.vvbo, cgl.uvvbo, cgl.ebo, cgl.drawInstructions, mesh, cgl.bvbo);
+        modifyOrInitializeDrawInstructions(cgl.vvbo, cgl.uvvbo, cgl.ebo, cgl.drawInstructions, mesh, cgl.bvbo, cgl.tvvbo, cgl.tuvvbo, cgl.tebo, cgl.tbvbo);
 #endif
 
         if(collider == nullptr)

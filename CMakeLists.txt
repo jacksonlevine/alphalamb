@@ -81,6 +81,7 @@ add_executable(DistantGarden
         src/Sky.h
         src/world/VoxelModels.cpp
         src/world/VoxelModels.h
+        src/world/MaterialName.cpp
 
 )
 

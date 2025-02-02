@@ -15,6 +15,8 @@ struct DrawInstructions
 {
     GLuint vao = 0;
     int indiceCount = 0;
+    GLuint tvao = 0;
+    int tindiceCount = 0;
 };
 
 using namespace physx;
@@ -24,11 +26,17 @@ struct UsableMesh
     std::vector<glm::vec2> texcoords = {};
     std::vector<PxU32> indices = {};
     std::vector<float> brightness = {};
+
+    std::vector<PxVec3> tpositions = {};
+    std::vector<glm::vec2> ttexcoords = {};
+    std::vector<PxU32> tindices = {};
+    std::vector<float> tbrightness = {};
 };
 
 struct ChunkGLInfo
 {
     GLuint vvbo, uvvbo, bvbo, ebo = 0;
+    GLuint tvvbo, tuvvbo, tbvbo, tebo = 0;
     DrawInstructions drawInstructions = {};
 };
 
@@ -42,7 +50,8 @@ struct ChangeBuffer
     TwoIntTup to = {};
 };
 
-void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo, DrawInstructions& drawInstructions, UsableMesh& usable_mesh, GLuint& bvbo);
+void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo, DrawInstructions& drawInstructions, UsableMesh& usable_mesh, GLuint& bvbo,
+    GLuint& tvvbo, GLuint& tuvvbo, GLuint& tebo, GLuint& tbvbo);
 
 void drawFromDrawInstructions(const DrawInstructions& drawInstructions);
 
@@ -51,7 +60,7 @@ enum Side
     Front = 0,Right,Back,Left,Top,Bottom
 };
 
-__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index);
+__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex);
 
 
 inline static PxVec3 cubefaces[6][4] = {

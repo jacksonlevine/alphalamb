@@ -8,7 +8,8 @@
 #include "worldgenmethods/OverworldWorldGenMethod.h"
 
 ///Prepare vbos and DrawInstructions info (vao, number of indices) so that it can be then drawn with drawFromDrawInstructions()
-void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo, DrawInstructions& drawInstructions, UsableMesh& usable_mesh, GLuint& bvbo)
+void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo, DrawInstructions& drawInstructions, UsableMesh& usable_mesh, GLuint& bvbo,
+    GLuint& tvvbo, GLuint& tuvvbo, GLuint& tebo, GLuint& tbvbo)
 {
     if(drawInstructions.vao == 0)
     {
@@ -18,10 +19,15 @@ void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo
         glGenBuffers(1, &uvvbo);
         glGenBuffers(1, &ebo);
         glGenBuffers(1, &bvbo);
-    } else
-    {
-        glBindVertexArray(drawInstructions.vao);
+        glGenVertexArrays(1, &drawInstructions.tvao);
+        glBindVertexArray(drawInstructions.tvao);
+        glGenBuffers(1, &tvvbo);
+        glGenBuffers(1, &tuvvbo);
+        glGenBuffers(1, &tebo);
+        glGenBuffers(1, &tbvbo);
     }
+
+    glBindVertexArray(drawInstructions.vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, vvbo);
     glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.positions) * sizeof(PxVec3), usable_mesh.positions.data(), GL_STATIC_DRAW);
@@ -45,6 +51,31 @@ void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, std::size(usable_mesh.indices) * sizeof(PxU32), usable_mesh.indices.data(), GL_STATIC_DRAW);
 
     drawInstructions.indiceCount = std::size(usable_mesh.indices);
+
+    glBindVertexArray(drawInstructions.tvao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, tvvbo);
+    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.tpositions) * sizeof(PxVec3), usable_mesh.tpositions.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, tbvbo);
+    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.tbrightness) * sizeof(float), usable_mesh.tbrightness.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, (void*)0);
+    glEnableVertexAttribArray(2);
+
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, (void*)(1*sizeof(float)));
+    glEnableVertexAttribArray(3);
+
+    glBindBuffer(GL_ARRAY_BUFFER, tuvvbo);
+    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.ttexcoords) * sizeof(glm::vec2), usable_mesh.ttexcoords.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
+    glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, std::size(usable_mesh.tindices) * sizeof(PxU32), usable_mesh.tindices.data(), GL_STATIC_DRAW);
+
+    drawInstructions.tindiceCount = std::size(usable_mesh.tindices);
 }
 
 ///This assumes shader is set up and uniforms are given values
@@ -52,6 +83,8 @@ void drawFromDrawInstructions(const DrawInstructions& drawInstructions)
 {
     glBindVertexArray(drawInstructions.vao);
     glDrawElements(GL_TRIANGLES, drawInstructions.indiceCount, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(drawInstructions.tvao);
+    glDrawElements(GL_TRIANGLES, drawInstructions.tindiceCount, GL_UNSIGNED_INT, 0);
 }
 
 bool isChunkInFrustum(const TwoIntTup& chunkSpot, const glm::vec3& cameraPosition, const glm::vec3& cameraDirection) {
@@ -86,7 +119,8 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
         if(buffer.ready && !buffer.in_use) {
             modifyOrInitializeDrawInstructions(chunkPool[buffer.chunkIndex].vvbo, chunkPool[buffer.chunkIndex].uvvbo,
             chunkPool[buffer.chunkIndex].ebo, chunkPool[buffer.chunkIndex].drawInstructions, buffer.mesh,
-            chunkPool[buffer.chunkIndex].bvbo);
+            chunkPool[buffer.chunkIndex].bvbo,
+            chunkPool[buffer.chunkIndex].tvvbo, chunkPool[buffer.chunkIndex].tuvvbo, chunkPool[buffer.chunkIndex].tebo, chunkPool[buffer.chunkIndex].tbvbo);
 
             if (buffer.from == std::nullopt)
             {
@@ -329,33 +363,65 @@ void WorldRenderer::generateChunk(World* world, TwoIntTup& chunkSpot)
 }
 
 ///Call this with an external index and UsableMesh to mutate them
-__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, PxU32& index)
+__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, PxU32& index, PxU32& tindex)
 {
-    std::ranges::transform(cubefaces[side], std::back_inserter(mesh.positions), [&offset, &sideHeight](const auto& v) {
+    if (std::find(transparents.begin(), transparents.end(), material) != transparents.end())
+    {
+        std::ranges::transform(cubefaces[side], std::back_inserter(mesh.tpositions), [&offset, &sideHeight](const auto& v) {
             auto newv = v;
             newv.y *= sideHeight;
             return newv + offset;
         });
 
-    std::ranges::transform(cwindices, std::back_inserter(mesh.indices), [&index](const auto& i) {
-        return index + i;
-    });
+        std::ranges::transform(cwindices, std::back_inserter(mesh.tindices), [&tindex](const auto& i) {
+            return tindex + i;
+        });
 
-    mesh.texcoords.insert(mesh.texcoords.end(),
-        {glm::vec2(0.0 + ((float)material / 16.0f), 0.0), glm::vec2(0.0625f + ((float)material / 16.0f), 0.0),
-         glm::vec2(0.0625f + ((float)material / 16.0f), 1.0 * sideHeight), glm::vec2(0.0 + ((float)material / 16.0f), 1.0 * sideHeight)});
+        mesh.ttexcoords.insert(mesh.ttexcoords.end(),
+            {glm::vec2(0.0 + ((float)material / 16.0f), 0.0), glm::vec2(0.0625f + ((float)material / 16.0f), 0.0),
+             glm::vec2(0.0625f + ((float)material / 16.0f), 1.0 * sideHeight), glm::vec2(0.0 + ((float)material / 16.0f), 1.0 * sideHeight)});
 
-    float isGrass = material == GRASS ? 1.0f : 0.0f;
+        float isGrass = material == GRASS ? 1.0f : 0.0f;
 
-    switch(side) {
-    case Side::Top:    mesh.brightness.insert(mesh.brightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
-    case Side::Left:   mesh.brightness.insert(mesh.brightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
-    case Side::Bottom: mesh.brightness.insert(mesh.brightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
-    case Side::Right:  mesh.brightness.insert(mesh.brightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
-    default:          mesh.brightness.insert(mesh.brightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
+        switch(side) {
+        case Side::Top:    mesh.tbrightness.insert(mesh.tbrightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
+        case Side::Left:   mesh.tbrightness.insert(mesh.tbrightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
+        case Side::Bottom: mesh.tbrightness.insert(mesh.tbrightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
+        case Side::Right:  mesh.tbrightness.insert(mesh.tbrightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
+        default:          mesh.tbrightness.insert(mesh.tbrightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
+        }
+
+        tindex += 4;
+    } else
+    {
+        std::ranges::transform(cubefaces[side], std::back_inserter(mesh.positions), [&offset, &sideHeight](const auto& v) {
+            auto newv = v;
+            newv.y *= sideHeight;
+            return newv + offset;
+        });
+
+        std::ranges::transform(cwindices, std::back_inserter(mesh.indices), [&index](const auto& i) {
+            return index + i;
+        });
+
+        mesh.texcoords.insert(mesh.texcoords.end(),
+            {glm::vec2(0.0 + ((float)material / 16.0f), 0.0), glm::vec2(0.0625f + ((float)material / 16.0f), 0.0),
+             glm::vec2(0.0625f + ((float)material / 16.0f), 1.0 * sideHeight), glm::vec2(0.0 + ((float)material / 16.0f), 1.0 * sideHeight)});
+
+        float isGrass = material == GRASS ? 1.0f : 0.0f;
+
+        switch(side) {
+        case Side::Top:    mesh.brightness.insert(mesh.brightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
+        case Side::Left:   mesh.brightness.insert(mesh.brightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
+        case Side::Bottom: mesh.brightness.insert(mesh.brightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
+        case Side::Right:  mesh.brightness.insert(mesh.brightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
+        default:          mesh.brightness.insert(mesh.brightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
+        }
+        index += 4;
     }
 
-    index += 4;
+
+
 }
 
 ///Create a UsableMesh from the specified chunk spot
@@ -364,6 +430,7 @@ UsableMesh fromChunk(TwoIntTup spot, World* world, int chunkSize)
 {
     UsableMesh mesh;
     PxU32 index = 0;
+    PxU32 tindex = 0;
 
     IntTup start(spot.x * chunkSize, spot.z * chunkSize);
 
@@ -376,14 +443,20 @@ UsableMesh fromChunk(TwoIntTup spot, World* world, int chunkSize)
             {
                 IntTup here = start + IntTup(x, y, z);
                 uint32_t blockHere = world->get(here);
+
                 if (blockHere != AIR)
                 {
+                    bool blockHereTransparent = std::find(transparents.begin(), transparents.end(), blockHere) != transparents.end();
                     for (int i = 0; i < std::size(neighborSpots); i++)
                     {
                         auto neigh = neighborSpots[i];
-                        if (world->get(neigh + here) == AIR)
+                        auto neighblock = world->get(neigh + here);
+                        auto neightransparent = std::find(transparents.begin(), transparents.end(), neighblock) != transparents.end();
+                        auto transparentbordering = blockHereTransparent && neighblock != blockHere;
+
+                        if (neightransparent || transparentbordering)
                         {
-                            addFace(PxVec3(here.x, here.y, here.z), (Side)i, (MaterialName)blockHere, 1, mesh, index);
+                            addFace(PxVec3(here.x, here.y, here.z), (Side)i, (MaterialName)blockHere, 1, mesh, index, tindex);
                         }
                     }
                 }
