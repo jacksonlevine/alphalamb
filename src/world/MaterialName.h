@@ -16,6 +16,8 @@ enum MaterialName : uint32_t {
     STONE,
 };
 
+
+
 extern std::vector<MaterialName> transparents;
 
 

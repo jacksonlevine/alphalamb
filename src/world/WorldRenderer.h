@@ -52,7 +52,7 @@ struct ChangeBuffer
 
 void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo, DrawInstructions& drawInstructions, UsableMesh& usable_mesh, GLuint& bvbo,
     GLuint& tvvbo, GLuint& tuvvbo, GLuint& tebo, GLuint& tbvbo);
-
+void drawTransparentsFromDrawInstructions(const DrawInstructions& drawInstructions);
 void drawFromDrawInstructions(const DrawInstructions& drawInstructions);
 
 enum Side

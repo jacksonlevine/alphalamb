@@ -83,6 +83,10 @@ void drawFromDrawInstructions(const DrawInstructions& drawInstructions)
 {
     glBindVertexArray(drawInstructions.vao);
     glDrawElements(GL_TRIANGLES, drawInstructions.indiceCount, GL_UNSIGNED_INT, 0);
+}
+
+void drawTransparentsFromDrawInstructions(const DrawInstructions& drawInstructions)
+{
     glBindVertexArray(drawInstructions.tvao);
     glDrawElements(GL_TRIANGLES, drawInstructions.tindiceCount, GL_UNSIGNED_INT, 0);
 }
@@ -152,6 +156,20 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
                 float grassRedChange = (worldGenMethod->getTemperatureNoise(chunkRealSpot) - worldGenMethod->getHumidityNoise(chunkRealSpot));
                 glUniform1f(grassRedChangeLoc, grassRedChange);
                 drawFromDrawInstructions(glInfo.drawInstructions);
+            }
+        }
+    }
+    for (const auto& [spot, index] : activeChunks) {
+        // Check if the chunk is within the frustum
+        if (isChunkInFrustum(spot, playerCamera->transform.position - (playerCamera->transform.direction * (float)chunkSize), playerCamera->transform.direction)) {
+            int dist = abs(spot.x - playerChunkPosition.x) + abs(spot.z - playerChunkPosition.z);
+            if (dist <= MIN_DISTANCE) {
+                auto glInfo = chunkPool[index];
+                static GLuint grassRedChangeLoc = glGetUniformLocation(shader, "grassRedChange");
+                IntTup chunkRealSpot = IntTup(spot.x * chunkSize, spot.z * chunkSize);
+                float grassRedChange = (worldGenMethod->getTemperatureNoise(chunkRealSpot) - worldGenMethod->getHumidityNoise(chunkRealSpot));
+                glUniform1f(grassRedChangeLoc, grassRedChange);
+                drawTransparentsFromDrawInstructions(glInfo.drawInstructions);
             }
         }
     }
@@ -450,11 +468,13 @@ UsableMesh fromChunk(TwoIntTup spot, World* world, int chunkSize)
                     for (int i = 0; i < std::size(neighborSpots); i++)
                     {
                         auto neigh = neighborSpots[i];
-                        auto neighblock = world->get(neigh + here);
-                        auto neightransparent = std::find(transparents.begin(), transparents.end(), neighblock) != transparents.end();
-                        auto transparentbordering = blockHereTransparent && neighblock != blockHere;
 
-                        if (neightransparent || transparentbordering)
+                        auto neighblock = world->get(neigh + here);
+
+                        auto neightransparent = std::find(transparents.begin(), transparents.end(), neighblock) != transparents.end();
+                        auto neighborair = neighblock == AIR;
+
+                        if (neighborair || (neightransparent && !blockHereTransparent))
                         {
                             addFace(PxVec3(here.x, here.y, here.z), (Side)i, (MaterialName)blockHere, 1, mesh, index, tindex);
                         }
