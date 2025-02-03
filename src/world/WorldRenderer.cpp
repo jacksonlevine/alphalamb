@@ -159,6 +159,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
             }
         }
     }
+    //glDepthMask(false);
     for (const auto& [spot, index] : activeChunks) {
         // Check if the chunk is within the frustum
         if (isChunkInFrustum(spot, playerCamera->transform.position - (playerCamera->transform.direction * (float)chunkSize), playerCamera->transform.direction)) {
@@ -173,6 +174,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
             }
         }
     }
+    //glDepthMask(true);
 }
 
 
@@ -345,38 +347,47 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 void WorldRenderer::generateChunk(World* world, TwoIntTup& chunkSpot)
 {
 
-    srand(chunkSpot.x + chunkSpot.z);
-    int y = 50;
-    IntTup realSpot(chunkSpot.x * chunkSize, chunkSpot.z * chunkSize);
-    bool surfaceBlockFound = false;
-    while(y < 170 && !surfaceBlockFound)
+    srand(chunkSpot.x * 73856093 ^ chunkSpot.z * 19349663);
+    if (rand() > 9000)
     {
-        realSpot.y = y;
-        if(world->get(realSpot) == GRASS)
+        int y = 50;
+        float offsetNoise = world->worldGenMethod->getHumidityNoise(IntTup(chunkSpot.x, chunkSpot.z)) * 5.0;
+        float offsetNoise2 = world->worldGenMethod->getHumidityNoise(IntTup(chunkSpot.x, chunkSpot.z)) * 5.0;
+        IntTup realSpot(chunkSpot.x * chunkSize + (chunkSize >> 1) + offsetNoise , chunkSpot.z * chunkSize  + (chunkSize >> 1) + offsetNoise2);
+        bool surfaceBlockFound = false;
+        while(y < 170 && !surfaceBlockFound)
         {
-            surfaceBlockFound = true;
-        }
-        y++;
-    }
-    if(surfaceBlockFound)
-    {
-        Climate climate = world->worldGenMethod->getClimate(realSpot);
-        std::vector<TerrainFeature>& possibleFeatures = getTerrainFeaturesFromClimate(climate);
-        size_t selectedIndex = (int)(((float)rand()/(float)RAND_MAX) * (float)(possibleFeatures.size()-1));
-        TerrainFeature selectedFeature = possibleFeatures[selectedIndex];
-
-        std::vector<VoxelModelName>& possibleModels = getVoxelModelNamesFromTerrainFeatureName(selectedFeature);
-        size_t selectedModelIndex = (int)(((float)rand()/(float)RAND_MAX) * (float)(possibleModels.size()-1));
-        VoxelModelName selectedModel = possibleModels[selectedModelIndex];
-
-        for(auto & point : voxelModels[selectedModel])
-        {
-            if(point.colorIndex != AIR)
+            realSpot.y = y;
+            if(world->get(realSpot) == GRASS)
             {
-                world->nonUserDataMap->set(realSpot + point.localSpot, point.colorIndex);
+                surfaceBlockFound = true;
+            }
+            y++;
+        }
+        if(surfaceBlockFound)
+        {
+            Climate climate = world->worldGenMethod->getClimate(realSpot);
+            std::vector<TerrainFeature>& possibleFeatures = getTerrainFeaturesFromClimate(climate);
+            size_t selectedIndex = (int)(((float)rand()/(float)RAND_MAX) * (float)(possibleFeatures.size()-1));
+            TerrainFeature selectedFeature = possibleFeatures[selectedIndex];
+
+            std::vector<VoxelModelName>& possibleModels = getVoxelModelNamesFromTerrainFeatureName(selectedFeature);
+            size_t selectedModelIndex = (int)(((float)rand()/(float)RAND_MAX) * (float)(possibleModels.size()-1));
+            VoxelModelName selectedModel = possibleModels[selectedModelIndex];
+
+            IntTup& voxDim = voxelModels[selectedModel].dimensions;
+            IntTup offset = IntTup(-(voxDim.x / 2), 0, -(voxDim.z / 2));
+
+            for(auto & point : voxelModels[selectedModel].points)
+            {
+                if(point.colorIndex != AIR)
+                {
+                    world->nonUserDataMap->set(realSpot + point.localSpot + offset, point.colorIndex);
+                }
             }
         }
     }
+
     generatedChunks.insert(chunkSpot);
 }
 

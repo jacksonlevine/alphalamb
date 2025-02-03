@@ -44,6 +44,8 @@ std::vector<std::vector<TerrainFeature>> climateTerrainFeatures = {
 OverworldWorldGenMethod::OverworldWorldGenMethod()
 {
     noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    srand(time(NULL));
+    noise.SetSeed(rand());
 }
 
 uint32_t OverworldWorldGenMethod::get(IntTup spot)

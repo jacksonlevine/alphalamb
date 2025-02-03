@@ -67,7 +67,7 @@ void Player::update(const float deltaTime)
 Player::Player()
 {
     controller = createPlayerController(
-        PxVec3(0, 100, 0),
+        PxVec3(0, 200, 0),
         0.4,
         1.7
     );

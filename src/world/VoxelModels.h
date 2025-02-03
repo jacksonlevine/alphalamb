@@ -14,17 +14,22 @@ struct VoxelPoint {
     uint8_t colorIndex;
 };
 
+// New structure to hold both points and dimensions
+struct VoxModel {
+    std::vector<VoxelPoint> points;
+    IntTup dimensions;  // Store x, y, z dimensions
+};
+
 struct RiffChunk {
     char id[4];
     uint32_t contentSize;
     uint32_t childrenSize;
 };
 
+extern std::vector<VoxModel> voxelModels;  // Modified to store VoxModel instead of just points
 
-extern std::vector<std::vector<VoxelPoint>> voxelModels;
-
-inline std::vector<VoxelPoint> loadVoxFile(const std::string& filename) {
-    std::vector<VoxelPoint> points;
+inline VoxModel loadVoxFile(const std::string& filename) {
+    VoxModel model;
     std::ifstream file(filename, std::ios::binary);
 
     if (!file) {
@@ -52,28 +57,40 @@ inline std::vector<VoxelPoint> loadVoxFile(const std::string& filename) {
         throw std::runtime_error("Missing MAIN chunk");
     }
 
-    //we only need the XYZI chunk for spot and color index
     while (file.good()) {
         RiffChunk chunk;
         file.read(reinterpret_cast<char*>(&chunk), sizeof(RiffChunk));
 
         std::string chunkId(chunk.id, 4);
 
-        if (chunkId == "XYZI") {
+        if (chunkId == "SIZE") {
+            uint32_t dimensions[3];
+            file.read(reinterpret_cast<char*>(dimensions), 12);
+            model.dimensions = IntTup(
+                static_cast<int>(dimensions[0]),
+                static_cast<int>(dimensions[2]),
+                static_cast<int>(dimensions[1])
+            );
+            printf("Model dimensions: %d, %d, %d\n",
+                model.dimensions.x,
+                model.dimensions.y,
+                model.dimensions.z);
+        }
+        else if (chunkId == "XYZI") {
             uint32_t numVoxels;
             file.read(reinterpret_cast<char*>(&numVoxels), 4);
             printf("Found %u voxels\n", numVoxels);
 
-            points.reserve(numVoxels);
+            model.points.reserve(numVoxels);
             for (uint32_t i = 0; i < numVoxels; i++) {
                 uint8_t voxel[4];
                 file.read(reinterpret_cast<char*>(voxel), 4);
 
-                points.push_back({
+                model.points.push_back({
                     IntTup(
-                    static_cast<int>(voxel[0]),
-                    static_cast<int>(voxel[2]),
-                    static_cast<int>(voxel[1])),
+                        static_cast<int>(voxel[0]),
+                        static_cast<int>(voxel[2]),
+                        static_cast<int>(voxel[1])),
                     voxel[3]
                 });
             }
@@ -84,7 +101,7 @@ inline std::vector<VoxelPoint> loadVoxFile(const std::string& filename) {
         }
     }
 
-    return points;
+    return model;
 }
 
 enum VoxelModelName

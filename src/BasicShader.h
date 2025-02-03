@@ -89,12 +89,15 @@ inline jl::Shader getBasicShader()
             void main()
             {
 
-                float distance = (mDist(ppos.x, ppos.z, camPos.x, camPos.z)/(15.0f*5.0f))/5.0f;
+                float distance = pow((mDist(ppos.x, ppos.z, camPos.x, camPos.z)/(15.0f*5.0f))/4.0f, 2);
                 vec4 fogColor = vec4(0.4, 0.75, 1.0, 1.0);
                 vec4 tex = texture(texture1, TexCoord) + vec4(grassColor, 0.0);
                 FragColor = vec4(tex.xyz * brightness, tex.w);
-                FragColor = mix(FragColor, fogColor, min(1.0f, max(distance, 0.0f)));
-
+                float normDist = min(1.0f, max(distance, 0.0f));
+                FragColor = mix(FragColor, fogColor, normDist);
+                if(FragColor.a < 0.1f) {
+                    discard;
+                }
 
 
             }

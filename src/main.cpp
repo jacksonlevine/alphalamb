@@ -137,6 +137,17 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
     }
 }
 
+void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+    Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
+    if (scene->myPlayerIndex != -1)
+    {
+        auto & camera = scene->players.at(scene->myPlayerIndex)->camera;
+        camera.updateProjection(width, height, 90.0f);
+    }
+}
+
 int main()
 {
 
@@ -151,6 +162,7 @@ int main()
     glfwSetKeyCallback(window, keyCallback);
     glfwSetCursorPosCallback(window, cursorPosCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);

@@ -5,4 +5,4 @@
 #include "VoxelModels.h"
 
 
-std::vector<std::vector<VoxelPoint>> voxelModels;
+std::vector<VoxModel> voxelModels;
