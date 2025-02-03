@@ -166,8 +166,11 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
+    glfwSwapInterval(0);
 
     initializePhysX();
 

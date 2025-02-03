@@ -27,7 +27,7 @@ inline void drawSky(glm::vec4 top, glm::vec4 bot, float ambBrightness, jl::Camer
                 void main()
                 {
                     uint idx = gl_VertexID;
-                    gl_Position = vec4((idx >> 1), idx & 1, 0.0, 0.5) * 4.0 - 1.0;
+                    gl_Position = vec4((idx & 1), (idx >> 1), 0.0, 0.5) * 4.0 - 1.0;
                     v_uv = vec2(gl_Position.xy + 1.0 + (cpitch / 62));
                 }
 
