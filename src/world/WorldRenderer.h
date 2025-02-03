@@ -62,6 +62,9 @@ enum Side
 
 __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex);
 
+constexpr float onePixel = 0.00183823529411764705882352941176f;     //  1/544      Padding
+constexpr float textureWidth = 0.02941176470588235294117647058824f; // 16/544      16 pixel texture width
+constexpr float texSlotWidth = 0.03308823529411764705882352941176f;
 
 inline static PxVec3 cubefaces[6][4] = {
     {//front
@@ -109,7 +112,7 @@ struct UsedChunkInfo
 class WorldRenderer {
 public:
     static constexpr int chunkSize = 16;
-    static constexpr int renderDistance = 14;
+    static constexpr int renderDistance = 16;
     static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2));
     static constexpr int MIN_DISTANCE = renderDistance + 1;
 

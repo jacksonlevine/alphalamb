@@ -383,6 +383,20 @@ void WorldRenderer::generateChunk(World* world, TwoIntTup& chunkSpot)
 ///Call this with an external index and UsableMesh to mutate them
 __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, PxU32& index, PxU32& tindex)
 {
+    auto & tex = TEXS[material];
+    auto faceindex = (side == Top) ? 2 : (side == Bottom) ? 1 : 0;
+    auto & face = tex[faceindex];
+
+    float uvoffsetx = (float)face.first * texSlotWidth;
+    float uvoffsety = 1.0f - ((float)face.second * texSlotWidth);
+
+    static glm::vec2 texOffsets[] = {
+        glm::vec2(onePixel, -onePixel),
+        glm::vec2(onePixel + textureWidth, -onePixel),
+        glm::vec2(onePixel + textureWidth, -(onePixel + textureWidth)),
+        glm::vec2(onePixel, -(onePixel + textureWidth)),
+    };
+    //If the material's transparent, add these verts to the "t____" parts of the mesh. If not, add them to the normal mesh.
     if (std::find(transparents.begin(), transparents.end(), material) != transparents.end())
     {
         std::ranges::transform(cubefaces[side], std::back_inserter(mesh.tpositions), [&offset, &sideHeight](const auto& v) {
@@ -395,9 +409,12 @@ __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideH
             return tindex + i;
         });
 
-        mesh.ttexcoords.insert(mesh.ttexcoords.end(),
-            {glm::vec2(0.0 + ((float)material / 16.0f), 0.0), glm::vec2(0.0625f + ((float)material / 16.0f), 0.0),
-             glm::vec2(0.0625f + ((float)material / 16.0f), 1.0 * sideHeight), glm::vec2(0.0 + ((float)material / 16.0f), 1.0 * sideHeight)});
+        mesh.ttexcoords.insert(mesh.ttexcoords.end(),{
+                glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
+            glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
+            glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
+            glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),
+            });
 
         float isGrass = material == GRASS ? 1.0f : 0.0f;
 
@@ -423,8 +440,10 @@ __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideH
         });
 
         mesh.texcoords.insert(mesh.texcoords.end(),
-            {glm::vec2(0.0 + ((float)material / 16.0f), 0.0), glm::vec2(0.0625f + ((float)material / 16.0f), 0.0),
-             glm::vec2(0.0625f + ((float)material / 16.0f), 1.0 * sideHeight), glm::vec2(0.0 + ((float)material / 16.0f), 1.0 * sideHeight)});
+{glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
+glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
+glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
+glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),});
 
         float isGrass = material == GRASS ? 1.0f : 0.0f;
 
