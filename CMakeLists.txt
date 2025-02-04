@@ -82,6 +82,8 @@ add_executable(DistantGarden
         src/world/VoxelModels.cpp
         src/world/VoxelModels.h
         src/world/MaterialName.cpp
+        src/world/gizmos/ParticlesGizmo.cpp
+        src/world/gizmos/ParticlesGizmo.h
 
 )
 
