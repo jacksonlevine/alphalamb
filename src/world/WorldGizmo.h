@@ -12,7 +12,7 @@
 class WorldGizmo
 {
 public:
-    virtual void draw(World* world, Player* player) const = 0;
+    virtual void draw(World* world, Player* player) = 0;
     virtual void init() = 0;
 };
 

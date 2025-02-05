@@ -25,6 +25,7 @@
 #include "world/WorldRenderer.h"
 #include "world/gizmos/BlockSelectGizmo.h"
 #include "world/datamapmethods/HashMapDataMap.h"
+#include "world/gizmos/ParticlesGizmo.h"
 #include "world/worldgenmethods/OverworldWorldGenMethod.h"
 
 struct Scene
@@ -40,6 +41,7 @@ struct Scene
     bool mouseCaptured = false;
     bool firstMouse = true;
     std::vector<WorldGizmo*> gizmos;
+    ParticlesGizmo* particles = nullptr;
 };
 
 Scene theScene = {};
@@ -64,6 +66,11 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
             {
                 //addShootLine();
                 //sendShootLineMessage();
+                auto & cam = scene->players[scene->myPlayerIndex]->camera;
+
+                scene->particles->addParticle(cam.transform.position + cam.transform.direction * 3.0f,
+                10, 0.3f);
+
             }
 
         }
@@ -188,7 +195,12 @@ int main()
     //Add ourselves to the scene
     theScene.myPlayerIndex = theScene.addPlayer();
 
+    ParticlesGizmo* particles = new ParticlesGizmo();
+    theScene.particles = particles;
+
+    theScene.gizmos.push_back(particles);
     theScene.gizmos.push_back(new BlockSelectGizmo());
+
 
     for(auto & gizmo : theScene.gizmos)
     {
@@ -224,8 +236,12 @@ int main()
         static jl::Shader gltfShader = getBasicShader();
         static jl::Texture worldTex("resources/world.png");
 
+
+
         if (theScene.myPlayerIndex != -1)
         {
+            gScene->simulate(deltaTime);
+
             auto & camera = theScene.players.at(theScene.myPlayerIndex)->camera;
             camera.updateWithYawPitch(camera.transform.yaw, camera.transform.pitch);
 
@@ -254,13 +270,17 @@ int main()
 
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
 
-            //std::cout << "Passing " << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << " \n";
-            theScene.players[theScene.myPlayerIndex]->collisionCage.updateToSpot(&world, camera.transform.position);
 
 
 
             renderer.mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, gltfShader.shaderID, world.worldGenMethod);
 
+            gScene->fetchResults(true);
+            //std::cout << "Passing " << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << " \n";
+            theScene.players[theScene.myPlayerIndex]->collisionCage.updateToSpot(&world, camera.transform.position);
+
+
+            glBindTexture(GL_TEXTURE_2D, worldTex.id);
             for(auto & gizmo : theScene.gizmos)
             {
                 gizmo->draw(&world, theScene.players[theScene.myPlayerIndex]);
@@ -268,6 +288,7 @@ int main()
 
 
         }
+
 
         glfwPollEvents();
         glfwSwapBuffers(window);

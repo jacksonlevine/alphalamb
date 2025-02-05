@@ -11,7 +11,7 @@ GLuint BlockSelectGizmo::indices[] = {
    4, 5,   5, 6,   6, 7,   7, 4,  // Back face
    0, 4,   1, 5,   2, 6,   3, 7   // Connecting lines
 };
-void BlockSelectGizmo::draw(World* world, Player* player) const
+void BlockSelectGizmo::draw(World* world, Player* player)
 {
 
     glBindVertexArray(vao);
@@ -23,9 +23,14 @@ void BlockSelectGizmo::draw(World* world, Player* player) const
     glm::vec3 direction = player->camera.transform.direction;
     glm::vec3 position = player->camera.transform.position;
     glLineWidth(4.0);
+
+
     PxRaycastBuffer hit;
+    PxQueryFilterData fd;
+    fd.flags |= PxQueryFlag::eANY_HIT;
+
     bool isHit = gScene->raycast(PxVec3(position.x, position.y, position.z), PxVec3(direction.x, direction.y, direction.z),
-        DISTANCE, hit);
+        DISTANCE, hit, PxHitFlags(PxHitFlag::eDEFAULT), fd);
     //std::cout << "Casting a ray: \n";
 
     if(isHit)
@@ -35,27 +40,35 @@ void BlockSelectGizmo::draw(World* world, Player* player) const
 
         glm::vec3 spot(0,0,0);
 
-
+        bool draw = false;
         for(int i = 0; i < hitCount; i++)
         {
             auto h = hit.getAnyHit(i);
-            // std::cout << " Hit at position " << h.position.x << " " << h.position.y  << " " << h.position.z << " \n";
-            PxVec3 pos = h.position;
+            if (h.actor->getType() == PxActorType::eRIGID_STATIC)
+            {
+                draw = true;
+                // std::cout << " Hit at position " << h.position.x << " " << h.position.y  << " " << h.position.z << " \n";
+                PxVec3 pos = h.position;
 
-            //Always go inside the block
-            pos += (h.normal * -1.0) * 0.3;
+                //Always go inside the block
+                pos += (h.normal * -1.0) * 0.3;
 
-            spot = glm::vec3(std::floor(pos.x), std::floor(pos.y), std::floor(pos.z));
+                spot = glm::vec3(std::floor(pos.x), std::floor(pos.y), std::floor(pos.z));
+            }
+
 
         }
 
-
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvp"), 1, GL_FALSE,
+        if (draw)
+        {
+            glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvp"), 1, GL_FALSE,
             glm::value_ptr(player->camera.mvp));
-        glUniform3f(glGetUniformLocation(shaderProgram, "pos"),
-            spot.x, spot.y, spot.z);
+            glUniform3f(glGetUniformLocation(shaderProgram, "pos"),
+                spot.x, spot.y, spot.z);
 
-        glDrawElements(GL_LINES, sizeof(indices) / sizeof(GLuint), GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_LINES, sizeof(indices) / sizeof(GLuint), GL_UNSIGNED_INT, 0);
+        }
+
     }
 
 }

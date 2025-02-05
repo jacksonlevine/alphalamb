@@ -9,7 +9,7 @@
 
 class BlockSelectGizmo : public WorldGizmo {
 public:
-    void draw(World* world, Player* player) const override;
+    void draw(World* world, Player* player) override;
     void init() override;
 private:
     GLuint vao, vbo, ebo = 0;

@@ -21,6 +21,20 @@ SurfaceData::SurfaceData()
     climbable = false;
 }
 
+PxFilterFlags CustomFilterShader(
+    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
+    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
+{
+    // Prevent collision if both objects are in the same group (word0)
+    if ((filterData0.word0 & filterData1.word1) != 0)
+        return PxFilterFlag::eSUPPRESS;
+
+    // Otherwise, allow default collision behavior
+    pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+    return PxFilterFlag::eDEFAULT;
+}
+
 void _initializePhysX() {
     // Step 1: Create the foundation
     gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
@@ -40,8 +54,9 @@ void _initializePhysX() {
     PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
     sceneDesc.cpuDispatcher = gDispatcher;
-    sceneDesc.filterShader = PxDefaultSimulationFilterShader;
+    sceneDesc.filterShader = CustomFilterShader;
     gScene = gPhysics->createScene(sceneDesc);
+
     gControllerManager = PxCreateControllerManager(*gScene);
 
     // Add PVD client to the scene
@@ -69,6 +84,8 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
     MyControllerHitReport* myHitReport = new MyControllerHitReport();
     desc.reportCallback = myHitReport;
 
+
+
     // 2. Create the controller using the controller manager
     PxController* playerController = gControllerManager->createController(desc);
     if (!playerController) {
@@ -85,8 +102,9 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
     //
     // // 5. Set the filter for each shape of the player
     // for (physx::PxU32 i = 0; i < shapeCount; i++) {
-    //     physx::PxFilterData filterData;
-    //     filterData.word0 = 1 << 0; // Put player in collision group 0
+    //     PxFilterData filterData;
+    //     filterData.word0 = 1 << 0; // Assign to a specific group (e.g., "particles")
+    //     filterData.word1 = 1 << 0; // Should not collide with itself
     //     shapes[i]->setSimulationFilterData(filterData);
     // }
 
@@ -139,6 +157,8 @@ PxRigidStatic* _createStaticMeshCollider(const PxVec3& position,
         meshDesc.triangles.stride = 3 * sizeof(PxU32);
         meshDesc.triangles.data = indices.data();
 
+        static PxMaterial* material =  gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
+
         // Cook the mesh
         PxTolerancesScale scale;
         PxCookingParams cookingParams(scale);
@@ -162,9 +182,10 @@ PxRigidStatic* _createStaticMeshCollider(const PxVec3& position,
                 if (staticActor)
                 {
                     PxTriangleMeshGeometry meshGeometry(triangleMesh, PxMeshScale(1.0f));
-                    PxShape* shape = gPhysics->createShape(meshGeometry, *gPhysics->createMaterial(0.5f, 0.5f, 0.1f));
+                    PxShape* shape = gPhysics->createShape(meshGeometry, *material);
                     if (shape)
                     {
+
                         if (climbable)
                         {
                             shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
@@ -269,6 +290,7 @@ PxRigidStatic* editStaticMeshCollider(PxRigidStatic* existing, const PxVec3& pos
         triangleMesh->release();  // Clean up the mesh if shape creation failed
         return existing;
     }
+
 
     if(existing)
     {

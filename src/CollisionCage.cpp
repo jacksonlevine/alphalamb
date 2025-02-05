@@ -40,6 +40,14 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
                     }
                 }
             }
+
+            if(collider == nullptr)
+            {
+                collider = createStaticMeshCollider(PxVec3(0,0,0), mesh.positions, mesh.indices);
+            } else
+            {
+                editStaticMeshCollider(collider, PxVec3(0,0,0), mesh.positions, mesh.indices);
+            }
         }
 
 
@@ -48,13 +56,7 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
         modifyOrInitializeDrawInstructions(cgl.vvbo, cgl.uvvbo, cgl.ebo, cgl.drawInstructions, mesh, cgl.bvbo, cgl.tvvbo, cgl.tuvvbo, cgl.tebo, cgl.tbvbo);
 #endif
 
-        if(collider == nullptr)
-        {
-            collider = createStaticMeshCollider(PxVec3(0,0,0), mesh.positions, mesh.indices);
-        } else
-        {
-            editStaticMeshCollider(collider, PxVec3(0,0,0), mesh.positions, mesh.indices);
-        }
+
     }
 #ifdef DEBUGDRAW
     if(cgl.drawInstructions.vao != 0)
