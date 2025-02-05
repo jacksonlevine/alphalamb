@@ -70,7 +70,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                 auto & cam = scene->players[scene->myPlayerIndex]->camera;
 
                 scene->particles->particleBurst(cam.transform.position + cam.transform.direction * 3.0f,
-                20, WOOD_PLANKS, 4.0);
+                20, WOOD_PLANKS, 2.0);
 
             }
 
@@ -88,14 +88,22 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
     if (scene->myPlayerIndex != -1)
     {
+        // if (key == GLFW_KEY_F)
+        // {
+        //     if(action == GLFW_PRESS)
+        //     {
+        //         std::cout << "Toggling fly mode \n";
+        //         FLY_MODE = !FLY_MODE;
+        //     }
+        //
+        // }
+        if (key == GLFW_KEY_E)
+        {
+            scene->players.at(scene->myPlayerIndex)->controls.secondary2 = action;
+        }
         if (key == GLFW_KEY_F)
         {
-            if(action == GLFW_PRESS)
-            {
-                std::cout << "Toggling fly mode \n";
-                FLY_MODE = !FLY_MODE;
-            }
-
+            scene->players.at(scene->myPlayerIndex)->controls.secondary1 = action;
         }
         if (key == GLFW_KEY_W)
         {
@@ -221,8 +229,8 @@ int main()
         new HashMapDataMap(),
         new OverworldWorldGenMethod(),
         new HashMapDataMap());
-    VoxModel swcModel = loadSwc("resources/swctest.txt");
-    stampVoxelModelInWorld(&world,swcModel);
+    //VoxModel swcModel = loadSwc("resources/swctest.txt");
+    //stampVoxelModelInWorld(&world,swcModel);
 
 
     WorldRenderer renderer;

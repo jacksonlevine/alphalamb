@@ -41,7 +41,7 @@ public:
     void draw(World* world, Player* player) override;
     void init() override;
 
-    void addParticle(glm::vec3 position, uint32_t blockID, float scale)
+    void addParticle(glm::vec3 position, uint32_t blockID, float scale, PxVec3 velocity)
     {
         PxBoxGeometry boxGeometry(0.1f, 0.1f, 0.1f);
 
@@ -67,7 +67,7 @@ public:
             *shape,  // Pass the shape here
             4.0f    // Density
         );
-
+        instances.back().body->setLinearVelocity(velocity, true);
         //instances.back().body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, false);
         //instances.back().body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
 
@@ -110,7 +110,8 @@ public:
             addParticle(
                 here + spot,
                 blockID,
-                0.3f
+                0.3f,
+                PxVec3(here.x, here.y, here.z)
                 );
         }
     }

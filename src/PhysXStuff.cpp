@@ -186,6 +186,12 @@ PxRigidStatic* _createStaticMeshCollider(const PxVec3& position,
                     if (shape)
                     {
 
+                        // Set the collision filtering
+                        PxFilterData filterData;
+                        filterData.word0 = 1;  // Set to group 1
+                        shape->setSimulationFilterData(filterData);
+                        shape->setQueryFilterData(filterData);
+
                         if (climbable)
                         {
                             shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
@@ -290,6 +296,12 @@ PxRigidStatic* editStaticMeshCollider(PxRigidStatic* existing, const PxVec3& pos
         triangleMesh->release();  // Clean up the mesh if shape creation failed
         return existing;
     }
+
+    // Set the collision filtering
+    PxFilterData filterData;
+    filterData.word0 = 1;  // Set to group 1
+    newShape->setSimulationFilterData(filterData);
+    newShape->setQueryFilterData(filterData);
 
 
     if(existing)
