@@ -66,20 +66,6 @@ void initializePhysX();
 
 void destroyPhysXStuff();
 
-class CustomFilterCallback : public PxQueryFilterCallback {
-public:
-    PxQueryHitType::Enum preFilter(const PxFilterData& filterData, const PxShape* shape,
-                                   const PxRigidActor* actor, PxHitFlags& queryFlags) override {
-        if (filterData.word0 == (1 << 0)) { // If the object is a particle
-            return PxQueryHitType::eNONE; // Ignore collision
-        }
-        return PxQueryHitType::eBLOCK; // Otherwise, collide normally
-    }
-    PxQueryHitType::Enum postFilter(const PxFilterData& filterData, const PxQueryHit& hit,
-                                    const PxShape* shape, const PxRigidActor* actor) override {
-        return PxQueryHitType::eBLOCK; // Default behavior for post filter
-    }
-};
 
 inline void affectTransformAndPhysicsObjWithControls(jl::Transform& transform, Controls& controls, PxController* playerController, float deltaTime) {
     // 1. Create a displacement vector (this will be applied as the movement)
@@ -124,16 +110,11 @@ inline void affectTransformAndPhysicsObjWithControls(jl::Transform& transform, C
     // Apply velocity to displacement
     displacement.y += transform.velocity.y * deltaTime;
 
-
-    static CustomFilterCallback customFilterCallback;
-    PxControllerFilters filters;
-    filters.mFilterCallback = &customFilterCallback;
-
     PxControllerCollisionFlags collisionFlags = playerController->move(
         PxVec3(displacement.x, displacement.y, displacement.z),
         0.001f,
         deltaTime,
-        filters
+        PxControllerFilters()
     );
 
     transform.grounded = (collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN);
