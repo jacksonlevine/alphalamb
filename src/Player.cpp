@@ -29,13 +29,15 @@ void Player::update(const float deltaTime)
     constexpr float MAX_FALL_SPEED = 35.0f;
 
     // Apply gravity only if not grounded
+
     if (!camera.transform.grounded) {
         camera.transform.velocity.y -= GRAVITY * deltaTime;
         camera.transform.velocity.y = glm::max(camera.transform.velocity.y, -MAX_FALL_SPEED); // Clamp fall speed
     }
 
+
     // Handle jumping
-    if (camera.transform.grounded && controls.jump) {
+    if ((camera.transform.grounded && controls.jump) || FLY_MODE) {
         camera.transform.velocity.y = JUMP_STRENGTH;
         controls.jump = false;
     }

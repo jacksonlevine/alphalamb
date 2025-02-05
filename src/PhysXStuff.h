@@ -67,6 +67,8 @@ void initializePhysX();
 void destroyPhysXStuff();
 
 
+inline static bool FLY_MODE = false;
+
 inline void affectTransformAndPhysicsObjWithControls(jl::Transform& transform, Controls& controls, PxController* playerController, float deltaTime) {
     // 1. Create a displacement vector (this will be applied as the movement)
     glm::vec3 displacement(0.0f, 0.0f, 0.0f);
@@ -93,14 +95,20 @@ inline void affectTransformAndPhysicsObjWithControls(jl::Transform& transform, C
     const float GRAVITY = 35.0f;
     const float MAX_FALL_SPEED = 50.0f;
 
-    // Apply gravity
-    transform.velocity.y -= GRAVITY * deltaTime;
+
+    if(!FLY_MODE)
+    {
+        // Apply gravity
+        transform.velocity.y -= GRAVITY * deltaTime;
+
+    }
+
 
     // Limit falling speed
     transform.velocity.y = glm::max(transform.velocity.y, -MAX_FALL_SPEED);
 
     // Jumping
-    if (transform.grounded && controls.jump)
+    if ((transform.grounded && controls.jump) || FLY_MODE)
     {
         //std::cout << "Jump \n";
         transform.velocity.y = JUMP_STRENGTH;  // Set to a fixed jump velocity
@@ -109,6 +117,7 @@ inline void affectTransformAndPhysicsObjWithControls(jl::Transform& transform, C
 
     // Apply velocity to displacement
     displacement.y += transform.velocity.y * deltaTime;
+
 
     PxControllerCollisionFlags collisionFlags = playerController->move(
         PxVec3(displacement.x, displacement.y, displacement.z),

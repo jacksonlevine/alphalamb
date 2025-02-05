@@ -84,6 +84,8 @@ add_executable(DistantGarden
         src/world/MaterialName.cpp
         src/world/gizmos/ParticlesGizmo.cpp
         src/world/gizmos/ParticlesGizmo.h
+        src/world/SWCLoader.cpp
+        src/world/SWCLoader.h
 
 )
 

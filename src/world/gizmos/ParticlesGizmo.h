@@ -43,10 +43,10 @@ public:
 
     void addParticle(glm::vec3 position, uint32_t blockID, float scale)
     {
-        // Create a box geometry
         PxBoxGeometry boxGeometry(0.1f, 0.1f, 0.1f);
 
-        static PxMaterial* gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.1f); // Static friction, dynamic friction, restitution
+        //Static shape and material (could probably just have some global shape and material but we will see we will have them here for now)
+        static PxMaterial* gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
         static PxShape* shape = gPhysics->createShape(boxGeometry, *gMaterial);
 
         static bool filterdataset = false;
@@ -60,10 +60,6 @@ public:
             filterdataset = true;
         }
 
-
-        //shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, true);
-        //shape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, false);
-
         instances.emplace_back(position, scale, (float)blockID, nullptr, 0.0f);
         instances.back().body = PxCreateDynamic(
             *gPhysics,
@@ -75,13 +71,7 @@ public:
         //instances.back().body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, false);
         //instances.back().body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
 
-
-
         gScene->addActor(*instances.back().body);
-        PxRigidBodyExt::updateMassAndInertia(*instances.back().body, 1.0f);
-
-        instances.back().body->wakeUp();
-
 
     }
 
@@ -99,6 +89,30 @@ public:
         return false;
     });
         instances.erase(it, instances.end());
+    }
+
+
+    void particleBurst(glm::vec3 spot, size_t amount, uint32_t blockID, float width)
+    {
+        static FastNoiseLite noise;
+        static auto _ = [] {
+            noise.SetNoiseType(FastNoiseLite::NoiseType_Value); // Run once
+            return 0;
+        }();
+        noise.SetSeed(time(NULL));
+        for(int i = 0; i < amount; i++)
+        {
+            glm::vec3 here(
+                noise.GetNoise(26.0f*(spot.x+i), 26.0f*(spot.z-i)) * width,
+                noise.GetNoise(26.0f*(spot.x-i), 26.0f*(spot.z+i)) * width,
+                noise.GetNoise(26.0f*(spot.y+i), 26.0f*(spot.x-i)) * width
+                );
+            addParticle(
+                here + spot,
+                blockID,
+                0.3f
+                );
+        }
     }
 
     void updateParticlesToPhysicsSpots()

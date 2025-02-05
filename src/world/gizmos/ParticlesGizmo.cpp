@@ -17,14 +17,10 @@ void ParticlesGizmo::draw(World* world, Player* player)
     glUniformMatrix4fv(mvploc, 1, GL_FALSE, glm::value_ptr(player->camera.mvp));
     glUniform3f(camPosloc, player->camera.transform.position.x, player->camera.transform.position.y, player->camera.transform.position.z);
 
-
-
     updateParticlesToPhysicsSpots();
     sendUpdatedInstancesList();
 
     glDrawArraysInstanced(GL_TRIANGLES, 0, 6, instances.size());
-
-
 }
 
 void ParticlesGizmo::init()

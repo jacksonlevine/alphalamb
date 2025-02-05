@@ -51,6 +51,8 @@ OverworldWorldGenMethod::OverworldWorldGenMethod()
 uint32_t OverworldWorldGenMethod::get(IntTup spot)
 {
 
+    return AIR;
+
     MaterialName floorBlock = getFloorBlockInClimate(getClimate(spot));
 
     MaterialName underDirt = STONE;

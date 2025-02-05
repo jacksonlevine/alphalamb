@@ -20,6 +20,7 @@
 
 #include "PhysXStuff.h"
 #include "Sky.h"
+#include "world/SWCLoader.h"
 #include "world/World.h"
 #include "world/WorldGizmo.h"
 #include "world/WorldRenderer.h"
@@ -68,8 +69,8 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                 //sendShootLineMessage();
                 auto & cam = scene->players[scene->myPlayerIndex]->camera;
 
-                scene->particles->addParticle(cam.transform.position + cam.transform.direction * 3.0f,
-                10, 0.3f);
+                scene->particles->particleBurst(cam.transform.position + cam.transform.direction * 3.0f,
+                20, WOOD_PLANKS, 4.0);
 
             }
 
@@ -87,6 +88,15 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
     if (scene->myPlayerIndex != -1)
     {
+        if (key == GLFW_KEY_F)
+        {
+            if(action == GLFW_PRESS)
+            {
+                std::cout << "Toggling fly mode \n";
+                FLY_MODE = !FLY_MODE;
+            }
+
+        }
         if (key == GLFW_KEY_W)
         {
             scene->players.at(scene->myPlayerIndex)->controls.forward = action;
@@ -211,6 +221,8 @@ int main()
         new HashMapDataMap(),
         new OverworldWorldGenMethod(),
         new HashMapDataMap());
+    VoxModel swcModel = loadSwc("resources/swctest.txt");
+    stampVoxelModelInWorld(&world,swcModel);
 
 
     WorldRenderer renderer;
@@ -218,6 +230,7 @@ int main()
     std::thread chunkWorker(&WorldRenderer::meshBuildCoroutine, &renderer,
         &(theScene.players[theScene.myPlayerIndex]->camera), &world);
     chunkWorker.detach();
+
 
     while (!glfwWindowShouldClose(window))
     {
@@ -240,7 +253,10 @@ int main()
 
         if (theScene.myPlayerIndex != -1)
         {
+
             gScene->simulate(deltaTime);
+
+
 
             auto & camera = theScene.players.at(theScene.myPlayerIndex)->camera;
             camera.updateWithYawPitch(camera.transform.yaw, camera.transform.pitch);
@@ -270,22 +286,29 @@ int main()
 
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
 
-
-
+            if(FLY_MODE)
+            {
+                std::cout << "" << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << " \n";
+            }
 
             renderer.mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, gltfShader.shaderID, world.worldGenMethod);
 
+
             gScene->fetchResults(true);
+
+
             //std::cout << "Passing " << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << " \n";
             theScene.players[theScene.myPlayerIndex]->collisionCage.updateToSpot(&world, camera.transform.position);
 
 
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
+
             for(auto & gizmo : theScene.gizmos)
             {
                 gizmo->draw(&world, theScene.players[theScene.myPlayerIndex]);
             }
 
+            particles->cleanUpOldParticles(deltaTime);
 
         }
 
