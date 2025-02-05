@@ -54,8 +54,8 @@ public:
         if (!filterdataset)
         {
             PxFilterData filterData;
-            filterData.word0 = 1 << 0; // Assign to a specific group (e.g., "particles")
-            filterData.word1 = 1 << 0; // Should not collide with itself
+            filterData.word0 = 1 << 0;
+            filterData.word1 = 1 << 0;
             shape->setSimulationFilterData(filterData);
             filterdataset = true;
         }
