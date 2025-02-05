@@ -76,7 +76,7 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
     desc.radius = radius; // The radius of the capsule
     desc.position = PxExtendedVec3(position.x, position.y, position.z); // Start position
     desc.slopeLimit = 0.707f; // Limit slope climbing
-    desc.contactOffset = 0.1f; // Distance to detect collisions
+    desc.contactOffset = 0.01f; // Distance to detect collisions
     desc.stepOffset = 0.5f; // Max step height the player can walk up
     desc.upDirection = PxVec3(0.0f, 1.0f, 0.0f); // Gravity direction (Y-up)
     desc.material = gPhysics->createMaterial(0.5f, 0.5f, 0.1f); // Friction material
@@ -86,8 +86,11 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
 
 
 
+
     // 2. Create the controller using the controller manager
     PxController* playerController = gControllerManager->createController(desc);
+
+    playerController->setUserData(myHitReport);
     if (!playerController) {
         throw std::runtime_error("Failed to create player controller");
     }

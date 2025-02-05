@@ -31,9 +31,17 @@ public:
 
 class MyControllerHitReport : public PxUserControllerHitReport {
 public:
+    bool isGrounded = false;
+    bool jetpackMode = false;
+
     void onShapeHit(const PxControllerShapeHit& hit) override {
         // Get the shape we hit
         PxShape* hitShape = hit.shape;
+
+        if (hit.worldNormal.y > 0.7f) {  // Adjust threshold as needed
+            isGrounded = true;
+           // printf("Ground hit detected!\n");
+        }
 
         // Check if the shape has userData
         if (hitShape->userData != nullptr) {

@@ -173,7 +173,7 @@ private:
         {
             for (auto & particle : instances)
             {
-                IntTup spot = IntTup(std::floor(particle.position.x), std::floor(particle.position.y), std::floor(particle.position.z));
+                IntTup spot = IntTup(std::floor(particle.position.x), std::floor(particle.position.y + 0.5f), std::floor(particle.position.z));
                 while (world->getLocked(spot) == AIR && spot.y > 0)
                 {
                     spot.y -= 1;
