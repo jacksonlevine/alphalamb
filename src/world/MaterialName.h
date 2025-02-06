@@ -7,7 +7,7 @@
 
 #include "../PrecompHeader.h"
 
-constexpr int BLOCK_COUNT = 91;
+constexpr int BLOCK_COUNT = 92;
 
 enum MaterialName : uint32_t {
     AIR,
@@ -101,6 +101,7 @@ enum MaterialName : uint32_t {
     WESTERN_HEMLOCK_PLANKS,
     EUCALYPTUS_PLANKS,
     ILLUMINITE_ORE,
+    JETPACK_PARTICLE_BLOCK
 };
 
 
@@ -110,7 +111,7 @@ extern std::vector<MaterialName> transparents;
 using TexCoord = std::pair<uint8_t, uint8_t>;
 using BlockTextures = std::array<TexCoord, 3>;
 
-constexpr std::array<BlockTextures, 91> TEXS = {{
+constexpr std::array<BlockTextures, 92> TEXS = {{
     // sides      // bot       // top
     {{ {0, 0}, {0, 0}, {0, 0} }},  // 0
     {{ {1, 0}, {1, 0}, {1, 0} }},  // 1 sand
@@ -202,7 +203,8 @@ constexpr std::array<BlockTextures, 91> TEXS = {{
     {{ {11, 12}, {11, 12}, {11, 12} }}, // 87 Beech Planks
     {{ {12, 12}, {12, 12}, {12, 12} }}, // 88 Western Hemlock Planks
     {{ {13, 12}, {13, 12}, {13, 12} }}, // 89 Eucalyptus Planks
-    {{ {12, 4}, {12, 4}, {12, 4} }} // 90 Illuminite Ore
+    {{ {12, 4}, {12, 4}, {12, 4} }}, // 90 Illuminite Ore
+    {{ {14, 14}, {14, 14}, {14, 14} }} // 91 Jetback Particle Block
 }};
 
 

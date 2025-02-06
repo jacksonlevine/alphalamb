@@ -8,7 +8,6 @@
 #include "../WorldGizmo.h"
 #include "../../PhysXStuff.h"
 
-#define DEBUGDRAW
 
 struct ParticleInstance
 {
@@ -64,7 +63,7 @@ public:
             *gPhysics,
             PxTransform(PxVec3(position.x, position.y, position.z)),
             *shape,  // Pass the shape here
-            8.0f    // Density
+            1.0f    // Density
         );
         instances.back().body->setLinearVelocity(velocity, true);
         //instances.back().body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, false);

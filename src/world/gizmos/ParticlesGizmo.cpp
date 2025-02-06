@@ -38,7 +38,7 @@ void ParticlesGizmo::init()
 
             uniform mat4 mvp;
             uniform vec3 camPos;
-            uniform vec2 blockSideTextures[91];
+            uniform vec2 blockSideTextures[92];
 
             out vec2 TexCoord;
 

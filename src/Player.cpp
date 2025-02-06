@@ -14,7 +14,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
     auto mhr = ((MyControllerHitReport*)controller->getUserData());
     mhr->isGrounded = false;
 
-    float walkmult = controls.sprint ? 8.0f : 4.0f;
+    float walkmult = controls.sprint ? 8.0f : 5.2f;
 
     {
         auto locked = world->tryToGetReadLockOnDMs();
@@ -34,7 +34,18 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         {
             footDustTimer += deltaTime;
         }
+    }
 
+    if(mhr->jetpackMode && controls.secondary1)
+    {
+        if(footDustTimer > 0.1)
+        {
+            particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 10, JETPACK_PARTICLE_BLOCK, 0.2f, 0.0f);
+            footDustTimer = 0.0f;
+        } else
+        {
+            footDustTimer += deltaTime;
+        }
     }
 
 
@@ -61,6 +72,8 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         if (controls.left) {
             camera.transform.velocity -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult;
         }
+        camera.transform.velocity.x = glm::clamp(camera.transform.velocity.x, -5000.0f * deltaTime, 5000.0f * deltaTime);
+        camera.transform.velocity.z = glm::clamp(camera.transform.velocity.z, -5000.0f * deltaTime, 5000.0f * deltaTime);
     } else
     {
         if (controls.forward) {
@@ -80,12 +93,12 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
 
 
     //Have to do this I guess, or else it won't detect if we're on the ground consistently.
-    displacement.y -= 0.003f;
+    displacement.y -= deltaTime * 3.0f;
 
 
 
     constexpr float JUMP_STRENGTH = 15.0f;
-    constexpr float GRAVITY = 25.0f;
+    constexpr float GRAVITY = 35.0f;
     constexpr float MAX_FALL_SPEED = 35.0f;
 
     // Apply gravity only if not grounded
@@ -137,7 +150,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
     // Update position
     PxExtendedVec3 newPos = controller->getPosition();
     camera.transform.position.x = static_cast<float>(newPos.x);
-    camera.transform.position.y = static_cast<float>(newPos.y);
+    camera.transform.position.y = static_cast<float>(newPos.y + 0.8f);
     camera.transform.position.z = static_cast<float>(newPos.z);
 }
 Player::Player()
@@ -145,7 +158,7 @@ Player::Player()
     controller = createPlayerController(
         PxVec3(0, 200, 0),
         0.4,
-        1.7
+        0.7
     );
     PxVec3T controllerPosition = controller->getPosition();
     camera.transform.position = glm::vec3(controllerPosition.x, controllerPosition.y, controllerPosition.z);

@@ -123,7 +123,7 @@ public:
     std::vector<char> activeChunksMemoryPool;
     std::vector<char> mbtActiveChunksMemoryPool;
 
-    // Monotonic buffer resources for memory management
+    // Monotonic buffer resources for these two hashmaps, because they will only ever have maxchunks size & we want to allocate as infrequently as possible.
     boost::container::pmr::monotonic_buffer_resource activeChunksMemoryResource;
     boost::container::pmr::monotonic_buffer_resource mbtActiveChunksMemoryResource;
 

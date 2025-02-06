@@ -71,15 +71,11 @@ inline VoxModel loadVoxFile(const std::string& filename) {
                 static_cast<int>(dimensions[2]),
                 static_cast<int>(dimensions[1])
             );
-            printf("Model dimensions: %d, %d, %d\n",
-                model.dimensions.x,
-                model.dimensions.y,
-                model.dimensions.z);
+
         }
         else if (chunkId == "XYZI") {
             uint32_t numVoxels;
             file.read(reinterpret_cast<char*>(&numVoxels), 4);
-            printf("Found %u voxels\n", numVoxels);
 
             model.points.reserve(numVoxels);
             for (uint32_t i = 0; i < numVoxels; i++) {

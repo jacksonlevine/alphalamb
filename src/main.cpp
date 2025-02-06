@@ -28,7 +28,7 @@
 #include "world/datamapmethods/HashMapDataMap.h"
 #include "world/gizmos/ParticlesGizmo.h"
 #include "world/worldgenmethods/OverworldWorldGenMethod.h"
-
+#include "ImGuiStuff.h"
 struct Scene
 {
     std::vector<Player*> players = {};
@@ -67,11 +67,10 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
             {
                 //addShootLine();
                 //sendShootLineMessage();
-                auto & cam = scene->players[scene->myPlayerIndex]->camera;
-
-                scene->particles->particleBurst(cam.transform.position + cam.transform.direction * 3.0f,
-                                                20, WOOD_PLANKS, 2.0, 1.0f);
-
+                // auto & cam = scene->players[scene->myPlayerIndex]->camera;
+                //
+                // scene->particles->particleBurst(cam.transform.position + cam.transform.direction * 3.0f,
+                //                                 20, WOOD_PLANKS, 2.0, 1.0f);
             }
 
         }
@@ -97,6 +96,10 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         //     }
         //
         // }
+        if(key == GLFW_KEY_ESCAPE)
+        {
+            glfwSetWindowShouldClose(window, 1);
+        }
         if (key == GLFW_KEY_E)
         {
             scene->players.at(scene->myPlayerIndex)->controls.secondary2 = action;
@@ -181,7 +184,11 @@ int main()
 {
 
     glfwInit();
-    GLFWwindow* window = glfwCreateWindow(1280, 1024, "Window", nullptr, nullptr);
+    GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+
+    const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
+
+    GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "project7", primaryMonitor, nullptr);
     glfwMakeContextCurrent(window);
     if (glewInit() != GLEW_OK)
     {
@@ -205,17 +212,29 @@ int main()
 
     loadGameVoxelModels();
 
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height);
+    // int width, height;
+    // glfwGetFramebufferSize(window, &width, &height);
+    glViewport(0, 0, mode->width, mode->height);
 
 
     float deltaTime = 0.0f;
 
     glfwSetWindowUserPointer(window, &theScene);
 
+    initializeImGui(window);
+    ImFont* font_title = imguiio->Fonts->AddFontFromFileTTF("font.ttf", 20.0f, NULL, imguiio->Fonts->GetGlyphRangesDefault());
+
+    ImFont* font_body = imguiio->Fonts->AddFontFromFileTTF("font.ttf", 20.0f, NULL, imguiio->Fonts->GetGlyphRangesDefault());
+
+
+
     //Add ourselves to the scene
     theScene.myPlayerIndex = theScene.addPlayer();
+
+    {
+        auto & camera = theScene.players.at(theScene.myPlayerIndex)->camera;
+        camera.updateProjection(mode->width, mode->height, 90.0f);
+    }
 
     ParticlesGizmo* particles = new ParticlesGizmo();
     theScene.particles = particles;
@@ -233,8 +252,8 @@ int main()
         new HashMapDataMap(),
         new OverworldWorldGenMethod(),
         new HashMapDataMap());
-    //VoxModel swcModel = loadSwc("resources/swctest.txt");
-    //stampVoxelModelInWorld(&world,swcModel);
+    VoxModel swcModel = loadSwc("resources/swctest.txt");
+    stampVoxelModelInWorld(&world,swcModel);
 
 
     WorldRenderer renderer;
@@ -322,6 +341,7 @@ int main()
 
             particles->cleanUpOldParticles(deltaTime);
 
+            renderImGui();
         }
 
 

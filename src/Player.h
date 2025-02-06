@@ -10,6 +10,7 @@
 #include "Controls.h"
 
 
+class MyControllerHitReport;
 class ParticlesGizmo;
 
 struct Player {
@@ -20,6 +21,10 @@ struct Player {
     float footDustTimer = 0.0f;
     MaterialName lastBlockStandingOn = AIR;
     void update(float deltaTime, World* world, ParticlesGizmo* particles);
+    MyControllerHitReport* getMyHitReport()
+    {
+        return ((MyControllerHitReport*)controller->getUserData());
+    }
     Player();
     ~Player();
 };

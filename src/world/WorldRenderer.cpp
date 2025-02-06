@@ -194,23 +194,42 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
     while(true)
     {
 
-        TwoIntTup confirmedChunk;
-        while (confirmedActiveChunksQueue.pop(confirmedChunk)) {
-            mbtActiveChunks.at(confirmedChunk).confirmedByMainThread = true;
-        }
+
 
 
         TwoIntTup playerChunkPosition = worldToChunkPos(
         TwoIntTup(std::floor(playerCamera->transform.position.x),
             std::floor(playerCamera->transform.position.z)));
 
+        static std::array<TwoIntTup, (renderDistance*2)*(renderDistance*2)> checkspots = {};
+
+        int index = 0;
         for (int i = -renderDistance; i < renderDistance; i++)
         {
             for (int j = -renderDistance; j < renderDistance; j++)
             {
+                checkspots[index] = playerChunkPosition + TwoIntTup(i,j);
+                index+=1;
+            }
+        }
 
 
-                    TwoIntTup spotHere = playerChunkPosition + TwoIntTup(i,j);
+
+        std::sort(checkspots.begin(), checkspots.end(), [&playerChunkPosition](const TwoIntTup& a, const TwoIntTup& b)
+        {
+            int distfroma = abs(a.x - playerChunkPosition.x) + abs(a.z - playerChunkPosition.z);
+            int distfromb = abs(b.x - playerChunkPosition.x) + abs(b.z - playerChunkPosition.z);
+            return distfroma < distfromb;
+        });
+
+
+        for (auto & spotHere : checkspots)
+        {
+
+                TwoIntTup confirmedChunk;
+                while (confirmedActiveChunksQueue.pop(confirmedChunk)) {
+                    mbtActiveChunks.at(confirmedChunk).confirmedByMainThread = true;
+                }
 
                     int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
                     if(dist <= MIN_DISTANCE)
@@ -332,9 +351,9 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                     }
 
 
-            }
+
         }
-        std::this_thread::sleep_for(std::chrono::seconds(4));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
 
 
     }

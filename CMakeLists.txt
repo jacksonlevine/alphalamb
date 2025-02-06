@@ -22,7 +22,6 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
-find_package(portaudio CONFIG REQUIRED)
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
 
@@ -136,5 +135,4 @@ endif()
 
 target_link_libraries(DistantGarden PRIVATE glfw glm::glm GLEW::GLEW)
 target_link_libraries(DistantGarden PRIVATE SndFile::sndfile)
-target_link_libraries(DistantGarden PRIVATE portaudio)
 

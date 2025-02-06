@@ -92,10 +92,10 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
     desc.radius = radius; // The radius of the capsule
     desc.position = PxExtendedVec3(position.x, position.y, position.z); // Start position
     desc.slopeLimit = 0.707f; // Limit slope climbing
-    desc.contactOffset = 0.01f; // Distance to detect collisions
+    desc.contactOffset = 0.1f; // Distance to detect collisions
     desc.stepOffset = 0.5f; // Max step height the player can walk up
     desc.upDirection = PxVec3(0.0f, 1.0f, 0.0f); // Gravity direction (Y-up)
-    desc.material = gPhysics->createMaterial(0.5f, 0.5f, 0.1f); // Friction material
+    desc.material = gPhysics->createMaterial(0.2f, 0.2f, 0.1f); // Friction material
     desc.nonWalkableMode = PxControllerNonWalkableMode::ePREVENT_CLIMBING; // Prevent climbing steep slopes
 
     MyControllerHitReport* myHitReport = new MyControllerHitReport();
@@ -178,7 +178,7 @@ PxRigidStatic* _createStaticMeshCollider(const PxVec3& position,
     // Early log for invalid geometry
     if (vertices.empty() || indices.empty() || indices.size() < 3)
     {
-        std::cout << "Invalid geometry: insufficient vertices or indices" << std::endl;
+       // std::cout << "Invalid geometry: insufficient vertices or indices" << std::endl;
     }
     else
     {
@@ -192,7 +192,7 @@ PxRigidStatic* _createStaticMeshCollider(const PxVec3& position,
         meshDesc.triangles.stride = 3 * sizeof(PxU32);
         meshDesc.triangles.data = indices.data();
 
-        static PxMaterial* material =  gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
+        static PxMaterial* material =  gPhysics->createMaterial(0.2f, 0.2f, 0.1f);
 
         // Cook the mesh
         PxTolerancesScale scale;
@@ -245,7 +245,7 @@ PxRigidStatic* _createStaticMeshCollider(const PxVec3& position,
     }
 
     // Create and return a basic rigid static actor if the process fails
-    std::cout << "Returning a default rigid static actor without shapes" << std::endl;
+    //std::cout << "Returning a default rigid static actor without shapes" << std::endl;
     PxRigidStatic* defaultActor = gPhysics->createRigidStatic(PxTransform(position));
     if (defaultActor)
     {
@@ -319,7 +319,7 @@ PxRigidStatic* editStaticMeshCollider(PxRigidStatic* existing, const PxVec3& pos
 
     // Create new shape with a shared material
     PxTriangleMeshGeometry meshGeometry(triangleMesh, PxMeshScale(1.0f));
-    PxMaterial* material = gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
+    PxMaterial* material = gPhysics->createMaterial(0.2f, 0.2f, 0.1f);
     PxShape* newShape = gPhysics->createShape(meshGeometry, *material);
 
     // Release the material as it's now referenced by the shape
