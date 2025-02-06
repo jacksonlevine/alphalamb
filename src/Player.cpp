@@ -5,14 +5,37 @@
 #include "Player.h"
 
 #include "PhysXStuff.h"
+#include "world/gizmos/ParticlesGizmo.h"
 
-void Player::update(const float deltaTime)
+
+void Player::update(const float deltaTime, World* world, ParticlesGizmo* particles)
 {
     glm::vec3 displacement(0.0f, 0.0f, 0.0f);
     auto mhr = ((MyControllerHitReport*)controller->getUserData());
     mhr->isGrounded = false;
 
-    float walkmult = 5.0f;
+    float walkmult = controls.sprint ? 8.0f : 4.0f;
+
+    {
+        auto locked = world->tryToGetReadLockOnDMs();
+        if (locked != std::nullopt)
+        {
+            lastBlockStandingOn = (MaterialName)world->getLocked(IntTup(camera.transform.position.x , camera.transform.position.y-2 , camera.transform.position.z));
+        }
+    }
+
+    if (controls.sprint && camera.transform.grounded)
+    {
+        if (footDustTimer > 0.07f)
+        {
+            footDustTimer = 0.0f;
+            particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 1, lastBlockStandingOn, 0.5f, 0.05f);
+        } else
+        {
+            footDustTimer += deltaTime;
+        }
+
+    }
 
 
     if (controls.secondary1)
@@ -83,12 +106,15 @@ void Player::update(const float deltaTime)
     displacement.x += camera.transform.velocity.x * deltaTime;
     displacement.z += camera.transform.velocity.z * deltaTime;
 
+    PxControllerFilters filters;
+    filters.mFilterFlags = PxQueryFlag::eSTATIC; // Only collides with static geometry
+
     // Move the character controller
     PxControllerCollisionFlags collisionFlags = controller->move(
         PxVec3(displacement.x, displacement.y, displacement.z),
         0.001f,
         deltaTime,
-        PxControllerFilters()
+        filters
     );
 
     // Update grounded state

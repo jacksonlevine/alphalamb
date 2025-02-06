@@ -54,8 +54,7 @@ public:
         if (!filterdataset)
         {
             PxFilterData filterData;
-            filterData.word0 = 1 << 0;
-            filterData.word1 = 1 << 0;
+            filterData.word0 = 3 << 0;
             shape->setSimulationFilterData(filterData);
             filterdataset = true;
         }
@@ -65,7 +64,7 @@ public:
             *gPhysics,
             PxTransform(PxVec3(position.x, position.y, position.z)),
             *shape,  // Pass the shape here
-            4.0f    // Density
+            8.0f    // Density
         );
         instances.back().body->setLinearVelocity(velocity, true);
         //instances.back().body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, false);
@@ -92,7 +91,7 @@ public:
     }
 
 
-    void particleBurst(glm::vec3 spot, size_t amount, uint32_t blockID, float width)
+    void particleBurst(glm::vec3 spot, size_t amount, uint32_t blockID, float width, float energy)
     {
         static FastNoiseLite noise;
         static auto _ = [] {

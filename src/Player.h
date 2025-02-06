@@ -9,12 +9,17 @@
 #include "CollisionCage.h"
 #include "Controls.h"
 
+
+class ParticlesGizmo;
+
 struct Player {
     jl::Camera camera;
     Controls controls;
     physx::PxController* controller;
     CollisionCage collisionCage = {};
-    void update(float deltaTime);
+    float footDustTimer = 0.0f;
+    MaterialName lastBlockStandingOn = AIR;
+    void update(float deltaTime, World* world, ParticlesGizmo* particles);
     Player();
     ~Player();
 };

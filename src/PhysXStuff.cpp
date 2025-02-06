@@ -21,19 +21,33 @@ SurfaceData::SurfaceData()
     climbable = false;
 }
 
-PxFilterFlags CustomFilterShader(
-    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
-    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
-    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
-{
-    // Prevent collision if both objects are in the same group (word0)
-    if ((filterData0.word0 & filterData1.word1) != 0)
-        return PxFilterFlag::eSUPPRESS;
 
-    // Otherwise, allow default collision behavior
-    pairFlags = PxPairFlag::eCONTACT_DEFAULT;
-    return PxFilterFlag::eDEFAULT;
-}
+// PxFilterFlags CustomFilterShader(
+//     PxFilterObjectAttributes attributes0, PxFilterData filterData0,
+//     PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+//     PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize) {
+//
+//     printf("Collision Check: filterData0.word0 = %d, filterData1.word0 = %d\n",
+//             filterData0.word0, filterData1.word0);
+//
+//     if (filterData0.word0 == 2 || filterData1.word0 == 2) {
+//         if (filterData0.word0 == 1 || filterData1.word0 == 1) {
+//             printf("Allowing collision: Controller <-> Static Body\n");
+//             pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+//             return PxFilterFlag::eDEFAULT;
+//         } else {
+//             printf("Suppressing collision: Controller <-> Non-static body\n");
+//             pairFlags = PxPairFlag::eTRIGGER_DEFAULT; // Make sure it's only a trigger, not a physical collision
+//             return PxFilterFlag::eSUPPRESS;
+//         }
+//     }
+//
+//
+//     // Default behavior for other collisions
+//     pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+//     return PxFilterFlag::eDEFAULT;
+// }
+//
 
 void _initializePhysX() {
     // Step 1: Create the foundation
@@ -54,7 +68,7 @@ void _initializePhysX() {
     PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
     sceneDesc.cpuDispatcher = gDispatcher;
-    sceneDesc.filterShader = CustomFilterShader;
+    sceneDesc.filterShader = PxDefaultSimulationFilterShader;
     gScene = gPhysics->createScene(sceneDesc);
 
     gControllerManager = PxCreateControllerManager(*gScene);
@@ -69,6 +83,8 @@ void _initializePhysX() {
 
 
 }
+
+
 PxController* createPlayerController(const PxVec3& position, float radius, float height) {
     // 1. Configure the capsule controller descriptor
     PxCapsuleControllerDesc desc;
@@ -81,11 +97,15 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
     desc.upDirection = PxVec3(0.0f, 1.0f, 0.0f); // Gravity direction (Y-up)
     desc.material = gPhysics->createMaterial(0.5f, 0.5f, 0.1f); // Friction material
     desc.nonWalkableMode = PxControllerNonWalkableMode::ePREVENT_CLIMBING; // Prevent climbing steep slopes
+
     MyControllerHitReport* myHitReport = new MyControllerHitReport();
     desc.reportCallback = myHitReport;
 
 
 
+    PxFilterData controllerFilterData;
+    controllerFilterData.word0 = 2;
+    controllerFilterData.word1 = 1; //Collides with 1
 
     // 2. Create the controller using the controller manager
     PxController* playerController = gControllerManager->createController(desc);
@@ -95,8 +115,20 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
         throw std::runtime_error("Failed to create player controller");
     }
 
-    // 3. Optionally set the actor's name for debugging
-    playerController->getActor()->setName("Player");
+    // 3. Retrieve the actor and set its name
+    PxRigidDynamic* playerActor = playerController->getActor();
+    if (playerActor) {
+        playerActor->setName("Player");
+        // 4. Retrieve the shape(s) and set the collision filter
+        PxShape* shapes[16]; // Buffer to store shapes (assuming 16 or fewer)
+        PxU32 shapeCount = playerActor->getShapes(shapes, 16); // Get all shapes
+
+        // 5. Set the filter data for each shape
+        for (PxU32 i = 0; i < shapeCount; i++) {
+
+            shapes[i]->setSimulationFilterData(controllerFilterData);
+        }
+    }
 
     // // 4. Set the collision filter for the actor's shape(s)
     // physx::PxRigidDynamic* playerActor = playerController->getActor(); // Get underlying actor

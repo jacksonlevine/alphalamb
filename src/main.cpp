@@ -70,7 +70,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                 auto & cam = scene->players[scene->myPlayerIndex]->camera;
 
                 scene->particles->particleBurst(cam.transform.position + cam.transform.direction * 3.0f,
-                20, WOOD_PLANKS, 2.0);
+                                                20, WOOD_PLANKS, 2.0, 1.0f);
 
             }
 
@@ -100,27 +100,31 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         if (key == GLFW_KEY_E)
         {
             scene->players.at(scene->myPlayerIndex)->controls.secondary2 = action;
-        }
+        } else
+        if (key == GLFW_KEY_LEFT_SHIFT)
+        {
+            scene->players.at(scene->myPlayerIndex)->controls.sprint = action;
+        } else
         if (key == GLFW_KEY_F)
         {
             scene->players.at(scene->myPlayerIndex)->controls.secondary1 = action;
-        }
+        } else
         if (key == GLFW_KEY_W)
         {
             scene->players.at(scene->myPlayerIndex)->controls.forward = action;
-        }
+        } else
         if (key == GLFW_KEY_A)
         {
             scene->players.at(scene->myPlayerIndex)->controls.left = action;
-        }
+        } else
         if (key == GLFW_KEY_S)
         {
             scene->players.at(scene->myPlayerIndex)->controls.backward = action;
-        }
+        } else
         if (key == GLFW_KEY_D)
         {
             scene->players.at(scene->myPlayerIndex)->controls.right = action;
-        }
+        } else
         if (key == GLFW_KEY_SPACE)
         {
             scene->players.at(scene->myPlayerIndex)->controls.jump = action;
@@ -251,7 +255,7 @@ int main()
 
         for (auto & player : theScene.players)
         {
-            player->update(deltaTime);
+            player->update(deltaTime, &world, particles);
         }
 
         static jl::Shader gltfShader = getBasicShader();
