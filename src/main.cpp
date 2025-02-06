@@ -29,6 +29,8 @@
 #include "world/gizmos/ParticlesGizmo.h"
 #include "world/worldgenmethods/OverworldWorldGenMethod.h"
 #include "ImGuiStuff.h"
+#include "LUTLoader.h"
+
 struct Scene
 {
     std::vector<Player*> players = {};
@@ -188,7 +190,7 @@ int main()
 
     const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
 
-    GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "project7", primaryMonitor, nullptr);
+    GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "project7", nullptr, nullptr);
     glfwMakeContextCurrent(window);
     if (glewInit() != GLEW_OK)
     {
@@ -211,6 +213,8 @@ int main()
     initializePhysX();
 
     loadGameVoxelModels();
+
+    GLuint lutTexture = load3DLUT("resources/film_default.png");
 
     // int width, height;
     // glfwGetFramebufferSize(window, &width, &height);
@@ -293,14 +297,15 @@ int main()
             camera.updateWithYawPitch(camera.transform.yaw, camera.transform.pitch);
 
             drawSky(glm::vec4(0.3, 0.65, 1.0, 1.0),
-                glm::vec4(1.0, 1.0, 1.0, 1.0),
-                1.0f, &theScene.players[theScene.myPlayerIndex]->camera);
+                    glm::vec4(1.0, 1.0, 1.0, 1.0),
+                    1.0f, &theScene.players[theScene.myPlayerIndex]->camera, lutTexture);
 
 
             glUseProgram(gltfShader.shaderID);
 
             static GLuint mvpLoc = glGetUniformLocation(gltfShader.shaderID, "mvp");
             static GLuint texture1Loc = glGetUniformLocation(gltfShader.shaderID, "texture1");
+            static GLuint lutLoc = glGetUniformLocation(gltfShader.shaderID, "lut");
             static GLuint posLoc = glGetUniformLocation(gltfShader.shaderID, "pos");
             static GLuint rotLoc = glGetUniformLocation(gltfShader.shaderID, "rot");
             static GLuint camPosLoc = glGetUniformLocation(gltfShader.shaderID, "camPos");
@@ -315,6 +320,11 @@ int main()
             glUniform1f(rotLoc, 0.0f);
             glUniform1f(grcLoc, 0.0f);
 
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_3D, lutTexture);
+            glUniform1i(lutLoc, 1);
+
+            glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
 
             if(FLY_MODE)

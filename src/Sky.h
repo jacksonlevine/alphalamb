@@ -7,7 +7,7 @@
 #include "Camera.h"
 #include "Shader.h"
 
-inline void drawSky(glm::vec4 top, glm::vec4 bot, float ambBrightness, jl::Camera* camera) {
+inline void drawSky(glm::vec4 top, glm::vec4 bot, float ambBrightness, jl::Camera* camera, GLuint lut) {
     // Sky
     static GLuint skyVao = 0;
     if (skyVao == 0)
@@ -41,6 +41,7 @@ inline void drawSky(glm::vec4 top, glm::vec4 bot, float ambBrightness, jl::Camer
                 uniform float sunrise;
                 uniform float sunset;
                 uniform vec3 camDir;
+                uniform sampler3D lut;
                 in vec2 v_uv;
 
                 out vec4 frag_color;
@@ -63,6 +64,10 @@ inline void drawSky(glm::vec4 top, glm::vec4 bot, float ambBrightness, jl::Camer
                     botColor = mix(botColor, sunsetcol, (similarity(camDir, west)) * sunset);
                     frag_color = mix(botColor, top_color * vec4(brightMult, brightMult, brightMult, 1.0f), max(min(pow(v_uv.y-0.4, 1.0), 1.0), 0.0));
 
+                    vec3 lutCoords = clamp(frag_color.xyz, 0.0, 1.0);
+                    lutCoords = lutCoords * (63.0/64.0) + (0.5/64.0);
+                    vec4 lutTex = texture(lut, lutCoords);
+                    frag_color = vec4(lutTex.xyz, frag_color.a);
 
                 }
 
@@ -75,6 +80,8 @@ inline void drawSky(glm::vec4 top, glm::vec4 bot, float ambBrightness, jl::Camer
     glBindVertexArray(skyVao);
     glUseProgram(skyshader);
     glDisable(GL_DEPTH_TEST);
+
+    static GLuint lutLoc = glGetUniformLocation(skyshader, "lut");
 
     static int T_C_LOC = -1;
     static int B_C_LOC = 0;
@@ -130,6 +137,9 @@ inline void drawSky(glm::vec4 top, glm::vec4 bot, float ambBrightness, jl::Camer
     glUniform1f(A_B_LOC, ambBrightness);
     glUniform1f(S_S_LOC, 0.0f);
     glUniform1f(S_R_LOC, 0.0f);
+
+    glActiveTexture(GL_TEXTURE1);
+    glUniform1i(lutLoc, 1);
 
 
     glDrawArrays(GL_TRIANGLES, 0, 3);
