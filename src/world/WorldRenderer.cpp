@@ -142,6 +142,33 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
             break; //Only do one per frame
         }
     }
+
+
+    for(size_t i = 0; i < userChangeMeshBuffers.size(); i++) {
+        auto& buffer = userChangeMeshBuffers[i];
+        if(buffer.ready && !buffer.in_use) {
+            modifyOrInitializeDrawInstructions(chunkPool[buffer.chunkIndex].vvbo, chunkPool[buffer.chunkIndex].uvvbo,
+            chunkPool[buffer.chunkIndex].ebo, chunkPool[buffer.chunkIndex].drawInstructions, buffer.mesh,
+            chunkPool[buffer.chunkIndex].bvbo,
+            chunkPool[buffer.chunkIndex].tvvbo, chunkPool[buffer.chunkIndex].tuvvbo, chunkPool[buffer.chunkIndex].tebo, chunkPool[buffer.chunkIndex].tbvbo);
+
+            if (buffer.from == std::nullopt)
+            {
+                activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+
+            } else
+            {
+                activeChunks.erase(buffer.from.value());
+                activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+            }
+            //Dont need to do this cause
+            //confirmedActiveChunksQueue.push(buffer.to);
+
+            freedChangeBuffers.push(i);  // Return to free list
+            buffer.ready = false;
+            break; //Only do one per frame
+        }
+    }
     TwoIntTup playerChunkPosition = worldToChunkPos(
         TwoIntTup(std::floor(playerCamera->transform.position.x),
             std::floor(playerCamera->transform.position.z)));

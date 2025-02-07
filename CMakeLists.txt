@@ -88,6 +88,7 @@ add_executable(DistantGarden
         src/LUTLoader.h
         src/ImGuiStuff.cpp
         src/ImGuiStuff.h
+        src/world/RebuildQueue.h
 
 )
 

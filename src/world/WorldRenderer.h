@@ -10,6 +10,7 @@
 #include "../Camera.h"
 #include "../IntTup.h"
 #include "../PrecompHeader.h"
+#include "RebuildQueue.h"
 
 struct DrawInstructions
 {
@@ -49,6 +50,9 @@ struct ChangeBuffer
     std::optional<TwoIntTup> from = std::nullopt;
     TwoIntTup to = {};
 };
+
+
+
 
 void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo, DrawInstructions& drawInstructions, UsableMesh& usable_mesh, GLuint& bvbo,
     GLuint& tvvbo, GLuint& tuvvbo, GLuint& tebo, GLuint& tbvbo);
@@ -119,11 +123,15 @@ struct ReadyToDrawChunkInfo
 class WorldRenderer {
 public:
     static constexpr int chunkSize = 16;
-    static constexpr int renderDistance = 16;
+    static constexpr int renderDistance = 18;
     static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2));
     static constexpr int MIN_DISTANCE = renderDistance + 1;
 
     std::vector<ChunkGLInfo> chunkPool;
+
+    RebuildQueue rebuildQueue;
+    std::thread rebuildThread;
+    std::atomic<bool> rebuildThreadRunning = false;
 
 
     // Preallocated memory pool for activeChunks and mbtActiveChunks
@@ -165,6 +173,13 @@ public:
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
     boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<10>> freedChangeBuffers = {};
 
+
+    ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
+    ///by adding its index to freeChangeBuffers.
+    std::array<ChangeBuffer, 10> userChangeMeshBuffers = {};
+    ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<10>> freedUserChangeMeshBuffers = {};
+
     ///After being added to mbtActiveChunks, we await a confirmation back in this before we know we can reuse that chunk again
     ///One way queue, from main thread to mesh building thread, to notify of mbtActiveChunks entries that have been confirmed/entered into activeChunks.
     boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<128>> confirmedActiveChunksQueue = {};
@@ -179,6 +194,38 @@ public:
         ChunkGLInfo chunk;
         chunkPool.push_back(chunk);
         return chunkPool.size() - 1;
+    }
+
+    void rebuildThreadFunction(World* world) {
+        while (rebuildThreadRunning) {
+            ChunkRebuildRequest request;
+            if (rebuildQueue.pop(request)) {
+                // Try to acquire read locks on the DataMaps
+                if (auto locks = world->tryToGetReadLockOnDMs()) {
+                    // Get a free change buffer
+                    size_t changeBufferIndex;
+                    while (!freedChangeBuffers.pop(changeBufferIndex)) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    }
+
+                    auto& buffer = changeBuffers[changeBufferIndex];
+                    buffer.in_use = true;
+
+                    // Generate new mesh
+                    buffer.mesh = fromChunk(request.chunkPos, world, chunkSize);
+                    buffer.chunkIndex = request.chunkIndex;
+                    buffer.from = request.chunkPos; // Same position, just updating
+                    buffer.to = request.chunkPos;
+
+                    buffer.ready = true;
+                    buffer.in_use = false;
+                } else {
+                    // If we couldn't get locks, push back to queue with original priority
+                    rebuildQueue.push(request);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                }
+            }
+        }
     }
 
     TwoIntTup worldToChunkPos(TwoIntTup worldPos)
