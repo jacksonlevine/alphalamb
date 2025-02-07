@@ -108,6 +108,13 @@ struct UsedChunkInfo
     UsedChunkInfo(size_t index) : chunkIndex(index) {}
 };
 
+struct ReadyToDrawChunkInfo
+{
+    size_t chunkIndex = 0;
+    float timeBeenRendered = 0.0f;
+    ReadyToDrawChunkInfo(size_t index) : chunkIndex(index) {}
+};
+
 
 class WorldRenderer {
 public:
@@ -133,7 +140,7 @@ public:
 
     ///Only for Main Thread access. The main thread will make changes to this as it buffers incoming geometry, so they will only be on this once theyre officially ready to be drawn.
     ///The main thread will also use this as its list of what chunks to draw
-    boost::unordered_map<TwoIntTup, size_t, TwoIntTupHash, std::equal_to<TwoIntTup>, ActiveChunksAllocator> activeChunks;
+    boost::unordered_map<TwoIntTup, ReadyToDrawChunkInfo, TwoIntTupHash, std::equal_to<TwoIntTup>, ActiveChunksAllocator> activeChunks;
 
     ///Only for Mesh Building thread access. Its internal record of what spots it has generated & sent out the geometry for.
     boost::unordered_map<TwoIntTup, UsedChunkInfo, TwoIntTupHash, std::equal_to<TwoIntTup>, MBTActiveChunksAllocator> mbtActiveChunks;
@@ -143,8 +150,8 @@ public:
     void generateChunk(World* world, TwoIntTup& chunkSpot);
 
     WorldRenderer()
-        : activeChunksMemoryPool(maxChunks * sizeof(std::pair<TwoIntTup, size_t>)), // 1 MB preallocated pool for activeChunks
-          mbtActiveChunksMemoryPool(maxChunks * sizeof(std::pair<TwoIntTup, size_t>)), // 1 MB preallocated pool for mbtActiveChunks
+        : activeChunksMemoryPool(maxChunks * sizeof(std::pair<TwoIntTup, size_t>)),
+          mbtActiveChunksMemoryPool(maxChunks * sizeof(std::pair<TwoIntTup, size_t>)),
           activeChunksMemoryResource(activeChunksMemoryPool.data(), activeChunksMemoryPool.size()),
           mbtActiveChunksMemoryResource(mbtActiveChunksMemoryPool.data(), mbtActiveChunksMemoryPool.size()),
           activeChunks(&activeChunksMemoryResource),
@@ -162,7 +169,7 @@ public:
     ///One way queue, from main thread to mesh building thread, to notify of mbtActiveChunks entries that have been confirmed/entered into activeChunks.
     boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<128>> confirmedActiveChunksQueue = {};
 
-    void mainThreadDraw(jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod);
+    void mainThreadDraw(jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod, float deltaTime);
     void meshBuildCoroutine(jl::Camera* playerCamera, World* world);
 
     ///Add a chunk gl info with the vao == 0 (not generated yet). Calling modifyOrInitializeDrawInstructions with it and geometry will initialize it.

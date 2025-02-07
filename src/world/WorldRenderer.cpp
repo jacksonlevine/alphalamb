@@ -116,7 +116,7 @@ bool isChunkInFrustum(const TwoIntTup& chunkSpot, const glm::vec3& cameraPositio
 }
 
 //MAIN THREAD COROUTINE
-void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod)
+void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod, float deltaTime)
 {
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         auto& buffer = changeBuffers[i];
@@ -128,12 +128,12 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
 
             if (buffer.from == std::nullopt)
             {
-                activeChunks.insert_or_assign(buffer.to, buffer.chunkIndex);
+                activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
 
             } else
             {
                 activeChunks.erase(buffer.from.value());
-                activeChunks.insert_or_assign(buffer.to, buffer.chunkIndex);
+                activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
             }
             confirmedActiveChunksQueue.push(buffer.to);
 
@@ -145,31 +145,45 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
     TwoIntTup playerChunkPosition = worldToChunkPos(
         TwoIntTup(std::floor(playerCamera->transform.position.x),
             std::floor(playerCamera->transform.position.z)));
-    for (const auto& [spot, index] : activeChunks) {
-        // Check if the chunk is within the frustum
+
+    static GLuint grassRedChangeLoc = glGetUniformLocation(shader, "grassRedChange");
+    static GLuint timeRenderedLoc = glGetUniformLocation(shader, "timeRendered");
+
+    for (auto& [spot, chunkinfo] : activeChunks) {
+        bool isDrawingThis = true;
+
         if (isChunkInFrustum(spot, playerCamera->transform.position - (playerCamera->transform.direction * (float)chunkSize), playerCamera->transform.direction)) {
             int dist = abs(spot.x - playerChunkPosition.x) + abs(spot.z - playerChunkPosition.z);
             if (dist <= MIN_DISTANCE) {
-                auto glInfo = chunkPool[index];
-                static GLuint grassRedChangeLoc = glGetUniformLocation(shader, "grassRedChange");
+                auto glInfo = chunkPool[chunkinfo.chunkIndex];
                 IntTup chunkRealSpot = IntTup(spot.x * chunkSize, spot.z * chunkSize);
                 float grassRedChange = (worldGenMethod->getTemperatureNoise(chunkRealSpot) - worldGenMethod->getHumidityNoise(chunkRealSpot));
                 glUniform1f(grassRedChangeLoc, grassRedChange);
+                glUniform1f(timeRenderedLoc, chunkinfo.timeBeenRendered);
                 drawFromDrawInstructions(glInfo.drawInstructions);
+                chunkinfo.timeBeenRendered += deltaTime;
+            } else
+            {
+                isDrawingThis = false;
             }
+        }
+
+        if (!isDrawingThis)
+        {
+            chunkinfo.timeBeenRendered = 0.0f;
         }
     }
     //glDepthMask(false);
-    for (const auto& [spot, index] : activeChunks) {
+    for (const auto& [spot, chunkinfo] : activeChunks) {
         // Check if the chunk is within the frustum
         if (isChunkInFrustum(spot, playerCamera->transform.position - (playerCamera->transform.direction * (float)chunkSize), playerCamera->transform.direction)) {
             int dist = abs(spot.x - playerChunkPosition.x) + abs(spot.z - playerChunkPosition.z);
             if (dist <= MIN_DISTANCE) {
-                auto glInfo = chunkPool[index];
-                static GLuint grassRedChangeLoc = glGetUniformLocation(shader, "grassRedChange");
+                auto glInfo = chunkPool[chunkinfo.chunkIndex];
                 IntTup chunkRealSpot = IntTup(spot.x * chunkSize, spot.z * chunkSize);
                 float grassRedChange = (worldGenMethod->getTemperatureNoise(chunkRealSpot) - worldGenMethod->getHumidityNoise(chunkRealSpot));
                 glUniform1f(grassRedChangeLoc, grassRedChange);
+                glUniform1f(timeRenderedLoc, chunkinfo.timeBeenRendered);
                 drawTransparentsFromDrawInstructions(glInfo.drawInstructions);
             }
         }

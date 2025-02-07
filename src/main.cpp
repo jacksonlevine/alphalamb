@@ -190,7 +190,7 @@ int main()
 
     const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
 
-    GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "project7", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "project7", primaryMonitor, nullptr);
     glfwMakeContextCurrent(window);
     if (glewInit() != GLEW_OK)
     {
@@ -332,7 +332,7 @@ int main()
                 std::cout << "" << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << " \n";
             }
 
-            renderer.mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, gltfShader.shaderID, world.worldGenMethod);
+            renderer.mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, gltfShader.shaderID, world.worldGenMethod, deltaTime);
 
 
             gScene->fetchResults(true);

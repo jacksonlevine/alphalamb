@@ -45,9 +45,13 @@ inline jl::Shader getBasicShader()
 
             uniform mat4 mvp;
             uniform vec3 pos;
+
+            uniform float timeRendered;
+
             out float brightness;
             out vec3 ppos;
             out vec3 grassColor;
+            out float timeRended;
 
             void main()
             {
@@ -57,8 +61,11 @@ inline jl::Shader getBasicShader()
                 ppos = inPosition;
                 brightness = inBrightness;
                 TexCoord = inTexCoord;
-                gl_Position = mvp * vec4((rotposition.xyz + pos), 1.0);
 
+                float fadeInProgress = min(1.0, timeRendered*2.5f);
+
+                timeRended = fadeInProgress;
+                gl_Position = mvp * vec4((rotposition.xyz + pos + vec3(0.0, (-1.0 + fadeInProgress) * 5.0f, 0.0)), 1.0);
                 if(isGrass == 1.0) {
 
                     if(grassRedChange < 0.0) {
@@ -80,6 +87,7 @@ inline jl::Shader getBasicShader()
             uniform sampler2D texture1;
             uniform sampler3D lut;
             uniform vec3 camPos;
+            in float timeRended;
 
             in vec3 ppos;
             in vec3 grassColor;
@@ -100,7 +108,8 @@ inline jl::Shader getBasicShader()
                 vec3 lutCoords = clamp(FragColor.xyz, 0.0, 1.0);
                 lutCoords = lutCoords * (63.0/64.0) + (0.5/64.0);
                 vec4 lutTex = texture(lut, lutCoords);
-                FragColor = vec4(lutTex.xyz, FragColor.a);
+
+                FragColor = vec4(lutTex.xyz, FragColor.a * timeRended);
 
                 if(FragColor.a < 0.1f) {
                     discard;
