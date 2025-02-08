@@ -89,6 +89,8 @@ add_executable(DistantGarden
         src/ImGuiStuff.cpp
         src/ImGuiStuff.h
         src/world/RebuildQueue.h
+        src/Image.cpp
+        src/Image.h
 
 )
 

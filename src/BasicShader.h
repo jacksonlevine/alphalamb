@@ -20,6 +20,7 @@ inline jl::Shader getBasicShader()
             layout(location = 3) in float isGrass;
 
             uniform float grassRedChange;
+uniform float scale;
 
             mat4 getRotationMatrix(float xrot, float yrot, float zrot) {
                 mat4 Rx = mat4(1.0, 0.0, 0.0, 0.0,
@@ -58,14 +59,17 @@ inline jl::Shader getBasicShader()
 
                 mat4 rotmat = getRotationMatrix(0.0, 0.0, rot);
                 vec4 rotposition = rotmat * vec4(inPosition, 1.0);
-                ppos = inPosition;
+
                 brightness = inBrightness;
                 TexCoord = inTexCoord;
 
                 float fadeInProgress = min(1.0, timeRendered*2.5f);
 
                 timeRended = fadeInProgress;
-                gl_Position = mvp * vec4((rotposition.xyz + pos + vec3(0.0, (-1.0 + fadeInProgress) * 5.0f, 0.0)), 1.0);
+                vec3 pos2 = (rotposition.xyz + pos + vec3(0.0, (-1.0 + fadeInProgress) * 5.0f, 0.0));
+                vec3 finalpos = vec3(pos2.x * scale, pos2.y, pos2.z * scale);
+                ppos = finalpos;
+                gl_Position = mvp * vec4(finalpos, 1.0);
                 if(isGrass == 1.0) {
 
                     if(grassRedChange < 0.0) {

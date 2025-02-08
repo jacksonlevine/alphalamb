@@ -22,7 +22,7 @@ void BlockSelectGizmo::draw(World* world, Player* player)
 
     glm::vec3 direction = player->camera.transform.direction;
     glm::vec3 position = player->camera.transform.position;
-    glLineWidth(4.0);
+    glLineWidth(8.0);
 
     PxRaycastBuffer hit;
     PxQueryFilterData fd;
@@ -108,7 +108,9 @@ void BlockSelectGizmo::init()
     out vec4 FragColor;
     void main()
     {
-        FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        float checkerboard = mod(floor(gl_FragCoord.x/10.0) + floor(gl_FragCoord.y/10.0), 2.0);
+        vec3 color = mix(vec3(0.0), vec3(1.0), checkerboard);
+        FragColor = vec4(color.xyz, 1.0);
     }
     )glsl",
         "blockSelectGizmoShader");

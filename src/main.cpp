@@ -316,6 +316,7 @@ int main()
         camera.updateProjection(mode->width, mode->height, 90.0f);
     }
 
+
     ParticlesGizmo* particles = new ParticlesGizmo();
     theScene.particles = particles;
     theScene.gizmos.push_back(particles);
@@ -323,7 +324,6 @@ int main()
     BlockSelectGizmo* bsg = new BlockSelectGizmo();
     theScene.blockSelectGizmo = bsg;
     theScene.gizmos.push_back(bsg);
-
 
     for(auto & gizmo : theScene.gizmos)
     {
@@ -397,6 +397,8 @@ int main()
             static GLuint rotLoc = glGetUniformLocation(gltfShader.shaderID, "rot");
             static GLuint camPosLoc = glGetUniformLocation(gltfShader.shaderID, "camPos");
             static GLuint grcLoc = glGetUniformLocation(gltfShader.shaderID, "grassRedChange");
+            static GLuint scaleLoc = glGetUniformLocation(gltfShader.shaderID, "scale");
+            static GLuint timeRenderedLoc = glGetUniformLocation(gltfShader.shaderID, "timeRendered");
 
             glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera.mvp));
             glActiveTexture(GL_TEXTURE0);
@@ -405,7 +407,8 @@ int main()
             const glm::vec3 campos = theScene.players[theScene.myPlayerIndex]->camera.transform.position;
             glUniform3f(camPosLoc, campos.x, campos.y, campos.z);
             glUniform1f(rotLoc, 0.0f);
-            glUniform1f(grcLoc, 0.0f);
+            glUniform1f(rotLoc, 0.0f);
+            glUniform1f(scaleLoc, 1.0f);
 
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_3D, lutTexture);
@@ -433,10 +436,12 @@ int main()
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
 
 
+
             for(auto & gizmo : theScene.gizmos)
             {
                 gizmo->draw(&world, theScene.players[theScene.myPlayerIndex]);
             }
+
 
             particles->cleanUpOldParticles(deltaTime);
 
