@@ -177,9 +177,9 @@ public:
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
-    std::array<ChangeBuffer, 10> userChangeMeshBuffers = {};
+    std::array<ChangeBuffer, 30> userChangeMeshBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<10>> freedUserChangeMeshBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<30>> freedUserChangeMeshBuffers = {};
 
     ///After being added to mbtActiveChunks, we await a confirmation back in this before we know we can reuse that chunk again
     ///One way queue, from main thread to mesh building thread, to notify of mbtActiveChunks entries that have been confirmed/entered into activeChunks.
@@ -204,6 +204,12 @@ public:
             std::cout << "Running \n";
             if (rebuildQueue.pop(request)) {
                 std::cout << "Popped one: " << request.chunkPos.x << " " << request.chunkPos.z << " \n";
+                if(request.changeTo != std::nullopt)
+                {
+                    std::cout <<"Doing the fucking write to " << request.changeSpot.x << " " << request.changeSpot.y << " " << request.changeSpot.z << " \n";
+                    world->set(request.changeSpot, request.changeTo.value());
+                }
+
                 UsableMesh mesh;
                 // Scope the locks so they're released after getting data
                 {
@@ -214,7 +220,7 @@ public:
                     } else {
                         std::cout << "Failed to get read lock on DMs\n";
                         rebuildQueue.push(request);
-                        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
                         continue;
                     }
                 } // locks are released here
@@ -222,8 +228,10 @@ public:
                 // Process the mesh data without holding locks
                 size_t changeBufferIndex;
                 while (!freedUserChangeMeshBuffers.pop(changeBufferIndex)) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 }
+
+
 
                 auto& buffer = userChangeMeshBuffers[changeBufferIndex];
                 buffer.in_use = true;
@@ -233,22 +241,36 @@ public:
                 buffer.to = request.chunkPos;
                 buffer.ready = true;
                 buffer.in_use = false;
-            } else {
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
         }
     }
 
-    void requestChunkRebuildFromMainThread(TwoIntTup spot)
+    void requestChunkRebuildFromMainThread(IntTup spot, std::optional<uint32_t> changeTo = std::nullopt)
     {
-        if (activeChunks.contains(spot))
+        //TwoIntTup version of spot
+        auto titspot = TwoIntTup(spot.x, spot.z);
+        auto chunkspot = WorldRenderer::worldToChunkPos(titspot);
+        if (activeChunks.contains(chunkspot))
         {
-            std::cout << "Requesting rebuild for spot: " << spot.x << " " << spot.z << std::endl;
-            rebuildQueue.push(ChunkRebuildRequest(
-                spot,
-                activeChunks.at(spot).chunkIndex,
-                true
-            ));
+            std::cout << "Requesting rebuild for spot: " << chunkspot.x << " " << chunkspot.z << std::endl;
+            if(changeTo != std::nullopt)
+            {
+                rebuildQueue.push(ChunkRebuildRequest(
+                    chunkspot,
+                    activeChunks.at(chunkspot).chunkIndex,
+                    true,
+                    spot,
+                    changeTo.value()
+                ));
+            } else
+            {
+                rebuildQueue.push(ChunkRebuildRequest(
+                    chunkspot,
+                    activeChunks.at(chunkspot).chunkIndex,
+                    true
+                ));
+            }
+
         } else
         {
             std::cout << "Spot not in activeChunks \n";

@@ -12,6 +12,7 @@ public:
     void draw(World* world, Player* player) override;
     void init() override;
     IntTup selectedSpot = {};
+    IntTup hitNormal ={};
 private:
     GLuint vao, vbo, ebo = 0;
     GLuint shaderProgram = 0;

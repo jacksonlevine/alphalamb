@@ -59,6 +59,7 @@ void BlockSelectGizmo::draw(World* world, Player* player)
                 float epsilon = 0.0001f;
                 spot = glm::vec3(std::floor(pos.x + epsilon), std::floor(pos.y + epsilon), std::floor(pos.z + epsilon));
                 selectedSpot = IntTup(spot.x, spot.y, spot.z);
+                hitNormal = IntTup(h.normal.x, h.normal.y, h.normal.z);
             }
         }
 

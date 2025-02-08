@@ -92,30 +92,66 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                                                      20, (MaterialName)blockThere, 2.0, 1.0f);
                     }
 
-                    scene->world->set(spot, AIR);
+                    //scene->world->set(spot, AIR);
 //std::cout << "Set the block "  << std::endl;;
                     scene->worldRenderer->requestChunkRebuildFromMainThread(
-                        scene->worldRenderer->worldToChunkPos(TwoIntTup(spot.x, spot.z))
+                        spot, AIR
                         );
-                    scene->worldRenderer->requestChunkRebuildFromMainThread(
-                        scene->worldRenderer->worldToChunkPos(TwoIntTup(spot.x-1, spot.z))
-                        );
-                    scene->worldRenderer->requestChunkRebuildFromMainThread(
-                        scene->worldRenderer->worldToChunkPos(TwoIntTup(spot.x+1, spot.z))
-                        );
-                    scene->worldRenderer->requestChunkRebuildFromMainThread(
-                        scene->worldRenderer->worldToChunkPos(TwoIntTup(spot.x, spot.z-1))
-                        );
-                    scene->worldRenderer->requestChunkRebuildFromMainThread(
-                        scene->worldRenderer->worldToChunkPos(TwoIntTup(spot.x, spot.z+1))
-                        );
+                    auto xmod = spot.x % scene->worldRenderer->chunkSize;
+                    auto zmod = spot.z % scene->worldRenderer->chunkSize;
+
+                    if(xmod == scene->worldRenderer->chunkSize - 1)
+                    {
+                        scene->worldRenderer->requestChunkRebuildFromMainThread(
+                            IntTup(spot.x+1, spot.y, spot.z));
+
+                    } else if(xmod == 0)
+                    {
+                        scene->worldRenderer->requestChunkRebuildFromMainThread(
+                            IntTup(spot.x-1, spot.y, spot.z));
+                    }
+
+                    if(zmod == scene->worldRenderer->chunkSize - 1)
+                    {
+                        scene->worldRenderer->requestChunkRebuildFromMainThread(
+                            IntTup(spot.x, spot.y, spot.z+1));
+
+                    } else if(zmod == 0)
+                    {
+                        scene->worldRenderer->requestChunkRebuildFromMainThread(
+                            IntTup(spot.x, spot.y, spot.z-1));
+                    }
+
 
                     //std::cout << "Request filed " << std::endl;
                 }
             }
 
         }
-        else
+        else if(button == GLFW_MOUSE_BUTTON_RIGHT)
+        {
+            auto & cam = scene->players[scene->myPlayerIndex]->camera;
+
+
+
+            if (scene->world && scene->blockSelectGizmo && scene->worldRenderer)
+            {
+                //std::cout << "Setting" << std::endl;
+                auto & spot = scene->blockSelectGizmo->selectedSpot;
+                //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
+                //uint32_t blockThere = scene->world->get(spot);
+                IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
+
+                //scene->world->set(spot, AIR);
+                //std::cout << "Set the block "  << std::endl;;
+                scene->worldRenderer->requestChunkRebuildFromMainThread(
+                    placeSpot, WOOD_PLANKS
+                    );
+
+
+                //std::cout << "Request filed " << std::endl;
+            }
+        } else
         {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             scene->mouseCaptured = false;
@@ -152,6 +188,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         if (key == GLFW_KEY_F)
         {
             scene->players.at(scene->myPlayerIndex)->controls.secondary1 = action;
+            scene->players.at(scene->myPlayerIndex)->controls.jump = action;
         } else
         if (key == GLFW_KEY_W)
         {
@@ -394,6 +431,7 @@ int main()
 
 
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
+
 
             for(auto & gizmo : theScene.gizmos)
             {

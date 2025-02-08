@@ -6,6 +6,7 @@
 #define LUTLOADER_H
 #include "PrecompHeader.h"
 
+inline static GLuint luttexture = 0;
 
 inline GLuint load3DLUT(const char* filename) {
     int width, height, channels;
@@ -60,6 +61,7 @@ inline GLuint load3DLUT(const char* filename) {
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
+    luttexture = lutTexture;
     return lutTexture;
 }
 #endif //LUTLOADER_H

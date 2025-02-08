@@ -4,6 +4,7 @@
 
 #include "ParticlesGizmo.h"
 
+#include "../../LUTLoader.h"
 #include "../../Shader.h"
 
 void ParticlesGizmo::draw(World* world, Player* player)
@@ -16,6 +17,8 @@ void ParticlesGizmo::draw(World* world, Player* player)
 
     glUniformMatrix4fv(mvploc, 1, GL_FALSE, glm::value_ptr(player->camera.mvp));
     glUniform3f(camPosloc, player->camera.transform.position.x, player->camera.transform.position.y, player->camera.transform.position.z);
+
+    glUniform1i(glGetUniformLocation(shaderProgram, "lut"), 1);
 
     updateParticlesToPhysicsSpots();
     sendUpdatedInstancesList();
@@ -44,14 +47,14 @@ void ParticlesGizmo::init()
 
             void main() {
 
-vec3 realPosition = instancePosition.xyz;
+                vec3 realPosition = instancePosition.xyz;
 
 
-vec3 look = normalize(realPosition - camPos);
-vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), look));
-vec3 up = normalize(cross(look, right));
+                vec3 look = normalize(realPosition - camPos);
+                vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), look));
+                vec3 up = normalize(cross(look, right));
 
-vec3 billboardedPosition = realPosition + ((vertexPosition.x * instancePosition.a) * right + (vertexPosition.y  * instancePosition.a) * up);
+                vec3 billboardedPosition = realPosition + ((vertexPosition.x * instancePosition.a) * right + (vertexPosition.y  * instancePosition.a) * up);
 
 
 
@@ -81,6 +84,7 @@ vec2 baseUV = vec2(texSpot.x * 0.03308823529411764705882352941176f, 1.0f - ((tex
             in vec2 TexCoord;
             out vec4 FragColor;
             uniform sampler2D ourTexture;
+            uniform sampler3D lut;
 
             void main()
             {
@@ -89,6 +93,12 @@ vec2 baseUV = vec2(texSpot.x * 0.03308823529411764705882352941176f, 1.0f - ((tex
                 if(texColor.a < 0.1) {
                     discard;
                 }
+
+                vec3 lutCoords = clamp(FragColor.xyz, 0.0, 1.0);
+                lutCoords = lutCoords * (63.0/64.0) + (0.5/64.0);
+                vec4 lutTex = texture(lut, lutCoords);
+
+                FragColor = vec4(lutTex.xyz, FragColor.a);
             }
         )glsl",
         "particleShader"
