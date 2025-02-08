@@ -45,6 +45,9 @@ struct Scene
     bool firstMouse = true;
     std::vector<WorldGizmo*> gizmos;
     ParticlesGizmo* particles = nullptr;
+    World* world = nullptr;
+    BlockSelectGizmo* blockSelectGizmo = nullptr;
+    WorldRenderer* worldRenderer = nullptr;
 };
 
 Scene theScene = {};
@@ -69,10 +72,46 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
             {
                 //addShootLine();
                 //sendShootLineMessage();
-                // auto & cam = scene->players[scene->myPlayerIndex]->camera;
-                //
-                // scene->particles->particleBurst(cam.transform.position + cam.transform.direction * 3.0f,
-                //                                 20, WOOD_PLANKS, 2.0, 1.0f);
+                auto & cam = scene->players[scene->myPlayerIndex]->camera;
+
+
+
+                if (scene->world && scene->blockSelectGizmo && scene->worldRenderer)
+                {
+                    //std::cout << "Setting" << std::endl;
+                    auto & spot = scene->blockSelectGizmo->selectedSpot;
+                    //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
+                    uint32_t blockThere = scene->world->get(spot);
+                    glm::vec3 burstspot = glm::vec3(
+                        scene->blockSelectGizmo->selectedSpot.x+ 0.5,
+                        scene->blockSelectGizmo->selectedSpot.y + 0.5,
+                        scene->blockSelectGizmo->selectedSpot.z + 0.5);
+                    if (scene->particles)
+                    {
+                        scene->particles->particleBurst(burstspot,
+                                                     20, (MaterialName)blockThere, 2.0, 1.0f);
+                    }
+
+                    scene->world->set(spot, AIR);
+//std::cout << "Set the block "  << std::endl;;
+                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                        scene->worldRenderer->worldToChunkPos(TwoIntTup(spot.x, spot.z))
+                        );
+                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                        scene->worldRenderer->worldToChunkPos(TwoIntTup(spot.x-1, spot.z))
+                        );
+                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                        scene->worldRenderer->worldToChunkPos(TwoIntTup(spot.x+1, spot.z))
+                        );
+                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                        scene->worldRenderer->worldToChunkPos(TwoIntTup(spot.x, spot.z-1))
+                        );
+                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                        scene->worldRenderer->worldToChunkPos(TwoIntTup(spot.x, spot.z+1))
+                        );
+
+                    //std::cout << "Request filed " << std::endl;
+                }
             }
 
         }
@@ -190,7 +229,7 @@ int main()
 
     const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
 
-    GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "project7", primaryMonitor, nullptr);
+    GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "project7", nullptr, nullptr);
     glfwMakeContextCurrent(window);
     if (glewInit() != GLEW_OK)
     {
@@ -242,9 +281,11 @@ int main()
 
     ParticlesGizmo* particles = new ParticlesGizmo();
     theScene.particles = particles;
-
     theScene.gizmos.push_back(particles);
-    theScene.gizmos.push_back(new BlockSelectGizmo());
+
+    BlockSelectGizmo* bsg = new BlockSelectGizmo();
+    theScene.blockSelectGizmo = bsg;
+    theScene.gizmos.push_back(bsg);
 
 
     for(auto & gizmo : theScene.gizmos)
@@ -256,16 +297,25 @@ int main()
         new HashMapDataMap(),
         new OverworldWorldGenMethod(),
         new HashMapDataMap());
+
+    theScene.world = &world;
     VoxModel swcModel = loadSwc("resources/swctest.txt");
     stampVoxelModelInWorld(&world,swcModel);
 
 
     WorldRenderer renderer;
 
+    theScene.worldRenderer = &renderer;
+
     std::thread chunkWorker(&WorldRenderer::meshBuildCoroutine, &renderer,
         &(theScene.players[theScene.myPlayerIndex]->camera), &world);
     chunkWorker.detach();
-
+    renderer.rebuildThreadRunning = true;
+    renderer.rebuildThread = std::thread(&WorldRenderer::rebuildThreadFunction,
+    &renderer,
+    &world
+);
+    renderer.rebuildThread.detach();
 
     while (!glfwWindowShouldClose(window))
     {
@@ -339,7 +389,8 @@ int main()
 
 
             //std::cout << "Passing " << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << " \n";
-            theScene.players[theScene.myPlayerIndex]->collisionCage.updateToSpot(&world, camera.transform.position);
+
+            theScene.players[theScene.myPlayerIndex]->collisionCage.updateToSpot(&world, camera.transform.position, deltaTime);
 
 
             glBindTexture(GL_TEXTURE_2D, worldTex.id);

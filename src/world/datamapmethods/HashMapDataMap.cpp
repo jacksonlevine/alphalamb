@@ -46,6 +46,8 @@ std::optional<uint32_t> HashMapDataMap::getLocked(const IntTup& spot) const
 
 void HashMapDataMap::set(const IntTup& spot, uint32_t block)
 {
+    //std::cout << "trying to lock mapmutex \n";
     std::unique_lock<std::shared_mutex> lock(mapmutex);
+    //std::cout << "locked mapmutex \n";
     map.insert_or_assign(spot, block);
 }

@@ -52,7 +52,9 @@ public:
     }
 
     bool pop(ChunkRebuildRequest& request) {
+        std::cout << "Trying to lock queue \n";
         std::unique_lock<std::mutex> lock(mutex);
+        std::cout << "Locked queue \n";
         while (queue.empty() && !shouldExit) {
             cv.wait_for(lock, std::chrono::milliseconds(100));
         }

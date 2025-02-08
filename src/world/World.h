@@ -20,6 +20,7 @@ public:
 
     uint32_t get(IntTup spot);
     uint32_t getLocked(IntTup spot);
+    void set(IntTup spot, uint32_t val);
     inline std::optional<std::pair<std::shared_lock<std::shared_mutex>,
                                  std::shared_lock<std::shared_mutex>>> tryToGetReadLockOnDMs()
     {

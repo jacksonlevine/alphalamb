@@ -24,14 +24,17 @@ void BlockSelectGizmo::draw(World* world, Player* player)
     glm::vec3 position = player->camera.transform.position;
     glLineWidth(4.0);
 
-
     PxRaycastBuffer hit;
     PxQueryFilterData fd;
-    fd.flags |= PxQueryFlag::eANY_HIT;
+    fd.flags |= PxQueryFlag::eSTATIC; // Ensure it checks both static & dynamic objects
 
-    bool isHit = gScene->raycast(PxVec3(position.x, position.y, position.z), PxVec3(direction.x, direction.y, direction.z),
-        DISTANCE, hit, PxHitFlags(PxHitFlag::eDEFAULT), fd);
-    //std::cout << "Casting a ray: \n";
+    // Exclude objects with word0 = 2
+    fd.data.word0 = ~2;  // This ensures that objects with word0 = 2 are ignored
+
+    bool isHit = gScene->raycast(PxVec3(position.x, position.y, position.z),
+                                 PxVec3(direction.x, direction.y, direction.z),
+                                 DISTANCE, hit, PxHitFlag::eDEFAULT, fd);
+
 
     if(isHit)
     {
@@ -51,12 +54,12 @@ void BlockSelectGizmo::draw(World* world, Player* player)
                 PxVec3 pos = h.position;
 
                 //Always go inside the block
-                pos += (h.normal * -1.0) * 0.3;
+                pos += (h.normal * -1.0) * 0.5;
 
-                spot = glm::vec3(std::floor(pos.x), std::floor(pos.y), std::floor(pos.z));
+                float epsilon = 0.0001f;
+                spot = glm::vec3(std::floor(pos.x + epsilon), std::floor(pos.y + epsilon), std::floor(pos.z + epsilon));
+                selectedSpot = IntTup(spot.x, spot.y, spot.z);
             }
-
-
         }
 
         if (draw)

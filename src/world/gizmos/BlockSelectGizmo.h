@@ -11,6 +11,7 @@ class BlockSelectGizmo : public WorldGizmo {
 public:
     void draw(World* world, Player* player) override;
     void init() override;
+    IntTup selectedSpot = {};
 private:
     GLuint vao, vbo, ebo = 0;
     GLuint shaderProgram = 0;

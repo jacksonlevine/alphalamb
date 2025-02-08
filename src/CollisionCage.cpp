@@ -9,55 +9,63 @@
 
 
 
-void CollisionCage::updateToSpot(World* world, glm::vec3 spot)
+void CollisionCage::updateToSpot(World* world, glm::vec3 spot, float deltaTime)
 {
     IntTup blockSpot(std::floor(spot.x), std::floor(spot.y), std::floor(spot.z));
 
-    if(blockSpot != lastBlockSpot)
+    if (updateTimer > 0.01f)
     {
-        lastBlockSpot = blockSpot;
-        UsableMesh mesh = {};
-
-        PxU32 index = 0;
-        PxU32 tindex = 0;
-        auto lock = world->tryToGetReadLockOnDMs();
-        if(lock != std::nullopt)
+        updateTimer = 0.0f;
+        if(true)
         {
-            for(int x = -6; x < 6; x++)
+            UsableMesh mesh = {};
+
+            PxU32 index = 0;
+            PxU32 tindex = 0;
+            auto lock = world->tryToGetReadLockOnDMs();
+            if(lock != std::nullopt)
             {
-                for(int z = -6; z < 6; z++)
+                for(int x = -6; x < 6; x++)
                 {
-                    for(int y = 6; y > -6; y--)
+                    for(int z = -6; z < 6; z++)
                     {
-                        IntTup spotHere = blockSpot + IntTup(x,y,z);
-                        if(world->getLocked(spotHere) != AIR)
+                        for(int y = 6; y > -6; y--)
                         {
-                            for (int i = 0; i < 6; i++)
+                            IntTup spotHere = blockSpot + IntTup(x,y,z);
+                            if(world->getLocked(spotHere) != AIR)
                             {
-                                addFace(PxVec3(spotHere.x, spotHere.y, spotHere.z), (Side)i, GRASS, 1, mesh, index, tindex);
+                                for (int i = 0; i < 6; i++)
+                                {
+                                    addFace(PxVec3(spotHere.x, spotHere.y, spotHere.z), (Side)i, GRASS, 1, mesh, index, tindex);
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            if(collider == nullptr)
-            {
-                collider = createStaticMeshCollider(PxVec3(0,0,0), mesh.positions, mesh.indices);
-            } else
-            {
-                editStaticMeshCollider(collider, PxVec3(0,0,0), mesh.positions, mesh.indices);
+                if(collider == nullptr)
+                {
+                    collider = createStaticMeshCollider(PxVec3(0,0,0), mesh.positions, mesh.indices);
+                } else
+                {
+                    editStaticMeshCollider(collider, PxVec3(0,0,0), mesh.positions, mesh.indices);
+                }
             }
-        }
 
 
 
 #ifdef DEBUGDRAW
-        modifyOrInitializeDrawInstructions(cgl.vvbo, cgl.uvvbo, cgl.ebo, cgl.drawInstructions, mesh, cgl.bvbo, cgl.tvvbo, cgl.tuvvbo, cgl.tebo, cgl.tbvbo);
+            modifyOrInitializeDrawInstructions(cgl.vvbo, cgl.uvvbo, cgl.ebo, cgl.drawInstructions, mesh, cgl.bvbo, cgl.tvvbo, cgl.tuvvbo, cgl.tebo, cgl.tbvbo);
 #endif
 
 
+        }
+    } else
+    {
+        updateTimer += deltaTime;
     }
+
+
 #ifdef DEBUGDRAW
     if(cgl.drawInstructions.vao != 0)
     {

@@ -129,16 +129,15 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
             if (buffer.from == std::nullopt)
             {
                 activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
-
             } else
             {
                 activeChunks.erase(buffer.from.value());
                 activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
             }
             confirmedActiveChunksQueue.push(buffer.to);
-
-            freedChangeBuffers.push(i);  // Return to free list
             buffer.ready = false;
+            freedChangeBuffers.push(i);  // Return to free list
+
             break; //Only do one per frame
         }
     }
@@ -146,7 +145,9 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
 
     for(size_t i = 0; i < userChangeMeshBuffers.size(); i++) {
         auto& buffer = userChangeMeshBuffers[i];
+        //std::cout << "Buffer state: Ready: " << buffer.ready << " in use: " << buffer.in_use << std::endl;
         if(buffer.ready && !buffer.in_use) {
+            std::cout << "Buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
             modifyOrInitializeDrawInstructions(chunkPool[buffer.chunkIndex].vvbo, chunkPool[buffer.chunkIndex].uvvbo,
             chunkPool[buffer.chunkIndex].ebo, chunkPool[buffer.chunkIndex].drawInstructions, buffer.mesh,
             chunkPool[buffer.chunkIndex].bvbo,
@@ -158,14 +159,14 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
 
             } else
             {
-                activeChunks.erase(buffer.from.value());
-                activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+                // activeChunks.erase(buffer.from.value());
+                // activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
             }
-            //Dont need to do this cause
+            //Dont need to do this cause these user-requested chunk rebuilds never involve moving the chunk
             //confirmedActiveChunksQueue.push(buffer.to);
-
-            freedChangeBuffers.push(i);  // Return to free list
             buffer.ready = false;
+            freedUserChangeMeshBuffers.push(i);  // Return to free list
+
             break; //Only do one per frame
         }
     }
@@ -200,9 +201,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
             chunkinfo.timeBeenRendered = 0.0f;
         }
     }
-    //glDepthMask(false);
     for (const auto& [spot, chunkinfo] : activeChunks) {
-        // Check if the chunk is within the frustum
         if (isChunkInFrustum(spot, playerCamera->transform.position - (playerCamera->transform.direction * (float)chunkSize), playerCamera->transform.direction)) {
             int dist = abs(spot.x - playerChunkPosition.x) + abs(spot.z - playerChunkPosition.z);
             if (dist <= MIN_DISTANCE) {
@@ -215,7 +214,6 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
             }
         }
     }
-    //glDepthMask(true);
 }
 
 
@@ -227,6 +225,9 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         freedChangeBuffers.push(i);
+    }
+    for(size_t i = 0; i < userChangeMeshBuffers.size(); i++) {
+        freedUserChangeMeshBuffers.push(i);
     }
     chunkPool.reserve(maxChunks);
     mbtActiveChunks.reserve(maxChunks);
@@ -531,10 +532,18 @@ glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),});
 
 
 }
-
+UsableMesh _fromChunk(TwoIntTup spot, World* world, int chunkSize, bool locked);
+UsableMesh fromChunk(TwoIntTup spot, World* world, int chunkSize)
+{
+    return _fromChunk(spot, world, chunkSize, false);
+}
+UsableMesh fromChunkLocked(TwoIntTup spot, World* world, int chunkSize)
+{
+    return _fromChunk(spot, world, chunkSize, true);
+}
 ///Create a UsableMesh from the specified chunk spot
 ///This gets called in the mesh building coroutine
-UsableMesh fromChunk(TwoIntTup spot, World* world, int chunkSize)
+UsableMesh _fromChunk(TwoIntTup spot, World* world, int chunkSize, bool locked)
 {
     UsableMesh mesh;
     PxU32 index = 0;
@@ -550,7 +559,16 @@ UsableMesh fromChunk(TwoIntTup spot, World* world, int chunkSize)
             for (int y = 0; y < 250; y++)
             {
                 IntTup here = start + IntTup(x, y, z);
-                uint32_t blockHere = world->get(here);
+                uint32_t blockHere = 0;
+
+                switch (locked)
+                {
+                case true:
+                    blockHere = world->getLocked(here);
+                    break;
+                case false:
+                    blockHere = world->get(here);
+                }
 
                 if (blockHere != AIR)
                 {
@@ -559,7 +577,15 @@ UsableMesh fromChunk(TwoIntTup spot, World* world, int chunkSize)
                     {
                         auto neigh = neighborSpots[i];
 
-                        auto neighblock = world->get(neigh + here);
+                        uint32_t neighblock = 0;
+                        switch (locked)
+                        {
+                        case true:
+                            neighblock = world->getLocked(neigh + here);
+                            break;
+                        case false:
+                            neighblock = world->get(neigh + here);
+                        }
 
                         auto neightransparent = std::find(transparents.begin(), transparents.end(), neighblock) != transparents.end();
                         auto neighborair = neighblock == AIR;

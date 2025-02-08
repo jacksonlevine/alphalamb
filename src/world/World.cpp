@@ -40,3 +40,8 @@ uint32_t World::getLocked(IntTup spot)
 
     return id.value();
 }
+
+void World::set(IntTup spot, uint32_t val)
+{
+    userDataMap->set(spot, val);
+}

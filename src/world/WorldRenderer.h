@@ -103,7 +103,8 @@ inline static IntTup neighborSpots[6] = {
 };
 
 
-UsableMesh fromChunk(TwoIntTup spot, World* world, int chunkSize);\
+UsableMesh fromChunk(TwoIntTup spot, World* world, int chunkSize);
+UsableMesh fromChunkLocked(TwoIntTup spot, World* world, int chunkSize);
 
 struct UsedChunkInfo
 {
@@ -197,34 +198,60 @@ public:
     }
 
     void rebuildThreadFunction(World* world) {
+        std::cout << "Running1 \n";
         while (rebuildThreadRunning) {
             ChunkRebuildRequest request;
+            std::cout << "Running \n";
             if (rebuildQueue.pop(request)) {
-                // Try to acquire read locks on the DataMaps
-                if (auto locks = world->tryToGetReadLockOnDMs()) {
-                    // Get a free change buffer
-                    size_t changeBufferIndex;
-                    while (!freedChangeBuffers.pop(changeBufferIndex)) {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                std::cout << "Popped one: " << request.chunkPos.x << " " << request.chunkPos.z << " \n";
+                UsableMesh mesh;
+                // Scope the locks so they're released after getting data
+                {
+                    if (auto locks = world->tryToGetReadLockOnDMs()) {
+                        // Get the chunk data with locks held
+                        std::cout << "Got readlock on dms \n";
+                        mesh = fromChunkLocked(request.chunkPos, world, chunkSize);
+                    } else {
+                        std::cout << "Failed to get read lock on DMs\n";
+                        rebuildQueue.push(request);
+                        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                        continue;
                     }
+                } // locks are released here
 
-                    auto& buffer = changeBuffers[changeBufferIndex];
-                    buffer.in_use = true;
-
-                    // Generate new mesh
-                    buffer.mesh = fromChunk(request.chunkPos, world, chunkSize);
-                    buffer.chunkIndex = request.chunkIndex;
-                    buffer.from = request.chunkPos; // Same position, just updating
-                    buffer.to = request.chunkPos;
-
-                    buffer.ready = true;
-                    buffer.in_use = false;
-                } else {
-                    // If we couldn't get locks, push back to queue with original priority
-                    rebuildQueue.push(request);
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                // Process the mesh data without holding locks
+                size_t changeBufferIndex;
+                while (!freedUserChangeMeshBuffers.pop(changeBufferIndex)) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 }
+
+                auto& buffer = userChangeMeshBuffers[changeBufferIndex];
+                buffer.in_use = true;
+                buffer.mesh = mesh;
+                buffer.chunkIndex = request.chunkIndex;
+                buffer.from = request.chunkPos;
+                buffer.to = request.chunkPos;
+                buffer.ready = true;
+                buffer.in_use = false;
+            } else {
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
+        }
+    }
+
+    void requestChunkRebuildFromMainThread(TwoIntTup spot)
+    {
+        if (activeChunks.contains(spot))
+        {
+            std::cout << "Requesting rebuild for spot: " << spot.x << " " << spot.z << std::endl;
+            rebuildQueue.push(ChunkRebuildRequest(
+                spot,
+                activeChunks.at(spot).chunkIndex,
+                true
+            ));
+        } else
+        {
+            std::cout << "Spot not in activeChunks \n";
         }
     }
 
