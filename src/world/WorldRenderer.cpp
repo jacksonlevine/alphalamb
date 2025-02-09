@@ -168,6 +168,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
             //confirmedActiveChunksQueue.push(buffer.to);
             buffer.ready = false;
             freedUserChangeMeshBuffers.push(i);  // Return to free list
+            notifyBufferFreed();
 
             break; //Only do one per frame
         }

@@ -97,7 +97,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                     }
 
                     //scene->world->set(spot, AIR);
-//std::cout << "Set the block "  << std::endl;;
+    //std::cout << "Set the block "  << std::endl;;
                     scene->worldRenderer->requestChunkRebuildFromMainThread(
                         spot, AIR
                         );

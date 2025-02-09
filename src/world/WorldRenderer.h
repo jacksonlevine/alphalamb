@@ -141,6 +141,13 @@ public:
     std::vector<char> activeChunksMemoryPool;
     std::vector<char> mbtActiveChunksMemoryPool;
 
+    std::mutex bufferMutex = {};
+    std::condition_variable bufferCV = {};
+
+
+    void notifyBufferFreed() {
+        bufferCV.notify_one();
+    }
     // Monotonic buffer resources for these two hashmaps, because they will only ever have maxchunks size & we want to allocate as infrequently as possible.
     boost::container::pmr::monotonic_buffer_resource activeChunksMemoryResource;
     boost::container::pmr::monotonic_buffer_resource mbtActiveChunksMemoryResource;
@@ -242,7 +249,7 @@ public:
                 UsableMesh mesh;
                 // Scope the locks so they're released after getting data
                 {
-                    if (auto locks = world->tryToGetReadLockOnDMs() && rebuildThreadRunning) {
+                    if (auto locks = world->tryToGetReadLockOnDMs()) {
                         // Get the chunk data with locks held
                         std::cout << "Got readlock on dms \n";
                         mesh = fromChunkLocked(request.chunkPos, world, chunkSize);
@@ -254,11 +261,16 @@ public:
                     }
                 } // locks are released here
 
-                // Process the mesh data without holding locks
+
+                // Wait for available buffer using condition variable
                 size_t changeBufferIndex = -1;
-                while (!freedUserChangeMeshBuffers.pop(changeBufferIndex) && rebuildThreadRunning) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                    std::cout << "Trying to pop change buffer on rebuild \n";
+                {
+                    std::unique_lock<std::mutex> lock(bufferMutex);
+                    bufferCV.wait(lock, [&]() {
+                        return freedUserChangeMeshBuffers.pop(changeBufferIndex) || !rebuildThreadRunning;
+                    });
+
+                    if (!rebuildThreadRunning) break;
                 }
 
                 if (changeBufferIndex != -1)
