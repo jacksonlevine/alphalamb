@@ -82,15 +82,15 @@ void BlockSelectGizmo::init()
     // Vertex data for a cube (0.0 to 1.0)
     GLfloat vertices[] = {
         // Front face vertices
-        0.0f, 0.0f, 0.0f,  // 0
-        1.0f, 0.0f, 0.0f,  // 1
-        1.0f, 1.0f, 0.0f,  // 2
-        0.0f, 1.0f, 0.0f,  // 3
+        -0.01f, -0.01f, -0.01f,  // 0
+        1.01f, -0.01f, -0.01f,  // 1
+        1.01f, 1.01f, -0.01f,  // 2
+        -0.01f, 1.01f, -0.01f,  // 3
         // Back face vertices
-        0.0f, 0.0f, 1.0f,  // 4
-        1.0f, 0.0f, 1.0f,  // 5
-        1.0f, 1.0f, 1.0f,  // 6
-        0.0f, 1.0f, 1.0f   // 7
+        -0.01f, -0.01f, 1.01f,  // 4
+        1.01f, -0.01f, 1.01f,  // 5
+        1.01f, 1.01f, 1.01f,  // 6
+        -0.01f, 1.01f, 1.01f   // 7
     };
 
     jl::Shader shader(R"glsl(

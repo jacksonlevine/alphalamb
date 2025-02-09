@@ -61,29 +61,33 @@ uint32_t OverworldWorldGenMethod::get(IntTup spot)
 
     static float WL = 60.0f;
 
+    float notype = std::max(0.007f, noise.GetNoise(
+        spot.x * 0.25f,
+        spot.z * 0.25f));
+
     float no = noise.GetNoise(
         spot.x * blockScaleInPerlin,
         spot.y * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-    - ((spot.y - 90.0) * 0.007);
+    - ((spot.y - 60.0) * notype);
 
     float noabove = noise.GetNoise(
         spot.x * blockScaleInPerlin,
         (spot.y + 2) * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-    - ((spot.y - 90.0) * 0.007);
+    - ((spot.y - 60.0) * notype);
 
     float no5up = noise.GetNoise(
         spot.x * blockScaleInPerlin,
         (spot.y + 6) * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-    - ((spot.y - 90.0) * 0.007);
+    - ((spot.y - 60.0) * notype);
 
     float no10up = noise.GetNoise(
         spot.x * blockScaleInPerlin,
         (spot.y + 12) * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-    - ((spot.y - 90.0) * 0.007);
+    - ((spot.y - 60.0) * notype);
 
     static float THRESHOLD = 0.02f;
 
