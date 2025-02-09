@@ -18,6 +18,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include "FSRUpscaler.h"
 #include "PhysXStuff.h"
 #include "Sky.h"
 #include "world/SWCLoader.h"
@@ -423,6 +424,10 @@ int main()
 
     theScene.worldRenderer = &renderer;
 
+
+    RenderPipeline pipeline(1280, 720, 3840, 2160); // 1080p to 4K
+    FSR fsr(1280, 720, 3840, 2160);
+
     renderer.launchThreads(&theScene.players.at(theScene.myPlayerIndex)->camera, &world);
 
     while (!glfwWindowShouldClose(window))
@@ -442,7 +447,7 @@ int main()
         static jl::Shader gltfShader = getBasicShader();
         static jl::Texture worldTex("resources/world.png");
 
-
+        pipeline.beginSceneRender();
 
         if (theScene.myPlayerIndex != -1)
         {
@@ -518,10 +523,18 @@ int main()
 
             theScene.hud->draw();
 
-            renderImGui();
-            //Lovely work here imgui fellas
-            imguiio->WantCaptureMouse = false;
+
         }
+
+        pipeline.endSceneRender();
+        fsr.upscale(pipeline.getSceneTexture(), pipeline.getOutputTexture());
+        glDisable(GL_CULL_FACE);
+                pipeline.displayResult();
+        glEnable(GL_CULL_FACE);
+
+        renderImGui();
+        //Lovely work here imgui fellas
+        imguiio->WantCaptureMouse = false;
 
 
         glfwPollEvents();

@@ -96,7 +96,8 @@ add_executable(DistantGarden
         src/Hud.cpp
         src/Network.cpp
         src/Network.h
-
+        src/FSRUpscaler.cpp
+        src/FSRUpscaler.h
 )
 
 target_precompile_headers( DistantGarden
