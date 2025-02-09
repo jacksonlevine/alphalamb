@@ -44,6 +44,11 @@ std::optional<uint32_t> HashMapDataMap::getLocked(const IntTup& spot) const
     return block;
 }
 
+void HashMapDataMap::clear()
+{
+    map.clear();
+}
+
 void HashMapDataMap::set(const IntTup& spot, uint32_t block)
 {
     //std::cout << "trying to lock mapmutex \n";

@@ -144,6 +144,11 @@ Climate OverworldWorldGenMethod::getClimate(IntTup spot)
     return static_cast<Climate>(index);
 }
 
+void OverworldWorldGenMethod::setSeed(int seed)
+{
+    noise.SetSeed(seed);
+}
+
 MaterialName OverworldWorldGenMethod::getFloorBlockInClimate(const Climate& climate)
 {
     switch (climate)

@@ -119,6 +119,7 @@ struct ReadyToDrawChunkInfo
     float timeBeenRendered = 0.0f;
     ReadyToDrawChunkInfo(size_t index) : chunkIndex(index) {}
 };
+extern std::atomic<int> NUM_THREADS_RUNNING;
 
 
 class WorldRenderer {
@@ -132,8 +133,9 @@ public:
 
     RebuildQueue rebuildQueue;
     std::thread rebuildThread;
+    std::thread chunkWorker;
     std::atomic<bool> rebuildThreadRunning = false;
-
+    std::atomic<bool> meshBuildingThreadRunning = false;
 
     // Preallocated memory pool for activeChunks and mbtActiveChunks
     std::vector<char> activeChunksMemoryPool;
@@ -197,8 +199,35 @@ public:
         return chunkPool.size() - 1;
     }
 
+    void launchThreads(jl::Camera* camera, World* world)
+    {
+
+        meshBuildingThreadRunning = true;
+        chunkWorker = std::thread(&WorldRenderer::meshBuildCoroutine, this,
+            camera, world);
+        //chunkWorker.detach();
+        rebuildQueue.shouldExit = false;
+        rebuildThreadRunning = true;
+        rebuildThread = std::thread(&WorldRenderer::rebuildThreadFunction,
+            this,
+            world
+        );
+        //rebuildThread.detach();
+    }
+    void stopThreads()
+    {
+        rebuildThreadRunning = false;
+        meshBuildingThreadRunning = false;
+        chunkWorker.join();
+        rebuildQueue.signalExit();
+        rebuildThread.join();
+    }
+
     void rebuildThreadFunction(World* world) {
-        std::cout << "Running1 \n";
+        std::cout << "Rebuild thread started!\n";
+        NUM_THREADS_RUNNING.fetch_add(1);  // Atomic increment
+        std::cout << "Rebuild thread incremented NUM_THREADS_RUNNING. Current value: " << NUM_THREADS_RUNNING.load() << "\n";
+
         while (rebuildThreadRunning) {
             ChunkRebuildRequest request;
             std::cout << "Running \n";
@@ -213,11 +242,11 @@ public:
                 UsableMesh mesh;
                 // Scope the locks so they're released after getting data
                 {
-                    if (auto locks = world->tryToGetReadLockOnDMs()) {
+                    if (auto locks = world->tryToGetReadLockOnDMs() && rebuildThreadRunning) {
                         // Get the chunk data with locks held
                         std::cout << "Got readlock on dms \n";
                         mesh = fromChunkLocked(request.chunkPos, world, chunkSize);
-                    } else {
+                    } else if (rebuildThreadRunning) {
                         std::cout << "Failed to get read lock on DMs\n";
                         rebuildQueue.push(request);
                         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -226,23 +255,30 @@ public:
                 } // locks are released here
 
                 // Process the mesh data without holding locks
-                size_t changeBufferIndex;
-                while (!freedUserChangeMeshBuffers.pop(changeBufferIndex)) {
+                size_t changeBufferIndex = -1;
+                while (!freedUserChangeMeshBuffers.pop(changeBufferIndex) && rebuildThreadRunning) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                    std::cout << "Trying to pop change buffer on rebuild \n";
+                }
+
+                if (changeBufferIndex != -1)
+                {
+                    auto& buffer = userChangeMeshBuffers[changeBufferIndex];
+                    buffer.in_use = true;
+                    buffer.mesh = mesh;
+                    buffer.chunkIndex = request.chunkIndex;
+                    buffer.from = request.chunkPos;
+                    buffer.to = request.chunkPos;
+                    buffer.ready = true;
+                    buffer.in_use = false;
                 }
 
 
 
-                auto& buffer = userChangeMeshBuffers[changeBufferIndex];
-                buffer.in_use = true;
-                buffer.mesh = mesh;
-                buffer.chunkIndex = request.chunkIndex;
-                buffer.from = request.chunkPos;
-                buffer.to = request.chunkPos;
-                buffer.ready = true;
-                buffer.in_use = false;
             }
         }
+        NUM_THREADS_RUNNING.fetch_sub(1);
+        std::cout << "Rebuild thread finished!\n";
     }
 
     void requestChunkRebuildFromMainThread(IntTup spot, std::optional<uint32_t> changeTo = std::nullopt)

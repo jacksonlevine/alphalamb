@@ -46,9 +46,10 @@ private:
                         RebuildRequestCompare> queue;
     std::mutex mutex;
     std::condition_variable cv;
-    bool shouldExit = false;
+
 
 public:
+    bool shouldExit = false;
     void push(const ChunkRebuildRequest& request) {
         std::lock_guard<std::mutex> lock(mutex);
         queue.push(request);
@@ -56,9 +57,9 @@ public:
     }
 
     bool pop(ChunkRebuildRequest& request) {
-        std::cout << "Trying to lock queue \n";
+        //std::cout << "Trying to lock queue \n";
         std::unique_lock<std::mutex> lock(mutex);
-        std::cout << "Locked queue \n";
+        //std::cout << "Locked queue \n";
         while (queue.empty() && !shouldExit) {
             cv.wait_for(lock, std::chrono::milliseconds(100));
         }

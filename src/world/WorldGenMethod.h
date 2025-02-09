@@ -14,5 +14,6 @@ public:
     virtual float getHumidityNoise(const IntTup& spot) = 0;
     virtual float getTemperatureNoise(const IntTup& spot) = 0;
     virtual Climate getClimate(IntTup spot) = 0;
+    virtual void setSeed(int seed) = 0;
 };
 #endif //WORLDGENMETHOD_H

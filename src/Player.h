@@ -10,6 +10,8 @@
 #include "Controls.h"
 
 
+inline static const PxExtendedVec3 DEFAULT_PLAYERPOS = PxExtendedVec3(0, 200, 0);
+
 class MyControllerHitReport;
 class ParticlesGizmo;
 

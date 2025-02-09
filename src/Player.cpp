@@ -156,7 +156,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
 Player::Player()
 {
     controller = createPlayerController(
-        PxVec3(0, 200, 0),
+        PxVec3(DEFAULT_PLAYERPOS.x, DEFAULT_PLAYERPOS.y, DEFAULT_PLAYERPOS.z),
         0.4,
         0.7
     );

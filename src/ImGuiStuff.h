@@ -62,7 +62,7 @@ inline void renderImGui() {
         ImGui::SetNextWindowBgAlpha(0.0f); // Transparent background
 
         // Disable window decorations
-        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoTitleBar |
+       ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoTitleBar |
                                        ImGuiWindowFlags_NoResize |
                                        ImGuiWindowFlags_NoMove |
                                        ImGuiWindowFlags_NoScrollbar |

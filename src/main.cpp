@@ -48,6 +48,10 @@ struct Scene
     World* world = nullptr;
     BlockSelectGizmo* blockSelectGizmo = nullptr;
     WorldRenderer* worldRenderer = nullptr;
+    void addWorld()
+    {
+
+    }
 };
 
 Scene theScene = {};
@@ -62,10 +66,10 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
             if(!scene->mouseCaptured)
             {
-                // if(imguiio->WantCaptureMouse)
-                // {
-                //     return;
-                // }
+                if(imguiio->WantCaptureMouse)
+                {
+                    return;
+                }
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
                 scene->mouseCaptured = true;
             } else
@@ -99,6 +103,8 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                         );
                     auto xmod = spot.x % scene->worldRenderer->chunkSize;
                     auto zmod = spot.z % scene->worldRenderer->chunkSize;
+
+                    //std::cout << "Xmod: " << xmod << " Zmod: " << zmod << std::endl;
 
                     if(xmod == scene->worldRenderer->chunkSize - 1)
                     {
@@ -151,17 +157,19 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
                 //std::cout << "Request filed " << std::endl;
             }
-        } else
-        {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            scene->mouseCaptured = false;
-            scene->firstMouse = true;
         }
     }
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+
+
     Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
+
+    if (!scene->mouseCaptured)
+    {
+        if (imguiio->WantCaptureKeyboard) return;
+    }
     if (scene->myPlayerIndex != -1)
     {
         // if (key == GLFW_KEY_F)
@@ -173,10 +181,59 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         //     }
         //
         // }
-        if(key == GLFW_KEY_ESCAPE)
+        if(key == GLFW_KEY_ESCAPE && scene->mouseCaptured == true)
         {
-            glfwSetWindowShouldClose(window, 1);
+            //glfwSetWindowShouldClose(window, 1);
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            scene->mouseCaptured = false;
+            scene->firstMouse = true;
         }
+        if (key == GLFW_KEY_P)
+        {
+            std::cout << "Stopping \n";
+            scene->worldRenderer->stopThreads();
+            std::cout << "Stopped \n";
+
+
+            scene->worldRenderer->activeChunks.clear();
+            //scene->worldRenderer->mbtActiveChunks.clear();
+            scene->players.at(scene->myPlayerIndex)->controller->setPosition(DEFAULT_PLAYERPOS);
+            scene->players.at(scene->myPlayerIndex)->camera.transform.position = glm::vec3(DEFAULT_PLAYERPOS.x, DEFAULT_PLAYERPOS.y, DEFAULT_PLAYERPOS.z);
+            scene->worldRenderer->generatedChunks.clear();
+
+            for (auto & c : scene->worldRenderer->changeBuffers)
+            {
+                c.in_use = false;
+                c.ready = false;
+            }
+            for (auto & c : scene->worldRenderer->userChangeMeshBuffers)
+            {
+                c.in_use = false;
+                c.ready = false;
+            }
+
+            size_t index;
+            while (scene->worldRenderer->freedChangeBuffers.pop(index)){}
+            while (scene->worldRenderer->freedUserChangeMeshBuffers.pop(index)){}
+            TwoIntTup t;
+            while (scene->worldRenderer->confirmedActiveChunksQueue.pop(t)){}
+
+            for (auto & chunk : scene->worldRenderer->chunkPool)
+            {
+                glDeleteBuffers(8, &chunk.vvbo);
+                glDeleteVertexArrays(1, &chunk.drawInstructions.vao);
+                glDeleteVertexArrays(1, &chunk.drawInstructions.tvao);
+            }
+            scene->worldRenderer->chunkPool.clear();
+
+            scene->world->clearWorld();
+            scene->world->setSeed(time(NULL));
+            scene->worldRenderer->launchThreads(&scene->players.at(scene->myPlayerIndex)->camera, scene->world);
+        }else
+            if (key == GLFW_KEY_T)
+            {
+                std::cout << "Num threads running: " << NUM_THREADS_RUNNING << '\n';
+            } else
         if (key == GLFW_KEY_E)
         {
             scene->players.at(scene->myPlayerIndex)->controls.secondary2 = action;
@@ -302,6 +359,7 @@ int main()
     glfwSetWindowUserPointer(window, &theScene);
 
     initializeImGui(window);
+    imguiio->WantCaptureMouse = false;
     ImFont* font_title = imguiio->Fonts->AddFontFromFileTTF("font.ttf", 20.0f, NULL, imguiio->Fonts->GetGlyphRangesDefault());
 
     ImFont* font_body = imguiio->Fonts->AddFontFromFileTTF("font.ttf", 20.0f, NULL, imguiio->Fonts->GetGlyphRangesDefault());
@@ -344,15 +402,7 @@ int main()
 
     theScene.worldRenderer = &renderer;
 
-    std::thread chunkWorker(&WorldRenderer::meshBuildCoroutine, &renderer,
-        &(theScene.players[theScene.myPlayerIndex]->camera), &world);
-    chunkWorker.detach();
-    renderer.rebuildThreadRunning = true;
-    renderer.rebuildThread = std::thread(&WorldRenderer::rebuildThreadFunction,
-    &renderer,
-    &world
-);
-    renderer.rebuildThread.detach();
+    renderer.launchThreads(&theScene.players.at(theScene.myPlayerIndex)->camera, &world);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -446,12 +496,15 @@ int main()
             particles->cleanUpOldParticles(deltaTime);
 
             renderImGui();
+            //Lovely work here imgui fellas
+            imguiio->WantCaptureMouse = false;
         }
 
 
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
+    renderer.stopThreads();
 
     glfwDestroyWindow(window);
 

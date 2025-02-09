@@ -17,6 +17,7 @@ public:
 
     std::optional<uint32_t> get(const IntTup& spot) const override;
     std::optional<uint32_t> getLocked(const IntTup& spot) const override;
+    void clear() override;
     void set(const IntTup& spot, uint32_t block) override;
 
     mutable std::shared_mutex mapmutex = {};
