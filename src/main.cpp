@@ -30,7 +30,7 @@
 #include "world/worldgenmethods/OverworldWorldGenMethod.h"
 #include "ImGuiStuff.h"
 #include "LUTLoader.h"
-
+#include "Hud.h"
 struct Scene
 {
     std::vector<Player*> players = {};
@@ -48,6 +48,7 @@ struct Scene
     World* world = nullptr;
     BlockSelectGizmo* blockSelectGizmo = nullptr;
     WorldRenderer* worldRenderer = nullptr;
+    Hud* hud = nullptr;
     void addWorld()
     {
 
@@ -55,6 +56,13 @@ struct Scene
 };
 
 Scene theScene = {};
+
+int properMod(int a, int b) {
+    int m = a % b;
+    return m < 0 ? m + b : m;
+}
+
+
 
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
@@ -98,10 +106,10 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
                     //scene->world->set(spot, AIR);
     //std::cout << "Set the block "  << std::endl;;
-
-                    auto xmod = spot.x % scene->worldRenderer->chunkSize;
-                    auto zmod = spot.z % scene->worldRenderer->chunkSize;
-
+                    auto cs = scene->worldRenderer->chunkSize;
+                    // Then in your code:
+                    auto xmod = properMod(spot.x, cs);
+                    auto zmod = properMod(spot.z, cs);
                     //std::cout << "Xmod: " << xmod << " Zmod: " << zmod << std::endl;
                     scene->worldRenderer->requestChunkRebuildFromMainThread(
                         spot, AIR, false
@@ -316,6 +324,14 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
         auto & camera = scene->players.at(scene->myPlayerIndex)->camera;
         camera.updateProjection(width, height, 90.0f);
     }
+
+    if(scene->hud)
+    {
+        Hud::windowWidth = width;
+        Hud::windowHeight = height;
+        scene->hud->uploaded = false;
+        scene->hud->rebuildDisplayData();
+    }
 }
 
 int main()
@@ -400,6 +416,8 @@ int main()
     VoxModel swcModel = loadSwc("resources/swctest.txt");
     stampVoxelModelInWorld(&world,swcModel);
 
+    theScene.hud = new Hud();
+    theScene.hud->rebuildDisplayData();
 
     WorldRenderer renderer;
 
@@ -497,6 +515,8 @@ int main()
 
 
             particles->cleanUpOldParticles(deltaTime);
+
+            theScene.hud->draw();
 
             renderImGui();
             //Lovely work here imgui fellas

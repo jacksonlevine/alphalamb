@@ -91,6 +91,11 @@ add_executable(DistantGarden
         src/world/RebuildQueue.h
         src/Image.cpp
         src/Image.h
+        src/Hud.cpp
+        src/Hud.h
+        src/Hud.cpp
+        src/Network.cpp
+        src/Network.h
 
 )
 
