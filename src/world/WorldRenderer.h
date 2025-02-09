@@ -245,45 +245,48 @@ public:
                     std::cout <<"Doing the fucking write to " << request.changeSpot.x << " " << request.changeSpot.y << " " << request.changeSpot.z << " \n";
                     world->set(request.changeSpot, request.changeTo.value());
                 }
-
-                UsableMesh mesh;
-                // Scope the locks so they're released after getting data
+                if(request.rebuild)
                 {
-                    if (auto locks = world->tryToGetReadLockOnDMs()) {
-                        // Get the chunk data with locks held
-                        std::cout << "Got readlock on dms \n";
-                        mesh = fromChunkLocked(request.chunkPos, world, chunkSize);
-                    } else if (rebuildThreadRunning) {
-                        std::cout << "Failed to get read lock on DMs\n";
-                        rebuildQueue.push(request);
-                        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                        continue;
+                    UsableMesh mesh;
+                    // Scope the locks so they're released after getting data
+                    {
+                        if (auto locks = world->tryToGetReadLockOnDMs()) {
+                            // Get the chunk data with locks held
+                            std::cout << "Got readlock on dms \n";
+                            mesh = fromChunkLocked(request.chunkPos, world, chunkSize);
+                        } else if (rebuildThreadRunning) {
+                            std::cout << "Failed to get read lock on DMs\n";
+                            rebuildQueue.push(request);
+                            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                            continue;
+                        }
+                    } // locks are released here
+
+
+                    // Wait for available buffer using condition variable
+                    size_t changeBufferIndex = -1;
+                    {
+                        std::unique_lock<std::mutex> lock(bufferMutex);
+                        bufferCV.wait(lock, [&]() {
+                            return freedUserChangeMeshBuffers.pop(changeBufferIndex) || !rebuildThreadRunning;
+                        });
+
+                        if (!rebuildThreadRunning) break;
                     }
-                } // locks are released here
 
-
-                // Wait for available buffer using condition variable
-                size_t changeBufferIndex = -1;
-                {
-                    std::unique_lock<std::mutex> lock(bufferMutex);
-                    bufferCV.wait(lock, [&]() {
-                        return freedUserChangeMeshBuffers.pop(changeBufferIndex) || !rebuildThreadRunning;
-                    });
-
-                    if (!rebuildThreadRunning) break;
+                    if (changeBufferIndex != -1)
+                    {
+                        auto& buffer = userChangeMeshBuffers[changeBufferIndex];
+                        buffer.in_use = true;
+                        buffer.mesh = mesh;
+                        buffer.chunkIndex = request.chunkIndex;
+                        buffer.from = request.chunkPos;
+                        buffer.to = request.chunkPos;
+                        buffer.ready = true;
+                        buffer.in_use = false;
+                    }
                 }
 
-                if (changeBufferIndex != -1)
-                {
-                    auto& buffer = userChangeMeshBuffers[changeBufferIndex];
-                    buffer.in_use = true;
-                    buffer.mesh = mesh;
-                    buffer.chunkIndex = request.chunkIndex;
-                    buffer.from = request.chunkPos;
-                    buffer.to = request.chunkPos;
-                    buffer.ready = true;
-                    buffer.in_use = false;
-                }
 
 
 
@@ -293,7 +296,7 @@ public:
         std::cout << "Rebuild thread finished!\n";
     }
 
-    void requestChunkRebuildFromMainThread(IntTup spot, std::optional<uint32_t> changeTo = std::nullopt)
+    void requestChunkRebuildFromMainThread(IntTup spot, std::optional<uint32_t> changeTo = std::nullopt, bool rebuild = true)
     {
         //TwoIntTup version of spot
         auto titspot = TwoIntTup(spot.x, spot.z);
@@ -308,7 +311,8 @@ public:
                     activeChunks.at(chunkspot).chunkIndex,
                     true,
                     spot,
-                    changeTo.value()
+                    changeTo.value(),
+                    rebuild
                 ));
             } else
             {

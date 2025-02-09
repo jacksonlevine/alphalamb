@@ -170,7 +170,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
             freedUserChangeMeshBuffers.push(i);  // Return to free list
             notifyBufferFreed();
 
-            break; //Only do one per frame
+            //break; //Only do one per frame
         }
     }
     TwoIntTup playerChunkPosition = worldToChunkPos(

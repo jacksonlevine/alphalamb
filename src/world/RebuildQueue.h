@@ -14,6 +14,7 @@ struct ChunkRebuildRequest {
     TwoIntTup chunkPos;
     size_t chunkIndex;
     bool isHighPriority;
+    bool rebuild = true;
     IntTup changeSpot = IntTup(0,0,0);
     std::optional<uint32_t> changeTo = std::nullopt;
     std::chrono::steady_clock::time_point timestamp;
@@ -22,6 +23,9 @@ struct ChunkRebuildRequest {
           timestamp(std::chrono::steady_clock::now()) {}
     ChunkRebuildRequest(TwoIntTup pos, size_t index, bool priority, IntTup changeSpot, uint32_t changeTo)
         : chunkPos(pos), chunkIndex(index), isHighPriority(priority), changeSpot(changeSpot), changeTo(changeTo),
+          timestamp(std::chrono::steady_clock::now()) {}
+    ChunkRebuildRequest(TwoIntTup pos, size_t index, bool priority, IntTup changeSpot, uint32_t changeTo, bool rebuild)
+        : chunkPos(pos), chunkIndex(index), isHighPriority(priority), changeSpot(changeSpot), changeTo(changeTo), rebuild(rebuild),
           timestamp(std::chrono::steady_clock::now()) {}
     ChunkRebuildRequest()
         : chunkPos(0, 0), chunkIndex(0), isHighPriority(false), timestamp(std::chrono::steady_clock::now()) {}
