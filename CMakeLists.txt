@@ -25,7 +25,7 @@ find_package(SndFile CONFIG REQUIRED)
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
 
-find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container)
+find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container variant2)
 message(STATUS "Boost version: ${Boost_VERSION}")
 find_package(imgui CONFIG REQUIRED)
 find_package(cereal CONFIG REQUIRED)
@@ -96,6 +96,7 @@ add_executable(DistantGarden
         src/Hud.cpp
         src/Network.cpp
         src/Network.h
+        src/SharedVarsBetweenMainAndGui.h
 
 )
 

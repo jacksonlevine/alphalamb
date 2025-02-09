@@ -5,11 +5,29 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
+#include <boost/variant2/variant.hpp>
 
+#include "Controls.h"
+using namespace boost::variant2;
 
-class Network {
-
+struct WorldInfo
+{
+    int seed;
+    glm::vec3 yourPosition;
 };
+
+struct ControlsUpdate {
+    int myPlayerIndex;
+    Controls myControls;
+};
+
+struct FileTransferInit
+{
+    size_t fileSize;
+};
+
+using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit>;
+
 
 
 

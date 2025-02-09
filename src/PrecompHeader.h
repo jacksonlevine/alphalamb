@@ -32,5 +32,6 @@
 #include <boost/container/pmr/monotonic_buffer_resource.hpp>
 #include <boost/container/pmr/polymorphic_allocator.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/variant2/variant.hpp>
 
 #endif //PRECOMPHEADER_H

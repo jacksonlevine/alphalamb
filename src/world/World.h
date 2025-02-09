@@ -20,6 +20,46 @@ public:
 
     uint32_t get(IntTup spot);
     uint32_t getLocked(IntTup spot);
+
+
+
+
+    bool save(std::string filename)
+    {
+        std::filesystem::path filePath(filename);
+        if (!filePath.parent_path().empty()) {
+            std::filesystem::create_directories(filePath.parent_path());
+        }
+        std::ofstream file(filename, std::ios::trunc);
+
+        if (file.is_open()) {
+
+            while (true) {
+                if (auto lock = tryToGetReadLockOnDMs()) {
+                    const std::unique_ptr<DataMap::Iterator> it = userDataMap->createIterator();
+                    while (it->hasNext()) {
+                        auto [key, value] = it->next();
+                        file << key.x << " " << key.y << " " << key.z << " " << value << '\n';
+                    }
+                    file.close();
+                    return true;
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
+
+
+        } else {
+            std::cout << "Could not open file " << filename << " for writing." << std::endl;
+            return false;
+        }
+    }
+
+
+
+
+
+
+
     void clearWorld()
     {
         userDataMap->clear();

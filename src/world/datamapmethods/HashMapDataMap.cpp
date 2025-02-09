@@ -1,5 +1,10 @@
 #include "HashMapDataMap.h"
 
+std::unique_ptr<DataMap::Iterator> HashMapDataMap::createIterator()
+{
+    return std::make_unique<HashMapDataMapIterator>(*this);
+}
+
 std::shared_mutex& HashMapDataMap::mutex()
 {
     return this->mapmutex;
@@ -46,6 +51,7 @@ std::optional<uint32_t> HashMapDataMap::getLocked(const IntTup& spot) const
 
 void HashMapDataMap::clear()
 {
+
     map.clear();
 }
 

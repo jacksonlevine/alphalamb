@@ -74,3 +74,11 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot, float deltaTime)
 #endif
 
 }
+
+CollisionCage::~CollisionCage()
+{
+    if(collider != nullptr)
+    {
+        collider->release();
+    }
+}

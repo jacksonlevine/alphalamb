@@ -31,29 +31,7 @@
 #include "ImGuiStuff.h"
 #include "LUTLoader.h"
 #include "Hud.h"
-struct Scene
-{
-    std::vector<Player*> players = {};
-    int myPlayerIndex = -1;
-    size_t addPlayer()
-    {
-        auto index = players.size();
-        players.push_back(new Player());
-        return index;
-    }
-    bool mouseCaptured = false;
-    bool firstMouse = true;
-    std::vector<WorldGizmo*> gizmos;
-    ParticlesGizmo* particles = nullptr;
-    World* world = nullptr;
-    BlockSelectGizmo* blockSelectGizmo = nullptr;
-    WorldRenderer* worldRenderer = nullptr;
-    Hud* hud = nullptr;
-    void addWorld()
-    {
-
-    }
-};
+#include "SharedVarsBetweenMainAndGui.h"
 
 Scene theScene = {};
 
@@ -192,52 +170,24 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         //     }
         //
         // }
+        if (key == GLFW_KEY_L)
+        {
+            scene->world->save("testfile.txt");
+        } else
         if(key == GLFW_KEY_ESCAPE && scene->mouseCaptured == true)
         {
             //glfwSetWindowShouldClose(window, 1);
+            currentGuiScreen = GuiScreen::EscapeMenu;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             scene->mouseCaptured = false;
             scene->firstMouse = true;
         }
         if (key == GLFW_KEY_P)
         {
-            std::cout << "Stopping \n";
-            scene->worldRenderer->stopThreads();
-            std::cout << "Stopped \n";
 
 
-            scene->worldRenderer->activeChunks.clear();
-            //scene->worldRenderer->mbtActiveChunks.clear();
-            scene->players.at(scene->myPlayerIndex)->controller->setPosition(DEFAULT_PLAYERPOS);
-            scene->players.at(scene->myPlayerIndex)->camera.transform.position = glm::vec3(DEFAULT_PLAYERPOS.x, DEFAULT_PLAYERPOS.y, DEFAULT_PLAYERPOS.z);
-            scene->worldRenderer->generatedChunks.clear();
 
-            for (auto & c : scene->worldRenderer->changeBuffers)
-            {
-                c.in_use = false;
-                c.ready = false;
-            }
-            for (auto & c : scene->worldRenderer->userChangeMeshBuffers)
-            {
-                c.in_use = false;
-                c.ready = false;
-            }
 
-            size_t index;
-            while (scene->worldRenderer->freedChangeBuffers.pop(index)){}
-            while (scene->worldRenderer->freedUserChangeMeshBuffers.pop(index)){}
-            TwoIntTup t;
-            while (scene->worldRenderer->confirmedActiveChunksQueue.pop(t)){}
-
-            for (auto & chunk : scene->worldRenderer->chunkPool)
-            {
-                glDeleteBuffers(8, &chunk.vvbo);
-                glDeleteVertexArrays(1, &chunk.drawInstructions.vao);
-                glDeleteVertexArrays(1, &chunk.drawInstructions.tvao);
-            }
-            scene->worldRenderer->chunkPool.clear();
-
-            scene->world->clearWorld();
             scene->world->setSeed(time(NULL));
             scene->worldRenderer->launchThreads(&scene->players.at(scene->myPlayerIndex)->camera, scene->world);
         }else
@@ -334,6 +284,22 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
     }
 }
 
+
+
+void enterWorld(Scene* s)
+{
+    int width, height = 0;
+    glfwGetWindowSize(s->window, &width, &height);
+    //Add ourselves to the scene
+    s->myPlayerIndex = s->addPlayer();
+
+    {
+        auto & camera = s->players.at(s->myPlayerIndex)->camera;
+        camera.updateProjection(width, height, 90.0f);
+    }
+    s->worldRenderer->launchThreads(&s->players.at(s->myPlayerIndex)->camera, s->world);
+}
+
 int main()
 {
 
@@ -342,7 +308,8 @@ int main()
 
     const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
 
-    GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "project7", nullptr, nullptr);
+    theScene.window = glfwCreateWindow(mode->width, mode->height, "project7", nullptr, nullptr);
+    GLFWwindow* window = theScene.window;
     glfwMakeContextCurrent(window);
     if (glewInit() != GLEW_OK)
     {
@@ -385,13 +352,7 @@ int main()
 
 
 
-    //Add ourselves to the scene
-    theScene.myPlayerIndex = theScene.addPlayer();
 
-    {
-        auto & camera = theScene.players.at(theScene.myPlayerIndex)->camera;
-        camera.updateProjection(mode->width, mode->height, 90.0f);
-    }
 
 
     ParticlesGizmo* particles = new ParticlesGizmo();
@@ -423,7 +384,7 @@ int main()
 
     theScene.worldRenderer = &renderer;
 
-    renderer.launchThreads(&theScene.players.at(theScene.myPlayerIndex)->camera, &world);
+
 
     while (!glfwWindowShouldClose(window))
     {
@@ -434,7 +395,7 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        for (auto & player : theScene.players)
+        for (auto & [id, player] : theScene.players)
         {
             player->update(deltaTime, &world, particles);
         }
@@ -518,16 +479,17 @@ int main()
 
             theScene.hud->draw();
 
-            renderImGui();
-            //Lovely work here imgui fellas
-            imguiio->WantCaptureMouse = false;
+
         }
 
+        renderImGui();
+        //Lovely work here imgui fellas
+        imguiio->WantCaptureMouse = false;
 
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
-    renderer.stopThreads();
+
 
     glfwDestroyWindow(window);
 

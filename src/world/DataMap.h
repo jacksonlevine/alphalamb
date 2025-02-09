@@ -17,6 +17,16 @@ public:
     virtual void clear() = 0;
     virtual void set(const IntTup& spot, uint32_t block) = 0;
     virtual std::shared_mutex& mutex() = 0;
+
+    class Iterator {
+    public:
+        virtual ~Iterator() = default;
+        virtual bool hasNext() const = 0;
+        virtual std::pair<const IntTup&, uint32_t&> next() = 0;
+    };
+
+    virtual std::unique_ptr<Iterator> createIterator() = 0;
+
 };
 
 #endif //USERDATAMAP_H

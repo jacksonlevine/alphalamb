@@ -8,7 +8,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
-
+#include "SharedVarsBetweenMainAndGui.h"
 
 extern ImGuiIO* imguiio;
 
@@ -18,7 +18,7 @@ enum GuiScreen
 {
     MainMenu,
     EscapeMenu,
-    MatchStatePreparing
+    InGame
 };
 
 extern GuiScreen currentGuiScreen;
@@ -74,30 +74,65 @@ inline void renderImGui() {
             ImGui::Begin("Invisible Window", nullptr, windowFlags);
 
 
+        switch (currentGuiScreen)
+        {
+        case GuiScreen::MainMenu:
+                if (ImGui::Button("Enter World"))
+                {
+                    enterWorld(&theScene);
+                    currentGuiScreen = GuiScreen::InGame;
+                }
+                if (ImGui::Button("Exit game"))
+                {
+                    glfwSetWindowShouldClose(theScene.window, true);
+                }
+                break;
+            case GuiScreen::EscapeMenu:
 
-            ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.91a");
+                if (ImGui::Button("Back to game"))
+                {
+                    currentGuiScreen = GuiScreen::InGame;
+                }
+                if (ImGui::Button("Leave to main menu"))
+                {
+                    exitWorld(&theScene);
+                    uncaptureMouse(&theScene);
+                    currentGuiScreen = GuiScreen::MainMenu;
+                }
+                if (ImGui::Button("Exit to desktop"))
+                {
+                    exitWorld(&theScene);
+                    glfwSetWindowShouldClose(theScene.window, true);
+                }
+                break;
+            case GuiScreen::InGame:
+                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.91a");
 
-        ImVec2 screenSize = ImGui::GetIO().DisplaySize;
-        ImVec2 textSize = ImGui::CalcTextSize("F: Use jetpack");
+                ImVec2 screenSize = ImGui::GetIO().DisplaySize;
+                ImVec2 textSize = ImGui::CalcTextSize("F: Use jetpack");
 
-        // Set the cursor position to the bottom-left of the screen
-        ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f));
+                // Set the cursor position to the bottom-left of the screen
+                ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f));
 
-        ImGui::Text("F: Use jetpack");
+                ImGui::Text("F: Use jetpack");
 
-        ImVec2 text2Size = ImGui::CalcTextSize("Shift: Sprint");
+                ImVec2 text2Size = ImGui::CalcTextSize("Shift: Sprint");
 
-        // Set the cursor position to the bottom-left of the screen
-        ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f));
+                // Set the cursor position to the bottom-left of the screen
+                ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f));
 
-        ImGui::Text("Shift: Sprint");
+                ImGui::Text("Shift: Sprint");
 
-        ImVec2 text3Size = ImGui::CalcTextSize("Esc: Exit");
+                ImVec2 text3Size = ImGui::CalcTextSize("Esc: Exit");
 
-        // Set the cursor position to the bottom-left of the screen
-        ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f));
+                // Set the cursor position to the bottom-left of the screen
+                ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f));
 
-        ImGui::Text("Esc: Exit");
+                ImGui::Text("Esc: Exit");
+
+                break;
+
+        }
 
 
         ImGui::End(); // End the window
