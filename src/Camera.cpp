@@ -7,13 +7,17 @@ namespace jl
 {
     void Camera::updateProjection(int screenwidth, int screenheight, float fov)
     {
-        projection = glm::perspective(
+        if(screenheight != 0)
+        {
+            projection = glm::perspective(
             glm::radians(fov),
             static_cast<float>(screenwidth) / static_cast<float>(screenheight),
             0.1f,
             512.0f
             );
-        mvp = projection * view * model;
+            mvp = projection * view * model;
+        }
+
     }
 
     void Camera::setYawPitch(float nyaw, float npitch) {

@@ -474,7 +474,7 @@ int main()
 
     theScene.worldRenderer = &renderer;
 
-    theScene.addPlayerWithIndex(99);
+    //theScene.addPlayerWithIndex(99);
 
     jl::prepareBillboard();
 
@@ -539,15 +539,18 @@ int main()
                         //theScene.worldReceived = true;
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
+                        std::cout << "Got a controls update from " << m.myPlayerIndex << "\n";
+                        std::cout << m.myControls << " \n";
+                        std::cout << m.startPos.x << " " << m.startPos.y << " " << m.startPos.z << "\n";
                         if(theScene.players.contains(m.myPlayerIndex))
                         {
                             theScene.players.at(m.myPlayerIndex)->controls = m.myControls;
                             theScene.players.at(m.myPlayerIndex)->camera.transform.position = m.startPos;
-                        //     theScene.players.at(m.myPlayerIndex)->controller->setPosition(PxExtendedVec3(
-                        // m.startPos.x,
-                        // m.startPos.y,
-                        // m.startPos.z)
-                        //     );
+                            theScene.players.at(m.myPlayerIndex)->controller->setPosition(PxExtendedVec3(
+                        m.startPos.x,
+                        m.startPos.y,
+                        m.startPos.z)
+                            );
 
                             theScene.players.at(m.myPlayerIndex)->camera.transform.yaw = m.startYawPitch.x;
                             theScene.players.at(m.myPlayerIndex)->camera.transform.pitch = m.startYawPitch.y;
@@ -556,11 +559,11 @@ int main()
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
                        std::cout << "Processing palyerpresent\n";
                         theScene.addPlayerWithIndex(m.index);
-                        // theScene.players.at(m.index)->controller->setPosition(PxExtendedVec3(
-                        // m.camera.transform.position.x,
-                        // m.camera.transform.position.y,
-                        // m.camera.transform.position.z)
-                        //     );
+                        theScene.players.at(m.index)->controller->setPosition(PxExtendedVec3(
+                        m.camera.transform.position.x,
+                        m.camera.transform.position.y,
+                        m.camera.transform.position.z)
+                            );
                         theScene.players.at(m.index)->camera = m.camera;
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
@@ -638,7 +641,7 @@ int main()
 
             for (auto & [id, player] : theScene.players)
         {
-            player->update(deltaTime, &world, particles);
+
 
 
 
@@ -647,11 +650,11 @@ int main()
 
 
 
-            std::cout << "Playerindex: " << id << "\n";
-            std::cout << "PositionCA: " << player->camera.transform.position.x << " " << player->camera.transform.position.y << " " << player->camera.transform.position.z << " \n";
-            std::cout << "PositionBI: " << player->billboard.position.x << " " << player->billboard.position.y << " " << player->billboard.position.z << " \n";
-            auto contpos = player->controller->getPosition();
-            std::cout << "PositionCO: " << contpos.x << " " << contpos.y << " " << contpos.z << " \n";
+            // std::cout << "Playerindex: " << id << "\n";
+            // std::cout << "PositionCA: " << player->camera.transform.position.x << " " << player->camera.transform.position.y << " " << player->camera.transform.position.z << " \n";
+            // std::cout << "PositionBI: " << player->billboard.position.x << " " << player->billboard.position.y << " " << player->billboard.position.z << " \n";
+            // auto contpos = player->controller->getPosition();
+            // std::cout << "PositionCO: " << contpos.x << " " << contpos.y << " " << contpos.z << " \n";
             // std::cout << player->controls << "\n";
             // std::cout << "Billboard Information:" << std::endl;
             // std::cout << "  Position: ("
@@ -672,11 +675,15 @@ int main()
             // std::cout << "  Time Scale: " << player->animation_state.timescale << std::endl;
 
             player->collisionCage.updateToSpot(&world, player->camera.transform.position, deltaTime);
+                player->camera.updateWithYawPitch(player->camera.transform.yaw, player->camera.transform.pitch);
+
+            if(id != theScene.myPlayerIndex)
+            {
+                billboards.push_back(player->billboard);
+                animStates.push_back(player->animation_state);
+            }
 
 
-
-            billboards.push_back(player->billboard);
-            animStates.push_back(player->animation_state);
             float wantedAnim = IDLE;
             if(player->controls.anyMovement())
             {
@@ -714,10 +721,8 @@ int main()
             {
                 player->animation_state = newState;
             }
-
+            player->update(deltaTime, &world, particles);
         }
-        std::cout << "BB size: " << billboards.size() << "\n";
-        std::cout << "AS size: " << animStates.size() << "\n";
         jl::updateBillboards(billboards);
         jl::updateAnimStates(animStates);
 
@@ -726,7 +731,7 @@ int main()
 
 
             auto & camera = theScene.players.at(theScene.myPlayerIndex)->camera;
-            camera.updateWithYawPitch(camera.transform.yaw, camera.transform.pitch);
+
 
             drawSky(glm::vec4(0.3, 0.65, 1.0, 1.0),
                     glm::vec4(1.0, 1.0, 1.0, 1.0),
@@ -835,7 +840,7 @@ int main()
             // std::cout << "players size: " << theScene.players.size() << " \n";
 
             glDisable(GL_CULL_FACE);
-            jl::drawBillboards(theScene.players.size());
+            jl::drawBillboards(theScene.players.size()-1);
             glEnable(GL_CULL_FACE);
 
 

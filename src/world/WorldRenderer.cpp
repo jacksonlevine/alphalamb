@@ -320,7 +320,9 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                 buffer.from = std::nullopt;
                                 buffer.to = spotHere;
 
+
                                 mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(buffer.chunkIndex));
+
 
                                 buffer.ready = true;   // Signal that data is ready
                                 buffer.in_use = false;

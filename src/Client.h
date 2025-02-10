@@ -62,6 +62,7 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
                         std::cout << "Got controls update \n";
+                        networkToMainBlockChangeQueue.push(m);
                     }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
                        std::cout << "Got player present \n";
