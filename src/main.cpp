@@ -510,7 +510,8 @@ int main()
                 sendControlsUpdatesLol(tsocket);
             }
 
-            DGMessage msg;
+            DGMessage msg = {};
+
             while (networkToMainBlockChangeQueue.pop(&msg))
             {
 
