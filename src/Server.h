@@ -8,6 +8,7 @@
 #include "Camera.h"
 #include "PrecompHeader.h"
 #include "Network.h"
+#include "world/DataMap.h"
 using tcp = boost::asio::ip::tcp;
 
 struct ServerPlayer
@@ -20,6 +21,8 @@ struct ServerPlayer
 extern std::unordered_map<int, ServerPlayer> clients;
 
 extern std::shared_mutex clientsMutex;
+
+extern DataMap* serverUserDataMap;
 
 
 class Session : public std::enable_shared_from_this<Session>
@@ -53,9 +56,7 @@ private:
             }
         });
         
-        //
-        // DGMessage worldFileInit = FileTransferInit {
-        // }
+
 
     boost::asio::async_read(*m_socket, boost::asio::buffer(&m_message, sizeof(DGMessage)),
         [this, self](const boost::system::error_code& ec, std::size_t /*length*/) {

@@ -23,7 +23,7 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
 
                 std::cout << " Got somethng \n";
 
-                visit([](const auto& m) {
+                visit([&](const auto& m) {
                     using T = std::decay_t<decltype(m)>;
                     if constexpr (std::is_same_v<T, WorldInfo>) {
                         std::cout << "Got world info " << m.seed << " \n"
@@ -34,13 +34,41 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                         theScene.myPlayerIndex = theScene.addPlayerWithIndex(m.yourPlayerIndex);
 
                         //Dont do this yet, receive the file first
-                        theScene.worldReceived = true;
+                        //theScene.worldReceived = true;
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
                         std::cout << "Got controls update \n";
                     }
                     else if constexpr (std::is_same_v<T, FileTransferInit>) {
                         std::cout << "Got file transfer init \n";
+
+                        std::vector<char> filemsg(m.fileSize);
+                        boost::system::error_code ec;
+
+                        bool isWorld = m.isWorld;
+
+                        //Read the message
+                        boost::asio::read(*socket, boost::asio::buffer(filemsg.data(), m.fileSize), ec);
+                        if(!ec)
+                        {
+                            std::cout << "Got world file \n";
+                            std::ofstream file("mpworld.txt", std::ios::trunc);
+                            if(file.is_open())
+                            {
+                                file.write(filemsg, m.fileSize);
+                                file.close();
+
+                                if(isWorld)
+                                {
+                                    theScene.world->load("mpworld.txt");
+                                    theScene.worldReceived.store(true);
+                                }
+
+                            } else
+                            {
+                                std::cout << "Couldn't open mpworld.txt to write \n";
+                            }
+                        }
                     }
                 }, message);
 
