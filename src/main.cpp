@@ -18,6 +18,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include "Client.h"
 #include "PhysXStuff.h"
 #include "Sky.h"
 #include "world/SWCLoader.h"
@@ -32,6 +33,10 @@
 #include "LUTLoader.h"
 #include "Hud.h"
 #include "SharedVarsBetweenMainAndGui.h"
+
+boost::asio::io_context io_context;
+boost::asio::ip::tcp::socket tsocket(io_context);
+boost::asio::ip::tcp::resolver resolver(io_context);
 
 Scene theScene = {};
 
@@ -56,8 +61,11 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                 {
                     return;
                 }
-                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                scene->mouseCaptured = true;
+                if (currentGuiScreen == GuiScreen::InGame)
+                {
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                    scene->mouseCaptured = true;
+                }
             } else
             {
                 //addShootLine();
@@ -288,6 +296,7 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 
 void enterWorld(Scene* s)
 {
+
     int width, height = 0;
     glfwGetWindowSize(s->window, &width, &height);
     //Add ourselves to the scene
@@ -345,7 +354,6 @@ int main()
     glfwSetWindowUserPointer(window, &theScene);
 
     initializeImGui(window);
-    imguiio->WantCaptureMouse = false;
     ImFont* font_title = imguiio->Fonts->AddFontFromFileTTF("font.ttf", 20.0f, NULL, imguiio->Fonts->GetGlyphRangesDefault());
 
     ImFont* font_body = imguiio->Fonts->AddFontFromFileTTF("font.ttf", 20.0f, NULL, imguiio->Fonts->GetGlyphRangesDefault());
@@ -483,8 +491,6 @@ int main()
         }
 
         renderImGui();
-        //Lovely work here imgui fellas
-        imguiio->WantCaptureMouse = false;
 
         glfwPollEvents();
         glfwSwapBuffers(window);

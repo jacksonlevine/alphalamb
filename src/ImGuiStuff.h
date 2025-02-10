@@ -43,6 +43,20 @@ inline void initializeImGui(GLFWwindow* window)
 
 }
 
+
+static int ResizeStringCallback(ImGuiInputTextCallbackData* data)
+{
+    if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+    {
+        std::string* my_str = (std::string*)(data->UserData);
+        IM_ASSERT(my_str->data() == data->Buf);
+        my_str->resize(data->BufSize);
+        data->Buf = my_str->data();
+    }
+    return 0;
+}
+
+
 inline void renderImGui() {
 
 
@@ -77,10 +91,34 @@ inline void renderImGui() {
         switch (currentGuiScreen)
         {
         case GuiScreen::MainMenu:
-                if (ImGui::Button("Enter World"))
+                ImGui::InputText("Server address", theScene.serverAddress.data(), theScene.serverAddress.capacity(), ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &theScene.serverAddress);
+                if (ImGui::Button("Connect to server"))
                 {
-                    enterWorld(&theScene);
-                    currentGuiScreen = GuiScreen::InGame;
+
+                    size_t colonPos = theScene.serverAddress.find(':');
+
+                    if (colonPos != std::string::npos) {
+                        std::string ip = theScene.serverAddress.substr(0, colonPos);
+                        std::string port = theScene.serverAddress.substr(colonPos + 1);
+                        std::cout << "IP: " << ip << "\n";
+                        std::cout << "Port: " << port << "\n";
+
+                        theScene.enableMultiplayer();
+
+                        if(connectToServer(ip.c_str(), port.c_str()))
+                        {
+                            enterWorld(&theScene);
+                            currentGuiScreen = GuiScreen::InGame;
+                        } else
+                        {
+                            std::cout << "Couldn't connect \n";
+                        }
+                    } else {
+                        std::cout << "Invalid format.\n";
+                    }
+
+
+
                 }
                 if (ImGui::Button("Exit game"))
                 {
@@ -106,6 +144,7 @@ inline void renderImGui() {
                 }
                 break;
             case GuiScreen::InGame:
+
                 ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.91a");
 
                 ImVec2 screenSize = ImGui::GetIO().DisplaySize;
@@ -130,6 +169,7 @@ inline void renderImGui() {
 
                 ImGui::Text("Esc: Exit");
 
+                imguiio->WantCaptureMouse = false;
                 break;
 
         }

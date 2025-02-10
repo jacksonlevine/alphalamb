@@ -97,54 +97,72 @@ add_executable(DistantGarden
         src/Network.cpp
         src/Network.h
         src/SharedVarsBetweenMainAndGui.h
+        src/Server.cpp
+        src/Server.h
+        src/Client.cpp
+        src/Client.h
 
 )
 
-target_precompile_headers( DistantGarden
-        PRIVATE ${CMAKE_SOURCE_DIR}/src/PrecompHeader.h )
+add_executable(DGServer
+        src/servermain.cpp
+        src/Server.h
+        src/PrecompHeader.h)
 
 
-# Include directories
-target_include_directories(DistantGarden PUBLIC ${CMAKE_SOURCE_DIR}/include)
-
-target_link_directories(DistantGarden PUBLIC ${CMAKE_SOURCE_DIR}/lib)
-target_include_directories(DistantGarden PRIVATE ${TINYGLTF_INCLUDE_DIRS})
-target_link_libraries(DistantGarden PRIVATE imgui::imgui)
-target_link_libraries(DistantGarden PRIVATE Boost::asio Boost::uuid)
-target_link_libraries(DistantGarden PRIVATE Boost::lockfree)
-target_link_libraries(DistantGarden PRIVATE cereal::cereal)
-
-# target_link_libraries(DistantGarden PRIVATE SharedThings)
-
-target_link_libraries(DistantGarden PRIVATE     unofficial::omniverse-physx-sdk::PhysXCooking
-        unofficial::omniverse-physx-sdk::PhysXFoundation
-        unofficial::omniverse-physx-sdk::PhysXCommon
-        unofficial::omniverse-physx-sdk::sdk)
-
-# Optional: import the defined target to copy over the GPU acceleration libraries (3rd party provided by NVIDIA)
-if(TARGET unofficial::omniverse-physx-sdk::gpu-library)
-    if(UNIX)
-        # Add rpath setting to find .so libraries on unix based systems
-        set_target_properties(DistantGarden PROPERTIES
-                BUILD_WITH_INSTALL_RPATH TRUE
-                INSTALL_RPATH "$ORIGIN"
-        )
-    endif()
-    add_custom_command(TARGET DistantGarden POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:unofficial::omniverse-physx-sdk::gpu-library>
-            $<TARGET_FILE_DIR:DistantGarden>)
-    if(WIN32)
-        add_custom_command(TARGET DistantGarden POST_BUILD
+function(add_common_libraries target)
+    
+    target_precompile_headers( ${target}
+            PRIVATE ${CMAKE_SOURCE_DIR}/src/PrecompHeader.h )
+    
+    
+    # Include directories
+    target_include_directories(${target} PUBLIC ${CMAKE_SOURCE_DIR}/include)
+    
+    target_link_directories(${target} PUBLIC ${CMAKE_SOURCE_DIR}/lib)
+    target_include_directories(${target} PRIVATE ${TINYGLTF_INCLUDE_DIRS})
+    target_link_libraries(${target} PRIVATE imgui::imgui)
+    target_link_libraries(${target} PRIVATE Boost::asio Boost::uuid)
+    target_link_libraries(${target} PRIVATE Boost::lockfree)
+    target_link_libraries(${target} PRIVATE cereal::cereal)
+    
+    
+    # target_link_libraries(${target} PRIVATE SharedThings)
+    
+    target_link_libraries(${target} PRIVATE     unofficial::omniverse-physx-sdk::PhysXCooking
+            unofficial::omniverse-physx-sdk::PhysXFoundation
+            unofficial::omniverse-physx-sdk::PhysXCommon
+            unofficial::omniverse-physx-sdk::sdk)
+    
+    # Optional: import the defined target to copy over the GPU acceleration libraries (3rd party provided by NVIDIA)
+    if(TARGET unofficial::omniverse-physx-sdk::gpu-library)
+        if(UNIX)
+            # Add rpath setting to find .so libraries on unix based systems
+            set_target_properties(${target} PROPERTIES
+                    BUILD_WITH_INSTALL_RPATH TRUE
+                    INSTALL_RPATH "$ORIGIN"
+            )
+        endif()
+        add_custom_command(TARGET ${target} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                $<TARGET_FILE:unofficial::omniverse-physx-sdk::gpu-device-library>
-                $<TARGET_FILE_DIR:DistantGarden>)
+                $<TARGET_FILE:unofficial::omniverse-physx-sdk::gpu-library>
+                $<TARGET_FILE_DIR:${target}>)
+        if(WIN32)
+            add_custom_command(TARGET ${target} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    $<TARGET_FILE:unofficial::omniverse-physx-sdk::gpu-device-library>
+                    $<TARGET_FILE_DIR:${target}>)
+        endif()
+    else()
+        message(WARNING "GPU acceleration library target not defined - GPU acceleration will NOT be available!")
     endif()
-else()
-    message(WARNING "GPU acceleration library target not defined - GPU acceleration will NOT be available!")
-endif()
+    target_link_libraries(${target} PRIVATE glfw glm::glm GLEW::GLEW)
+    target_link_libraries(${target} PRIVATE SndFile::sndfile)
+endfunction()
 
 
-target_link_libraries(DistantGarden PRIVATE glfw glm::glm GLEW::GLEW)
-target_link_libraries(DistantGarden PRIVATE SndFile::sndfile)
+add_common_libraries(DistantGarden)
+add_common_libraries(DGServer)
+
+
 

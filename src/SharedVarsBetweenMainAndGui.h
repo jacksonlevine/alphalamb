@@ -11,6 +11,12 @@
 #include "world/gizmos/BlockSelectGizmo.h"
 #include "Hud.h"
 
+#include "Client.h"
+
+extern boost::asio::io_context io_context;
+extern boost::asio::ip::tcp::socket tsocket;
+extern boost::asio::ip::tcp::resolver resolver;
+
 struct Scene
 {
     std::unordered_map<int, Player*> players = {};
@@ -25,6 +31,11 @@ struct Scene
         players.insert({index, new Player()});
         return index;
     }
+    size_t addPlayerWithIndex(size_t index)
+    {
+        players.insert_or_assign(index, new Player());
+        return index;
+    }
     bool mouseCaptured = false;
     bool firstMouse = true;
     std::vector<WorldGizmo*> gizmos;
@@ -34,12 +45,50 @@ struct Scene
     WorldRenderer* worldRenderer = nullptr;
     Hud* hud = nullptr;
     GLFWwindow* window = nullptr;
+    std::string serverAddress = "127.0.0.1:25000";
+    int currentSeed = 0;
+    bool multiplayer = false;
+    std::atomic<bool> worldReceived = {false};
+    std::atomic<bool> clientShouldRun = {false};
+    void enableMultiplayer()
+    {
+        multiplayer = true;
+        clientShouldRun.store(true);
+    }
 };
 
 extern Scene theScene;
 
 
 void enterWorld(Scene* s);
+
+inline bool connectToServer(const char* addr, const char* port)
+{
+    bool connected = false;
+
+    using boost::asio::ip::tcp;
+
+    try
+    {
+        // Connect to the server
+        std::cout << "about to connect \n";
+        boost::asio::connect(tsocket, resolver.resolve(addr, port));
+        std::cout << "connected \n";
+        connected = true;
+    } catch(std::exception e)
+    {
+        connected = false;
+        std::cout << e.what() << "\n";
+    }
+
+    if (connected)
+    {
+        launchReceiverThread(&tsocket, &theScene.clientShouldRun);
+    }
+
+    return connected;
+}
+
 inline void exitWorld(Scene* scene)
 {
     std::cout << "Stopping \n";
@@ -91,5 +140,7 @@ inline void uncaptureMouse(Scene* s)
     s->mouseCaptured = false;
     s->firstMouse = true;
 }
+
+
 
 #endif //SHAREDVARSBETWEENMAINANDGUI_H

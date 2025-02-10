@@ -14,6 +14,7 @@ struct WorldInfo
 {
     int seed;
     glm::vec3 yourPosition;
+    int yourPlayerIndex;
 };
 
 struct ControlsUpdate {

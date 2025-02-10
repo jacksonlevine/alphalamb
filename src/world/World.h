@@ -54,6 +54,36 @@ public:
         }
     }
 
+    bool load(std::string filename)
+    {
+        std::ifstream file(filename);
+        if (!file.is_open())
+        {
+            std::cout << "Could not open file " << filename << " for reading." << std::endl;
+            return false;
+        } else
+        {
+            std::string line;
+            while (std::getline(file, line))
+            {
+                std::istringstream iss(line);
+                std::vector<std::string> words;
+                std::string word;
+                while (iss >> word)
+                {
+                    words.push_back(word);
+                }
+                if (words.size() == 4)
+                {
+                    //Read the block (words[3]) as unsigned long because that can contain all the uint32_t values
+                    //Rest are ints
+                    userDataMap->set(IntTup( std::stoi(words[0]) , std::stoi(words[1]), std::stoi(words[2]) ), static_cast<uint32_t>(std::stoul(words[3])));
+                }
+            }
+            file.close();
+        }
+    }
+
 
 
 
