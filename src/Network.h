@@ -44,7 +44,15 @@ struct BlockSet
     uint32_t block;
 };
 
-using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent>;
+
+struct YawPitchUpdate
+{
+    int myPlayerIndex;
+    float newYaw;
+    float newPitch;
+};
+
+using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate>;
 
 
 

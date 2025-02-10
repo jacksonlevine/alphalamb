@@ -45,7 +45,7 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
             boost::asio::read(*socket, boost::asio::buffer(&message, sizeof(DGMessage)), ec);
             if (!ec) {
 
-                std::cout << " Got somethng \n";
+                //std::cout << " Got somethng \n";
 
                 visit([&](const auto& m) {
                     using T = std::decay_t<decltype(m)>;
@@ -62,6 +62,10 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
                         std::cout << "Got controls update \n";
+                        networkToMainBlockChangeQueue.push(m);
+                    }
+                    else if constexpr (std::is_same_v<T, YawPitchUpdate>) {
+                        //std::cout << "Got yawpitch update \n";
                         networkToMainBlockChangeQueue.push(m);
                     }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {

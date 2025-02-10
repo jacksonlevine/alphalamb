@@ -164,6 +164,12 @@ private:
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
                         std::cout << "Got playerpresent \n";
                     }
+
+                    else if constexpr (std::is_same_v<T, YawPitchUpdate>) {
+                        std::cout << "Got yawpitchupdate \n";
+                        redistrib = true;
+                        excludeyou = true;
+                    }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
                         std::cout << "Got block set \n";
                         serverUserDataMap->set(m.spot, m.block);

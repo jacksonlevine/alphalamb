@@ -62,35 +62,26 @@ void sendControlsUpdatesLol(tcp::socket& socket)
 
 
     }
-    // static float lastpitch = CAMERA.transform.pitch;
-    // static float lastyaw = CAMERA.transform.yaw;
-    //
-    // if(lastpitch != CAMERA.transform.pitch || lastyaw != CAMERA.transform.yaw)
-    // {
-    //     lastpitch = CAMERA.transform.pitch;
-    //     lastyaw = CAMERA.transform.yaw;
-    //
-    //     PlayerYawPitchUpdate player_yaw_pitch_update = PlayerYawPitchUpdate {
-    //         myPlayerIndex,
-    //         lastyaw,
-    //         lastpitch
-    //     };
-    //
-    //     MessageHeader header = MessageHeader {
-    //         1,
-    //         sizeof(PlayerYawPitchUpdate),
-    //         PlayerYawPitchUpdateType,
-    //         uuid_manager.getMyUUID()
-    //     };
-    //     boost::asio::async_write(socket, boost::asio::buffer(&header, sizeof(MessageHeader)), [](boost::system::error_code ec, std::size_t /*length*/)
-    //     {
-    //
-    //     });
-    //     boost::asio::async_write(socket, boost::asio::buffer(&player_yaw_pitch_update, sizeof(PlayerYawPitchUpdate)), [](boost::system::error_code ec, std::size_t /*length*/)
-    //     {
-    //
-    //     });
-    // }
+    static float lastpitch = player->camera.transform.pitch;
+    static float lastyaw = player->camera.transform.yaw;
+
+    if(lastpitch != player->camera.transform.pitch || lastyaw != player->camera.transform.yaw)
+    {
+        lastpitch = player->camera.transform.pitch;
+        lastyaw = player->camera.transform.yaw;
+
+        DGMessage player_yaw_pitch_update = YawPitchUpdate {
+            theScene.myPlayerIndex,
+            lastyaw,
+            lastpitch
+        };
+
+        boost::asio::async_write(socket, boost::asio::buffer(&player_yaw_pitch_update, sizeof(DGMessage)), [](boost::system::error_code ec, std::size_t /*length*/)
+        {
+
+        });
+
+    }
 }
 
 
@@ -470,9 +461,9 @@ int main()
     theScene.hud = new Hud();
     theScene.hud->rebuildDisplayData();
 
-    WorldRenderer renderer;
+    WorldRenderer* renderer = new WorldRenderer();
 
-    theScene.worldRenderer = &renderer;
+    theScene.worldRenderer = renderer;
 
     //theScene.addPlayerWithIndex(99);
 
@@ -539,9 +530,9 @@ int main()
                         //theScene.worldReceived = true;
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
-                        std::cout << "Got a controls update from " << m.myPlayerIndex << "\n";
-                        std::cout << m.myControls << " \n";
-                        std::cout << m.startPos.x << " " << m.startPos.y << " " << m.startPos.z << "\n";
+                        // std::cout << "Got a controls update from " << m.myPlayerIndex << "\n";
+                        // std::cout << m.myControls << " \n";
+                        // std::cout << m.startPos.x << " " << m.startPos.y << " " << m.startPos.z << "\n";
                         if(theScene.players.contains(m.myPlayerIndex))
                         {
                             theScene.players.at(m.myPlayerIndex)->controls = m.myControls;
@@ -554,6 +545,13 @@ int main()
 
                             theScene.players.at(m.myPlayerIndex)->camera.transform.yaw = m.startYawPitch.x;
                             theScene.players.at(m.myPlayerIndex)->camera.transform.pitch = m.startYawPitch.y;
+                        }
+                    }
+                    else if constexpr (std::is_same_v<T, YawPitchUpdate>)
+                    {
+                        if(theScene.players.contains(m.myPlayerIndex))
+                        {
+                            theScene.players.at(m.myPlayerIndex)->camera.updateWithYawPitch(m.newYaw, m.newPitch);
                         }
                     }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
@@ -772,7 +770,7 @@ int main()
                 std::cout << "" << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << " \n";
             }
 
-            renderer.mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, gltfShader.shaderID, world.worldGenMethod, deltaTime);
+            renderer->mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, gltfShader.shaderID, world.worldGenMethod, deltaTime);
 
 
             gScene->fetchResults(true);
