@@ -7,9 +7,16 @@
 
 #include <boost/variant2/variant.hpp>
 
+#include "Camera.h"
 #include "Controls.h"
 #include "IntTup.h"
 using namespace boost::variant2;
+
+struct PlayerPresent
+{
+    int index;
+    jl::Camera camera;
+};
 
 struct WorldInfo
 {
@@ -21,6 +28,8 @@ struct WorldInfo
 struct ControlsUpdate {
     int myPlayerIndex;
     Controls myControls;
+    glm::vec3 startPos;
+    glm::vec2 startYawPitch;
 };
 
 struct FileTransferInit
@@ -35,7 +44,7 @@ struct BlockSet
     uint32_t block;
 };
 
-using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet>;
+using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent>;
 
 
 

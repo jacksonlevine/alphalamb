@@ -46,6 +46,53 @@ int properMod(int a, int b) {
     return m < 0 ? m + b : m;
 }
 
+void sendControlsUpdatesLol(tcp::socket& socket)
+{
+
+    auto& player = theScene.players.at(theScene.myPlayerIndex);
+    static Controls lastcontrols = player->controls;
+    if(player->controls != lastcontrols)
+    {
+        lastcontrols = player->controls;
+        DGMessage cu = ControlsUpdate(theScene.myPlayerIndex, player->controls, player->camera.transform.position, glm::vec2(player->camera.transform.yaw, player->camera.transform.pitch));
+        boost::asio::async_write(socket, boost::asio::buffer(&cu, sizeof(DGMessage)), [](boost::system::error_code ec, std::size_t /*length*/)
+        {
+
+        });
+
+
+    }
+    // static float lastpitch = CAMERA.transform.pitch;
+    // static float lastyaw = CAMERA.transform.yaw;
+    //
+    // if(lastpitch != CAMERA.transform.pitch || lastyaw != CAMERA.transform.yaw)
+    // {
+    //     lastpitch = CAMERA.transform.pitch;
+    //     lastyaw = CAMERA.transform.yaw;
+    //
+    //     PlayerYawPitchUpdate player_yaw_pitch_update = PlayerYawPitchUpdate {
+    //         myPlayerIndex,
+    //         lastyaw,
+    //         lastpitch
+    //     };
+    //
+    //     MessageHeader header = MessageHeader {
+    //         1,
+    //         sizeof(PlayerYawPitchUpdate),
+    //         PlayerYawPitchUpdateType,
+    //         uuid_manager.getMyUUID()
+    //     };
+    //     boost::asio::async_write(socket, boost::asio::buffer(&header, sizeof(MessageHeader)), [](boost::system::error_code ec, std::size_t /*length*/)
+    //     {
+    //
+    //     });
+    //     boost::asio::async_write(socket, boost::asio::buffer(&player_yaw_pitch_update, sizeof(PlayerYawPitchUpdate)), [](boost::system::error_code ec, std::size_t /*length*/)
+    //     {
+    //
+    //     });
+    // }
+}
+
 
 
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
@@ -340,6 +387,7 @@ void enterWorld(Scene* s)
         auto & camera = player->camera;
         camera.updateProjection(width, height, 90.0f);
     }
+
     s->worldRenderer->launchThreads(&s->players.at(s->myPlayerIndex)->camera, s->world);
 }
 
@@ -351,7 +399,7 @@ int main()
 
     const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
 
-    theScene.window = glfwCreateWindow(1280, 1024, "project7", nullptr, nullptr);
+    theScene.window = glfwCreateWindow(800, 800, "project7", nullptr, nullptr);
     GLFWwindow* window = theScene.window;
     glfwMakeContextCurrent(window);
     if (glewInit() != GLEW_OK)
@@ -426,13 +474,15 @@ int main()
 
     theScene.worldRenderer = &renderer;
 
+    theScene.addPlayerWithIndex(99);
 
-
+    jl::prepareBillboard();
 
     std::vector<std::string> paths = {"resources/sprite/idle.png", "resources/sprite/run.png", "resources/sprite/jump.png", "resources/sprite/leftstrafe.png", "resources/sprite/rightstrafe.png", "resources/sprite/backwardsrun.png"};
     jl::Texture2DArray texture2DArray(paths);
-    texture2DArray.bind(3);
-    jl::prepareBillboard();
+    texture2DArray.bind(2);
+
+    static jl::Shader billboardInstShader = getBillboardInstanceShader();
 
 
     while (!glfwWindowShouldClose(window))
@@ -444,12 +494,187 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        std::vector<Billboard> billboards(theScene.players.size());
-        std::vector<AnimationState> animStates(theScene.players.size());
+        std::vector<Billboard> billboards;
+        std::vector<AnimationState> animStates;
+        //billboards.reserve(theScene.players.size());
+        //animStates.reserve(theScene.players.size());
 
-        for (auto & [id, player] : theScene.players)
+        glBindVertexArray(billboardVAO);
+        glUseProgram(billboardInstShader.shaderID);
+
+
+
+        static jl::Shader gltfShader = getBasicShader();
+        static jl::Texture worldTex("resources/world.png");
+
+
+
+        if (theScene.myPlayerIndex != -1)
+        {
+
+
+
+            if(theScene.multiplayer)
+            {
+                sendControlsUpdatesLol(tsocket);
+            }
+
+            DGMessage msg;
+            while (networkToMainBlockChangeQueue.pop(&msg))
+            {
+
+
+
+                visit([&](const auto& m) {
+                    using T = std::decay_t<decltype(m)>;
+                    if constexpr (std::is_same_v<T, WorldInfo>) {
+                        std::cout << "Got world info " << m.seed << " \n"
+                        << "playerIndex: " << m.yourPlayerIndex << " \n"
+                        << "yourPosition: " << m.yourPosition.x << " " << m.yourPosition.y << " " << m.yourPosition.z << " \n";
+
+                        theScene.world->setSeed(m.seed);
+                        theScene.myPlayerIndex = theScene.addPlayerWithIndex(m.yourPlayerIndex);
+
+                        //Dont do this yet, receive the file first
+                        //theScene.worldReceived = true;
+                    }
+                    else if constexpr (std::is_same_v<T, ControlsUpdate>) {
+                        if(theScene.players.contains(m.myPlayerIndex))
+                        {
+                            theScene.players.at(m.myPlayerIndex)->controls = m.myControls;
+                            theScene.players.at(m.myPlayerIndex)->camera.transform.position = m.startPos;
+                        //     theScene.players.at(m.myPlayerIndex)->controller->setPosition(PxExtendedVec3(
+                        // m.startPos.x,
+                        // m.startPos.y,
+                        // m.startPos.z)
+                        //     );
+
+                            theScene.players.at(m.myPlayerIndex)->camera.transform.yaw = m.startYawPitch.x;
+                            theScene.players.at(m.myPlayerIndex)->camera.transform.pitch = m.startYawPitch.y;
+                        }
+                    }
+                    else if constexpr (std::is_same_v<T, PlayerPresent>) {
+                       std::cout << "Processing palyerpresent\n";
+                        theScene.addPlayerWithIndex(m.index);
+                        // theScene.players.at(m.index)->controller->setPosition(PxExtendedVec3(
+                        // m.camera.transform.position.x,
+                        // m.camera.transform.position.y,
+                        // m.camera.transform.position.z)
+                        //     );
+                        theScene.players.at(m.index)->camera = m.camera;
+                    }
+                    else if constexpr (std::is_same_v<T, BlockSet>) {
+                        std::cout << "Processing network block change \n";
+
+                        Scene* scene = &theScene;
+                        //std::cout << " Server Setting" << std::endl;
+                            auto & spot = m.spot;
+                            //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
+                            uint32_t blockThere = scene->world->get(spot);
+                            glm::vec3 burstspot = glm::vec3(
+                                spot.x+ 0.5,
+                                spot.y + 0.5,
+                                spot.z + 0.5);
+                            if (scene->particles)
+                            {
+                                scene->particles->particleBurst(burstspot,
+                                                             20, (MaterialName)blockThere, 2.0, 1.0f);
+                            }
+
+                            if (m.block == AIR)
+                            {
+                                auto cs = scene->worldRenderer->chunkSize;
+                                // Then in your code:
+                                auto xmod = properMod(spot.x, cs);
+                                auto zmod = properMod(spot.z, cs);
+
+                                scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                    spot, AIR, false
+                                    );
+
+
+                                if(xmod == scene->worldRenderer->chunkSize - 1)
+                                {
+                                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                        IntTup(spot.x+1, spot.y, spot.z));
+
+                                } else if(xmod == 0)
+                                {
+                                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                        IntTup(spot.x-1, spot.y, spot.z));
+                                }
+
+                                if(zmod == scene->worldRenderer->chunkSize - 1)
+                                {
+                                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                        IntTup(spot.x, spot.y, spot.z+1));
+
+                                } else if(zmod == 0)
+                                {
+                                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                        IntTup(spot.x, spot.y, spot.z-1));
+                                }
+                                scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                    spot
+                                    );
+
+                            } else
+                            {
+                                scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                    spot, m.block
+                                    );
+                            }
+                            }
+                            else if constexpr (std::is_same_v<T, FileTransferInit>) {
+
+                            }
+                        }, msg);
+
+
+
+
+            }
+
+
+            for (auto & [id, player] : theScene.players)
         {
             player->update(deltaTime, &world, particles);
+
+
+
+            player->billboard.position = player->camera.transform.position;
+            player->billboard.direction = player->camera.transform.direction;
+
+
+
+            std::cout << "Playerindex: " << id << "\n";
+            std::cout << "PositionCA: " << player->camera.transform.position.x << " " << player->camera.transform.position.y << " " << player->camera.transform.position.z << " \n";
+            std::cout << "PositionBI: " << player->billboard.position.x << " " << player->billboard.position.y << " " << player->billboard.position.z << " \n";
+            auto contpos = player->controller->getPosition();
+            std::cout << "PositionCO: " << contpos.x << " " << contpos.y << " " << contpos.z << " \n";
+            // std::cout << player->controls << "\n";
+            // std::cout << "Billboard Information:" << std::endl;
+            // std::cout << "  Position: ("
+            //           << player->billboard.position.x << ", "
+            //           << player->billboard.position.y << ", "
+            //           << player->billboard.position.z << ")" << std::endl;
+            // std::cout << "  Direction: ("
+            //           << player->billboard.direction.x << ", "
+            //           << player->billboard.direction.y << ", "
+            //           << player->billboard.direction.z << ")" << std::endl;
+            // std::cout << "  Character Number: " << player->billboard.characterNum << std::endl;
+            // std::cout << "  Hidden: " << player->billboard.hidden << std::endl;
+            //
+            // // Print AnimationState
+            // std::cout << "\nAnimation State Information:" << std::endl;
+            // std::cout << "  Action Number: " << player->animation_state.actionNum << std::endl;
+            // std::cout << "  Time Started: " << player->animation_state.timestarted << std::endl;
+            // std::cout << "  Time Scale: " << player->animation_state.timescale << std::endl;
+
+            player->collisionCage.updateToSpot(&world, player->camera.transform.position, deltaTime);
+
+
+
             billboards.push_back(player->billboard);
             animStates.push_back(player->animation_state);
             float wantedAnim = IDLE;
@@ -491,82 +716,10 @@ int main()
             }
 
         }
+        std::cout << "BB size: " << billboards.size() << "\n";
+        std::cout << "AS size: " << animStates.size() << "\n";
         jl::updateBillboards(billboards);
         jl::updateAnimStates(animStates);
-
-        static jl::Shader gltfShader = getBasicShader();
-        static jl::Texture worldTex("resources/world.png");
-
-        static jl::Shader billboardInstShader = getBillboardInstanceShader();
-
-        if (theScene.myPlayerIndex != -1)
-        {
-
-            BlockChange change;
-            while (networkToMainBlockChangeQueue.pop(&change))
-            {
-                std::cout << "Processing network block change \n";
-                Scene* scene = &theScene;
-                //std::cout << " Server Setting" << std::endl;
-                    auto & spot = change.spot;
-                    //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
-                    uint32_t blockThere = scene->world->get(spot);
-                    glm::vec3 burstspot = glm::vec3(
-                        scene->blockSelectGizmo->selectedSpot.x+ 0.5,
-                        scene->blockSelectGizmo->selectedSpot.y + 0.5,
-                        scene->blockSelectGizmo->selectedSpot.z + 0.5);
-                    if (scene->particles)
-                    {
-                        scene->particles->particleBurst(burstspot,
-                                                     20, (MaterialName)blockThere, 2.0, 1.0f);
-                    }
-
-                    if (change.block == AIR)
-                    {
-                        auto cs = scene->worldRenderer->chunkSize;
-                        // Then in your code:
-                        auto xmod = properMod(spot.x, cs);
-                        auto zmod = properMod(spot.z, cs);
-
-                        scene->worldRenderer->requestChunkRebuildFromMainThread(
-                            spot, AIR, false
-                            );
-
-
-                        if(xmod == scene->worldRenderer->chunkSize - 1)
-                        {
-                            scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                IntTup(spot.x+1, spot.y, spot.z));
-
-                        } else if(xmod == 0)
-                        {
-                            scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                IntTup(spot.x-1, spot.y, spot.z));
-                        }
-
-                        if(zmod == scene->worldRenderer->chunkSize - 1)
-                        {
-                            scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                IntTup(spot.x, spot.y, spot.z+1));
-
-                        } else if(zmod == 0)
-                        {
-                            scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                IntTup(spot.x, spot.y, spot.z-1));
-                        }
-                        scene->worldRenderer->requestChunkRebuildFromMainThread(
-                            spot
-                            );
-
-                    } else
-                    {
-                        scene->worldRenderer->requestChunkRebuildFromMainThread(
-                            spot, change.block
-                            );
-                    }
-
-
-            }
 
             gScene->simulate(deltaTime);
 
@@ -622,7 +775,6 @@ int main()
 
             //std::cout << "Passing " << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << " \n";
 
-            theScene.players[theScene.myPlayerIndex]->collisionCage.updateToSpot(&world, camera.transform.position, deltaTime);
 
 
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
@@ -656,20 +808,35 @@ int main()
             //std::cout << "time loc: " << std::to_string(loc3) << "\n";
             glUniform1f(loc3, glfwGetTime());
 
+            texture2DArray.bind(2);
+
             auto loc4 = glGetUniformLocation(billboardInstShader.shaderID, "ourTexture");
             //std::cout << "texture loc: " << std::to_string(loc4) << "\n";
-            glUniform1i(loc4, 3);
+            glUniform1i(loc4, 2);
+            // // Check for OpenGL errors
+            // GLenum err;
+            // while ((err = glGetError()) != GL_NO_ERROR) {
+            //     std::cerr << "OpenGL error: " << err << std::endl;
+            // }
+            //
+            // // Print uniform locations
+            // std::cout << "mvp location: " << loc1 << std::endl;
+            // std::cout << "camPos location: " << loc2 << std::endl;
+            // std::cout << "time location: " << loc3 << std::endl;
+            // std::cout << "ourTexture location: " << loc4 << std::endl;
+            //
+            // // Print texture ID
+            // std::cout << "Texture ID: " << texture2DArray.textureID << std::endl;
+            //
+            //
+            //
+            //
+            //
+            // std::cout << "players size: " << theScene.players.size() << " \n";
 
-
-
-
-
-
-
-
-
+            glDisable(GL_CULL_FACE);
             jl::drawBillboards(theScene.players.size());
-
+            glEnable(GL_CULL_FACE);
 
 
 

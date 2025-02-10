@@ -117,6 +117,10 @@ add_executable(DGServer
 src/IntTup.cpp
 src/world/datamapmethods/HashMapDataMap.cpp
 src/world/DataMap.h
+        src/Camera.cpp
+        src/Camera.h
+        src/Transform.cpp
+        src/Transform.h
 )
 
 

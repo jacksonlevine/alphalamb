@@ -168,5 +168,6 @@ Player::Player()
 
 Player::~Player()
 {
+    //std::cout << "Destructor called \n";
     controller->release();
 }

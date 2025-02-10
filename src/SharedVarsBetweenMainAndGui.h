@@ -55,13 +55,21 @@ inline void exitWorld(Scene* scene)
     if(scene->multiplayer)
     {
         scene->clientShouldRun.store(false);
+        for(auto & player : scene->players)
+        {
+
+
+            player.second->controller->release();
+            player.second->collisionCage.collider->release();
+        }
+        scene->players.clear();
     }
+
+
 
 
     scene->worldRenderer->activeChunks.clear();
     //scene->worldRenderer->mbtActiveChunks.clear();
-    scene->players.at(scene->myPlayerIndex)->controller->setPosition(DEFAULT_PLAYERPOS);
-    scene->players.at(scene->myPlayerIndex)->camera.transform.position = glm::vec3(DEFAULT_PLAYERPOS.x, DEFAULT_PLAYERPOS.y, DEFAULT_PLAYERPOS.z);
     scene->worldRenderer->generatedChunks.clear();
 
     for (auto & c : scene->worldRenderer->changeBuffers)

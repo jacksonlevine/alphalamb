@@ -16,7 +16,7 @@ struct BlockChange
     IntTup spot;
     uint32_t block;
 };
-extern boost::lockfree::spsc_queue<BlockChange, boost::lockfree::capacity<64>> networkToMainBlockChangeQueue;
+extern boost::lockfree::spsc_queue<DGMessage, boost::lockfree::capacity<64>> networkToMainBlockChangeQueue;
 
 extern boost::lockfree::spsc_queue<BlockChange, boost::lockfree::capacity<64>> mainToNetworkBlockChangeQueue;
 
@@ -63,10 +63,13 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
                         std::cout << "Got controls update \n";
                     }
+                    else if constexpr (std::is_same_v<T, PlayerPresent>) {
+                       std::cout << "Got player present \n";
+                        networkToMainBlockChangeQueue.push(m);
+                    }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
                         std::cout << "Got block set \n";
-                        networkToMainBlockChangeQueue.push(BlockChange(
-                            m.spot, m.block));
+                        networkToMainBlockChangeQueue.push(m);
                     }
                     else if constexpr (std::is_same_v<T, FileTransferInit>) {
                         std::cout << "Got file transfer init \n";

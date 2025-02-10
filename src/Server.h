@@ -40,7 +40,7 @@ private:
     void sayInitialThings()
     {
         auto self(shared_from_this());
-        constexpr int seed = 101010;
+        constexpr int seed = 0;
         DGMessage wi = WorldInfo {
             .seed = seed,
             .yourPosition = glm::vec3(0, 200, 0),
@@ -85,6 +85,45 @@ private:
             });
         }
 
+        {
+            std::shared_lock<std::shared_mutex> clientsLock(clientsMutex);
+            for(auto & [id, client] : clients)
+            {
+                if(id != (int)m_playerIndex)
+                {
+                    DGMessage playerPresent = PlayerPresent {
+                        id, client.camera};
+                    //We are notified of others
+                    boost::asio::async_write(*m_socket, boost::asio::buffer(&playerPresent, sizeof(DGMessage)),
+                    [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
+                    {
+                        if (!ec) {
+                            std::cout << "Successfully wrote playerpresent " << bytes_transferred << " bytes." << std::endl;
+                        } else {
+                            std::cerr << "Error writing to socket: " << ec.message() << std::endl;
+                        }
+                    });
+                    //And also notify others we are here
+                    if(!client.socket.expired())
+                    {
+                        DGMessage ourPlayerPresent = PlayerPresent {
+                            (int)m_playerIndex, clients.at(m_playerIndex).camera};
+
+                        boost::asio::async_write(*client.socket.lock(), boost::asio::buffer(&ourPlayerPresent, sizeof(DGMessage)),
+                    [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
+                        {
+                            if (!ec) {
+                                std::cout << "Successfully wrote ourplayerpresent " << bytes_transferred << " bytes." << std::endl;
+                            } else {
+                                std::cerr << "Error writing to socket: " << ec.message() << std::endl;
+                            }
+                        });
+                    }
+                }
+
+            }
+        }
+
 
         //Now start waiting for messages
         waitForMessage();
@@ -101,6 +140,7 @@ private:
             if (!ec) {
 
                 bool redistrib = false;
+                bool excludeyou = false;
 
                 visit([&](const auto& m) {
                     using T = std::decay_t<decltype(m)>;
@@ -109,7 +149,20 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
                         std::cout << "Got controls update \n";
+                        {
+                            std::cout << "Waiting on clients lock \n";
+                            std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+                            clients.at(m_playerIndex).camera.transform.position = m.startPos;
+                            clients.at(m_playerIndex).controls = m.myControls;
+                            clients.at(m_playerIndex).camera.transform.updateWithYawPitch(m.startYawPitch.x, m.startYawPitch.y);
+                            std::cout << "Got clients lock \n";
+                        }
+
                         redistrib = true;
+                        excludeyou = true;
+                    }
+                    else if constexpr (std::is_same_v<T, PlayerPresent>) {
+                        std::cout << "Got playerpresent \n";
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
                         std::cout << "Got block set \n";
@@ -128,7 +181,7 @@ private:
                     auto lock = std::unique_lock<std::shared_mutex>(clientsMutex);
                     for(auto & [id, client] : clients)
                     {
-                        if(true)//(client.myUuid != m_header.myUuid)
+                        if(!(excludeyou && (id == m_playerIndex)))//(client.myUuid != m_header.myUuid)
                         {
                             if(!client.socket.expired())
                             {

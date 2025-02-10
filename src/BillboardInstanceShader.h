@@ -23,14 +23,14 @@ struct Billboard
     glm::vec3 position = glm::vec3(0.0);
     glm::vec3 direction = glm::vec3(0.0,1.0,0.0);
     float characterNum = 0.0f;
-    float hidden = 1.0f;
+    float hidden = 0.0f;
 };
 
 struct AnimationState
 {
     float actionNum = 0.0f;
     float timestarted = 0.0f;
-    float timescale = 0.0f;
+    float timescale = 1.0f;
 };
 
 
