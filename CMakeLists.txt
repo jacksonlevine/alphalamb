@@ -109,7 +109,11 @@ add_executable(DGServer
         src/servermain.cpp
         src/Server.h
         src/Server.cpp
-        src/PrecompHeader.h)
+        src/PrecompHeader.h
+src/IntTup.cpp
+src/world/datamapmethods/HashMapDataMap.cpp
+src/world/DataMap.h
+)
 
 
 function(add_common_libraries target)

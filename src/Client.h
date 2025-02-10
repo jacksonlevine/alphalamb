@@ -11,6 +11,30 @@
 
 using tcp = boost::asio::ip::tcp;
 
+struct BlockChange
+{
+    IntTup spot;
+    uint32_t block;
+};
+extern boost::lockfree::spsc_queue<BlockChange, boost::lockfree::capacity<64>> networkToMainBlockChangeQueue;
+
+extern boost::lockfree::spsc_queue<BlockChange, boost::lockfree::capacity<64>> mainToNetworkBlockChangeQueue;
+
+inline void sendToServer(tcp::socket* socket, std::atomic<bool>* shouldRun)
+{
+    while (shouldRun->load()) {
+        BlockChange m;
+        while (mainToNetworkBlockChangeQueue.pop(&m))
+        {
+            DGMessage blockSet = BlockSet {
+                m.spot, m.block
+            };
+            boost::asio::write(*socket, boost::asio::buffer(&blockSet, sizeof(DGMessage)));
+        }
+    }
+
+}
+
 inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) {
     try {
         while (shouldRun->load()) {
@@ -39,6 +63,11 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
                         std::cout << "Got controls update \n";
                     }
+                    else if constexpr (std::is_same_v<T, BlockSet>) {
+                        std::cout << "Got block set \n";
+                        networkToMainBlockChangeQueue.push(BlockChange(
+                            m.spot, m.block));
+                    }
                     else if constexpr (std::is_same_v<T, FileTransferInit>) {
                         std::cout << "Got file transfer init \n";
 
@@ -55,7 +84,7 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                             std::ofstream file("mpworld.txt", std::ios::trunc);
                             if(file.is_open())
                             {
-                                file.write(filemsg, m.fileSize);
+                                file.write(filemsg.data(), m.fileSize);
                                 file.close();
 
                                 if(isWorld)
@@ -93,6 +122,12 @@ inline void launchReceiverThread(tcp::socket* socket, std::atomic<bool>* shouldR
 {
     std::thread receiver_thread(read_from_server, socket, shouldRun);
     receiver_thread.detach();
+}
+
+inline void launchSenderThread(tcp::socket* socket, std::atomic<bool>* shouldRun)
+{
+    std::thread senderthread(sendToServer, socket, shouldRun);
+    senderthread.detach();
 }
 
 #endif //CLIENT_H

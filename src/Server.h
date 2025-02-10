@@ -9,6 +9,7 @@
 #include "PrecompHeader.h"
 #include "Network.h"
 #include "world/DataMap.h"
+#include "world/World.h"
 using tcp = boost::asio::ip::tcp;
 
 struct ServerPlayer
@@ -32,12 +33,13 @@ public:
     : m_socket(std::move(socket)), m_playerIndex(playerIndex) { }
 
     void run() {
-        waitForMessage();
+        sayInitialThings();
     }
 private:
 
-    void waitForMessage() {
-    auto self(shared_from_this());
+    void sayInitialThings()
+    {
+        auto self(shared_from_this());
         constexpr int seed = 101010;
         DGMessage wi = WorldInfo {
             .seed = seed,
@@ -55,20 +57,108 @@ private:
                 std::cerr << "Error writing to socket: " << ec.message() << std::endl;
             }
         });
-        
+
+        auto string = saveDM("serverworld.txt", serverUserDataMap);
+        if (string.has_value())
+        {
+            DGMessage fileInit = FileTransferInit {
+            .fileSize = string.value().size() * sizeof(char),
+            .isWorld  = true};
+            boost::asio::async_write(*m_socket, boost::asio::buffer(&fileInit, sizeof(DGMessage)),
+            [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
+            {
+                if (!ec) {
+                    std::cout << "Successfully wrote fileinit " << bytes_transferred << " bytes." << std::endl;
+                } else {
+                    std::cerr << "Error writing to socket: " << ec.message() << std::endl;
+                }
+            });
+
+            boost::asio::async_write(*m_socket, boost::asio::buffer(string.value().data(), string.value().size() * sizeof(char)),
+            [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
+            {
+                if (!ec) {
+                    std::cout << "Successfully wrote world " << bytes_transferred << " bytes." << std::endl;
+                } else {
+                    std::cerr << "Error writing to socket: " << ec.message() << std::endl;
+                }
+            });
+        }
+
+
+        //Now start waiting for messages
+        waitForMessage();
+    }
+
+    void waitForMessage() {
+    auto self(shared_from_this());
+
+
 
 
     boost::asio::async_read(*m_socket, boost::asio::buffer(&m_message, sizeof(DGMessage)),
         [this, self](const boost::system::error_code& ec, std::size_t /*length*/) {
             if (!ec) {
 
-                ///READ THE MESSAGA VARAIANTS EJRE
+                bool redistrib = false;
 
+                visit([&](const auto& m) {
+                    using T = std::decay_t<decltype(m)>;
+                    if constexpr (std::is_same_v<T, WorldInfo>) {
+                        std::cout << "Got world info " << m.seed << " \n";
+                    }
+                    else if constexpr (std::is_same_v<T, ControlsUpdate>) {
+                        std::cout << "Got controls update \n";
+                        redistrib = true;
+                    }
+                    else if constexpr (std::is_same_v<T, BlockSet>) {
+                        std::cout << "Got block set \n";
+                        serverUserDataMap->set(m.spot, m.block);
+                        redistrib = true;
+                    }
+                    else if constexpr (std::is_same_v<T, FileTransferInit>) {
+                        std::cout << "Got file transfer init \n";
+
+                    }
+                }, m_message);
+
+
+                if (redistrib)
+                {
+                    auto lock = std::unique_lock<std::shared_mutex>(clientsMutex);
+                    for(auto & [id, client] : clients)
+                    {
+                        if(true)//(client.myUuid != m_header.myUuid)
+                        {
+                            if(!client.socket.expired())
+                            {
+                                try
+                                {
+                                    boost::asio::async_write(*(client.socket.lock()), boost::asio::buffer(&m_message, sizeof(DGMessage)), [this, self](boost::system::error_code ec, std::size_t /*length*/)
+                                    {
+
+                                    });
+
+                                } catch (std::exception& e)
+                                {
+                                    std::cout << "Couldn't send: " <<  e.what() << "\n";
+                                }
+
+                            }
+
+                        }
+                    }
+                }
+
+                //Wait for next message
+            waitForMessage();
             } else {
                 std::cout << "Error reading message: " << ec.message() << std::endl;
 
             }
         });
+
+
 }
 
 private:

@@ -73,8 +73,17 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                 auto & cam = scene->players[scene->myPlayerIndex]->camera;
 
 
+                if (scene->multiplayer)
+                {
+                    auto & spot = scene->blockSelectGizmo->selectedSpot;
+                    std::cout << "Senfing blokc chagne \n";
+                    mainToNetworkBlockChangeQueue.push(BlockChange{
+                        spot, AIR
+                    });
 
-                if (scene->world && scene->blockSelectGizmo && scene->worldRenderer)
+                } else
+                {
+                    if (scene->world && scene->blockSelectGizmo && scene->worldRenderer)
                 {
                     //std::cout << "Setting" << std::endl;
                     auto & spot = scene->blockSelectGizmo->selectedSpot;
@@ -128,6 +137,8 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
                     //std::cout << "Request filed " << std::endl;
                 }
+                }
+
             }
 
         }
@@ -420,6 +431,72 @@ int main()
 
         if (theScene.myPlayerIndex != -1)
         {
+
+            BlockChange change;
+            while (networkToMainBlockChangeQueue.pop(&change))
+            {
+                std::cout << "Processing network block change \n";
+                Scene* scene = &theScene;
+                //std::cout << " Server Setting" << std::endl;
+                    auto & spot = change.spot;
+                    //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
+                    uint32_t blockThere = scene->world->get(spot);
+                    glm::vec3 burstspot = glm::vec3(
+                        scene->blockSelectGizmo->selectedSpot.x+ 0.5,
+                        scene->blockSelectGizmo->selectedSpot.y + 0.5,
+                        scene->blockSelectGizmo->selectedSpot.z + 0.5);
+                    if (scene->particles)
+                    {
+                        scene->particles->particleBurst(burstspot,
+                                                     20, (MaterialName)blockThere, 2.0, 1.0f);
+                    }
+
+                    if (change.block == AIR)
+                    {
+                        auto cs = scene->worldRenderer->chunkSize;
+                        // Then in your code:
+                        auto xmod = properMod(spot.x, cs);
+                        auto zmod = properMod(spot.z, cs);
+
+                        scene->worldRenderer->requestChunkRebuildFromMainThread(
+                            spot, AIR, false
+                            );
+
+
+                        if(xmod == scene->worldRenderer->chunkSize - 1)
+                        {
+                            scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                IntTup(spot.x+1, spot.y, spot.z));
+
+                        } else if(xmod == 0)
+                        {
+                            scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                IntTup(spot.x-1, spot.y, spot.z));
+                        }
+
+                        if(zmod == scene->worldRenderer->chunkSize - 1)
+                        {
+                            scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                IntTup(spot.x, spot.y, spot.z+1));
+
+                        } else if(zmod == 0)
+                        {
+                            scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                IntTup(spot.x, spot.y, spot.z-1));
+                        }
+                        scene->worldRenderer->requestChunkRebuildFromMainThread(
+                            spot
+                            );
+
+                    } else
+                    {
+                        scene->worldRenderer->requestChunkRebuildFromMainThread(
+                            spot, change.block
+                            );
+                    }
+
+
+            }
 
             gScene->simulate(deltaTime);
 

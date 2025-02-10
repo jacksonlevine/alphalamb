@@ -8,53 +8,50 @@
 #include "WorldGenMethod.h"
 
 
-class World {
-public:
-    World(DataMap* udm, WorldGenMethod* wm, DataMap* nudm) :
-    userDataMap(udm), worldGenMethod(wm), nonUserDataMap(nudm) {};
-
-    DataMap* userDataMap;
-    DataMap* nonUserDataMap;
-
-    WorldGenMethod* worldGenMethod;
-
-    uint32_t get(IntTup spot);
-    uint32_t getLocked(IntTup spot);
 
 
-
-
-    bool save(std::string filename)
-    {
-        std::filesystem::path filePath(filename);
-        if (!filePath.parent_path().empty()) {
-            std::filesystem::create_directories(filePath.parent_path());
-        }
-        std::ofstream file(filename, std::ios::trunc);
-
-        if (file.is_open()) {
-
-            while (true) {
-                if (auto lock = tryToGetReadLockOnDMs()) {
-                    const std::unique_ptr<DataMap::Iterator> it = userDataMap->createIterator();
-                    while (it->hasNext()) {
-                        auto [key, value] = it->next();
-                        file << key.x << " " << key.y << " " << key.z << " " << value << '\n';
-                    }
-                    file.close();
-                    return true;
-                }
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            }
-
-
-        } else {
-            std::cout << "Could not open file " << filename << " for writing." << std::endl;
-            return false;
-        }
+inline std::optional<std::shared_lock<std::shared_mutex>> tryToGetReadLockOnDM(DataMap* map)
+{
+    std::shared_lock<std::shared_mutex> lock1(map->mutex(), std::try_to_lock);
+    if (!lock1.owns_lock()) {
+        return std::nullopt;
     }
 
-    bool load(std::string filename)
+
+    return std::move(lock1);
+}
+
+inline std::optional<std::string> saveDM(std::string filename, DataMap* map) {
+    std::filesystem::path filePath(filename);
+    if (!filePath.parent_path().empty()) {
+        std::filesystem::create_directories(filePath.parent_path());
+    }
+
+    std::ostringstream contentStream; // String stream to store content before writing to file
+
+    while (true) {
+        if (auto lock = tryToGetReadLockOnDM(map)) {
+            const std::unique_ptr<DataMap::Iterator> it = map->createIterator();
+            while (it->hasNext()) {
+                auto [key, value] = it->next();
+                contentStream << key.x << " " << key.y << " " << key.z << " " << value << '\n';
+            }
+
+            std::ofstream file(filename, std::ios::trunc);
+            if (file.is_open()) {
+                file << contentStream.str();
+                file.close();
+                return contentStream.str(); // Return the written content
+            } else {
+                std::cerr << "Could not open file " << filename << " for writing." << std::endl;
+                return std::nullopt;
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+}
+
+   inline bool loadDM(std::string filename, DataMap* map)
     {
         std::ifstream file(filename);
         if (!file.is_open())
@@ -77,11 +74,41 @@ public:
                 {
                     //Read the block (words[3]) as unsigned long because that can contain all the uint32_t values
                     //Rest are ints
-                    userDataMap->set(IntTup( std::stoi(words[0]) , std::stoi(words[1]), std::stoi(words[2]) ), static_cast<uint32_t>(std::stoul(words[3])));
+                    map->set(IntTup( std::stoi(words[0]) , std::stoi(words[1]), std::stoi(words[2]) ), static_cast<uint32_t>(std::stoul(words[3])));
                 }
             }
             file.close();
         }
+    }
+
+
+
+
+
+class World {
+public:
+    World(DataMap* udm, WorldGenMethod* wm, DataMap* nudm) :
+    userDataMap(udm), worldGenMethod(wm), nonUserDataMap(nudm) {};
+
+    DataMap* userDataMap;
+    DataMap* nonUserDataMap;
+
+    WorldGenMethod* worldGenMethod;
+
+    uint32_t get(IntTup spot);
+    uint32_t getLocked(IntTup spot);
+
+
+
+
+    bool save(std::string filename)
+    {
+        return saveDM(filename, userDataMap) ? true : false;
+    }
+
+    bool load(std::string filename)
+    {
+        return loadDM(filename, userDataMap);
     }
 
 
@@ -100,6 +127,7 @@ public:
         worldGenMethod->setSeed(seed);
     }
     void set(IntTup spot, uint32_t val);
+
     inline std::optional<std::pair<std::shared_lock<std::shared_mutex>,
                                  std::shared_lock<std::shared_mutex>>> tryToGetReadLockOnDMs()
     {
@@ -116,7 +144,5 @@ public:
         return std::make_pair(std::move(lock1), std::move(lock2));
     }
 };
-
-
 
 #endif //WORLD_H

@@ -40,6 +40,7 @@ inline bool connectToServer(const char* addr, const char* port)
     if (connected)
     {
         launchReceiverThread(&tsocket, &theScene.clientShouldRun);
+        launchSenderThread(&tsocket, &theScene.clientShouldRun);
     }
 
     return connected;
