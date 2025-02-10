@@ -147,24 +147,37 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
             auto & cam = scene->players[scene->myPlayerIndex]->camera;
 
 
-
-            if (scene->world && scene->blockSelectGizmo && scene->worldRenderer)
+            if (scene->multiplayer)
             {
-                //std::cout << "Setting" << std::endl;
                 auto & spot = scene->blockSelectGizmo->selectedSpot;
-                //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
-                //uint32_t blockThere = scene->world->get(spot);
                 IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
-
-                //scene->world->set(spot, AIR);
-                //std::cout << "Set the block "  << std::endl;;
-                scene->worldRenderer->requestChunkRebuildFromMainThread(
+                std::cout << "Senfing blokc place \n";
+                mainToNetworkBlockChangeQueue.push(BlockChange{
                     placeSpot, WOOD_PLANKS
-                    );
+                });
+
+            } else
+            {
+                if (scene->world && scene->blockSelectGizmo && scene->worldRenderer)
+                {
+                    //std::cout << "Setting" << std::endl;
+                    auto & spot = scene->blockSelectGizmo->selectedSpot;
+                    //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
+                    //uint32_t blockThere = scene->world->get(spot);
+                    IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
+
+                    //scene->world->set(spot, AIR);
+                    //std::cout << "Set the block "  << std::endl;;
+                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                        placeSpot, WOOD_PLANKS
+                        );
 
 
-                //std::cout << "Request filed " << std::endl;
+                    //std::cout << "Request filed " << std::endl;
+                }
             }
+
+
         }
     }
 }
@@ -333,7 +346,7 @@ int main()
 
     const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
 
-    theScene.window = glfwCreateWindow(mode->width, mode->height, "project7", nullptr, nullptr);
+    theScene.window = glfwCreateWindow(1280, 1024, "project7", nullptr, nullptr);
     GLFWwindow* window = theScene.window;
     glfwMakeContextCurrent(window);
     if (glewInit() != GLEW_OK)
@@ -360,9 +373,9 @@ int main()
 
     GLuint lutTexture = load3DLUT("resources/film_default.png");
 
-    // int width, height;
-    // glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, mode->width, mode->height);
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    glViewport(0, 0, width, height);
 
 
     float deltaTime = 0.0f;
