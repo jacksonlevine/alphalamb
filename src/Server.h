@@ -92,7 +92,7 @@ private:
                 if(id != (int)m_playerIndex)
                 {
                     DGMessage playerPresent = PlayerPresent {
-                        id, client.camera};
+                        id, client.camera.transform.position, client.camera.transform.direction};
                     //We are notified of others
                     boost::asio::async_write(*m_socket, boost::asio::buffer(&playerPresent, sizeof(DGMessage)),
                     [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
@@ -107,7 +107,7 @@ private:
                     if(!client.socket.expired())
                     {
                         DGMessage ourPlayerPresent = PlayerPresent {
-                            (int)m_playerIndex, clients.at(m_playerIndex).camera};
+                            (int)m_playerIndex, clients.at(m_playerIndex).camera.transform.position, clients.at(m_playerIndex).camera.transform.direction};
 
                         boost::asio::async_write(*client.socket.lock(), boost::asio::buffer(&ourPlayerPresent, sizeof(DGMessage)),
                     [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
@@ -148,14 +148,14 @@ private:
                         std::cout << "Got world info " << m.seed << " \n";
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
-                        std::cout << "Got controls update \n";
+                        std::cout << "Got controls update from " << m_playerIndex << " \n";
                         {
-                            std::cout << "Waiting on clients lock \n";
+                            //std::cout << "Waiting on clients lock \n";
                             std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
                             clients.at(m_playerIndex).camera.transform.position = m.startPos;
                             clients.at(m_playerIndex).controls = m.myControls;
                             clients.at(m_playerIndex).camera.transform.updateWithYawPitch(m.startYawPitch.x, m.startYawPitch.y);
-                            std::cout << "Got clients lock \n";
+                            //std::cout << "Got clients lock \n";
                         }
 
                         redistrib = true;
@@ -164,7 +164,9 @@ private:
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
                         std::cout << "Got playerpresent \n";
                     }
-
+                    else if constexpr (std::is_same_v<T, PlayerLeave>) {
+                        std::cout << "Got playerleave \n";
+                    }
                     else if constexpr (std::is_same_v<T, YawPitchUpdate>) {
                         std::cout << "Got yawpitchupdate \n";
                         redistrib = true;
@@ -213,7 +215,37 @@ private:
             waitForMessage();
             } else {
                 std::cout << "Error reading message: " << ec.message() << std::endl;
+                if (ec.value() == boost::asio::error::connection_reset)
+                {
+                    std::cout << "Removing player \n";
+                    std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+                    clients.erase(m_playerIndex);
 
+                    for(auto & [id, client] : clients)
+                    {
+
+                            if(!client.socket.expired())
+                            {
+                                try
+                                {
+
+                                    DGMessage pl = PlayerLeave {
+                                    (int)m_playerIndex};
+                                    boost::asio::async_write(*(client.socket.lock()), boost::asio::buffer(&pl, sizeof(DGMessage)), [this, self](boost::system::error_code ec, std::size_t /*length*/)
+                                    {
+
+                                    });
+
+                                } catch (std::exception& e)
+                                {
+                                    std::cout << "Couldn't send player leave: " <<  e.what() << "\n";
+                                }
+
+                            }
+
+
+                    }
+                }
             }
         });
 

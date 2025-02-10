@@ -3,6 +3,6 @@
 //
 
 #include "Client.h"
-boost::lockfree::spsc_queue<DGMessage, boost::lockfree::capacity<64>> networkToMainBlockChangeQueue;
+boost::lockfree::spsc_queue<DGMessage, boost::lockfree::capacity<512>> networkToMainBlockChangeQueue;
 
-boost::lockfree::spsc_queue<BlockChange, boost::lockfree::capacity<64>> mainToNetworkBlockChangeQueue;
+boost::lockfree::spsc_queue<BlockChange, boost::lockfree::capacity<512>> mainToNetworkBlockChangeQueue;

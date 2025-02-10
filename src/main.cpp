@@ -46,8 +46,9 @@ int properMod(int a, int b) {
     return m < 0 ? m + b : m;
 }
 
-void sendControlsUpdatesLol(tcp::socket& socket)
+void sendControlsUpdatesLol(tcp::socket& socket, float deltaTime)
 {
+    static float timer = 0.0f;
 
     auto& player = theScene.players.at(theScene.myPlayerIndex);
     static Controls lastcontrols = player->controls;
@@ -59,29 +60,38 @@ void sendControlsUpdatesLol(tcp::socket& socket)
         {
 
         });
-
-
     }
-    static float lastpitch = player->camera.transform.pitch;
-    static float lastyaw = player->camera.transform.yaw;
 
-    if(lastpitch != player->camera.transform.pitch || lastyaw != player->camera.transform.yaw)
+    if (timer > 0.1)
     {
-        lastpitch = player->camera.transform.pitch;
-        lastyaw = player->camera.transform.yaw;
+        timer = 0.0f;
 
-        DGMessage player_yaw_pitch_update = YawPitchUpdate {
-            theScene.myPlayerIndex,
-            lastyaw,
-            lastpitch
-        };
 
-        boost::asio::async_write(socket, boost::asio::buffer(&player_yaw_pitch_update, sizeof(DGMessage)), [](boost::system::error_code ec, std::size_t /*length*/)
+        static float lastpitch = player->camera.transform.pitch;
+        static float lastyaw = player->camera.transform.yaw;
+
+        if(lastpitch != player->camera.transform.pitch || lastyaw != player->camera.transform.yaw)
         {
+            lastpitch = player->camera.transform.pitch;
+            lastyaw = player->camera.transform.yaw;
 
-        });
+            DGMessage player_yaw_pitch_update = YawPitchUpdate {
+                theScene.myPlayerIndex,
+                lastyaw,
+                lastpitch
+            };
 
+            boost::asio::async_write(socket, boost::asio::buffer(&player_yaw_pitch_update, sizeof(DGMessage)), [](boost::system::error_code ec, std::size_t /*length*/)
+            {
+
+            });
+
+        }
+    } else
+    {
+        timer += deltaTime;
     }
+
 }
 
 
@@ -507,7 +517,7 @@ int main()
 
             if(theScene.multiplayer)
             {
-                sendControlsUpdatesLol(tsocket);
+                sendControlsUpdatesLol(tsocket, deltaTime);
             }
 
             DGMessage msg = {};
@@ -555,15 +565,23 @@ int main()
                             theScene.players.at(m.myPlayerIndex)->camera.updateWithYawPitch(m.newYaw, m.newPitch);
                         }
                     }
+                    else if constexpr (std::is_same_v<T, PlayerLeave>)
+                    {
+                        if(theScene.players.contains(m.myPlayerIndex))
+                        {
+                            theScene.players.erase(m.myPlayerIndex);
+                        }
+                    }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
                        std::cout << "Processing palyerpresent\n";
                         theScene.addPlayerWithIndex(m.index);
                         theScene.players.at(m.index)->controller->setPosition(PxExtendedVec3(
-                        m.camera.transform.position.x,
-                        m.camera.transform.position.y,
-                        m.camera.transform.position.z)
+                        m.position.x,
+                        m.position.y,
+                        m.position.z)
                             );
-                        theScene.players.at(m.index)->camera = m.camera;
+                        theScene.players.at(m.index)->camera.transform.position = m.position;
+                        theScene.players.at(m.index)->camera.transform.direction = m.direction;
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
                         std::cout << "Processing network block change \n";

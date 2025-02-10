@@ -15,7 +15,8 @@ using namespace boost::variant2;
 struct PlayerPresent
 {
     int index;
-    jl::Camera camera;
+    glm::vec3 position;
+    glm::vec3 direction;
 };
 
 struct WorldInfo
@@ -52,7 +53,12 @@ struct YawPitchUpdate
     float newPitch;
 };
 
-using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate>;
+struct PlayerLeave
+{
+    int myPlayerIndex;
+};
+
+using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave>;
 
 
 

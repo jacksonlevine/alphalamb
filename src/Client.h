@@ -16,9 +16,9 @@ struct BlockChange
     IntTup spot;
     uint32_t block;
 };
-extern boost::lockfree::spsc_queue<DGMessage, boost::lockfree::capacity<64>> networkToMainBlockChangeQueue;
+extern boost::lockfree::spsc_queue<DGMessage, boost::lockfree::capacity<512>> networkToMainBlockChangeQueue;
 
-extern boost::lockfree::spsc_queue<BlockChange, boost::lockfree::capacity<64>> mainToNetworkBlockChangeQueue;
+extern boost::lockfree::spsc_queue<BlockChange, boost::lockfree::capacity<512>> mainToNetworkBlockChangeQueue;
 
 inline void sendToServer(tcp::socket* socket, std::atomic<bool>* shouldRun)
 {
@@ -61,7 +61,11 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                         //theScene.worldReceived = true;
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
-                        std::cout << "Got controls update \n";
+                        //std::cout << "Got controls update \n";
+                        networkToMainBlockChangeQueue.push(m);
+                    }
+                    else if constexpr (std::is_same_v<T, PlayerLeave>) {
+                        std::cout << "Got player leave \n";
                         networkToMainBlockChangeQueue.push(m);
                     }
                     else if constexpr (std::is_same_v<T, YawPitchUpdate>) {
@@ -73,7 +77,7 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                         networkToMainBlockChangeQueue.push(m);
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
-                        std::cout << "Got block set \n";
+                        //std::cout << "Got block set \n";
                         networkToMainBlockChangeQueue.push(m);
                     }
                     else if constexpr (std::is_same_v<T, FileTransferInit>) {
