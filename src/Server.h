@@ -5,9 +5,21 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#include "Camera.h"
 #include "PrecompHeader.h"
 #include "Network.h"
 using tcp = boost::asio::ip::tcp;
+
+struct ServerPlayer
+{
+    std::weak_ptr<tcp::socket> socket;
+    Controls controls;
+    jl::Camera camera;
+};
+
+extern std::unordered_map<int, ServerPlayer> clients;
+
+extern std::shared_mutex clientsMutex;
 
 
 class Session : public std::enable_shared_from_this<Session>
@@ -40,6 +52,10 @@ private:
                 std::cerr << "Error writing to socket: " << ec.message() << std::endl;
             }
         });
+        
+        //
+        // DGMessage worldFileInit = FileTransferInit {
+        // }
 
     boost::asio::async_read(*m_socket, boost::asio::buffer(&m_message, sizeof(DGMessage)),
         [this, self](const boost::system::error_code& ec, std::size_t /*length*/) {
@@ -85,9 +101,23 @@ public:
                     std::cout << "creating session on: "
                               << shared_socket->remote_endpoint().address().to_string()
                               << ":" << shared_socket->remote_endpoint().port() << '\n';
+                    int index = 0;
+                    {
+                        std::shared_lock<std::shared_mutex> clientslock(clientsMutex);
+
+                        while (clients.contains(index))
+                        {
+                            index++;
+                        }
+                        clients.insert({index, ServerPlayer{
+                            .socket = shared_socket,
+                            .controls = Controls{},
+                            .camera = jl::Camera{}
+                        }});
+                    }
 
                     // Pass the shared_ptr to the session
-                    auto sesh = std::make_shared<Session>(shared_socket, 0);
+                    auto sesh = std::make_shared<Session>(shared_socket, index);
                      sesh->run();
                 } catch (std::exception& e)
                 {

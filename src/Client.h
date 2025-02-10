@@ -7,6 +7,7 @@
 
 #include "Network.h"
 #include "PrecompHeader.h"
+#include "Scene.h"
 
 using tcp = boost::asio::ip::tcp;
 
@@ -25,7 +26,15 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                 visit([](const auto& m) {
                     using T = std::decay_t<decltype(m)>;
                     if constexpr (std::is_same_v<T, WorldInfo>) {
-                        std::cout << "Got world info " << m.seed << " \n";
+                        std::cout << "Got world info " << m.seed << " \n"
+                        << "playerIndex: " << m.yourPlayerIndex << " \n"
+                        << "yourPosition: " << m.yourPosition.x << " " << m.yourPosition.y << " " << m.yourPosition.z << " \n";
+
+                        theScene.world->setSeed(m.seed);
+                        theScene.myPlayerIndex = theScene.addPlayerWithIndex(m.yourPlayerIndex);
+
+                        //Dont do this yet, receive the file first
+                        theScene.worldReceived = true;
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
                         std::cout << "Got controls update \n";

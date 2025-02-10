@@ -3,3 +3,7 @@
 //
 
 #include "Server.h"
+
+std::unordered_map<int, ServerPlayer> clients;
+
+std::shared_mutex clientsMutex;

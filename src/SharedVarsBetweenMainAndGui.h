@@ -7,57 +7,13 @@
 
 
 #include "PrecompHeader.h"
-#include "world/WorldGizmo.h"
-#include "world/gizmos/BlockSelectGizmo.h"
-#include "Hud.h"
+#include "Scene.h"
 
 #include "Client.h"
 
 extern boost::asio::io_context io_context;
 extern boost::asio::ip::tcp::socket tsocket;
 extern boost::asio::ip::tcp::resolver resolver;
-
-struct Scene
-{
-    std::unordered_map<int, Player*> players = {};
-    int myPlayerIndex = -1;
-    size_t addPlayer()
-    {
-        int index = 0;
-        while (players.contains(index))
-        {
-            index++;
-        };
-        players.insert({index, new Player()});
-        return index;
-    }
-    size_t addPlayerWithIndex(size_t index)
-    {
-        players.insert_or_assign(index, new Player());
-        return index;
-    }
-    bool mouseCaptured = false;
-    bool firstMouse = true;
-    std::vector<WorldGizmo*> gizmos;
-    ParticlesGizmo* particles = nullptr;
-    World* world = nullptr;
-    BlockSelectGizmo* blockSelectGizmo = nullptr;
-    WorldRenderer* worldRenderer = nullptr;
-    Hud* hud = nullptr;
-    GLFWwindow* window = nullptr;
-    std::string serverAddress = "127.0.0.1:25000";
-    int currentSeed = 0;
-    bool multiplayer = false;
-    std::atomic<bool> worldReceived = {false};
-    std::atomic<bool> clientShouldRun = {false};
-    void enableMultiplayer()
-    {
-        multiplayer = true;
-        clientShouldRun.store(true);
-    }
-};
-
-extern Scene theScene;
 
 
 void enterWorld(Scene* s);

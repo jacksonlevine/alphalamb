@@ -299,8 +299,13 @@ void enterWorld(Scene* s)
 
     int width, height = 0;
     glfwGetWindowSize(s->window, &width, &height);
+
+    if (!s->multiplayer)
+    {
+        s->myPlayerIndex = s->addPlayer();
+    }
     //Add ourselves to the scene
-    s->myPlayerIndex = s->addPlayer();
+
 
     {
         auto & camera = s->players.at(s->myPlayerIndex)->camera;

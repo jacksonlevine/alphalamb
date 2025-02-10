@@ -25,6 +25,7 @@ struct ControlsUpdate {
 struct FileTransferInit
 {
     size_t fileSize;
+    bool isWorld;
 };
 
 using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit>;

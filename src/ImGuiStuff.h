@@ -107,6 +107,10 @@ inline void renderImGui() {
 
                         if(connectToServer(ip.c_str(), port.c_str()))
                         {
+                            while (!theScene.worldReceived.load())
+                            {
+                                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                            }
                             enterWorld(&theScene);
                             currentGuiScreen = GuiScreen::InGame;
                         } else

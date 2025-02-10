@@ -101,12 +101,14 @@ add_executable(DistantGarden
         src/Server.h
         src/Client.cpp
         src/Client.h
+        src/Scene.h
 
 )
 
 add_executable(DGServer
         src/servermain.cpp
         src/Server.h
+        src/Server.cpp
         src/PrecompHeader.h)
 
 
