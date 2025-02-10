@@ -102,6 +102,10 @@ add_executable(DistantGarden
         src/Client.cpp
         src/Client.h
         src/Scene.h
+        src/BillboardInstanceShader.cpp
+        src/BillboardInstanceShader.h
+        src/Texture2DArray.cpp
+        src/Texture2DArray.h
 
 )
 

@@ -111,6 +111,7 @@ inline void renderImGui() {
                             {
                                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
                             }
+                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
                             enterWorld(&theScene);
                             currentGuiScreen = GuiScreen::InGame;
                         } else
@@ -139,6 +140,10 @@ inline void renderImGui() {
                 {
                     exitWorld(&theScene);
                     uncaptureMouse(&theScene);
+                    if(theScene.multiplayer)
+                    {
+                        tsocket.close();
+                    }
                     currentGuiScreen = GuiScreen::MainMenu;
                 }
                 if (ImGui::Button("Exit to desktop"))

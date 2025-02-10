@@ -52,6 +52,11 @@ inline void exitWorld(Scene* scene)
     scene->worldRenderer->stopThreads();
     std::cout << "Stopped \n";
 
+    if(scene->multiplayer)
+    {
+        scene->clientShouldRun.store(false);
+    }
+
 
     scene->worldRenderer->activeChunks.clear();
     //scene->worldRenderer->mbtActiveChunks.clear();

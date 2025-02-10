@@ -90,6 +90,7 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                                 if(isWorld)
                                 {
                                     theScene.world->load("mpworld.txt");
+                                    std::cout << "Playerindex here: " << theScene.myPlayerIndex << " \n";
                                     theScene.worldReceived.store(true);
                                 }
 

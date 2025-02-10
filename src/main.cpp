@@ -33,6 +33,7 @@
 #include "LUTLoader.h"
 #include "Hud.h"
 #include "SharedVarsBetweenMainAndGui.h"
+#include "Texture2DArray.h"
 
 boost::asio::io_context io_context;
 boost::asio::ip::tcp::socket tsocket(io_context);
@@ -326,13 +327,17 @@ void enterWorld(Scene* s)
 
     if (!s->multiplayer)
     {
+        std::cout << " This happening \n";
         s->myPlayerIndex = s->addPlayer();
     }
     //Add ourselves to the scene
 
 
     {
-        auto & camera = s->players.at(s->myPlayerIndex)->camera;
+        auto & players = s->players;
+        std::cout << "Player index on entering: " << s->myPlayerIndex;
+        auto & player = players.at(s->myPlayerIndex);
+        auto & camera = player->camera;
         camera.updateProjection(width, height, 90.0f);
     }
     s->worldRenderer->launchThreads(&s->players.at(s->myPlayerIndex)->camera, s->world);
@@ -423,6 +428,13 @@ int main()
 
 
 
+
+    std::vector<std::string> paths = {"resources/sprite/idle.png", "resources/sprite/run.png", "resources/sprite/jump.png", "resources/sprite/leftstrafe.png", "resources/sprite/rightstrafe.png", "resources/sprite/backwardsrun.png"};
+    jl::Texture2DArray texture2DArray(paths);
+    texture2DArray.bind(3);
+    jl::prepareBillboard();
+
+
     while (!glfwWindowShouldClose(window))
     {
         static float lastTime = glfwGetTime();
@@ -432,15 +444,60 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        std::vector<Billboard> billboards(theScene.players.size());
+        std::vector<AnimationState> animStates(theScene.players.size());
+
         for (auto & [id, player] : theScene.players)
         {
             player->update(deltaTime, &world, particles);
+            billboards.push_back(player->billboard);
+            animStates.push_back(player->animation_state);
+            float wantedAnim = IDLE;
+            if(player->controls.anyMovement())
+            {
+                if(player->controls.jump)
+                {
+                    wantedAnim = JUMP;
+                }
+                else
+                    if(player->controls.left && !player->controls.right)
+                    {
+                        wantedAnim = LEFTSTRAFE;
+                    } else
+                        if(player->controls.right && !player->controls.left)
+                        {
+                            wantedAnim = RIGHTSTRAFE;
+                        } else
+                            if(player->controls.backward && !player->controls.forward)
+                            {
+                                wantedAnim = BACKWARDSRUN;
+                            } else
+                            {
+                                wantedAnim = RUN;
+                            }
+            }
+
+            auto existinganim = &player->animation_state;
+            AnimationState newState{
+                wantedAnim,
+                (float)glfwGetTime(),
+                wantedAnim == JUMP ? 0.5f : 1.0f
+            };
+
+            bool jumpinprogress = (existinganim->actionNum == JUMP) && (glfwGetTime() - existinganim->timestarted < 0.75f);
+            if(existinganim->actionNum != wantedAnim && !jumpinprogress)
+            {
+                player->animation_state = newState;
+            }
+
         }
+        jl::updateBillboards(billboards);
+        jl::updateAnimStates(animStates);
 
         static jl::Shader gltfShader = getBasicShader();
         static jl::Texture worldTex("resources/world.png");
 
-
+        static jl::Shader billboardInstShader = getBillboardInstanceShader();
 
         if (theScene.myPlayerIndex != -1)
         {
@@ -576,6 +633,52 @@ int main()
             {
                 gizmo->draw(&world, theScene.players[theScene.myPlayerIndex]);
             }
+
+
+
+
+
+
+
+
+
+
+            glBindVertexArray(billboardVAO);
+            glUseProgram(billboardInstShader.shaderID);
+            auto loc1 = glGetUniformLocation(billboardInstShader.shaderID, "mvp");
+            //std::cout << "mvp loc: " << std::to_string(loc1) << "\n";
+            glUniformMatrix4fv(loc1, 1, GL_FALSE, glm::value_ptr(camera.mvp));
+            auto loc2 = glGetUniformLocation(billboardInstShader.shaderID, "camPos");
+            //std::cout << "campos loc: " << std::to_string(loc2) << "\n";
+
+            glUniform3f(loc2, camera.transform.position.x, camera.transform.position.y, camera.transform.position.z);
+            auto loc3 = glGetUniformLocation(billboardInstShader.shaderID, "time");
+            //std::cout << "time loc: " << std::to_string(loc3) << "\n";
+            glUniform1f(loc3, glfwGetTime());
+
+            auto loc4 = glGetUniformLocation(billboardInstShader.shaderID, "ourTexture");
+            //std::cout << "texture loc: " << std::to_string(loc4) << "\n";
+            glUniform1i(loc4, 3);
+
+
+
+
+
+
+
+
+
+            jl::drawBillboards(theScene.players.size());
+
+
+
+
+
+
+
+
+
+
 
 
             particles->cleanUpOldParticles(deltaTime);

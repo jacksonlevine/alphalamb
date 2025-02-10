@@ -8,7 +8,7 @@
 #include "Camera.h"
 #include "CollisionCage.h"
 #include "Controls.h"
-
+#include "BillboardInstanceShader.h"
 
 inline static const PxExtendedVec3 DEFAULT_PLAYERPOS = PxExtendedVec3(0, 200, 0);
 
@@ -16,12 +16,16 @@ class MyControllerHitReport;
 class ParticlesGizmo;
 
 struct Player {
-    jl::Camera camera;
-    Controls controls;
-    physx::PxController* controller;
+    jl::Camera camera = {};
+    Controls controls = {};
+    physx::PxController* controller = nullptr;
     CollisionCage collisionCage = {};
     float footDustTimer = 0.0f;
     MaterialName lastBlockStandingOn = AIR;
+    Billboard billboard = {};
+    AnimationState animation_state = {};
+    bool isGrounded = false;
+    bool jetpackMode = false;
     void update(float deltaTime, World* world, ParticlesGizmo* particles);
     MyControllerHitReport* getMyHitReport()
     {

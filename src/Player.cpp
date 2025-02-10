@@ -11,8 +11,8 @@
 void Player::update(const float deltaTime, World* world, ParticlesGizmo* particles)
 {
     glm::vec3 displacement(0.0f, 0.0f, 0.0f);
-    auto mhr = ((MyControllerHitReport*)controller->getUserData());
-    mhr->isGrounded = false;
+
+    isGrounded = false;
 
     float walkmult = controls.sprint ? 8.0f : 5.2f;
 
@@ -36,7 +36,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         }
     }
 
-    if(mhr->jetpackMode && controls.secondary1)
+    if(jetpackMode && controls.secondary1)
     {
         if(footDustTimer > 0.1)
         {
@@ -51,10 +51,10 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
 
     if (controls.secondary1)
     {
-        mhr->jetpackMode = true;
+        jetpackMode = true;
     }
 
-    if (mhr->jetpackMode)
+    if (jetpackMode)
     {
         camera.transform.velocity /= (1.0f + deltaTime);
         if (controls.secondary1) {
@@ -131,10 +131,10 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
     );
 
     // Update grounded state
-    camera.transform.grounded = (collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN) || mhr->isGrounded;
+    camera.transform.grounded = (collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN) || isGrounded;
     if (camera.transform.grounded)
     {
-        mhr->jetpackMode = false;
+        jetpackMode = false;
     }
 
 
