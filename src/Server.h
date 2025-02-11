@@ -17,6 +17,7 @@ struct ServerPlayer
     std::weak_ptr<tcp::socket> socket;
     Controls controls;
     jl::Camera camera;
+    bool receivedWorld = false;
 };
 
 extern std::unordered_map<int, ServerPlayer> clients;
@@ -24,6 +25,24 @@ extern std::unordered_map<int, ServerPlayer> clients;
 extern std::shared_mutex clientsMutex;
 
 extern DataMap* serverUserDataMap;
+
+
+
+
+
+inline void sendMessageToAllClients(const DGMessage& message, int m_playerIndex, bool excludeMe)
+{
+
+    std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+    for(auto & [id, client] : clients)
+    {
+        if(!((id == (int)m_playerIndex) && excludeMe) && !client.socket.expired() && client.receivedWorld)
+        {
+            boost::asio::write(*client.socket.lock(), boost::asio::buffer(&message, sizeof(DGMessage)));
+        }
+    }
+
+}
 
 
 class Session : public std::enable_shared_from_this<Session>
@@ -84,7 +103,6 @@ private:
                 }
             });
         }
-
         {
             std::shared_lock<std::shared_mutex> clientsLock(clientsMutex);
             for(auto & [id, client] : clients)
@@ -104,7 +122,7 @@ private:
                         }
                     });
                     //And also notify others we are here
-                    if(!client.socket.expired())
+                    if(!client.socket.expired() && client.receivedWorld)
                     {
                         DGMessage ourPlayerPresent = PlayerPresent {
                             (int)m_playerIndex, clients.at(m_playerIndex).camera.transform.position, clients.at(m_playerIndex).camera.transform.direction};
@@ -122,6 +140,7 @@ private:
                 }
 
             }
+            clients.at(m_playerIndex).receivedWorld = true;
         }
 
 
@@ -132,7 +151,7 @@ private:
     void waitForMessage() {
     auto self(shared_from_this());
 
-
+//std::cout << "now starting \n";
 
 
     boost::asio::async_read(*m_socket, boost::asio::buffer(&m_message, sizeof(DGMessage)),
@@ -142,13 +161,14 @@ private:
                 bool redistrib = false;
                 bool excludeyou = false;
 
+                //std::cout << "got something, visiting \n";
                 visit([&](const auto& m) {
                     using T = std::decay_t<decltype(m)>;
                     if constexpr (std::is_same_v<T, WorldInfo>) {
                         std::cout << "Got world info " << m.seed << " \n";
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
-                        std::cout << "Got controls update from " << m_playerIndex << " \n";
+                        //std::cout << "Got controls update from " << m_playerIndex << " \n";
                         {
                             //std::cout << "Waiting on clients lock \n";
                             std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
@@ -168,7 +188,7 @@ private:
                         std::cout << "Got playerleave \n";
                     }
                     else if constexpr (std::is_same_v<T, YawPitchUpdate>) {
-                        std::cout << "Got yawpitchupdate \n";
+                        //std::cout << "Got yawpitchupdate \n";
                         redistrib = true;
                         excludeyou = true;
                     }
@@ -191,29 +211,7 @@ private:
 
                 if (redistrib)
                 {
-                    auto lock = std::unique_lock<std::shared_mutex>(clientsMutex);
-                    for(auto & [id, client] : clients)
-                    {
-                        if(!(excludeyou && (id == m_playerIndex)))//(client.myUuid != m_header.myUuid)
-                        {
-                            if(!client.socket.expired())
-                            {
-                                try
-                                {
-                                    boost::asio::async_write(*(client.socket.lock()), boost::asio::buffer(&m_message, sizeof(DGMessage)), [this, self](boost::system::error_code ec, std::size_t /*length*/)
-                                    {
-
-                                    });
-
-                                } catch (std::exception& e)
-                                {
-                                    std::cout << "Couldn't send: " <<  e.what() << "\n";
-                                }
-
-                            }
-
-                        }
-                    }
+                   sendMessageToAllClients(m_message, m_playerIndex, excludeyou);
                 }
 
                 //Wait for next message
@@ -229,33 +227,18 @@ private:
                     ec == boost::asio::error::shut_down)
                 {
                     std::cout << "Removing player \n";
-                    std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-                    clients.erase(m_playerIndex);
 
-                    for(auto & [id, client] : clients)
-                    {
 
-                            if(!client.socket.expired())
-                            {
-                                try
-                                {
-
-                                    DGMessage pl = PlayerLeave {
+                    DGMessage pl = PlayerLeave {
                                     (int)m_playerIndex};
-                                    boost::asio::async_write(*(client.socket.lock()), boost::asio::buffer(&pl, sizeof(DGMessage)), [this, self](boost::system::error_code ec, std::size_t /*length*/)
-                                    {
 
-                                    });
-
-                                } catch (std::exception& e)
-                                {
-                                    std::cout << "Couldn't send player leave: " <<  e.what() << "\n";
-                                }
-
-                            }
-
-
+                    {
+                        std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+                        std::cout << "New player count: " << clients.size()-1 << std::endl;
+                        clients.erase(m_playerIndex);
                     }
+
+                    sendMessageToAllClients(pl, m_playerIndex, true);
                 }
             }
         });
@@ -305,7 +288,8 @@ public:
                         clients.insert({index, ServerPlayer{
                             .socket = shared_socket,
                             .controls = Controls{},
-                            .camera = jl::Camera{}
+                            .camera = jl::Camera{},
+                            .receivedWorld = std::atomic<bool>{false},
                         }});
                     }
 

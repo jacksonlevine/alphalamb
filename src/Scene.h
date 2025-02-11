@@ -9,6 +9,12 @@
 #include "world/gizmos/BlockSelectGizmo.h"
 #include "Hud.h"
 
+
+struct Settings
+{
+    float mouseSensitivity = 1.0f;
+
+};
 struct Scene
 {
     std::unordered_map<int, Player*> players = {};
@@ -42,6 +48,25 @@ struct Scene
     bool multiplayer = false;
     std::atomic<bool> worldReceived = {false};
     std::atomic<bool> clientShouldRun = {false};
+    Settings settings = {};
+    void saveSettings()
+    {
+        std::ofstream settingsFile("settings.txt", std::ios::trunc);
+        if (settingsFile.is_open())
+        {
+            settingsFile << settings.mouseSensitivity << "\n";
+            settingsFile.close();
+        }
+
+    }
+    void loadSettings()
+    {
+        std::ifstream settingsFile("settings.txt");
+        if (settingsFile.is_open())
+        {
+            settingsFile >> settings.mouseSensitivity;
+        }
+    }
     void enableMultiplayer()
     {
         multiplayer = true;

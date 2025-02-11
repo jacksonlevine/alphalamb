@@ -137,12 +137,18 @@ public:
     std::atomic<bool> rebuildThreadRunning = false;
     std::atomic<bool> meshBuildingThreadRunning = false;
 
+
     // Preallocated memory pool for activeChunks and mbtActiveChunks
     std::vector<char> activeChunksMemoryPool;
     std::vector<char> mbtActiveChunksMemoryPool;
 
+    //For the user
     std::mutex bufferMutex = {};
     std::condition_variable bufferCV = {};
+
+    //For the mbt
+    std::mutex mbtBufferMutex = {};
+    std::condition_variable mbtBufferCV = {};
 
 
     void notifyBufferFreed() {
@@ -165,7 +171,7 @@ public:
 
     ///Chunks that have had their terrain features generated already.
     std::unordered_set<TwoIntTup, TwoIntTupHash> generatedChunks;
-    void generateChunk(World* world, TwoIntTup& chunkSpot);
+    void generateChunk(World* world, TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>& implicatedChunks);
 
     WorldRenderer()
         : activeChunksMemoryPool(maxChunks * sizeof(std::pair<TwoIntTup, size_t>)),
@@ -237,12 +243,12 @@ public:
 
         while (rebuildThreadRunning) {
             ChunkRebuildRequest request;
-            std::cout << "Running \n";
+            //std::cout << "Running \n";
             if (rebuildQueue.pop(request)) {
-                std::cout << "Popped one: " << request.chunkPos.x << " " << request.chunkPos.z << " \n";
+                //std::cout << "Popped one: " << request.chunkPos.x << " " << request.chunkPos.z << " \n";
                 if(request.changeTo != std::nullopt)
                 {
-                    std::cout <<"Doing the fucking write to " << request.changeSpot.x << " " << request.changeSpot.y << " " << request.changeSpot.z << " \n";
+                    //std::cout <<"Doing the fucking write to " << request.changeSpot.x << " " << request.changeSpot.y << " " << request.changeSpot.z << " \n";
                     world->set(request.changeSpot, request.changeTo.value());
                 }
                 if(request.rebuild)
@@ -252,7 +258,7 @@ public:
                     {
                         if (auto locks = world->tryToGetReadLockOnDMs()) {
                             // Get the chunk data with locks held
-                            std::cout << "Got readlock on dms \n";
+                            //std::cout << "Got readlock on dms \n";
                             mesh = fromChunkLocked(request.chunkPos, world, chunkSize);
                         } else if (rebuildThreadRunning) {
                             std::cout << "Failed to get read lock on DMs\n";
@@ -303,7 +309,7 @@ public:
         auto chunkspot = WorldRenderer::worldToChunkPos(titspot);
         if (activeChunks.contains(chunkspot))
         {
-            std::cout << "Requesting rebuild for spot: " << chunkspot.x << " " << chunkspot.z << std::endl;
+            //std::cout << "Requesting rebuild for spot: " << chunkspot.x << " " << chunkspot.z << std::endl;
             if(changeTo != std::nullopt)
             {
                 rebuildQueue.push(ChunkRebuildRequest(

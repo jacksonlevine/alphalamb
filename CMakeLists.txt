@@ -13,10 +13,16 @@ endif()
 project(DistantGarden)
 
 add_compile_definitions(_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
+add_compile_options(/experimental:relativepath)
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 ")
+
 set(CMAKE_VERBOSE_MAKEFILE ON)
+
+set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG /Z7-") # Ensure NDEBUG is set in Release mode
+set(CMAKE_CXX_FLAGS_DEBUG "/Zi /D_DEBUG")    # Ensure _DEBUG is set in Debug mode
+
 
 find_package(glfw3 CONFIG REQUIRED)
 find_package(GLEW REQUIRED)

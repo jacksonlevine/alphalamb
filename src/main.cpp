@@ -124,7 +124,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                 if (scene->multiplayer)
                 {
                     auto & spot = scene->blockSelectGizmo->selectedSpot;
-                    std::cout << "Senfing blokc chagne \n";
+                    //std::cout << "Senfing blokc chagne \n";
                     pushToMainToNetworkQueue(BlockSet{
                         spot, AIR
                     });
@@ -199,10 +199,20 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
             {
                 auto & spot = scene->blockSelectGizmo->selectedSpot;
                 IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
-                std::cout << "Senfing blokc place \n";
-                pushToMainToNetworkQueue(BlockSet{
-                    placeSpot, scene->players.at(scene->myPlayerIndex)->currentHeldBlock
-                });
+
+                    using namespace std;
+
+                IntTup playerBlockSpot1 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y), floor(cam.transform.position.z));
+                IntTup playerBlockSpot2 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y-1), floor(cam.transform.position.z));
+
+                if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
+                {
+                    //std::cout << "Senfing blokc place \n";
+                    pushToMainToNetworkQueue(BlockSet{
+                        placeSpot, scene->players.at(scene->myPlayerIndex)->currentHeldBlock
+                    });
+                }
+
 
             } else
             {
@@ -353,8 +363,8 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 
 
         //ADD SENSITIVITY HERE
-        const double xOffset = (xpos - lastx) * (30.0f/100.0f);
-        const double yOffset = (lasty - ypos) * (30.0f/100.0f);
+        const double xOffset = (xpos - lastx) * (scene->settings.mouseSensitivity * 0.3);
+        const double yOffset = (lasty - ypos) * (scene->settings.mouseSensitivity * 0.3);
 
         //std::cout << "Yaw: " << std::to_string(CAMERA.transform.yaw) << " Pitch: " << std::to_string(CAMERA.transform.pitch) << "\n";
 
@@ -436,7 +446,7 @@ void enterWorld(Scene* s)
 
     if (!s->multiplayer)
     {
-        std::cout << " This happening \n";
+        //std::cout << " This happening \n";
         s->myPlayerIndex = s->addPlayer();
     }
     //Add ourselves to the scene
@@ -444,7 +454,7 @@ void enterWorld(Scene* s)
 
     {
         auto & players = s->players;
-        std::cout << "Player index on entering: " << s->myPlayerIndex;
+        //std::cout << "Player index on entering: " << s->myPlayerIndex;
         auto & player = players.at(s->myPlayerIndex);
         auto & camera = player->camera;
         camera.updateProjection(width, height, 90.0f);
@@ -505,7 +515,7 @@ int main()
 
 
 
-
+    theScene.loadSettings();
 
 
     ParticlesGizmo* particles = new ParticlesGizmo();
@@ -574,8 +584,8 @@ int main()
 
             std::vector<Billboard> billboards;
             std::vector<AnimationState> animStates;
-            billboards.reserve(theScene.players.size()-1);
-            animStates.reserve(theScene.players.size()-1);
+            billboards.reserve(theScene.players.size());
+            animStates.reserve(theScene.players.size());
 
             if(theScene.multiplayer)
             {
@@ -696,26 +706,30 @@ int main()
                         // std::cout << "Got a controls update from " << m.myPlayerIndex << "\n";
                         // std::cout << m.myControls << " \n";
                         // std::cout << m.startPos.x << " " << m.startPos.y << " " << m.startPos.z << "\n";
-                        if(theScene.players.contains(m.myPlayerIndex))
+                        if(!theScene.players.contains(m.myPlayerIndex))
                         {
-                            theScene.players.at(m.myPlayerIndex)->controls = m.myControls;
-                            theScene.players.at(m.myPlayerIndex)->camera.transform.position = m.startPos;
-                            theScene.players.at(m.myPlayerIndex)->controller->setPosition(PxExtendedVec3(
-                        m.startPos.x,
-                        m.startPos.y - CAMERA_OFFSET,
-                        m.startPos.z)
-                            );
-
-                            theScene.players.at(m.myPlayerIndex)->camera.transform.yaw = m.startYawPitch.x;
-                            theScene.players.at(m.myPlayerIndex)->camera.transform.pitch = m.startYawPitch.y;
+                            theScene.addPlayerWithIndex(m.myPlayerIndex);
                         }
+                        theScene.players.at(m.myPlayerIndex)->controls = m.myControls;
+                        theScene.players.at(m.myPlayerIndex)->camera.transform.position = m.startPos;
+                        theScene.players.at(m.myPlayerIndex)->controller->setPosition(PxExtendedVec3(
+                    m.startPos.x,
+                    m.startPos.y - CAMERA_OFFSET,
+                    m.startPos.z)
+                        );
+
+                        theScene.players.at(m.myPlayerIndex)->camera.transform.yaw = m.startYawPitch.x;
+                        theScene.players.at(m.myPlayerIndex)->camera.transform.pitch = m.startYawPitch.y;
+
                     }
                     else if constexpr (std::is_same_v<T, YawPitchUpdate>)
                     {
-                        if(theScene.players.contains(m.myPlayerIndex))
+                        if(!theScene.players.contains(m.myPlayerIndex))
                         {
-                            theScene.players.at(m.myPlayerIndex)->camera.updateWithYawPitch(m.newYaw, m.newPitch);
+                            theScene.addPlayerWithIndex(m.myPlayerIndex);
                         }
+                        theScene.players.at(m.myPlayerIndex)->camera.updateWithYawPitch(m.newYaw, m.newPitch);
+
                     }
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>)
                     {
@@ -867,14 +881,12 @@ int main()
             renderer->mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, gltfShader.shaderID, world.worldGenMethod, deltaTime);
             glUniform1f(timeRenderedLoc, 10.0f);
             glUniform1f(scaleLoc, 0.4f);
-            for (auto & [id, player] : theScene.players)
+            for (auto& player : theScene.players | std::views::values)
             {
 
                 auto pos = player->camera.transform.position + (player->camera.transform.direction*0.5f) + (player->camera.transform.right * 0.5f);
                 pos.y -= 0.5f;
                 glUniform3f(posLoc, pos.x, pos.y, pos.z);
-            
-
                 glUniform3f(offsetLoc, -0.5f, -0.5f, -0.5f);
                 drawHandledBlock(player->camera.transform.position, player->currentHeldBlock, gltfShader.shaderID, player->lastHeldBlock, player->handledBlockMeshInfo);
             }

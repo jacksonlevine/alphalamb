@@ -130,7 +130,12 @@ inline void renderImGui() {
                     glfwSetWindowShouldClose(theScene.window, true);
                 }
                 break;
-            case GuiScreen::EscapeMenu:
+        case GuiScreen::EscapeMenu:
+
+                if (ImGui::SliderFloat("Mouse Sensitivity", &theScene.settings.mouseSensitivity, 0.0f, 2.0f))
+                {
+                    theScene.saveSettings();
+                }
 
                 if (ImGui::Button("Back to game"))
                 {
@@ -154,7 +159,7 @@ inline void renderImGui() {
                 break;
             case GuiScreen::InGame:
 
-                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.92abc");
+                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.93a");
 
                 ImVec2 screenSize = ImGui::GetIO().DisplaySize;
                 ImVec2 textSize = ImGui::CalcTextSize("F: Use jetpack");

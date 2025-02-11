@@ -139,7 +139,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
             confirmedActiveChunksQueue.push(buffer.to);
             buffer.ready = false;
             freedChangeBuffers.push(i);  // Return to free list
-
+            mbtBufferCV.notify_one();
             break; //Only do one per frame
         }
     }
@@ -246,7 +246,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
     while(meshBuildingThreadRunning)
     {
 
-
+        std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
 
 
         TwoIntTup playerChunkPosition = worldToChunkPos(
@@ -278,6 +278,46 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         for (auto & spotHere : checkspots)
         {
 
+            for (auto & chunk : implicatedChunks)
+            {
+                if (mbtActiveChunks.contains(chunk))
+                {
+                    auto & uci = mbtActiveChunks.at(chunk);
+                    UsableMesh mesh;
+                    {
+                        if (auto locks = world->tryToGetReadLockOnDMs()) {
+                            //std::cout << "Got readlock on dms \n";
+                            mesh = fromChunkLocked(chunk, world, chunkSize);
+                        }
+                    }
+
+
+                    size_t changeBufferIndex = -1;
+                    {
+                        std::unique_lock<std::mutex> lock(mbtBufferMutex);
+                        mbtBufferCV.wait(lock, [&]() {
+                            return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
+                        });
+
+                        if (!meshBuildingThreadRunning) break;
+                    }
+
+                    if (changeBufferIndex != -1)
+                    {
+                        auto& buffer = changeBuffers[changeBufferIndex];
+                        buffer.in_use = true;
+                        buffer.mesh = mesh;
+                        buffer.chunkIndex = uci.chunkIndex;
+                        buffer.from = chunk;
+                        buffer.to = chunk;
+                        buffer.ready = true;
+                        buffer.in_use = false;
+                    }
+                }
+
+            }
+            implicatedChunks.clear();
+
                 TwoIntTup confirmedChunk;
                 while (confirmedActiveChunksQueue.pop(confirmedChunk) && meshBuildingThreadRunning) {
                     if (mbtActiveChunks.contains(confirmedChunk))
@@ -295,7 +335,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                     {
                             if(!generatedChunks.contains(spotHere))
                             {
-                                generateChunk(world, spotHere);
+                                generateChunk(world, spotHere, implicatedChunks);
                             }
                         //std::cout << "Spot " << i << " " << j << std::endl;
 
@@ -304,9 +344,13 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                         if (chunkPool.size() < maxChunks)
                         {
                             size_t changeBufferIndex = -1;
-                            while (!freedChangeBuffers.pop(changeBufferIndex) && meshBuildingThreadRunning) {
-                                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                                std::cout << "Trying to pop change buffer on mesh \n";
+                            {
+                                std::unique_lock<std::mutex> lock(mbtBufferMutex);
+                                mbtBufferCV.wait(lock, [&]() {
+                                    return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
+                                });
+
+                                if (!meshBuildingThreadRunning) break;
                             }
                             if (changeBufferIndex != -1)
                             {
@@ -378,9 +422,15 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                         size_t chunkIndex = mbtActiveChunks.at(oldSpot).chunkIndex;
 
                                         size_t changeBufferIndex = -1;
-                                        while (!freedChangeBuffers.pop(changeBufferIndex) && meshBuildingThreadRunning) {
-                                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                                        {
+                                            std::unique_lock<std::mutex> lock(mbtBufferMutex);
+                                            mbtBufferCV.wait(lock, [&]() {
+                                                return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
+                                            });
+
+                                            if (!meshBuildingThreadRunning) break;
                                         }
+
                                         if (changeBufferIndex != -1)
                                         {
                                             //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
@@ -420,6 +470,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
 
         }
+
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
 
@@ -432,10 +483,11 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
 }
 
-void WorldRenderer::generateChunk(World* world, TwoIntTup& chunkSpot)
+void WorldRenderer::generateChunk(World* world, TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>& implicatedChunks)
 {
 
     srand(chunkSpot.x * 73856093 ^ chunkSpot.z * 19349663);
+
     if (rand() > 9000)
     {
         int y = 50;
@@ -443,10 +495,12 @@ void WorldRenderer::generateChunk(World* world, TwoIntTup& chunkSpot)
         float offsetNoise2 = world->worldGenMethod->getHumidityNoise(IntTup(chunkSpot.x, chunkSpot.z)) * 5.0;
         IntTup realSpot(chunkSpot.x * chunkSize + (chunkSize >> 1) + offsetNoise , chunkSpot.z * chunkSize  + (chunkSize >> 1) + offsetNoise2);
         bool surfaceBlockFound = false;
+
+        MaterialName fb = OverworldWorldGenMethod::getFloorBlockInClimate(world->worldGenMethod->getClimate(realSpot));
         while(y < 170 && !surfaceBlockFound)
         {
             realSpot.y = y;
-            if(world->get(realSpot) == GRASS)
+            if(world->get(realSpot) == fb)
             {
                 surfaceBlockFound = true;
             }
@@ -456,11 +510,13 @@ void WorldRenderer::generateChunk(World* world, TwoIntTup& chunkSpot)
         {
             Climate climate = world->worldGenMethod->getClimate(realSpot);
             std::vector<TerrainFeature>& possibleFeatures = getTerrainFeaturesFromClimate(climate);
-            size_t selectedIndex = (int)(((float)rand()/(float)RAND_MAX) * (float)(possibleFeatures.size()-1));
+            size_t selectedIndex = (int)(((float)rand()/(float)RAND_MAX) * (float)(possibleFeatures.size()));
+            selectedIndex = std::min(selectedIndex, possibleFeatures.size() - 1);
             TerrainFeature selectedFeature = possibleFeatures[selectedIndex];
 
             std::vector<VoxelModelName>& possibleModels = getVoxelModelNamesFromTerrainFeatureName(selectedFeature);
-            size_t selectedModelIndex = (int)(((float)rand()/(float)RAND_MAX) * (float)(possibleModels.size()-1));
+            size_t selectedModelIndex = (int)(((float)rand()/(float)RAND_MAX) * (float)(possibleModels.size()));
+            selectedModelIndex = std::min(selectedModelIndex, possibleModels.size() - 1);
             VoxelModelName selectedModel = possibleModels[selectedModelIndex];
 
             IntTup& voxDim = voxelModels[selectedModel].dimensions;
@@ -470,10 +526,21 @@ void WorldRenderer::generateChunk(World* world, TwoIntTup& chunkSpot)
             {
                 if(point.colorIndex != AIR)
                 {
-                    world->nonUserDataMap->set(realSpot + point.localSpot + offset, point.colorIndex);
+                    auto finalspot = realSpot + point.localSpot + offset;
+                    auto chunkhere = WorldRenderer::worldToChunkPos(TwoIntTup(finalspot.x, finalspot.z));
+                    if (chunkhere != chunkSpot)
+                    {
+                        implicatedChunks.insert(chunkhere);
+                    }
+                    world->nonUserDataMap->set(finalspot, point.colorIndex);
                 }
             }
         }
+    }
+
+    for (auto & chunk: implicatedChunks)
+    {
+
     }
 
     generatedChunks.insert(chunkSpot);
