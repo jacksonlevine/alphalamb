@@ -8,5 +8,5 @@
 int main()
 {
     loadDM("serverworld.txt", serverUserDataMap);
-    serverThreadFun(25000);
+    serverThreadFun(6969);
 }

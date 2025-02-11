@@ -18,21 +18,32 @@ struct BlockChange
 };
 extern boost::lockfree::spsc_queue<DGMessage, boost::lockfree::capacity<512>> networkToMainBlockChangeQueue;
 
-extern boost::lockfree::spsc_queue<BlockChange, boost::lockfree::capacity<512>> mainToNetworkBlockChangeQueue;
+extern boost::lockfree::spsc_queue<DGMessage, boost::lockfree::capacity<512>> mainToNetworkBlockChangeQueue;
+
+extern std::mutex networkMutex;
+extern std::condition_variable networkCV;
 
 inline void sendToServer(tcp::socket* socket, std::atomic<bool>* shouldRun)
 {
     while (shouldRun->load()) {
-        BlockChange m;
+
+        if (mainToNetworkBlockChangeQueue.empty()) {
+            std::unique_lock<std::mutex> lock(networkMutex);
+            networkCV.wait(lock);
+        }
+
+        DGMessage m = WorldInfo{};
         while (mainToNetworkBlockChangeQueue.pop(&m))
         {
-            DGMessage blockSet = BlockSet {
-                m.spot, m.block
-            };
-            boost::asio::write(*socket, boost::asio::buffer(&blockSet, sizeof(DGMessage)));
+            boost::asio::write(*socket, boost::asio::buffer(&m, sizeof(DGMessage)));
         }
     }
+}
 
+inline void pushToMainToNetworkQueue(const DGMessage& m)
+{
+    mainToNetworkBlockChangeQueue.push(m);
+    networkCV.notify_one();
 }
 
 inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) {
@@ -62,6 +73,10 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
                         //std::cout << "Got controls update \n";
+                        networkToMainBlockChangeQueue.push(m);
+                    }
+                    else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>) {
+                        //std::cout << "Got select block change update \n";
                         networkToMainBlockChangeQueue.push(m);
                     }
                     else if constexpr (std::is_same_v<T, PlayerLeave>) {

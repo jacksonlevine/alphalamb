@@ -46,6 +46,7 @@ uniform float scale;
 
             uniform mat4 mvp;
             uniform vec3 pos;
+            uniform vec3 offs;
 
             uniform float timeRendered;
 
@@ -66,10 +67,12 @@ uniform float scale;
                 float fadeInProgress = min(1.0, timeRendered*2.5f);
 
                 timeRended = fadeInProgress;
-                vec3 pos2 = (rotposition.xyz + pos + vec3(0.0, (-1.0 + fadeInProgress) * 5.0f, 0.0));
-                vec3 finalpos = vec3(pos2.x * scale, pos2.y, pos2.z * scale);
-                ppos = finalpos;
-                gl_Position = mvp * vec4(finalpos, 1.0);
+                vec3 rotpos = rotposition.xyz  + offs;
+                vec3 scaledPos = vec3(rotpos.x * scale, rotpos.y * scale, rotpos.z * scale);
+                vec3 pos2 = (scaledPos.xyz + pos + vec3(0.0, (-1.0 + fadeInProgress) * 5.0f, 0.0));
+
+                ppos = pos2;
+                gl_Position = mvp * vec4(pos2, 1.0);
                 if(isGrass == 1.0) {
 
                     if(grassRedChange < 0.0) {

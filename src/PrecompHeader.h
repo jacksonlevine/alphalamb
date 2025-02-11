@@ -15,14 +15,13 @@
 #include <physx/PxPhysicsAPI.h>
 #include "boost/lockfree/spsc_queue.hpp"
 #include <physx/cooking/PxCooking.h>
-#include <cereal/types/memory.hpp>
-#include <cereal/archives/binary.hpp>
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
 #include <tiny_gltf.h>
 #include <stb_image.h>
 #include <PxRigidStatic.h>
 #include <cassert>
+#include <unordered_set>
 #include <memory>
 #include <filesystem>
 #include <ranges>

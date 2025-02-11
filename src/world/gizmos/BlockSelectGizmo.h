@@ -13,6 +13,7 @@ public:
     void init() override;
     IntTup selectedSpot = {};
     IntTup hitNormal ={};
+    bool isDrawing = false;
 private:
     GLuint vao, vbo, ebo = 0;
     GLuint shaderProgram = 0;

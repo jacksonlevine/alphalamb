@@ -28,7 +28,6 @@ find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container variant2)
 message(STATUS "Boost version: ${Boost_VERSION}")
 find_package(imgui CONFIG REQUIRED)
-find_package(cereal CONFIG REQUIRED)
 
 find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
 
@@ -106,6 +105,7 @@ add_executable(DistantGarden
         src/BillboardInstanceShader.h
         src/Texture2DArray.cpp
         src/Texture2DArray.h
+        src/HandledBlock.h
 
 )
 
@@ -138,7 +138,6 @@ function(add_common_libraries target)
     target_link_libraries(${target} PRIVATE imgui::imgui)
     target_link_libraries(${target} PRIVATE Boost::asio Boost::uuid)
     target_link_libraries(${target} PRIVATE Boost::lockfree)
-    target_link_libraries(${target} PRIVATE cereal::cereal)
     
     
     # target_link_libraries(${target} PRIVATE SharedThings)

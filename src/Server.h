@@ -172,6 +172,11 @@ private:
                         redistrib = true;
                         excludeyou = true;
                     }
+                    else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>) {
+                        std::cout << "Got selectblockchange \n";
+                        redistrib = true;
+                        excludeyou = true;
+                    }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
                         std::cout << "Got block set \n";
                         serverUserDataMap->set(m.spot, m.block);
@@ -335,7 +340,7 @@ inline void serverThreadFun(int port)
 
 inline void launchServerThreadFun()
 {
-    std::thread serverThread(serverThreadFun, 25000);
+    std::thread serverThread(serverThreadFun, 6969);
     serverThread.detach();
 }
 

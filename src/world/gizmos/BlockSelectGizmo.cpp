@@ -22,7 +22,7 @@ void BlockSelectGizmo::draw(World* world, Player* player)
 
     glm::vec3 direction = player->camera.transform.direction;
     glm::vec3 position = player->camera.transform.position;
-    glLineWidth(8.0);
+    glLineWidth(3.0);
 
     PxRaycastBuffer hit;
     PxQueryFilterData fd;
@@ -35,7 +35,7 @@ void BlockSelectGizmo::draw(World* world, Player* player)
                                  PxVec3(direction.x, direction.y, direction.z),
                                  DISTANCE, hit, PxHitFlag::eDEFAULT, fd);
 
-
+    isDrawing = false;
     if(isHit)
     {
         auto hitCount = hit.getNbAnyHits();
@@ -71,6 +71,7 @@ void BlockSelectGizmo::draw(World* world, Player* player)
                 spot.x, spot.y, spot.z);
 
             glDrawElements(GL_LINES, sizeof(indices) / sizeof(GLuint), GL_UNSIGNED_INT, 0);
+            isDrawing = true;
         }
 
     }

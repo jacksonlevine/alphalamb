@@ -10,6 +10,7 @@
 #include "Camera.h"
 #include "Controls.h"
 #include "IntTup.h"
+#include "world/MaterialName.h"
 using namespace boost::variant2;
 
 struct PlayerPresent
@@ -58,7 +59,13 @@ struct PlayerLeave
     int myPlayerIndex;
 };
 
-using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave>;
+struct PlayerSelectBlockChange
+{
+    int myPlayerIndex;
+    MaterialName newMaterial;
+};
+
+using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange>;
 
 
 

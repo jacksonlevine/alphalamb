@@ -37,7 +37,7 @@ struct Scene
     WorldRenderer* worldRenderer = nullptr;
     Hud* hud = nullptr;
     GLFWwindow* window = nullptr;
-    std::string serverAddress = "127.0.0.1:25000";
+    std::string serverAddress = "127.0.0.1:6969";
     int currentSeed = 0;
     bool multiplayer = false;
     std::atomic<bool> worldReceived = {false};

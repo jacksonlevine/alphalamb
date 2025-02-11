@@ -154,7 +154,7 @@ inline void renderImGui() {
                 break;
             case GuiScreen::InGame:
 
-                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.91a");
+                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.92abc");
 
                 ImVec2 screenSize = ImGui::GetIO().DisplaySize;
                 ImVec2 textSize = ImGui::CalcTextSize("F: Use jetpack");

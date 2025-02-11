@@ -27,6 +27,9 @@ struct Player {
     bool isGrounded = false;
     bool jetpackMode = false;
     void update(float deltaTime, World* world, ParticlesGizmo* particles);
+    MaterialName lastHeldBlock = AIR;
+    MaterialName currentHeldBlock = WOOD_PLANKS;
+    ChunkGLInfo handledBlockMeshInfo = {};
     MyControllerHitReport* getMyHitReport()
     {
         return ((MyControllerHitReport*)controller->getUserData());

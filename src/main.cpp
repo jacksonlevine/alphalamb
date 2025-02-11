@@ -19,6 +19,7 @@
 #include <stb_image.h>
 
 #include "Client.h"
+#include "HandledBlock.h"
 #include "PhysXStuff.h"
 #include "Sky.h"
 #include "world/SWCLoader.h"
@@ -41,6 +42,9 @@ boost::asio::ip::tcp::resolver resolver(io_context);
 
 Scene theScene = {};
 
+constexpr double J_PI = 3.1415926535897932384626433832;
+constexpr double DEG_TO_RAD = J_PI / 180.0;
+
 int properMod(int a, int b) {
     int m = a % b;
     return m < 0 ? m + b : m;
@@ -56,13 +60,11 @@ void sendControlsUpdatesLol(tcp::socket& socket, float deltaTime)
     {
         lastcontrols = player->controls;
         DGMessage cu = ControlsUpdate(theScene.myPlayerIndex, player->controls, player->camera.transform.position, glm::vec2(player->camera.transform.yaw, player->camera.transform.pitch));
-        boost::asio::async_write(socket, boost::asio::buffer(&cu, sizeof(DGMessage)), [](boost::system::error_code ec, std::size_t /*length*/)
-        {
+        pushToMainToNetworkQueue(cu);
 
-        });
     }
 
-    if (timer > 0.1)
+    if (timer > 0.2)
     {
         timer = 0.0f;
 
@@ -80,11 +82,8 @@ void sendControlsUpdatesLol(tcp::socket& socket, float deltaTime)
                 lastyaw,
                 lastpitch
             };
+            pushToMainToNetworkQueue(player_yaw_pitch_update);
 
-            boost::asio::async_write(socket, boost::asio::buffer(&player_yaw_pitch_update, sizeof(DGMessage)), [](boost::system::error_code ec, std::size_t /*length*/)
-            {
-
-            });
 
         }
     } else
@@ -126,7 +125,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                 {
                     auto & spot = scene->blockSelectGizmo->selectedSpot;
                     std::cout << "Senfing blokc chagne \n";
-                    mainToNetworkBlockChangeQueue.push(BlockChange{
+                    pushToMainToNetworkQueue(BlockSet{
                         spot, AIR
                     });
 
@@ -201,8 +200,8 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                 auto & spot = scene->blockSelectGizmo->selectedSpot;
                 IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
                 std::cout << "Senfing blokc place \n";
-                mainToNetworkBlockChangeQueue.push(BlockChange{
-                    placeSpot, WOOD_PLANKS
+                pushToMainToNetworkQueue(BlockSet{
+                    placeSpot, scene->players.at(scene->myPlayerIndex)->currentHeldBlock
                 });
 
             } else
@@ -218,7 +217,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                     //scene->world->set(spot, AIR);
                     //std::cout << "Set the block "  << std::endl;;
                     scene->worldRenderer->requestChunkRebuildFromMainThread(
-                        placeSpot, WOOD_PLANKS
+                        placeSpot, scene->players.at(scene->myPlayerIndex)->currentHeldBlock
                         );
 
 
@@ -227,6 +226,32 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
             }
 
 
+        } else if (button == GLFW_MOUSE_BUTTON_MIDDLE)
+        {
+            if (scene->world && scene->blockSelectGizmo && scene->worldRenderer && scene->myPlayerIndex != -1)
+            {
+                if (scene->blockSelectGizmo->isDrawing)
+                {
+                    //std::cout << "Setting" << std::endl;
+                    auto & spot = scene->blockSelectGizmo->selectedSpot;
+                    //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
+                    uint32_t blockThere = scene->world->get(spot);
+                    //IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
+                    scene->players.at(scene->myPlayerIndex)->currentHeldBlock = (MaterialName)blockThere;
+                    //scene->world->set(spot, AIR);
+                    //std::cout << "Set the block "  << std::endl;;
+                    // scene->worldRenderer->requestChunkRebuildFromMainThread(
+                    //     placeSpot, scene->players.at(scene->myPlayerIndex)->currentHeldBlock
+                    //     );
+
+
+                } else
+                {
+                    scene->players.at(scene->myPlayerIndex)->currentHeldBlock = AIR;
+                }
+
+                //std::cout << "Request filed " << std::endl;
+            }
         }
     }
 }
@@ -365,6 +390,42 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
     }
 }
 
+void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    static float lastTime = glfwGetTime();
+    if (glfwGetTime() - lastTime > 0.07f)
+    {
+        lastTime = glfwGetTime();
+        Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
+        if (scene->myPlayerIndex != -1)
+        {
+
+            if (yoffset > 0)
+            {
+                scene->players.at(scene->myPlayerIndex)->currentHeldBlock = (MaterialName)(((int)scene->players.at(scene->myPlayerIndex)->currentHeldBlock + 1 ) % BLOCK_COUNT);
+            }
+            if (yoffset < 0)
+            {
+                int newMat = (scene->players.at(scene->myPlayerIndex)->currentHeldBlock - 1) % BLOCK_COUNT;
+                if (newMat < 0)
+                {
+                    newMat = BLOCK_COUNT - 1;
+                }
+                scene->players.at(scene->myPlayerIndex)->currentHeldBlock = (MaterialName)newMat;
+            }
+
+            if (scene->multiplayer)
+            {
+                DGMessage sbu = PlayerSelectBlockChange{
+                    scene->myPlayerIndex,
+                scene->players.at(scene->myPlayerIndex)->currentHeldBlock};
+                pushToMainToNetworkQueue(sbu);
+            }
+        }
+    }
+
+}
+
 
 
 void enterWorld(Scene* s)
@@ -412,6 +473,7 @@ int main()
     glfwSetCursorPosCallback(window, cursorPosCallback);
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
+    glfwSetScrollCallback(window, scrollCallback);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -495,10 +557,7 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        std::vector<Billboard> billboards;
-        std::vector<AnimationState> animStates;
-        //billboards.reserve(theScene.players.size());
-        //animStates.reserve(theScene.players.size());
+
 
         glBindVertexArray(billboardVAO);
         glUseProgram(billboardInstShader.shaderID);
@@ -513,12 +572,105 @@ int main()
         if (theScene.myPlayerIndex != -1)
         {
 
-
+            std::vector<Billboard> billboards;
+            std::vector<AnimationState> animStates;
+            billboards.reserve(theScene.players.size()-1);
+            animStates.reserve(theScene.players.size()-1);
 
             if(theScene.multiplayer)
             {
                 sendControlsUpdatesLol(tsocket, deltaTime);
             }
+
+            for (auto & [id, player] : theScene.players)
+        {
+
+
+
+
+            player->billboard.position = player->camera.transform.position;
+            player->billboard.direction = player->camera.transform.direction;
+                player->billboard.characterNum = id % 4;
+
+
+            // std::cout << "Playerindex: " << id << "\n";
+            // std::cout << "PositionCA: " << player->camera.transform.position.x << " " << player->camera.transform.position.y << " " << player->camera.transform.position.z << " \n";
+            // std::cout << "PositionBI: " << player->billboard.position.x << " " << player->billboard.position.y << " " << player->billboard.position.z << " \n";
+            // auto contpos = player->controller->getPosition();
+            // std::cout << "PositionCO: " << contpos.x << " " << contpos.y << " " << contpos.z << " \n";
+            // std::cout << player->controls << "\n";
+            // std::cout << "Billboard Information:" << std::endl;
+            // std::cout << "  Position: ("
+            //           << player->billboard.position.x << ", "
+            //           << player->billboard.position.y << ", "
+            //           << player->billboard.position.z << ")" << std::endl;
+            // std::cout << "  Direction: ("
+            //           << player->billboard.direction.x << ", "
+            //           << player->billboard.direction.y << ", "
+            //           << player->billboard.direction.z << ")" << std::endl;
+            // std::cout << "  Character Number: " << player->billboard.characterNum << std::endl;
+            // std::cout << "  Hidden: " << player->billboard.hidden << std::endl;
+            //
+            // // Print AnimationState
+            // std::cout << "\nAnimation State Information:" << std::endl;
+            // std::cout << "  Action Number: " << player->animation_state.actionNum << std::endl;
+            // std::cout << "  Time Started: " << player->animation_state.timestarted << std::endl;
+            // std::cout << "  Time Scale: " << player->animation_state.timescale << std::endl;
+
+            player->collisionCage.updateToSpot(&world, player->camera.transform.position, deltaTime);
+                player->camera.updateWithYawPitch(player->camera.transform.yaw, player->camera.transform.pitch);
+
+            if(id != theScene.myPlayerIndex)
+            {
+                billboards.push_back(player->billboard);
+                animStates.push_back(player->animation_state);
+            }
+
+
+            float wantedAnim = IDLE;
+            if(player->controls.anyMovement())
+            {
+                if(player->controls.jump)
+                {
+                    wantedAnim = JUMP;
+                }
+                else
+                    if(player->controls.left && !player->controls.right)
+                    {
+                        wantedAnim = LEFTSTRAFE;
+                    } else
+                        if(player->controls.right && !player->controls.left)
+                        {
+                            wantedAnim = RIGHTSTRAFE;
+                        } else
+                            if(player->controls.backward && !player->controls.forward)
+                            {
+                                wantedAnim = BACKWARDSRUN;
+                            } else
+                            {
+                                wantedAnim = RUN;
+                            }
+            }
+
+            auto existinganim = &player->animation_state;
+            AnimationState newState{
+                wantedAnim,
+                (float)glfwGetTime(),
+                wantedAnim == JUMP ? 0.5f : 1.0f
+            };
+
+            bool jumpinprogress = (existinganim->actionNum == JUMP) && (glfwGetTime() - existinganim->timestarted < 0.75f);
+            if(existinganim->actionNum != wantedAnim && !jumpinprogress)
+            {
+                player->animation_state = newState;
+            }
+            player->update(deltaTime, &world, particles);
+        }
+        jl::updateBillboards(billboards);
+        jl::updateAnimStates(animStates);
+
+
+
 
             DGMessage msg = {};
 
@@ -563,6 +715,13 @@ int main()
                         if(theScene.players.contains(m.myPlayerIndex))
                         {
                             theScene.players.at(m.myPlayerIndex)->camera.updateWithYawPitch(m.newYaw, m.newPitch);
+                        }
+                    }
+                    else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>)
+                    {
+                        if(theScene.players.contains(m.myPlayerIndex))
+                        {
+                            theScene.players.at(m.myPlayerIndex)->currentHeldBlock = m.newMaterial;
                         }
                     }
                     else if constexpr (std::is_same_v<T, PlayerLeave>)
@@ -652,99 +811,14 @@ int main()
 
 
 
-
+                break; //Only do one per frame
             }
 
 
-            for (auto & [id, player] : theScene.players)
-        {
 
 
-
-
-            player->billboard.position = player->camera.transform.position;
-            player->billboard.direction = player->camera.transform.direction;
-                player->billboard.characterNum = id % 4;
-
-
-            // std::cout << "Playerindex: " << id << "\n";
-            // std::cout << "PositionCA: " << player->camera.transform.position.x << " " << player->camera.transform.position.y << " " << player->camera.transform.position.z << " \n";
-            // std::cout << "PositionBI: " << player->billboard.position.x << " " << player->billboard.position.y << " " << player->billboard.position.z << " \n";
-            // auto contpos = player->controller->getPosition();
-            // std::cout << "PositionCO: " << contpos.x << " " << contpos.y << " " << contpos.z << " \n";
-            // std::cout << player->controls << "\n";
-            // std::cout << "Billboard Information:" << std::endl;
-            // std::cout << "  Position: ("
-            //           << player->billboard.position.x << ", "
-            //           << player->billboard.position.y << ", "
-            //           << player->billboard.position.z << ")" << std::endl;
-            // std::cout << "  Direction: ("
-            //           << player->billboard.direction.x << ", "
-            //           << player->billboard.direction.y << ", "
-            //           << player->billboard.direction.z << ")" << std::endl;
-            // std::cout << "  Character Number: " << player->billboard.characterNum << std::endl;
-            // std::cout << "  Hidden: " << player->billboard.hidden << std::endl;
-            //
-            // // Print AnimationState
-            // std::cout << "\nAnimation State Information:" << std::endl;
-            // std::cout << "  Action Number: " << player->animation_state.actionNum << std::endl;
-            // std::cout << "  Time Started: " << player->animation_state.timestarted << std::endl;
-            // std::cout << "  Time Scale: " << player->animation_state.timescale << std::endl;
-
-            player->collisionCage.updateToSpot(&world, player->camera.transform.position, deltaTime);
-                player->camera.updateWithYawPitch(player->camera.transform.yaw, player->camera.transform.pitch);
-
-            if(id != theScene.myPlayerIndex)
-            {
-                billboards.push_back(player->billboard);
-                animStates.push_back(player->animation_state);
-            }
-
-
-            float wantedAnim = IDLE;
-            if(player->controls.anyMovement())
-            {
-                if(player->controls.jump)
-                {
-                    wantedAnim = JUMP;
-                }
-                else
-                    if(player->controls.left && !player->controls.right)
-                    {
-                        wantedAnim = LEFTSTRAFE;
-                    } else
-                        if(player->controls.right && !player->controls.left)
-                        {
-                            wantedAnim = RIGHTSTRAFE;
-                        } else
-                            if(player->controls.backward && !player->controls.forward)
-                            {
-                                wantedAnim = BACKWARDSRUN;
-                            } else
-                            {
-                                wantedAnim = RUN;
-                            }
-            }
-
-            auto existinganim = &player->animation_state;
-            AnimationState newState{
-                wantedAnim,
-                (float)glfwGetTime(),
-                wantedAnim == JUMP ? 0.5f : 1.0f
-            };
-
-            bool jumpinprogress = (existinganim->actionNum == JUMP) && (glfwGetTime() - existinganim->timestarted < 0.75f);
-            if(existinganim->actionNum != wantedAnim && !jumpinprogress)
-            {
-                player->animation_state = newState;
-            }
-            player->update(deltaTime, &world, particles);
-        }
-        jl::updateBillboards(billboards);
-        jl::updateAnimStates(animStates);
 
             gScene->simulate(deltaTime);
-
 
 
             auto & camera = theScene.players.at(theScene.myPlayerIndex)->camera;
@@ -766,6 +840,7 @@ int main()
             static GLuint grcLoc = glGetUniformLocation(gltfShader.shaderID, "grassRedChange");
             static GLuint scaleLoc = glGetUniformLocation(gltfShader.shaderID, "scale");
             static GLuint timeRenderedLoc = glGetUniformLocation(gltfShader.shaderID, "timeRendered");
+            static GLuint offsetLoc = glGetUniformLocation(gltfShader.shaderID, "offs");
 
             glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera.mvp));
             glActiveTexture(GL_TEXTURE0);
@@ -774,7 +849,7 @@ int main()
             const glm::vec3 campos = theScene.players[theScene.myPlayerIndex]->camera.transform.position;
             glUniform3f(camPosLoc, campos.x, campos.y, campos.z);
             glUniform1f(rotLoc, 0.0f);
-            glUniform1f(rotLoc, 0.0f);
+            glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
             glUniform1f(scaleLoc, 1.0f);
 
             glActiveTexture(GL_TEXTURE1);
@@ -790,8 +865,21 @@ int main()
             }
 
             renderer->mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, gltfShader.shaderID, world.worldGenMethod, deltaTime);
+            glUniform1f(timeRenderedLoc, 10.0f);
+            glUniform1f(scaleLoc, 0.4f);
+            for (auto & [id, player] : theScene.players)
+            {
 
+                auto pos = player->camera.transform.position + (player->camera.transform.direction*0.5f) + (player->camera.transform.right * 0.5f);
+                pos.y -= 0.5f;
+                glUniform3f(posLoc, pos.x, pos.y, pos.z);
+            
 
+                glUniform3f(offsetLoc, -0.5f, -0.5f, -0.5f);
+                drawHandledBlock(player->camera.transform.position, player->currentHeldBlock, gltfShader.shaderID, player->lastHeldBlock, player->handledBlockMeshInfo);
+            }
+            glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
+            glUniform1f(scaleLoc, 1.0f);
             gScene->fetchResults(true);
 
 
@@ -855,10 +943,14 @@ int main()
             //
             //
             // std::cout << "players size: " << theScene.players.size() << " \n";
+            if (!billboards.empty())
+            {
+                glDisable(GL_CULL_FACE);
 
-            glDisable(GL_CULL_FACE);
-            jl::drawBillboards(theScene.players.size()-1);
-            glEnable(GL_CULL_FACE);
+                jl::drawBillboards(billboards.size());
+                glEnable(GL_CULL_FACE);
+            }
+
 
 
 
