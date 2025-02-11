@@ -550,7 +550,7 @@ int main()
                             theScene.players.at(m.myPlayerIndex)->camera.transform.position = m.startPos;
                             theScene.players.at(m.myPlayerIndex)->controller->setPosition(PxExtendedVec3(
                         m.startPos.x,
-                        m.startPos.y,
+                        m.startPos.y - CAMERA_OFFSET,
                         m.startPos.z)
                             );
 
@@ -577,7 +577,7 @@ int main()
                         theScene.addPlayerWithIndex(m.index);
                         theScene.players.at(m.index)->controller->setPosition(PxExtendedVec3(
                         m.position.x,
-                        m.position.y,
+                        m.position.y + CAMERA_OFFSET,
                         m.position.z)
                             );
                         theScene.players.at(m.index)->camera.transform.position = m.position;
@@ -664,7 +664,7 @@ int main()
 
             player->billboard.position = player->camera.transform.position;
             player->billboard.direction = player->camera.transform.direction;
-
+                player->billboard.characterNum = id % 4;
 
 
             // std::cout << "Playerindex: " << id << "\n";

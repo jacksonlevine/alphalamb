@@ -233,7 +233,7 @@ public:
     void rebuildThreadFunction(World* world) {
         std::cout << "Rebuild thread started!\n";
         NUM_THREADS_RUNNING.fetch_add(1);  // Atomic increment
-        std::cout << "Rebuild thread incremented NUM_THREADS_RUNNING. Current value: " << NUM_THREADS_RUNNING.load() << "\n";
+        //std::cout << "Rebuild thread incremented NUM_THREADS_RUNNING. Current value: " << NUM_THREADS_RUNNING.load() << "\n";
 
         while (rebuildThreadRunning) {
             ChunkRebuildRequest request;

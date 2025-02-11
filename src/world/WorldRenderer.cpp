@@ -227,7 +227,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
     std::cout << "Mesh thread started!\n";
     NUM_THREADS_RUNNING.fetch_add(1);  // Atomic increment
-    std::cout << "Mesh incremented NUM_THREADS_RUNNING. Current value: " << NUM_THREADS_RUNNING.load() << "\n";
+    //std::cout << "Mesh incremented NUM_THREADS_RUNNING. Current value: " << NUM_THREADS_RUNNING.load() << "\n";
 
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         freedChangeBuffers.push(i);

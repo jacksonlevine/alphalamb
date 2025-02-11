@@ -150,7 +150,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
     // Update position
     PxExtendedVec3 newPos = controller->getPosition();
     camera.transform.position.x = static_cast<float>(newPos.x);
-    camera.transform.position.y = static_cast<float>(newPos.y + 0.8f);
+    camera.transform.position.y = static_cast<float>(newPos.y + CAMERA_OFFSET);
     camera.transform.position.z = static_cast<float>(newPos.z);
 }
 Player::Player()

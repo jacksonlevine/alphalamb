@@ -11,7 +11,7 @@
 #include "BillboardInstanceShader.h"
 
 inline static const PxExtendedVec3 DEFAULT_PLAYERPOS = PxExtendedVec3(0, 200, 0);
-
+inline static const float CAMERA_OFFSET = 0.8f;
 class MyControllerHitReport;
 class ParticlesGizmo;
 

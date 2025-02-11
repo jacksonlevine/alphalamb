@@ -215,7 +215,13 @@ private:
             waitForMessage();
             } else {
                 std::cout << "Error reading message: " << ec.message() << std::endl;
-                if (ec.value() == boost::asio::error::connection_reset)
+                if (ec == boost::asio::error::connection_reset ||
+                    ec == boost::asio::error::eof ||
+                    ec == boost::asio::error::operation_aborted ||
+                    ec == boost::asio::error::connection_aborted ||
+                    ec == boost::asio::error::not_connected ||
+                    ec == boost::asio::error::broken_pipe ||
+                    ec == boost::asio::error::shut_down)
                 {
                     std::cout << "Removing player \n";
                     std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);

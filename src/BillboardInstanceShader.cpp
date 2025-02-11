@@ -10,4 +10,4 @@ GLuint billboardVBO = 0;
 GLuint billboardInstancesVBO = 0;
 GLuint billboardAnimationStatesVBO = 0;
 
-float BILLBOARDWIDTH = 5.0f;
+float BILLBOARDWIDTH = 2.5f;

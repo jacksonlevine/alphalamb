@@ -44,6 +44,14 @@ enum AnimationName
     BACKWARDSRUN
 };
 
+enum CharacterName
+{
+    Chrome,
+    Placeholder1,
+    Placeholder2,
+    Placeholder3
+};
+
 jl::Shader getBillboardInstanceShader();
 
 namespace jl
