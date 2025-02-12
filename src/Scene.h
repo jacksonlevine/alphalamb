@@ -57,6 +57,7 @@ struct Scene
         if (settingsFile.is_open())
         {
             settingsFile << settings.mouseSensitivity << "\n";
+            settingsFile << serverAddress << "\n";
             settingsFile.close();
         }
 
@@ -67,6 +68,7 @@ struct Scene
         if (settingsFile.is_open())
         {
             settingsFile >> settings.mouseSensitivity;
+            settingsFile >> serverAddress;
         }
     }
     void enableMultiplayer()

@@ -91,7 +91,11 @@ inline void renderImGui() {
         switch (currentGuiScreen)
         {
         case GuiScreen::MainMenu:
-                ImGui::InputText("Server address", theScene.serverAddress.data(), theScene.serverAddress.capacity(), ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &theScene.serverAddress);
+            if (                ImGui::InputText("Server address", theScene.serverAddress.data(), theScene.serverAddress.capacity(), ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &theScene.serverAddress)
+)
+            {
+                theScene.saveSettings();
+            }
                 if (ImGui::Button("Connect to server"))
                 {
 
