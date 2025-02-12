@@ -90,10 +90,14 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         }
     }
 
+    if (controls.secondary2)
+    {
+        hoverMode = !hoverMode;
+
+        controls.secondary2 = false;
+    }
 
 
-    //Have to do this I guess, or else it won't detect if we're on the ground consistently.
-    displacement.y -= deltaTime * 3.0f;
 
 
 
@@ -103,17 +107,41 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
 
     // Apply gravity only if not grounded
 
-    if (!camera.transform.grounded) {
-        camera.transform.velocity.y -= GRAVITY * deltaTime;
-        camera.transform.velocity.y = glm::max(camera.transform.velocity.y, -MAX_FALL_SPEED); // Clamp fall speed
+    if (hoverMode)
+    {
+        camera.transform.velocity = glm::vec3(0.0f);
+        jetpackMode = false;
+        if (controls.sprint)
+        {
+            displacement -= glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f)) * deltaTime * walkmult;
+        }
+        if (controls.jump)
+        {
+            displacement += glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f)) * deltaTime * walkmult;
+        }
+    }else
+    {
+
+        //Have to do this I guess, or else it won't detect if we're on the ground consistently.
+        displacement.y -= deltaTime * 3.0f;
+
+
+
+        if (!camera.transform.grounded) {
+            camera.transform.velocity.y -= GRAVITY * deltaTime;
+            camera.transform.velocity.y = glm::max(camera.transform.velocity.y, -MAX_FALL_SPEED); // Clamp fall speed
+        }
+
+        // Handle jumping
+        if ((camera.transform.grounded && controls.jump)) {
+            camera.transform.velocity.y = JUMP_STRENGTH;
+            controls.jump = false;
+        }
     }
 
 
-    // Handle jumping
-    if ((camera.transform.grounded && controls.jump) || FLY_MODE) {
-        camera.transform.velocity.y = JUMP_STRENGTH;
-        controls.jump = false;
-    }
+
+
 
     displacement.y += camera.transform.velocity.y * deltaTime;
     displacement.x += camera.transform.velocity.x * deltaTime;

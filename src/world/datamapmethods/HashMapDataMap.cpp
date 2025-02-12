@@ -1,5 +1,10 @@
 #include "HashMapDataMap.h"
 
+std::unique_lock<std::shared_mutex> HashMapDataMap::getUniqueLock()
+{
+    return std::unique_lock<std::shared_mutex>(mutex());
+}
+
 std::unique_ptr<DataMap::Iterator> HashMapDataMap::createIterator()
 {
     return std::make_unique<HashMapDataMapIterator>(*this);
@@ -60,5 +65,10 @@ void HashMapDataMap::set(const IntTup& spot, uint32_t block)
     //std::cout << "trying to lock mapmutex \n";
     std::unique_lock<std::shared_mutex> lock(mapmutex);
     //std::cout << "locked mapmutex \n";
+    map.insert_or_assign(spot, block);
+}
+
+void HashMapDataMap::setLocked(const IntTup& spot, uint32_t block)
+{
     map.insert_or_assign(spot, block);
 }

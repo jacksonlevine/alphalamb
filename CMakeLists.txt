@@ -112,6 +112,8 @@ add_executable(DistantGarden
         src/Texture2DArray.cpp
         src/Texture2DArray.h
         src/HandledBlock.h
+        src/world/gizmos/BulkPlaceGizmo.cpp
+        src/world/gizmos/BulkPlaceGizmo.h
 
 )
 

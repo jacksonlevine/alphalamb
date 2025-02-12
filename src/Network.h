@@ -65,7 +65,14 @@ struct PlayerSelectBlockChange
     MaterialName newMaterial;
 };
 
-using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange>;
+struct BulkBlockSet
+{
+    IntTup corner1;
+    IntTup corner2;
+    uint32_t block;
+};
+
+using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet>;
 
 
 

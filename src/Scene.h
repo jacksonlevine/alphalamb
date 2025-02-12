@@ -8,6 +8,7 @@
 #include "world/WorldGizmo.h"
 #include "world/gizmos/BlockSelectGizmo.h"
 #include "Hud.h"
+#include "world/gizmos/BulkPlaceGizmo.h"
 
 
 struct Settings
@@ -40,6 +41,7 @@ struct Scene
     ParticlesGizmo* particles = nullptr;
     World* world = nullptr;
     BlockSelectGizmo* blockSelectGizmo = nullptr;
+    BulkPlaceGizmo* bulkPlaceGizmo = nullptr;
     WorldRenderer* worldRenderer = nullptr;
     Hud* hud = nullptr;
     GLFWwindow* window = nullptr;

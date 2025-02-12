@@ -200,6 +200,13 @@ public:
     ///One way queue, from main thread to mesh building thread, to notify of mbtActiveChunks entries that have been confirmed/entered into activeChunks.
     boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<128>> confirmedActiveChunksQueue = {};
 
+
+
+    //A way for the rebuild thread to ask the main thread "What chunks are active from this area?" so that the main thread can submit rebuild requests for them
+    boost::lockfree::spsc_queue<BlockArea, boost::lockfree::capacity<128>> rebuildToMainAreaNotifications = {};
+
+
+
     void mainThreadDraw(jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod, float deltaTime);
     void meshBuildCoroutine(jl::Camera* playerCamera, World* world);
 
@@ -246,52 +253,79 @@ public:
             //std::cout << "Running \n";
             if (rebuildQueue.pop(request)) {
                 //std::cout << "Popped one: " << request.chunkPos.x << " " << request.chunkPos.z << " \n";
-                if(request.changeTo != std::nullopt)
+
+                if (request.isArea)
                 {
-                    //std::cout <<"Doing the fucking write to " << request.changeSpot.x << " " << request.changeSpot.y << " " << request.changeSpot.z << " \n";
-                    world->set(request.changeSpot, request.changeTo.value());
-                }
-                if(request.rebuild)
-                {
-                    UsableMesh mesh;
-                    // Scope the locks so they're released after getting data
-                    {
-                        if (auto locks = world->tryToGetReadLockOnDMs()) {
-                            // Get the chunk data with locks held
-                            //std::cout << "Got readlock on dms \n";
-                            mesh = fromChunkLocked(request.chunkPos, world, chunkSize);
-                        } else if (rebuildThreadRunning) {
-                            std::cout << "Failed to get read lock on DMs\n";
-                            rebuildQueue.push(request);
-                            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                            continue;
+                    //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
+                     std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
+                     auto lock = world->nonUserDataMap->getUniqueLock();
+                     auto m = request.area;
+                        int minX = std::min(m.corner1.x, m.corner2.x);
+                        int maxX = std::max(m.corner1.x, m.corner2.x);
+                        int minY = std::min(m.corner1.y, m.corner2.y);
+                        int maxY = std::max(m.corner1.y, m.corner2.y);
+                        int minZ = std::min(m.corner1.z, m.corner2.z);
+                        int maxZ = std::max(m.corner1.z, m.corner2.z);
+
+                        for (int x = minX; x <= maxX; x++) {
+                            for (int y = minY; y <= maxY; y++) {
+                                for (int z = minZ; z <= maxZ; z++) {
+                                    world->nonUserDataMap->setLocked(IntTup{x, y, z}, m.block);
+                                }
+                            }
                         }
-                    } // locks are released here
+                    rebuildToMainAreaNotifications.push(request.area);
 
-
-                    // Wait for available buffer using condition variable
-                    size_t changeBufferIndex = -1;
+                }else
+                {
+                    if(request.changeTo != std::nullopt)
                     {
-                        std::unique_lock<std::mutex> lock(bufferMutex);
-                        bufferCV.wait(lock, [&]() {
-                            return freedUserChangeMeshBuffers.pop(changeBufferIndex) || !rebuildThreadRunning;
-                        });
-
-                        if (!rebuildThreadRunning) break;
+                        //std::cout <<"Doing the fucking write to " << request.changeSpot.x << " " << request.changeSpot.y << " " << request.changeSpot.z << " \n";
+                        world->set(request.changeSpot, request.changeTo.value());
                     }
-
-                    if (changeBufferIndex != -1)
+                    if(request.rebuild)
                     {
-                        auto& buffer = userChangeMeshBuffers[changeBufferIndex];
-                        buffer.in_use = true;
-                        buffer.mesh = mesh;
-                        buffer.chunkIndex = request.chunkIndex;
-                        buffer.from = request.chunkPos;
-                        buffer.to = request.chunkPos;
-                        buffer.ready = true;
-                        buffer.in_use = false;
+                        UsableMesh mesh;
+                        // Scope the locks so they're released after getting data
+                        {
+                            if (auto locks = world->tryToGetReadLockOnDMs()) {
+                                // Get the chunk data with locks held
+                                //std::cout << "Got readlock on dms \n";
+                                mesh = fromChunkLocked(request.chunkPos, world, chunkSize);
+                            } else if (rebuildThreadRunning) {
+                                std::cout << "Failed to get read lock on DMs\n";
+                                rebuildQueue.push(request);
+                                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                                continue;
+                            }
+                        } // locks are released here
+
+
+                        // Wait for available buffer using condition variable
+                        size_t changeBufferIndex = -1;
+                        {
+                            std::unique_lock<std::mutex> lock(bufferMutex);
+                            bufferCV.wait(lock, [&]() {
+                                return freedUserChangeMeshBuffers.pop(changeBufferIndex) || !rebuildThreadRunning;
+                            });
+
+                            if (!rebuildThreadRunning) break;
+                        }
+
+                        if (changeBufferIndex != -1)
+                        {
+                            auto& buffer = userChangeMeshBuffers[changeBufferIndex];
+                            buffer.in_use = true;
+                            buffer.mesh = mesh;
+                            buffer.chunkIndex = request.chunkIndex;
+                            buffer.from = request.chunkPos;
+                            buffer.to = request.chunkPos;
+                            buffer.ready = true;
+                            buffer.in_use = false;
+                        }
                     }
                 }
+
 
 
 
@@ -300,6 +334,12 @@ public:
         }
         NUM_THREADS_RUNNING.fetch_sub(1);
         std::cout << "Rebuild thread finished!\n";
+    }
+
+    void requestBlockBulkPlaceFromMainThread(BlockArea area)
+    {
+        rebuildQueue.push(ChunkRebuildRequest(area
+                ));
     }
 
     void requestChunkRebuildFromMainThread(IntTup spot, std::optional<uint32_t> changeTo = std::nullopt, bool rebuild = true)
@@ -328,6 +368,25 @@ public:
                     true
                 ));
             }
+
+        } else
+        {
+            std::cout << "Spot not in activeChunks \n";
+        }
+    }
+
+    void requestChunkSpotRebuildFromMainThread(TwoIntTup chunkspot)
+    {
+        if (activeChunks.contains(chunkspot))
+        {
+            //std::cout << "Requesting rebuild for spot: " << chunkspot.x << " " << chunkspot.z << std::endl;
+
+            rebuildQueue.push(ChunkRebuildRequest(
+                chunkspot,
+                activeChunks.at(chunkspot).chunkIndex,
+                true
+            ));
+
 
         } else
         {

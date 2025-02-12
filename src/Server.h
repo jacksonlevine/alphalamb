@@ -24,6 +24,7 @@ extern std::unordered_map<int, ServerPlayer> clients;
 
 extern std::shared_mutex clientsMutex;
 
+extern BlockAreaRegistry serverBAR;
 extern DataMap* serverUserDataMap;
 
 
@@ -77,7 +78,7 @@ private:
             }
         });
 
-        auto string = saveDM("serverworld.txt", serverUserDataMap);
+        auto string = saveDM("serverworld.txt", serverUserDataMap, serverBAR);
         if (string.has_value())
         {
             DGMessage fileInit = FileTransferInit {
@@ -200,6 +201,13 @@ private:
                     else if constexpr (std::is_same_v<T, BlockSet>) {
                         std::cout << "Got block set \n";
                         serverUserDataMap->set(m.spot, m.block);
+                        redistrib = true;
+                    }
+                    else if constexpr (std::is_same_v<T, BulkBlockSet>) {
+                        std::cout << "Got bulk block set \n";\
+                        std::unique_lock<std::shared_mutex> barlock(serverBAR.baMutex);
+                        serverBAR.blockAreas.push_back(BlockArea{m.corner1, m.corner2, m.block
+                        });
                         redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, FileTransferInit>) {

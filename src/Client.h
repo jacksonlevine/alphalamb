@@ -36,6 +36,7 @@ inline void sendToServer(tcp::socket* socket, std::atomic<bool>* shouldRun)
         while (mainToNetworkBlockChangeQueue.pop(&m))
         {
             boost::asio::write(*socket, boost::asio::buffer(&m, sizeof(DGMessage)));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
     }
 }
@@ -81,6 +82,10 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                     }
                     else if constexpr (std::is_same_v<T, PlayerLeave>) {
                         std::cout << "Got player leave \n";
+                        networkToMainBlockChangeQueue.push(m);
+                    }
+                    else if constexpr (std::is_same_v<T, BulkBlockSet>) {
+                        std::cout << "Got bulk block set \n";
                         networkToMainBlockChangeQueue.push(m);
                     }
                     else if constexpr (std::is_same_v<T, YawPitchUpdate>) {

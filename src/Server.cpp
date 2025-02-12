@@ -10,4 +10,5 @@ std::unordered_map<int, ServerPlayer> clients;
 
 std::shared_mutex clientsMutex;
 
+BlockAreaRegistry serverBAR;
 DataMap* serverUserDataMap = new HashMapDataMap();

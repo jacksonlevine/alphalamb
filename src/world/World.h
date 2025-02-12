@@ -21,37 +21,68 @@ inline std::optional<std::shared_lock<std::shared_mutex>> tryToGetReadLockOnDM(D
     return std::move(lock1);
 }
 
-inline std::optional<std::string> saveDM(std::string filename, DataMap* map) {
+struct BlockArea
+{
+    IntTup corner1;
+    IntTup corner2;
+    uint32_t block;
+};
+
+struct BlockAreaRegistry
+{
+    std::vector<BlockArea> blockAreas = {};
+    std::shared_mutex baMutex = {};
+
+};
+
+
+inline std::optional<std::string> saveDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas) {
     std::filesystem::path filePath(filename);
     if (!filePath.parent_path().empty()) {
         std::filesystem::create_directories(filePath.parent_path());
     }
 
     std::ostringstream contentStream; // String stream to store content before writing to file
-
-    while (true) {
+    bool gotlock = false;
+    while (!gotlock) {
         if (auto lock = tryToGetReadLockOnDM(map)) {
             const std::unique_ptr<DataMap::Iterator> it = map->createIterator();
             while (it->hasNext()) {
                 auto [key, value] = it->next();
                 contentStream << key.x << " " << key.y << " " << key.z << " " << value << '\n';
             }
-
-            std::ofstream file(filename, std::ios::trunc);
-            if (file.is_open()) {
-                file << contentStream.str();
-                file.close();
-                return contentStream.str(); // Return the written content
-            } else {
-                std::cerr << "Could not open file " << filename << " for writing." << std::endl;
-                return std::nullopt;
-            }
+            gotlock = true;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+
+    {
+        std::shared_lock<std::shared_mutex> lock(blockAreas.baMutex);
+        if (!blockAreas.blockAreas.empty())
+        {
+            for (auto& area : blockAreas.blockAreas)
+            {
+                contentStream << "AREA " << area.corner1.x << " " << area.corner1.y << " " << area.corner1.z << " "
+                << area.corner2.x << " " << area.corner2.y << " " << area.corner2.z << " "
+                << area.block << '\n';
+            }
+        }
+    }
+
+    std::ofstream file(filename, std::ios::trunc);
+    if (file.is_open()) {
+        file << contentStream.str();
+        file.close();
+        return contentStream.str(); // Return the written content
+    } else {
+        std::cerr << "Could not open file " << filename << " for writing." << std::endl;
+        return std::nullopt;
+    }
 }
 
-   inline bool loadDM(std::string filename, DataMap* map)
+
+
+   inline bool loadDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas)
     {
         std::ifstream file(filename);
         if (!file.is_open())
@@ -75,12 +106,24 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map) {
                     //Read the block (words[3]) as unsigned long because that can contain all the uint32_t values
                     //Rest are ints
                     map->set(IntTup( std::stoi(words[0]) , std::stoi(words[1]), std::stoi(words[2]) ), static_cast<uint32_t>(std::stoul(words[3])));
+                } else
+                {
+                    if (words.size() == 8 && words.at(0) == "AREA")
+                    {
+                        std::unique_lock<std::shared_mutex> lock(blockAreas.baMutex);
+                        blockAreas.blockAreas.push_back(BlockArea{
+                            .corner1 = IntTup(std::stoi(words[1]),std::stoi(words[2]),std::stoi(words[3])),
+                            .corner2 = IntTup(std::stoi(words[4]),std::stoi(words[5]),std::stoi(words[6])),
+                            .block = static_cast<uint32_t>(std::stoul(words[7]))
+                        });
+                    }
                 }
             }
             file.close();
+            return true;
         }
+    return false;
     }
-
 
 
 
@@ -93,6 +136,8 @@ public:
     DataMap* userDataMap;
     DataMap* nonUserDataMap;
 
+    BlockAreaRegistry blockAreas = {};
+
     WorldGenMethod* worldGenMethod;
 
     uint32_t get(IntTup spot);
@@ -103,12 +148,47 @@ public:
 
     bool save(std::string filename)
     {
-        return saveDM(filename, userDataMap) ? true : false;
+        return saveDM(filename, userDataMap, blockAreas) ? true : false;
     }
 
     bool load(std::string filename)
     {
-        return loadDM(filename, userDataMap);
+        if (loadDM(filename, userDataMap, blockAreas))
+        {
+            std::vector<BlockArea> ba;
+
+            {
+                std::shared_lock<std::shared_mutex> lock(blockAreas.baMutex);
+                ba.reserve(blockAreas.blockAreas.size());
+                for (auto & area : blockAreas.blockAreas)
+                {
+                    ba.push_back(area);
+                }
+            }
+
+            {
+                auto lock = nonUserDataMap->getUniqueLock();
+                for (auto & m : ba)
+                {
+                    int minX = std::min(m.corner1.x, m.corner2.x);
+                    int maxX = std::max(m.corner1.x, m.corner2.x);
+                    int minY = std::min(m.corner1.y, m.corner2.y);
+                    int maxY = std::max(m.corner1.y, m.corner2.y);
+                    int minZ = std::min(m.corner1.z, m.corner2.z);
+                    int maxZ = std::max(m.corner1.z, m.corner2.z);
+
+                    for (int x = minX; x <= maxX; x++) {
+                        for (int y = minY; y <= maxY; y++) {
+                            for (int z = minZ; z <= maxZ; z++) {
+                                nonUserDataMap->setLocked(IntTup{x, y, z}, m.block);
+                            }
+                        }
+                    }
+                }
+
+            }
+            return true;
+        };
     }
 
 
@@ -128,7 +208,7 @@ public:
     }
     void set(IntTup spot, uint32_t val);
 
-    inline std::optional<std::pair<std::shared_lock<std::shared_mutex>,
+    std::optional<std::pair<std::shared_lock<std::shared_mutex>,
                                  std::shared_lock<std::shared_mutex>>> tryToGetReadLockOnDMs()
     {
         std::shared_lock<std::shared_mutex> lock1(userDataMap->mutex(), std::try_to_lock);

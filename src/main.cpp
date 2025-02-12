@@ -35,6 +35,7 @@
 #include "Hud.h"
 #include "SharedVarsBetweenMainAndGui.h"
 #include "Texture2DArray.h"
+#include "world/gizmos/BulkPlaceGizmo.h"
 
 boost::asio::io_context io_context;
 boost::asio::ip::tcp::socket tsocket(io_context);
@@ -197,21 +198,49 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
             if (scene->multiplayer)
             {
-                auto & spot = scene->blockSelectGizmo->selectedSpot;
-                IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
+
+                if (!scene->bulkPlaceGizmo->active)
+                {
+                    auto & spot = scene->blockSelectGizmo->selectedSpot;
+                    IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
 
                     using namespace std;
 
-                IntTup playerBlockSpot1 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y), floor(cam.transform.position.z));
-                IntTup playerBlockSpot2 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y-1), floor(cam.transform.position.z));
+                    IntTup playerBlockSpot1 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y), floor(cam.transform.position.z));
+                    IntTup playerBlockSpot2 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y-1), floor(cam.transform.position.z));
 
-                if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
+                    if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
+                    {
+                        //std::cout << "Senfing blokc place \n";
+                        pushToMainToNetworkQueue(BlockSet{
+                            placeSpot, scene->players.at(scene->myPlayerIndex)->currentHeldBlock
+                        });
+                    }
+                } else
                 {
-                    //std::cout << "Senfing blokc place \n";
-                    pushToMainToNetworkQueue(BlockSet{
-                        placeSpot, scene->players.at(scene->myPlayerIndex)->currentHeldBlock
-                    });
+                    auto playerpos = scene->players[scene->myPlayerIndex]->camera.transform.position;
+
+                    bool isInside =
+                    playerpos.x >= std::min(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x) &&
+                    playerpos.x <= std::max(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x) &&
+                    playerpos.y >= std::min(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y) &&
+                    playerpos.y <= std::max(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y) &&
+                    playerpos.z >= std::min(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z) &&
+                    playerpos.z <= std::max(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z);
+
+                    if(!isInside)
+                    {
+                        if (scene->bulkPlaceGizmo->placeMode == BulkPlaceGizmo::Solid)
+                        {
+                            DGMessage bulkPlace = BulkBlockSet{
+                                scene->bulkPlaceGizmo->corner1, scene->bulkPlaceGizmo->corner2, scene->players.at(scene->myPlayerIndex)->currentHeldBlock};
+                            pushToMainToNetworkQueue(bulkPlace);
+                        }
+
+                    }
+
                 }
+
 
 
             } else
@@ -290,6 +319,18 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         {
             scene->world->save("testfile.txt");
         } else
+        if (key == GLFW_KEY_B)
+        {
+            if (action == GLFW_PRESS)
+            {
+
+                scene->bulkPlaceGizmo->corner1 = scene->blockSelectGizmo->selectedSpot;
+
+                scene->bulkPlaceGizmo->active = !scene->bulkPlaceGizmo->active;
+
+            }
+
+        } else
         if(key == GLFW_KEY_ESCAPE && scene->mouseCaptured == true)
         {
             //glfwSetWindowShouldClose(window, 1);
@@ -297,16 +338,8 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             scene->mouseCaptured = false;
             scene->firstMouse = true;
-        }
-        if (key == GLFW_KEY_P)
-        {
+        } else
 
-
-
-
-            scene->world->setSeed(time(NULL));
-            scene->worldRenderer->launchThreads(&scene->players.at(scene->myPlayerIndex)->camera, scene->world);
-        }else
             if (key == GLFW_KEY_T)
             {
                 std::cout << "Num threads running: " << NUM_THREADS_RUNNING << '\n';
@@ -403,7 +436,7 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
     static float lastTime = glfwGetTime();
-    if (glfwGetTime() - lastTime > 0.07f)
+    if (glfwGetTime() - lastTime > 0.005f)
     {
         lastTime = glfwGetTime();
         Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
@@ -526,6 +559,10 @@ int main()
     theScene.blockSelectGizmo = bsg;
     theScene.gizmos.push_back(bsg);
 
+    BulkPlaceGizmo* bpg = new BulkPlaceGizmo();
+    theScene.bulkPlaceGizmo = bpg;
+    theScene.gizmos.push_back(bpg);
+
     for(auto & gizmo : theScene.gizmos)
     {
         gizmo->init();
@@ -581,6 +618,8 @@ int main()
 
         if (theScene.myPlayerIndex != -1)
         {
+
+
 
             std::vector<Billboard> billboards;
             std::vector<AnimationState> animStates;
@@ -757,7 +796,7 @@ int main()
                         theScene.players.at(m.index)->camera.transform.direction = m.direction;
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
-                        std::cout << "Processing network block change \n";
+                        //std::cout << "Processing network block change \n";
 
                         Scene* scene = &theScene;
                         //std::cout << " Server Setting" << std::endl;
@@ -821,6 +860,11 @@ int main()
                             else if constexpr (std::is_same_v<T, FileTransferInit>) {
 
                             }
+                            else if constexpr (std::is_same_v<T, BulkBlockSet>) {
+                                theScene.worldRenderer->requestBlockBulkPlaceFromMainThread(
+                                    BlockArea{m.corner1, m.corner2, m.block}
+                                    );
+                            }
                         }, msg);
 
 
@@ -834,9 +878,44 @@ int main()
 
             gScene->simulate(deltaTime);
 
+            BlockArea m = {};
+
+            while (theScene.worldRenderer->rebuildToMainAreaNotifications.pop(&m))
+            {
+                int minX = std::min(m.corner1.x, m.corner2.x);
+                int maxX = std::max(m.corner1.x, m.corner2.x);
+                int minZ = std::min(m.corner1.z, m.corner2.z);
+                int maxZ = std::max(m.corner1.z, m.corner2.z);
+
+                std::unordered_set<TwoIntTup, TwoIntTupHash> implicated = {};
+
+                for (int x = minX; x <= maxX; x++) {
+                        for (int z = minZ; z <= maxZ; z++) {
+                            TwoIntTup cposhere = theScene.worldRenderer->worldToChunkPos(TwoIntTup(x, z));
+                            if (theScene.worldRenderer->activeChunks.contains(cposhere))
+                            {
+                                implicated.insert(cposhere);
+
+                            }
+                        }
+                }
+                for (auto& i : implicated)
+                {
+                    theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(i);
+                }
+
+                break; //Only do oen per frame
+            }
+
 
             auto & camera = theScene.players.at(theScene.myPlayerIndex)->camera;
 
+            if (theScene.bulkPlaceGizmo->active)
+            {
+                auto thespot = camera.transform.position + (camera.transform.direction * 3.0f);
+                auto theintspot = IntTup(thespot.x, thespot.y, thespot.z);
+                theScene.bulkPlaceGizmo->corner2 = theintspot;
+            }
 
             drawSky(glm::vec4(0.3, 0.65, 1.0, 1.0),
                     glm::vec4(1.0, 1.0, 1.0, 1.0),

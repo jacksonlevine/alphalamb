@@ -30,6 +30,7 @@ struct Player {
     MaterialName lastHeldBlock = AIR;
     MaterialName currentHeldBlock = WOOD_PLANKS;
     ChunkGLInfo handledBlockMeshInfo = {};
+    bool hoverMode = false;
     MyControllerHitReport* getMyHitReport()
     {
         return ((MyControllerHitReport*)controller->getUserData());

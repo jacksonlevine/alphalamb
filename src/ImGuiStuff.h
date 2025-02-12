@@ -159,29 +159,79 @@ inline void renderImGui() {
                 break;
             case GuiScreen::InGame:
 
-                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.93a");
+                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.94");
 
                 ImVec2 screenSize = ImGui::GetIO().DisplaySize;
-                ImVec2 textSize = ImGui::CalcTextSize("F: Use jetpack");
 
-                // Set the cursor position to the bottom-left of the screen
-                ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f));
 
-                ImGui::Text("F: Use jetpack");
+                if (!theScene.bulkPlaceGizmo->active)
+                {
+                    const char* s1 = "F: Use jetpack";
+                    ImVec2 textSize = ImGui::CalcTextSize(s1);
 
-                ImVec2 text2Size = ImGui::CalcTextSize("Shift: Sprint");
+                    // Set the cursor position to the bottom-left of the screen
+                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f));
 
-                // Set the cursor position to the bottom-left of the screen
-                ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f));
+                    ImGui::Text(s1);
 
-                ImGui::Text("Shift: Sprint");
 
-                ImVec2 text3Size = ImGui::CalcTextSize("Esc: Exit");
+                    const char* s2 = "Shift: Sprint";
+                    ImVec2 text2Size = ImGui::CalcTextSize(s2);
 
-                // Set the cursor position to the bottom-left of the screen
-                ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f));
+                    // Set the cursor position to the bottom-left of the screen
+                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f));
 
-                ImGui::Text("Esc: Exit");
+                    ImGui::Text(s2);
+
+                    const char* s3 = "Esc: Exit";
+                    ImVec2 text3Size = ImGui::CalcTextSize(s3);
+
+                    // Set the cursor position to the bottom-left of the screen
+                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f));
+
+                    ImGui::Text(s3);
+
+                    const char* s4 = "E: Hover mode";
+                    ImVec2 textSize0 = ImGui::CalcTextSize(s4);
+
+                    // Set the cursor position to the bottom-left of the screen
+                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f - textSize0.y - 10.0f));
+
+                    ImGui::Text(s4);
+
+                    const char* s5 = "B: Toggle Build Mode";
+                    ImVec2 textSize4 = ImGui::CalcTextSize(s5);
+
+                    // Set the cursor position to the bottom-left of the screen
+                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f - textSize0.y - 10.0f - textSize4.y - 10.0f));
+
+                    ImGui::Text(s5);
+                } else
+                {
+                    const char* s1 = "Right click: Confirm and place";
+                    ImVec2 textSize = ImGui::CalcTextSize(s1);
+
+                    // Set the cursor position to the bottom-left of the screen
+                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f));
+
+                    ImGui::Text(s1);
+
+
+                    const char* s2 = "B: Toggle Build Mode";
+                    ImVec2 text2Size = ImGui::CalcTextSize(s2);
+
+                    // Set the cursor position to the bottom-left of the screen
+                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f));
+
+                    ImGui::Text(s2);
+
+
+
+
+                }
+
+
+
 
                 imguiio->WantCaptureMouse = false;
                 break;
