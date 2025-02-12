@@ -121,7 +121,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         auto& buffer = changeBuffers[i];
         //std::cout << "Buffer state: Ready: " << buffer.ready << " in use: " << buffer.in_use << std::endl;
-        if(buffer.ready && !buffer.in_use) {
+        if(buffer.ready.load() && !buffer.in_use.load()) {
             //std::cout << "Mesh buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
             modifyOrInitializeDrawInstructions(chunkPool[buffer.chunkIndex].vvbo, chunkPool[buffer.chunkIndex].uvvbo,
             chunkPool[buffer.chunkIndex].ebo, chunkPool[buffer.chunkIndex].drawInstructions, buffer.mesh,
@@ -137,7 +137,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
                 activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
             }
             confirmedActiveChunksQueue.push(buffer.to);
-            buffer.ready = false;
+            buffer.ready.store(false);
             freedChangeBuffers.push(i);  // Return to free list
             mbtBufferCV.notify_one();
             break; //Only do one per frame
@@ -148,7 +148,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
     for(size_t i = 0; i < userChangeMeshBuffers.size(); i++) {
         auto& buffer = userChangeMeshBuffers[i];
         //std::cout << "User Buffer state: Ready: " << buffer.ready << " in use: " << buffer.in_use << std::endl;
-        if(buffer.ready && !buffer.in_use) {
+        if(buffer.ready.load() && !buffer.in_use.load()) {
             //std::cout << "Buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
             modifyOrInitializeDrawInstructions(chunkPool[buffer.chunkIndex].vvbo, chunkPool[buffer.chunkIndex].uvvbo,
             chunkPool[buffer.chunkIndex].ebo, chunkPool[buffer.chunkIndex].drawInstructions, buffer.mesh,
@@ -166,7 +166,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
             }
             //Dont need to do this cause these user-requested chunk rebuilds never involve moving the chunk
             //confirmedActiveChunksQueue.push(buffer.to);
-            buffer.ready = false;
+            buffer.ready.store(false);
             freedUserChangeMeshBuffers.push(i);  // Return to free list
             notifyBufferFreed();
 
@@ -305,13 +305,13 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                     if (changeBufferIndex != -1)
                     {
                         auto& buffer = changeBuffers[changeBufferIndex];
-                        buffer.in_use = true;
+                        buffer.in_use.store(true);
                         buffer.mesh = mesh;
                         buffer.chunkIndex = uci.chunkIndex;
                         buffer.from = chunk;
                         buffer.to = chunk;
-                        buffer.ready = true;
-                        buffer.in_use = false;
+                        buffer.ready.store(true);
+                        buffer.in_use.store(false);
                     }
                 }
 
@@ -357,7 +357,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                 //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
 
                                 auto& buffer = changeBuffers[changeBufferIndex];
-                                buffer.in_use = true;
+                                buffer.in_use.store(true);
                                 buffer.mesh = fromChunk(spotHere, world, chunkSize);
 
                                 buffer.chunkIndex = addUninitializedChunkBuffer();
@@ -368,8 +368,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                 mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(buffer.chunkIndex));
 
 
-                                buffer.ready = true;   // Signal that data is ready
-                                buffer.in_use = false;
+                                buffer.ready.store(true);   // Signal that data is ready
+                                buffer.in_use.store(false);
                             }
 
 
@@ -436,7 +436,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                             //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
 
                                             auto& buffer = changeBuffers[changeBufferIndex];
-                                            buffer.in_use = true;
+                                            buffer.in_use.store(true);
                                             buffer.mesh = fromChunk(spotHere, world, chunkSize);
 
                                             buffer.chunkIndex = chunkIndex;
@@ -448,8 +448,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                             mbtActiveChunks.erase(oldSpot);
                                             mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
 
-                                            buffer.ready = true;   // Signal that data is ready
-                                            buffer.in_use = false;
+                                            buffer.ready.store(true);   // Signal that data is ready
+                                            buffer.in_use.store(false);
                                         }
 
 

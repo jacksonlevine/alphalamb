@@ -27,24 +27,46 @@ inline void sendToServer(tcp::socket* socket, std::atomic<bool>* shouldRun)
 {
     while (shouldRun->load()) {
 
-        if (mainToNetworkBlockChangeQueue.empty()) {
+        {
             std::unique_lock<std::mutex> lock(networkMutex);
-            networkCV.wait(lock);
+            if (mainToNetworkBlockChangeQueue.empty()) {
+
+                networkCV.wait(lock);
+            }
         }
+
 
         DGMessage m = WorldInfo{};
         while (mainToNetworkBlockChangeQueue.pop(&m))
         {
             boost::asio::write(*socket, boost::asio::buffer(&m, sizeof(DGMessage)));
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
     }
 }
 
 inline void pushToMainToNetworkQueue(const DGMessage& m)
 {
-    mainToNetworkBlockChangeQueue.push(m);
-    networkCV.notify_one();
+    if (mainToNetworkBlockChangeQueue.write_available() > 0)
+    {
+        mainToNetworkBlockChangeQueue.push(m);
+        networkCV.notify_one();
+    } else
+    {
+        std::cout << "No space available in main to network queue \n";
+    }
+
+}
+
+inline void pushToNetworkToMainQueue(const DGMessage& m)
+{
+    if (networkToMainBlockChangeQueue.write_available() > 0)
+    {
+        networkToMainBlockChangeQueue.push(m);
+        //networkCV.notify_one();
+    } else
+    {
+        std::cout << "No space available in network to main queue \n";
+    }
 }
 
 inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) {
@@ -74,31 +96,31 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
                         //std::cout << "Got controls update \n";
-                        networkToMainBlockChangeQueue.push(m);
+                        pushToNetworkToMainQueue(m);
                     }
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>) {
                         //std::cout << "Got select block change update \n";
-                        networkToMainBlockChangeQueue.push(m);
+                        pushToNetworkToMainQueue(m);
                     }
                     else if constexpr (std::is_same_v<T, PlayerLeave>) {
                         std::cout << "Got player leave \n";
-                        networkToMainBlockChangeQueue.push(m);
+                        pushToNetworkToMainQueue(m);
                     }
                     else if constexpr (std::is_same_v<T, BulkBlockSet>) {
                         std::cout << "Got bulk block set \n";
-                        networkToMainBlockChangeQueue.push(m);
+                        pushToNetworkToMainQueue(m);
                     }
                     else if constexpr (std::is_same_v<T, YawPitchUpdate>) {
                         //std::cout << "Got yawpitch update \n";
-                        networkToMainBlockChangeQueue.push(m);
+                        pushToNetworkToMainQueue(m);
                     }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
                        std::cout << "Got player present \n";
-                        networkToMainBlockChangeQueue.push(m);
+                        pushToNetworkToMainQueue(m);
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
                         //std::cout << "Got block set \n";
-                        networkToMainBlockChangeQueue.push(m);
+                        pushToNetworkToMainQueue(m);
                     }
                     else if constexpr (std::is_same_v<T, FileTransferInit>) {
                         std::cout << "Got file transfer init \n";

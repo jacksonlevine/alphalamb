@@ -1,5 +1,17 @@
 #include "HashMapDataMap.h"
 
+void HashMapDataMap::erase(const IntTup& spot, bool locked)
+{
+    if (!locked)
+    {
+        std::unique_lock<std::shared_mutex> lock(mapmutex);
+        this->map.erase(spot);
+    } else
+    {
+        this->map.erase(spot);
+    }
+}
+
 std::unique_lock<std::shared_mutex> HashMapDataMap::getUniqueLock()
 {
     return std::unique_lock<std::shared_mutex>(mutex());

@@ -12,7 +12,7 @@
 // Add these to WorldRenderer.h class definition
 struct ChunkRebuildRequest {
     TwoIntTup chunkPos;
-    size_t chunkIndex;
+    size_t chunkIndex = 0 ;
     bool isHighPriority;
     bool rebuild = true;
     IntTup changeSpot = IntTup(0,0,0);

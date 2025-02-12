@@ -204,10 +204,66 @@ private:
                         redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, BulkBlockSet>) {
-                        std::cout << "Got bulk block set \n";\
-                        std::unique_lock<std::shared_mutex> barlock(serverBAR.baMutex);
-                        serverBAR.blockAreas.push_back(BlockArea{m.corner1, m.corner2, m.block
-                        });
+                        auto b = BlockArea{m.corner1, m.corner2, m.block, m.hollow
+                        };
+                        std::cout << "Got bulk block set \n";
+                        {
+                            std::unique_lock<std::shared_mutex> barlock(serverBAR.baMutex);
+                            serverBAR.blockAreas.push_back(b);
+                            // if (b.hollow)
+                            // {
+                            //     serverBAR.blockAreas.push_back(BlockArea{
+                            //     m.corner1 + IntTup(1,1,1), m.corner2 + IntTup(-1,-1,-1), AIR, false});
+                            // }
+                        }
+
+                        {
+                            std::vector<IntTup> spotsToEraseInUDM;
+                           spotsToEraseInUDM.reserve(500);
+
+
+                           {
+
+                               std::shared_lock<std::shared_mutex> udmRL(serverUserDataMap->mutex());
+                               auto hulk = b;
+                               int minX = std::min(hulk.corner1.x, hulk.corner2.x);
+                               int maxX = std::max(hulk.corner1.x, hulk.corner2.x);
+                               int minY = std::min(hulk.corner1.y, hulk.corner2.y);
+                               int maxY = std::max(hulk.corner1.y, hulk.corner2.y);
+                               int minZ = std::min(hulk.corner1.z, hulk.corner2.z);
+                               int maxZ = std::max(hulk.corner1.z, hulk.corner2.z);
+
+                               for (int x = minX; x <= maxX; x++) {
+                                   for (int y = minY; y <= maxY; y++) {
+                                       for (int z = minZ; z <= maxZ; z++) {
+
+                                           bool isBoundary = (x == minX || x == maxX ||
+                                                       y == minY || y == maxY ||
+                                                       z == minZ || z == maxZ);
+
+                                           if (isBoundary || !b.hollow)
+                                           {
+                                               if (serverUserDataMap->getLocked(IntTup{x, y, z}) != std::nullopt)
+                                               {
+                                                   spotsToEraseInUDM.emplace_back(IntTup{x, y, z});
+                                               }
+                                           }
+
+                                       }
+                                   }
+                               }
+                           }
+
+                           {
+                               auto lock = serverUserDataMap->getUniqueLock();
+                               for (auto & spot : spotsToEraseInUDM)
+                               {
+                                   serverUserDataMap->erase(spot, true);
+                               }
+                           }
+
+                        }
+
                         redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, FileTransferInit>) {

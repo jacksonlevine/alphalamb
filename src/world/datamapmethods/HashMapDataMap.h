@@ -13,6 +13,8 @@
 ///A simple implementation of UserDataMap using an unordered_map (And with optionally enabled measuring of lookup time)
 class HashMapDataMap : public DataMap {
 public:
+    void erase(const IntTup& spot, bool locked = true) override;
+
     std::unique_lock<std::shared_mutex> getUniqueLock() override;
 
     std::unique_ptr<Iterator> createIterator() override;

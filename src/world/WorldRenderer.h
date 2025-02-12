@@ -11,6 +11,7 @@
 #include "../IntTup.h"
 #include "../PrecompHeader.h"
 #include "RebuildQueue.h"
+#include "../AtomicRWInt.h"
 
 struct DrawInstructions
 {
@@ -45,8 +46,8 @@ struct ChangeBuffer
 {
     UsableMesh mesh = {};
     size_t chunkIndex = 0;
-    std::atomic<bool> ready = false;
-    std::atomic<bool> in_use = false;
+    AtomicRWInt ready = false;
+    AtomicRWInt in_use = false;
     std::optional<TwoIntTup> from = std::nullopt;
     TwoIntTup to = {};
 };
@@ -134,8 +135,8 @@ public:
     RebuildQueue rebuildQueue;
     std::thread rebuildThread;
     std::thread chunkWorker;
-    std::atomic<bool> rebuildThreadRunning = false;
-    std::atomic<bool> meshBuildingThreadRunning = false;
+    std::atomic<int> rebuildThreadRunning = false;
+    std::atomic<int> meshBuildingThreadRunning = false;
 
 
     // Preallocated memory pool for activeChunks and mbtActiveChunks
@@ -194,7 +195,7 @@ public:
     ///by adding its index to freeChangeBuffers.
     std::array<ChangeBuffer, 30> userChangeMeshBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<30>> freedUserChangeMeshBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<128>> freedUserChangeMeshBuffers = {};
 
     ///After being added to mbtActiveChunks, we await a confirmation back in this before we know we can reuse that chunk again
     ///One way queue, from main thread to mesh building thread, to notify of mbtActiveChunks entries that have been confirmed/entered into activeChunks.
@@ -203,7 +204,7 @@ public:
 
 
     //A way for the rebuild thread to ask the main thread "What chunks are active from this area?" so that the main thread can submit rebuild requests for them
-    boost::lockfree::spsc_queue<BlockArea, boost::lockfree::capacity<128>> rebuildToMainAreaNotifications = {};
+    boost::lockfree::spsc_queue<BlockArea, boost::lockfree::capacity<256>> rebuildToMainAreaNotifications = {};
 
 
 
@@ -256,10 +257,16 @@ public:
 
                 if (request.isArea)
                 {
-                    //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
-                     std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
-                     auto lock = world->nonUserDataMap->getUniqueLock();
-                     auto m = request.area;
+                    std::vector<IntTup> spotsToEraseInUDM;
+                    spotsToEraseInUDM.reserve(500);
+
+
+                    {
+                        //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
+                        std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
+                        auto lock = world->nonUserDataMap->getUniqueLock();
+                        std::shared_lock<std::shared_mutex> udmRL(world->userDataMap->mutex());
+                        auto m = request.area;
                         int minX = std::min(m.corner1.x, m.corner2.x);
                         int maxX = std::max(m.corner1.x, m.corner2.x);
                         int minY = std::min(m.corner1.y, m.corner2.y);
@@ -270,13 +277,41 @@ public:
                         for (int x = minX; x <= maxX; x++) {
                             for (int y = minY; y <= maxY; y++) {
                                 for (int z = minZ; z <= maxZ; z++) {
-                                    world->nonUserDataMap->setLocked(IntTup{x, y, z}, m.block);
+                                    bool isBoundary = (x == minX || x == maxX ||
+                                                       y == minY || y == maxY ||
+                                                       z == minZ || z == maxZ);
+
+                                    if (isBoundary || !m.hollow) {
+                                        world->nonUserDataMap->setLocked(IntTup{x, y, z}, m.block);
+                                        if (world->userDataMap->getLocked(IntTup{x, y, z}) != std::nullopt)
+                                        {
+                                            spotsToEraseInUDM.emplace_back(IntTup{x, y, z});
+                                        }
+                                    }
+
                                 }
                             }
                         }
-                    rebuildToMainAreaNotifications.push(request.area);
+                    }
 
-                }else
+                    {
+                        auto lock = world->userDataMap->getUniqueLock();
+                        for (auto & spot : spotsToEraseInUDM)
+                        {
+                            world->userDataMap->erase(spot, true);
+                        }
+                    }
+
+                    if (rebuildToMainAreaNotifications.write_available() > 0)
+                    {
+                        rebuildToMainAreaNotifications.push(request.area);
+                    } else
+                    {
+                        std::cout << "No more space in rebuildtomainareanotifications \n";
+                    }
+
+
+                } else
                 {
                     if(request.changeTo != std::nullopt)
                     {
@@ -315,13 +350,13 @@ public:
                         if (changeBufferIndex != -1)
                         {
                             auto& buffer = userChangeMeshBuffers[changeBufferIndex];
-                            buffer.in_use = true;
+                            buffer.in_use.store(true);
                             buffer.mesh = mesh;
                             buffer.chunkIndex = request.chunkIndex;
                             buffer.from = request.chunkPos;
                             buffer.to = request.chunkPos;
-                            buffer.ready = true;
-                            buffer.in_use = false;
+                            buffer.ready.store(true);
+                            buffer.in_use.store(false);
                         }
                     }
                 }

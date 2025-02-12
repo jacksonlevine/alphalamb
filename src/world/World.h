@@ -26,6 +26,7 @@ struct BlockArea
     IntTup corner1;
     IntTup corner2;
     uint32_t block;
+    bool hollow = false;
 };
 
 struct BlockAreaRegistry
@@ -64,7 +65,7 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
             {
                 contentStream << "AREA " << area.corner1.x << " " << area.corner1.y << " " << area.corner1.z << " "
                 << area.corner2.x << " " << area.corner2.y << " " << area.corner2.z << " "
-                << area.block << '\n';
+                << area.block << " " << (int)area.hollow << '\n';
             }
         }
     }
@@ -114,7 +115,18 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
                         blockAreas.blockAreas.push_back(BlockArea{
                             .corner1 = IntTup(std::stoi(words[1]),std::stoi(words[2]),std::stoi(words[3])),
                             .corner2 = IntTup(std::stoi(words[4]),std::stoi(words[5]),std::stoi(words[6])),
-                            .block = static_cast<uint32_t>(std::stoul(words[7]))
+                            .block = static_cast<uint32_t>(std::stoul(words[7])),
+                            .hollow = false
+                        });
+                    }
+                    if (words.size() == 9 && words.at(0) == "AREA")
+                    {
+                        std::unique_lock<std::shared_mutex> lock(blockAreas.baMutex);
+                        blockAreas.blockAreas.push_back(BlockArea{
+                            .corner1 = IntTup(std::stoi(words[1]),std::stoi(words[2]),std::stoi(words[3])),
+                            .corner2 = IntTup(std::stoi(words[4]),std::stoi(words[5]),std::stoi(words[6])),
+                            .block = static_cast<uint32_t>(std::stoul(words[7])),
+                            .hollow = (bool)std::stoi(words[8]),
                         });
                     }
                 }
@@ -177,16 +189,29 @@ public:
                     int minZ = std::min(m.corner1.z, m.corner2.z);
                     int maxZ = std::max(m.corner1.z, m.corner2.z);
 
+
                     for (int x = minX; x <= maxX; x++) {
                         for (int y = minY; y <= maxY; y++) {
                             for (int z = minZ; z <= maxZ; z++) {
-                                nonUserDataMap->setLocked(IntTup{x, y, z}, m.block);
+
+                                bool isBoundary = (x == minX || x == maxX ||
+                                                       y == minY || y == maxY ||
+                                                       z == minZ || z == maxZ);
+                                if (isBoundary || !m.hollow)
+                                {
+                                    nonUserDataMap->setLocked(IntTup{x, y, z}, m.block);
+                                }
+
                             }
                         }
                     }
                 }
 
             }
+
+
+
+
             return true;
         };
     }

@@ -233,8 +233,30 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                         if (scene->bulkPlaceGizmo->placeMode == BulkPlaceGizmo::Solid)
                         {
                             DGMessage bulkPlace = BulkBlockSet{
-                                scene->bulkPlaceGizmo->corner1, scene->bulkPlaceGizmo->corner2, scene->players.at(scene->myPlayerIndex)->currentHeldBlock};
+                                .corner1 = scene->bulkPlaceGizmo->corner1, .corner2 = scene->bulkPlaceGizmo->corner2, .block = scene->players.at(scene->myPlayerIndex)->currentHeldBlock, .hollow = false};
                             pushToMainToNetworkQueue(bulkPlace);
+                            scene->bulkPlaceGizmo->active = false;
+                        } else
+                        {
+                            IntTup minCorner = {
+                                std::min(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x),
+                                std::min(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y),
+                                std::min(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z)
+                            };
+
+                            IntTup maxCorner = {
+                                std::max(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x),
+                                std::max(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y),
+                                std::max(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z)
+                            };
+
+                            DGMessage bulkPlace = BulkBlockSet{
+                                .corner1 = minCorner, .corner2 = maxCorner, .block = scene->players.at(scene->myPlayerIndex)->currentHeldBlock, .hollow = true};
+                            pushToMainToNetworkQueue(bulkPlace);
+                            // DGMessage bulkCutout = BulkBlockSet{
+                            //     minCorner + IntTup(1,1,1), maxCorner + IntTup(-1,-1,-1), AIR};
+                            // pushToMainToNetworkQueue(bulkCutout);
+                            scene->bulkPlaceGizmo->active = false;
                         }
 
                     }
@@ -324,9 +346,22 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             if (action == GLFW_PRESS)
             {
 
-                scene->bulkPlaceGizmo->corner1 = scene->blockSelectGizmo->selectedSpot;
+                if (!scene->bulkPlaceGizmo->active)
+                {
+                    scene->bulkPlaceGizmo->corner1 = scene->blockSelectGizmo->selectedSpot;
+                    scene->bulkPlaceGizmo->active = true;
+                    scene->bulkPlaceGizmo->placeMode = BulkPlaceGizmo::Solid;
+                } else if (scene->bulkPlaceGizmo->placeMode == BulkPlaceGizmo::Solid)
+                {
+                    scene->bulkPlaceGizmo->placeMode = BulkPlaceGizmo::Walls;
+                } else
+                {
+                    scene->bulkPlaceGizmo->active = false;
+                }
 
-                scene->bulkPlaceGizmo->active = !scene->bulkPlaceGizmo->active;
+
+
+
 
             }
 
@@ -862,8 +897,14 @@ int main()
                             }
                             else if constexpr (std::is_same_v<T, BulkBlockSet>) {
                                 theScene.worldRenderer->requestBlockBulkPlaceFromMainThread(
-                                    BlockArea{m.corner1, m.corner2, m.block}
+                                    BlockArea{.corner1 = m.corner1, .corner2 = m.corner2, .block = m.block, .hollow = m.hollow}
                                     );
+                                // if (m.hollow)
+                                // {
+                                //     theScene.worldRenderer->requestBlockBulkPlaceFromMainThread(
+                                //     BlockArea{.corner1 = m.corner1 + IntTup(1,1,1), .corner2 = m.corner2 + IntTup(-1,-1,-1), .block = AIR, .hollow = false}
+                                //     );
+                                // }
                             }
                         }, msg);
 

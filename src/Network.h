@@ -70,6 +70,7 @@ struct BulkBlockSet
     IntTup corner1;
     IntTup corner2;
     uint32_t block;
+    bool hollow = false;
 };
 
 using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet>;
