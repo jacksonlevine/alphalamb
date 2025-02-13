@@ -11,7 +11,7 @@
 namespace jl {
     class Camera {
     public:
-        jl::Transform transform;
+        jl::Transform transform = {};
         static glm::mat4 model;
         glm::mat4 view;
         glm::mat4 projection;

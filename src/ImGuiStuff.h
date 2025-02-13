@@ -163,7 +163,7 @@ inline void renderImGui() {
                 break;
             case GuiScreen::InGame:
 
-                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.94ab");
+                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.94cc");
 
                 ImVec2 screenSize = ImGui::GetIO().DisplaySize;
 

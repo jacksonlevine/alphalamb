@@ -501,6 +501,7 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
     {
         auto & camera = scene->players.at(scene->myPlayerIndex)->camera;
         camera.updateProjection(width, height, 90.0f);
+        scene->guiCamera->updateProjection(width, height, 60.0f);
     }
 
     if(scene->hud)
@@ -675,6 +676,10 @@ int main()
 
     static jl::Shader billboardInstShader = getBillboardInstanceShader();
 
+    theScene.guiCamera = new jl::Camera();
+    std::cout << "width:" << width << " height:" << height << std::endl;
+    theScene.guiCamera->updateProjection(width, height, 60.0f);
+    theScene.guiCamera->updateWithYawPitch(0.0,0.0);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -682,6 +687,9 @@ int main()
         float currentTime = glfwGetTime();
         deltaTime = currentTime - lastTime;
         lastTime = currentTime;
+
+        int wwi, whei = 0;
+        glfwGetWindowSize(window, &wwi, &whei);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -723,29 +731,7 @@ int main()
                 player->billboard.characterNum = id % 4;
 
 
-            // std::cout << "Playerindex: " << id << "\n";
-            // std::cout << "PositionCA: " << player->camera.transform.position.x << " " << player->camera.transform.position.y << " " << player->camera.transform.position.z << " \n";
-            // std::cout << "PositionBI: " << player->billboard.position.x << " " << player->billboard.position.y << " " << player->billboard.position.z << " \n";
-            // auto contpos = player->controller->getPosition();
-            // std::cout << "PositionCO: " << contpos.x << " " << contpos.y << " " << contpos.z << " \n";
-            // std::cout << player->controls << "\n";
-            // std::cout << "Billboard Information:" << std::endl;
-            // std::cout << "  Position: ("
-            //           << player->billboard.position.x << ", "
-            //           << player->billboard.position.y << ", "
-            //           << player->billboard.position.z << ")" << std::endl;
-            // std::cout << "  Direction: ("
-            //           << player->billboard.direction.x << ", "
-            //           << player->billboard.direction.y << ", "
-            //           << player->billboard.direction.z << ")" << std::endl;
-            // std::cout << "  Character Number: " << player->billboard.characterNum << std::endl;
-            // std::cout << "  Hidden: " << player->billboard.hidden << std::endl;
-            //
-            // // Print AnimationState
-            // std::cout << "\nAnimation State Information:" << std::endl;
-            // std::cout << "  Action Number: " << player->animation_state.actionNum << std::endl;
-            // std::cout << "  Time Started: " << player->animation_state.timestarted << std::endl;
-            // std::cout << "  Time Scale: " << player->animation_state.timescale << std::endl;
+
 
             player->collisionCage.updateToSpot(&world, player->camera.transform.position, deltaTime);
                 player->camera.updateWithYawPitch(player->camera.transform.yaw, player->camera.transform.pitch);
@@ -1047,14 +1033,27 @@ int main()
             renderer->mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, gltfShader.shaderID, world.worldGenMethod, deltaTime);
             glUniform1f(timeRenderedLoc, 10.0f);
             glUniform1f(scaleLoc, 0.4f);
-            for (auto& player : theScene.players | std::views::values)
+            for (auto& [id, player] : theScene.players)
             {
 
                 auto pos = player->camera.transform.position + (player->camera.transform.direction*0.5f) + (player->camera.transform.right * 0.5f);
                 pos.y -= 0.5f;
-                glUniform3f(posLoc, pos.x, pos.y, pos.z);
+
                 glUniform3f(offsetLoc, -0.5f, -0.5f, -0.5f);
+                bool isme = id == theScene.myPlayerIndex;
+                if (isme)
+                {
+                    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.guiCamera->mvp));
+                    glUniform3f(posLoc, 3.0, -1.2, std::min((float)wwi / 600.0f, 2.0f));
+                    glDisable(GL_DEPTH_TEST);
+                } else
+                {
+                    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera.mvp));
+                    glUniform3f(posLoc, pos.x, pos.y, pos.z);
+
+                }
                 drawHandledBlock(player->camera.transform.position, player->currentHeldBlock, gltfShader.shaderID, player->lastHeldBlock, player->handledBlockMeshInfo);
+                glEnable(GL_DEPTH_TEST);
             }
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
             glUniform1f(scaleLoc, 1.0f);

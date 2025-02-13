@@ -51,6 +51,7 @@ struct Scene
     std::atomic<bool> worldReceived = {false};
     std::atomic<bool> clientShouldRun = {false};
     Settings settings = {};
+    jl::Camera* guiCamera = nullptr;
     bool showingControls = false;
     void saveSettings()
     {
