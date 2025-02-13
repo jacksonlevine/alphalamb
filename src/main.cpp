@@ -36,6 +36,8 @@
 #include "SharedVarsBetweenMainAndGui.h"
 #include "Texture2DArray.h"
 #include "world/gizmos/BulkPlaceGizmo.h"
+#include "IndexOptimization.h" // This is quackery I apologize
+
 
 boost::asio::io_context io_context;
 boost::asio::ip::tcp::socket tsocket(io_context);
@@ -117,76 +119,84 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                 }
             } else
             {
+
+                if (scene->blockSelectGizmo)
+                {
+                    if (scene->blockSelectGizmo->isDrawing)
+                    {
+                        auto & cam = scene->players[scene->myPlayerIndex]->camera;
+
+
+                        if (scene->multiplayer)
+                        {
+                            auto & spot = scene->blockSelectGizmo->selectedSpot;
+                            //std::cout << "Senfing blokc chagne \n";
+                            pushToMainToNetworkQueue(BlockSet{
+                                spot, AIR
+                            });
+
+                        } else
+                        {
+                            if (scene->world && scene->blockSelectGizmo && scene->worldRenderer)
+                            {
+                                //std::cout << "Setting" << std::endl;
+                                auto & spot = scene->blockSelectGizmo->selectedSpot;
+                                //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
+                                uint32_t blockThere = scene->world->get(spot);
+                                glm::vec3 burstspot = glm::vec3(
+                                    scene->blockSelectGizmo->selectedSpot.x+ 0.5,
+                                    scene->blockSelectGizmo->selectedSpot.y + 0.5,
+                                    scene->blockSelectGizmo->selectedSpot.z + 0.5);
+                                if (scene->particles)
+                                {
+                                    scene->particles->particleBurst(burstspot,
+                                                                 20, (MaterialName)blockThere, 2.0, 1.0f);
+                                }
+
+                                //scene->world->set(spot, AIR);
+                //std::cout << "Set the block "  << std::endl;;
+                                auto cs = scene->worldRenderer->chunkSize;
+                                // Then in your code:
+                                auto xmod = properMod(spot.x, cs);
+                                auto zmod = properMod(spot.z, cs);
+                                //std::cout << "Xmod: " << xmod << " Zmod: " << zmod << std::endl;
+                                scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                    spot, AIR, false
+                                    );
+
+                                if(xmod == scene->worldRenderer->chunkSize - 1)
+                                {
+                                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                        IntTup(spot.x+1, spot.y, spot.z));
+
+                                } else if(xmod == 0)
+                                {
+                                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                        IntTup(spot.x-1, spot.y, spot.z));
+                                }
+
+                                if(zmod == scene->worldRenderer->chunkSize - 1)
+                                {
+                                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                        IntTup(spot.x, spot.y, spot.z+1));
+
+                                } else if(zmod == 0)
+                                {
+                                    scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                        IntTup(spot.x, spot.y, spot.z-1));
+                                }
+                                scene->worldRenderer->requestChunkRebuildFromMainThread(
+                                    spot
+                                    );
+
+                                //std::cout << "Request filed " << std::endl;
+                            }
+                        }
+                    }
+                }
                 //addShootLine();
                 //sendShootLineMessage();
-                auto & cam = scene->players[scene->myPlayerIndex]->camera;
 
-
-                if (scene->multiplayer)
-                {
-                    auto & spot = scene->blockSelectGizmo->selectedSpot;
-                    //std::cout << "Senfing blokc chagne \n";
-                    pushToMainToNetworkQueue(BlockSet{
-                        spot, AIR
-                    });
-
-                } else
-                {
-                    if (scene->world && scene->blockSelectGizmo && scene->worldRenderer)
-                {
-                    //std::cout << "Setting" << std::endl;
-                    auto & spot = scene->blockSelectGizmo->selectedSpot;
-                    //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
-                    uint32_t blockThere = scene->world->get(spot);
-                    glm::vec3 burstspot = glm::vec3(
-                        scene->blockSelectGizmo->selectedSpot.x+ 0.5,
-                        scene->blockSelectGizmo->selectedSpot.y + 0.5,
-                        scene->blockSelectGizmo->selectedSpot.z + 0.5);
-                    if (scene->particles)
-                    {
-                        scene->particles->particleBurst(burstspot,
-                                                     20, (MaterialName)blockThere, 2.0, 1.0f);
-                    }
-
-                    //scene->world->set(spot, AIR);
-    //std::cout << "Set the block "  << std::endl;;
-                    auto cs = scene->worldRenderer->chunkSize;
-                    // Then in your code:
-                    auto xmod = properMod(spot.x, cs);
-                    auto zmod = properMod(spot.z, cs);
-                    //std::cout << "Xmod: " << xmod << " Zmod: " << zmod << std::endl;
-                    scene->worldRenderer->requestChunkRebuildFromMainThread(
-                        spot, AIR, false
-                        );
-
-                    if(xmod == scene->worldRenderer->chunkSize - 1)
-                    {
-                        scene->worldRenderer->requestChunkRebuildFromMainThread(
-                            IntTup(spot.x+1, spot.y, spot.z));
-
-                    } else if(xmod == 0)
-                    {
-                        scene->worldRenderer->requestChunkRebuildFromMainThread(
-                            IntTup(spot.x-1, spot.y, spot.z));
-                    }
-
-                    if(zmod == scene->worldRenderer->chunkSize - 1)
-                    {
-                        scene->worldRenderer->requestChunkRebuildFromMainThread(
-                            IntTup(spot.x, spot.y, spot.z+1));
-
-                    } else if(zmod == 0)
-                    {
-                        scene->worldRenderer->requestChunkRebuildFromMainThread(
-                            IntTup(spot.x, spot.y, spot.z-1));
-                    }
-                    scene->worldRenderer->requestChunkRebuildFromMainThread(
-                        spot
-                        );
-
-                    //std::cout << "Request filed " << std::endl;
-                }
-                }
 
             }
 
@@ -201,65 +211,71 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
                 if (!scene->bulkPlaceGizmo->active)
                 {
-                    auto & spot = scene->blockSelectGizmo->selectedSpot;
-                    IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
-
-                    using namespace std;
-
-                    IntTup playerBlockSpot1 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y), floor(cam.transform.position.z));
-                    IntTup playerBlockSpot2 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y-1), floor(cam.transform.position.z));
-
-                    if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
+                    if (scene->blockSelectGizmo->isDrawing)
                     {
-                        //std::cout << "Senfing blokc place \n";
-                        pushToMainToNetworkQueue(BlockSet{
-                            placeSpot, scene->players.at(scene->myPlayerIndex)->currentHeldBlock
-                        });
+                        auto & spot = scene->blockSelectGizmo->selectedSpot;
+                        IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
+
+                        using namespace std;
+
+                        IntTup playerBlockSpot1 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y), floor(cam.transform.position.z));
+                        IntTup playerBlockSpot2 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y-1), floor(cam.transform.position.z));
+
+                        if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
+                        {
+                            //std::cout << "Senfing blokc place \n";
+                            pushToMainToNetworkQueue(BlockSet{
+                                placeSpot, scene->players.at(scene->myPlayerIndex)->currentHeldBlock
+                            });
+                        }
                     }
                 } else
                 {
-                    auto playerpos = scene->players[scene->myPlayerIndex]->camera.transform.position;
 
-                    bool isInside =
-                    playerpos.x >= std::min(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x) &&
-                    playerpos.x <= std::max(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x) &&
-                    playerpos.y >= std::min(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y) &&
-                    playerpos.y <= std::max(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y) &&
-                    playerpos.z >= std::min(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z) &&
-                    playerpos.z <= std::max(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z);
+                        auto playerpos = scene->players[scene->myPlayerIndex]->camera.transform.position;
 
-                    if(!isInside)
-                    {
-                        if (scene->bulkPlaceGizmo->placeMode == BulkPlaceGizmo::Solid)
+                        bool isInside =
+                        playerpos.x >= std::min(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x) &&
+                        playerpos.x <= std::max(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x) &&
+                        playerpos.y >= std::min(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y) &&
+                        playerpos.y <= std::max(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y) &&
+                        playerpos.z >= std::min(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z) &&
+                        playerpos.z <= std::max(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z);
+
+                        if(!isInside)
                         {
-                            DGMessage bulkPlace = BulkBlockSet{
-                                .corner1 = scene->bulkPlaceGizmo->corner1, .corner2 = scene->bulkPlaceGizmo->corner2, .block = scene->players.at(scene->myPlayerIndex)->currentHeldBlock, .hollow = false};
-                            pushToMainToNetworkQueue(bulkPlace);
-                            scene->bulkPlaceGizmo->active = false;
-                        } else
-                        {
-                            IntTup minCorner = {
-                                std::min(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x),
-                                std::min(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y),
-                                std::min(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z)
-                            };
+                            if (scene->bulkPlaceGizmo->placeMode == BulkPlaceGizmo::Solid)
+                            {
+                                DGMessage bulkPlace = BulkBlockSet{
+                                    .corner1 = scene->bulkPlaceGizmo->corner1, .corner2 = scene->bulkPlaceGizmo->corner2, .block = scene->players.at(scene->myPlayerIndex)->currentHeldBlock, .hollow = false};
+                                pushToMainToNetworkQueue(bulkPlace);
+                                scene->bulkPlaceGizmo->active = false;
+                            } else
+                            {
+                                IntTup minCorner = {
+                                    std::min(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x),
+                                    std::min(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y),
+                                    std::min(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z)
+                                };
 
-                            IntTup maxCorner = {
-                                std::max(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x),
-                                std::max(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y),
-                                std::max(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z)
-                            };
+                                IntTup maxCorner = {
+                                    std::max(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x),
+                                    std::max(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y),
+                                    std::max(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z)
+                                };
 
-                            DGMessage bulkPlace = BulkBlockSet{
-                                .corner1 = minCorner, .corner2 = maxCorner, .block = scene->players.at(scene->myPlayerIndex)->currentHeldBlock, .hollow = true};
-                            pushToMainToNetworkQueue(bulkPlace);
-                            // DGMessage bulkCutout = BulkBlockSet{
-                            //     minCorner + IntTup(1,1,1), maxCorner + IntTup(-1,-1,-1), AIR};
-                            // pushToMainToNetworkQueue(bulkCutout);
-                            scene->bulkPlaceGizmo->active = false;
+                                DGMessage bulkPlace = BulkBlockSet{
+                                    .corner1 = minCorner, .corner2 = maxCorner, .block = scene->players.at(scene->myPlayerIndex)->currentHeldBlock, .hollow = true};
+                                pushToMainToNetworkQueue(bulkPlace);
+                                // DGMessage bulkCutout = BulkBlockSet{
+                                //     minCorner + IntTup(1,1,1), maxCorner + IntTup(-1,-1,-1), AIR};
+                                // pushToMainToNetworkQueue(bulkCutout);
+                                scene->bulkPlaceGizmo->active = false;
+                            }
+
                         }
 
-                    }
+
 
                 }
 
@@ -328,15 +344,43 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     }
     if (scene->myPlayerIndex != -1)
     {
-        // if (key == GLFW_KEY_F)
+        // if (key == GLFW_KEY_C && action == GLFW_PRESS)
         // {
-        //     if(action == GLFW_PRESS)
+        //     int index = 0;
+        //     for (auto & chunk : scene->worldRenderer->chunkPool)
         //     {
-        //         std::cout << "Toggling fly mode \n";
-        //         FLY_MODE = !FLY_MODE;
-        //     }
+        //         std::cout << "Index: " << index << "\n";
         //
+        //         // struct ChunkGLInfo
+        //         // {
+        //         //     GLuint vvbo, uvvbo, bvbo, ebo = 0;
+        //         //     GLuint tvvbo, tuvvbo, tbvbo, tebo = 0;
+        //         //     DrawInstructions drawInstructions = {};
+        //         // };
+        //
+        //         std::cout << "VAOS: " << std::to_string(chunk.drawInstructions.vao) << " " << std::to_string(chunk.drawInstructions.tvao) << "\n";
+        //
+        //         std::cout << std::to_string(chunk.vvbo) << " "
+        //       << std::to_string(chunk.uvvbo) << " "
+        //       << std::to_string(chunk.bvbo) << " "
+        //       << std::to_string(chunk.ebo) << " "
+        //       << std::to_string(chunk.tvvbo) << " "
+        //       << std::to_string(chunk.tuvvbo) << " "
+        //       << std::to_string(chunk.tbvbo) << " "
+        //       << std::to_string(chunk.tebo) << std::endl;
+        //
+        //             index++;
+        //     }
         // }
+        if (key == GLFW_KEY_F3)
+        {
+            if (action == GLFW_PRESS)
+            {
+                scene->showingControls = !scene->showingControls;
+            }
+
+
+        }
         if (key == GLFW_KEY_L)
         {
             scene->world->save("testfile.txt");
@@ -561,6 +605,8 @@ int main()
     glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
     glfwSwapInterval(0);
 
+    WorldRenderer* renderer = new WorldRenderer();
+
     initializePhysX();
 
     loadGameVoxelModels();
@@ -615,7 +661,7 @@ int main()
     theScene.hud = new Hud();
     theScene.hud->rebuildDisplayData();
 
-    WorldRenderer* renderer = new WorldRenderer();
+
 
     theScene.worldRenderer = renderer;
 

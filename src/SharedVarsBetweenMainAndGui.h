@@ -89,13 +89,14 @@ inline void exitWorld(Scene* scene)
     TwoIntTup t;
     while (scene->worldRenderer->confirmedActiveChunksQueue.pop(t)){}
 
-    for (auto & chunk : scene->worldRenderer->chunkPool)
-    {
-        glDeleteBuffers(8, &chunk.vvbo);
-        glDeleteVertexArrays(1, &chunk.drawInstructions.vao);
-        glDeleteVertexArrays(1, &chunk.drawInstructions.tvao);
-    }
-    scene->worldRenderer->chunkPool.clear();
+    //Not needed since we will be keeping these buffers 'statically'
+    // for (auto & chunk : scene->worldRenderer->chunkPool)
+    // {
+    //     glDeleteBuffers(8, &chunk.vvbo);
+    //     glDeleteVertexArrays(1, &chunk.drawInstructions.vao);
+    //     glDeleteVertexArrays(1, &chunk.drawInstructions.tvao);
+    // }
+    // scene->worldRenderer->chunkPool.clear();
 
     scene->world->clearWorld();
 

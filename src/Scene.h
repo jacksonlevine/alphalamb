@@ -51,6 +51,7 @@ struct Scene
     std::atomic<bool> worldReceived = {false};
     std::atomic<bool> clientShouldRun = {false};
     Settings settings = {};
+    bool showingControls = false;
     void saveSettings()
     {
         std::ofstream settingsFile("settings.txt", std::ios::trunc);

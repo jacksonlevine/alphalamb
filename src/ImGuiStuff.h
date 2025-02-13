@@ -170,65 +170,111 @@ inline void renderImGui() {
 
                 if (!theScene.bulkPlaceGizmo->active)
                 {
-                    const char* s1 = "F: Use jetpack";
-                    ImVec2 textSize = ImGui::CalcTextSize(s1);
+                    if (theScene.showingControls)
+                    {
+                        const char* s1 = "F3: Hide help";
+                        ImVec2 textSize = ImGui::CalcTextSize(s1);
 
-                    // Set the cursor position to the bottom-left of the screen
-                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f));
+                        // Set the cursor position to the bottom-left of the screen
+                        ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f));
 
-                    ImGui::Text(s1);
+                        ImGui::Text(s1);
 
 
-                    const char* s2 = "Shift: Sprint";
-                    ImVec2 text2Size = ImGui::CalcTextSize(s2);
+                        const char* s2 = "Shift: Sprint";
+                        ImVec2 text2Size = ImGui::CalcTextSize(s2);
 
-                    // Set the cursor position to the bottom-left of the screen
-                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f));
+                        ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f));
 
-                    ImGui::Text(s2);
+                        ImGui::Text(s2);
 
-                    const char* s3 = "Esc: Exit";
-                    ImVec2 text3Size = ImGui::CalcTextSize(s3);
+                        const char* s3 = "Esc: Exit";
+                        ImVec2 text3Size = ImGui::CalcTextSize(s3);
 
-                    // Set the cursor position to the bottom-left of the screen
-                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f));
+                        ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f));
 
-                    ImGui::Text(s3);
+                        ImGui::Text(s3);
 
-                    const char* s4 = "E: Hover mode";
-                    ImVec2 textSize0 = ImGui::CalcTextSize(s4);
+                        const char* s4 = "E: Hover mode";
+                        ImVec2 textSize0 = ImGui::CalcTextSize(s4);
 
-                    // Set the cursor position to the bottom-left of the screen
-                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f - textSize0.y - 10.0f));
+                        ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f - textSize0.y - 10.0f));
 
-                    ImGui::Text(s4);
+                        ImGui::Text(s4);
 
-                    const char* s5 = "B: Toggle Build Mode";
-                    ImVec2 textSize4 = ImGui::CalcTextSize(s5);
+                        const char* s5 = "B: Toggle Build Mode";
+                        ImVec2 textSize4 = ImGui::CalcTextSize(s5);
 
-                    // Set the cursor position to the bottom-left of the screen
-                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f - textSize0.y - 10.0f - textSize4.y - 10.0f));
+                        ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f - textSize0.y - 10.0f - textSize4.y - 10.0f));
 
-                    ImGui::Text(s5);
+                        ImGui::Text(s5);
+
+
+                        const char* s6 = "Middle-click: Pick block";
+                        ImVec2 textSize6 = ImGui::CalcTextSize(s6);
+
+                        ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f - textSize0.y - 10.0f - textSize4.y - 10.0f - textSize6.y - 10.0f));
+
+                        ImGui::Text(s6);
+
+
+                        const char* s7 = "F: Use jetpack";
+                        ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - (( textSize.y + 10.0f) * 7)));
+
+                        ImGui::Text(s7);
+
+
+
+
+                        static std::string coordinatesString = "";
+                        glm::vec3 pp = theScene.players.at(theScene.myPlayerIndex)->camera.transform.position;
+                        coordinatesString = std::string("X: ") + std::to_string(pp.x) + ", Y: " + std::to_string(pp.y) + ", Z: " + std::to_string(pp.z);
+
+                        ImGui::SetCursorPos(ImVec2(10.0f, 10.0f  + textSize.y));
+
+                        ImGui::Text(coordinatesString.c_str());
+                    } else
+                    {
+                        const char* s1 = "F3: Toggle help";
+                        ImVec2 textSize = ImGui::CalcTextSize(s1);
+
+                        // Set the cursor position to the bottom-left of the screen
+                        ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f));
+
+                        ImGui::Text(s1);
+                    }
+
                 } else
                 {
                     const char* s1 = "Right click: Confirm and place";
                     ImVec2 textSize = ImGui::CalcTextSize(s1);
 
                     // Set the cursor position to the bottom-left of the screen
-                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f));
+                    ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f));
 
                     ImGui::Text(s1);
 
 
-                    const char* s2 = "B: Toggle Build Mode";
+                    const char* s2 = "B: Toggle Mode / Exit Build Mode";
                     ImVec2 text2Size = ImGui::CalcTextSize(s2);
 
-                    // Set the cursor position to the bottom-left of the screen
-                    ImGui::SetCursorPos(ImVec2(5.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f));
+                    ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f));
 
                     ImGui::Text(s2);
 
+                    const char* s3 = "Yellow Outline: Hollow";
+                    ImVec2 text3Size = ImGui::CalcTextSize(s3);
+
+                    ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f));
+
+                    ImGui::TextColored(ImVec4(1.0, 1.0, 0.0, 1.0),s3);
+
+                    const char* s4 = "Red Outline: Solid";
+                    ImVec2 textSize0 = ImGui::CalcTextSize(s4);
+
+                    ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f - textSize0.y - 10.0f));
+
+                    ImGui::TextColored(ImVec4(1.0, 0.0, 0.0, 1.0),s4);
 
 
 

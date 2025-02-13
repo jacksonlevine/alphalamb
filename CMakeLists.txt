@@ -115,6 +115,7 @@ add_executable(DistantGarden
         src/world/gizmos/BulkPlaceGizmo.cpp
         src/world/gizmos/BulkPlaceGizmo.h
         src/AtomicRWInt.h
+        src/IndexOptimization.h
 
 )
 

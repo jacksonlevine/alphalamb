@@ -12,7 +12,7 @@
 #include "../PrecompHeader.h"
 #include "RebuildQueue.h"
 #include "../AtomicRWInt.h"
-
+#include "../IndexOptimization.h"
 struct DrawInstructions
 {
     GLuint vao = 0;
@@ -42,14 +42,20 @@ struct ChunkGLInfo
     DrawInstructions drawInstructions = {};
 };
 
+struct SmallChunkGLInfo
+{
+    int indiceCount = 0;
+    int tindiceCount = 0;
+};
+
 struct ChangeBuffer
 {
     UsableMesh mesh = {};
     size_t chunkIndex = 0;
-    AtomicRWInt ready = false;
-    AtomicRWInt in_use = false;
     std::optional<TwoIntTup> from = std::nullopt;
     TwoIntTup to = {};
+    std::atomic<bool> ready = false;
+    std::atomic<bool> in_use = false;
 };
 
 
@@ -57,16 +63,21 @@ struct ChangeBuffer
 
 void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo, DrawInstructions& drawInstructions, UsableMesh& usable_mesh, GLuint& bvbo,
     GLuint& tvvbo, GLuint& tuvvbo, GLuint& tebo, GLuint& tbvbo);
+void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, UsableMesh& usable_mesh);
 void drawTransparentsFromDrawInstructions(const DrawInstructions& drawInstructions);
 void drawFromDrawInstructions(const DrawInstructions& drawInstructions);
 
-enum Side
+void drawFromChunkIndex(int chunkIndex, const SmallChunkGLInfo& cgl);
+void drawTransparentsFromChunkIndex(int chunkIndex, const SmallChunkGLInfo& cgl);
+
+
+enum class Side
 {
     Front = 0,Right,Back,Left,Top,Bottom
 };
 
 __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex);
-
+void genCGLBuffers();
 constexpr float onePixel = 0.00183823529411764705882352941176f;     //  1/544      Padding
 constexpr float textureWidth = 0.02941176470588235294117647058824f; // 16/544      16 pixel texture width
 constexpr float texSlotWidth = 0.03308823529411764705882352941176f;
@@ -130,7 +141,9 @@ public:
     static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2));
     static constexpr int MIN_DISTANCE = renderDistance + 1;
 
-    std::vector<ChunkGLInfo> chunkPool;
+    std::array<SmallChunkGLInfo, maxChunks> chunkPool;
+
+    std::atomic<size_t> chunkPoolSize = {0};
 
     RebuildQueue rebuildQueue;
     std::thread rebuildThread;
@@ -180,7 +193,14 @@ public:
           activeChunksMemoryResource(activeChunksMemoryPool.data(), activeChunksMemoryPool.size()),
           mbtActiveChunksMemoryResource(mbtActiveChunksMemoryPool.data(), mbtActiveChunksMemoryPool.size()),
           activeChunks(&activeChunksMemoryResource),
-          mbtActiveChunks(&mbtActiveChunksMemoryResource) {}
+          mbtActiveChunks(&mbtActiveChunksMemoryResource)
+    {
+        //Generate them all at the beginning so we know the buffer names for sure
+        for (auto& chunk : chunkPool)
+        {
+            genCGLBuffers();
+        }
+    }
 
 
 
@@ -215,9 +235,10 @@ public:
     ///Returns the index in chunkPool of the new chunk.
     size_t addUninitializedChunkBuffer()
     {
-        ChunkGLInfo chunk;
-        chunkPool.push_back(chunk);
-        return chunkPool.size() - 1;
+        size_t val = chunkPoolSize.load();
+        size_t ret = val;
+        chunkPoolSize.store(val+1);
+        return ret;
     }
 
     void launchThreads(jl::Camera* camera, World* world)

@@ -178,7 +178,7 @@ private:
                 }
                 if (world->getLocked(spot) != AIR)
                 {
-                    addFace(PxVec3(spot.x, spot.y, spot.z), Top, GRASS, 1, mesh, index, tindex);
+                    addFace(PxVec3(spot.x, spot.y, spot.z), Side::Top, GRASS, 1, mesh, index, tindex);
                 }
 
             }

@@ -5,6 +5,9 @@
 
 namespace jl
 {
+
+    glm::mat4 Camera::model = glm::mat4(1.0f);
+
     void Camera::updateProjection(int screenwidth, int screenheight, float fov)
     {
         if(screenheight != 0)

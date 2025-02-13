@@ -303,6 +303,9 @@ private:
                     }
 
                     sendMessageToAllClients(pl, m_playerIndex, true);
+
+                    //Save when a player leaves too
+                    saveDM("serverworld.txt", serverUserDataMap, serverBAR);
                 }
             }
         });

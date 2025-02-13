@@ -17,19 +17,19 @@ class ParticlesGizmo;
 
 struct Player {
     jl::Camera camera = {};
-    Controls controls = {};
-    physx::PxController* controller = nullptr;
-    CollisionCage collisionCage = {};
-    float footDustTimer = 0.0f;
-    MaterialName lastBlockStandingOn = AIR;
+    ChunkGLInfo handledBlockMeshInfo = {};
     Billboard billboard = {};
+    CollisionCage collisionCage = {};
     AnimationState animation_state = {};
-    bool isGrounded = false;
-    bool jetpackMode = false;
+    physx::PxController* controller = nullptr;
+    Controls controls = {};
     void update(float deltaTime, World* world, ParticlesGizmo* particles);
     MaterialName lastHeldBlock = AIR;
     MaterialName currentHeldBlock = WOOD_PLANKS;
-    ChunkGLInfo handledBlockMeshInfo = {};
+    float footDustTimer = 0.0f;
+    MaterialName lastBlockStandingOn = AIR;
+    bool isGrounded = false;
+    bool jetpackMode = false;
     bool hoverMode = false;
     MyControllerHitReport* getMyHitReport()
     {
