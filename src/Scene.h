@@ -9,6 +9,7 @@
 #include "world/gizmos/BlockSelectGizmo.h"
 #include "Hud.h"
 #include "world/gizmos/BulkPlaceGizmo.h"
+#include "world/gizmos/VoxModelStampGizmo.h"
 
 
 struct Settings
@@ -43,6 +44,7 @@ struct Scene
     BlockSelectGizmo* blockSelectGizmo = nullptr;
     BulkPlaceGizmo* bulkPlaceGizmo = nullptr;
     WorldRenderer* worldRenderer = nullptr;
+    VoxModelStampGizmo* vmStampGizmo = nullptr;
     Hud* hud = nullptr;
     GLFWwindow* window = nullptr;
     std::string serverAddress = "127.0.0.1:6969";

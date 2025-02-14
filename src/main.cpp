@@ -345,11 +345,9 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     }
     if (scene->myPlayerIndex != -1)
     {
-        if (key == GLFW_KEY_C && action == GLFW_PRESS)
+        if (key == GLFW_KEY_V && action == GLFW_PRESS)
         {
-            ALuint testbuffer = bufferFromFile("resources/test.mp3");
-            ALuint source = makeSource(glm::vec3(0, 100, 0));
-            playBufferFromSource(testbuffer, source);
+            theScene.vmStampGizmo->active = !theScene.vmStampGizmo->active;
         }
         if (key == GLFW_KEY_F3)
         {
@@ -502,27 +500,46 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
         if (scene->myPlayerIndex != -1)
         {
 
-            if (yoffset > 0)
+            if (!scene->vmStampGizmo->active)
             {
-                scene->players.at(scene->myPlayerIndex)->currentHeldBlock = (MaterialName)(((int)scene->players.at(scene->myPlayerIndex)->currentHeldBlock + 1 ) % BLOCK_COUNT);
-            }
-            if (yoffset < 0)
-            {
-                int newMat = (scene->players.at(scene->myPlayerIndex)->currentHeldBlock - 1) % BLOCK_COUNT;
-                if (newMat < 0)
+                if (yoffset > 0)
                 {
-                    newMat = BLOCK_COUNT - 1;
+                    scene->players.at(scene->myPlayerIndex)->currentHeldBlock = (MaterialName)(((int)scene->players.at(scene->myPlayerIndex)->currentHeldBlock + 1 ) % BLOCK_COUNT);
                 }
-                scene->players.at(scene->myPlayerIndex)->currentHeldBlock = (MaterialName)newMat;
+                if (yoffset < 0)
+                {
+                    int newMat = (scene->players.at(scene->myPlayerIndex)->currentHeldBlock - 1);
+                    if (newMat < 0)
+                    {
+                        newMat = BLOCK_COUNT - 1;
+                    }
+                    scene->players.at(scene->myPlayerIndex)->currentHeldBlock = (MaterialName)newMat;
+                }
+
+                if (scene->multiplayer)
+                {
+                    DGMessage sbu = PlayerSelectBlockChange{
+                        scene->myPlayerIndex,
+                    scene->players.at(scene->myPlayerIndex)->currentHeldBlock};
+                    pushToMainToNetworkQueue(sbu);
+                }
+            } else
+            {
+                if (yoffset > 0)
+                {
+                   scene->vmStampGizmo->modelIndex = (scene->vmStampGizmo->modelIndex + 1) % voxelModels.size();
+                }
+                if (yoffset < 0)
+                {
+                    int newMat = (scene->vmStampGizmo->modelIndex - 1);
+                    if (newMat < 0)
+                    {
+                        newMat = voxelModels.size() - 1;
+                    }
+                    scene->vmStampGizmo->modelIndex = newMat;
+                }
             }
 
-            if (scene->multiplayer)
-            {
-                DGMessage sbu = PlayerSelectBlockChange{
-                    scene->myPlayerIndex,
-                scene->players.at(scene->myPlayerIndex)->currentHeldBlock};
-                pushToMainToNetworkQueue(sbu);
-            }
         }
     }
 
@@ -610,7 +627,8 @@ int main()
 
     ImFont* font_body = imguiio->Fonts->AddFontFromFileTTF("font.ttf", 20.0f, NULL, imguiio->Fonts->GetGlyphRangesDefault());
 
-
+    static jl::Shader gltfShader = getBasicShader();
+    static jl::Texture worldTex("resources/world.png");
 
     theScene.loadSettings();
 
@@ -626,6 +644,12 @@ int main()
     BulkPlaceGizmo* bpg = new BulkPlaceGizmo();
     theScene.bulkPlaceGizmo = bpg;
     theScene.gizmos.push_back(bpg);
+
+    VoxModelStampGizmo* vms = new VoxModelStampGizmo();
+    vms->shaderProgram = gltfShader.shaderID;
+    theScene.vmStampGizmo = vms;
+
+    //theScene.gizmos.push_back(vms);
 
     for(auto & gizmo : theScene.gizmos)
     {
@@ -683,9 +707,8 @@ int main()
         glUseProgram(billboardInstShader.shaderID);
 
 
+        theScene.vmStampGizmo->spot = theScene.blockSelectGizmo->selectedSpot;
 
-        static jl::Shader gltfShader = getBasicShader();
-        static jl::Texture worldTex("resources/world.png");
 
 
 
@@ -1017,6 +1040,8 @@ int main()
             }
 
             renderer->mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, gltfShader.shaderID, world.worldGenMethod, deltaTime);
+            vms->draw(&world, theScene.players.at(theScene.myPlayerIndex));
+
             glUniform1f(timeRenderedLoc, 10.0f);
             glUniform1f(scaleLoc, 0.4f);
             for (auto& [id, player] : theScene.players)

@@ -119,6 +119,8 @@ add_executable(DistantGarden
         src/IndexOptimization.h
         src/OpenALStuff.cpp
         src/OpenALStuff.h
+        src/world/gizmos/VoxModelStampGizmo.cpp
+        src/world/gizmos/VoxModelStampGizmo.h
 
 )
 
