@@ -7,6 +7,6 @@
 
 int main()
 {
-    loadDM("serverworld.txt", serverUserDataMap, serverBAR);
+    loadDM("serverworld.txt", serverUserDataMap, serverBAR, serverPVMR);
     serverThreadFun(6969);
 }
