@@ -9,6 +9,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include "FPSCounter.h"
 #include "Server.h"
 #include "SharedVarsBetweenMainAndGui.h"
 #include "LocalServerIOContext.h"
@@ -294,6 +295,12 @@ inline void renderImGui() {
                         ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - (( textSize.y + 10.0f) * 8)));
 
                         ImGui::Text(s8);
+
+                        std::string fps = std::to_string(DG_FPS) + " FPS";
+                        ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - (( textSize.y + 10.0f) * 9)));
+
+                        ImGui::Text(fps.c_str());
+
 
 
 

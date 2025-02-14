@@ -19,6 +19,7 @@
 #include <stb_image.h>
 
 #include "Client.h"
+#include "FPSCounter.h"
 #include "HandledBlock.h"
 #include "PhysXStuff.h"
 #include "Sky.h"
@@ -609,7 +610,6 @@ int main()
     glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
     glfwSwapInterval(0);
 
-
     initOpenAL();
 
     WorldRenderer* renderer = new WorldRenderer();
@@ -721,7 +721,7 @@ int main()
 
         if (theScene.myPlayerIndex != -1)
         {
-
+            updateFPS();
 
 
             std::vector<Billboard> billboards;

@@ -123,6 +123,8 @@ add_executable(DistantGarden
         src/world/gizmos/VoxModelStampGizmo.h
         src/LocalServerIOContext.h
         src/LocalServerIOContext.cpp
+        src/FPSCounter.cpp
+        src/FPSCounter.h
 
 )
 
