@@ -210,7 +210,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
             if (scene->multiplayer)
             {
 
-                if (!scene->bulkPlaceGizmo->active)
+                if (!scene->bulkPlaceGizmo->active && !scene->vmStampGizmo->active)
                 {
                     if (scene->blockSelectGizmo->isDrawing)
                     {
@@ -230,7 +230,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                             });
                         }
                     }
-                } else
+                } else if (scene->bulkPlaceGizmo->active)
                 {
 
                         auto playerpos = scene->players[scene->myPlayerIndex]->camera.transform.position;
@@ -278,6 +278,13 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
 
 
+                } else if (scene->vmStampGizmo->active)
+                {
+                    DGMessage vmplace = VoxModelStamp{
+                        .name = (VoxelModelName)scene->vmStampGizmo->modelIndex,
+                        .spot = scene->vmStampGizmo->spot
+                       };
+                    pushToMainToNetworkQueue(vmplace);
                 }
 
 
@@ -937,6 +944,19 @@ int main()
                             else if constexpr (std::is_same_v<T, BulkBlockSet>) {
                                 theScene.worldRenderer->requestBlockBulkPlaceFromMainThread(
                                     BlockArea{.corner1 = m.corner1, .corner2 = m.corner2, .block = m.block, .hollow = m.hollow}
+                                    );
+                                // if (m.hollow)
+                                // {
+                                //     theScene.worldRenderer->requestBlockBulkPlaceFromMainThread(
+                                //     BlockArea{.corner1 = m.corner1 + IntTup(1,1,1), .corner2 = m.corner2 + IntTup(-1,-1,-1), .block = AIR, .hollow = false}
+                                //     );
+                                // }
+                            }
+                             else if constexpr (std::is_same_v<T, VoxModelStamp>) {
+                                theScene.worldRenderer->requestVoxelModelPlaceFromMainThread(
+                                    PlacedVoxModel{
+                                        m.name, m.spot
+                                    }
                                     );
                                 // if (m.hollow)
                                 // {

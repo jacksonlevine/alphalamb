@@ -5,6 +5,7 @@
 #ifndef WORLD_H
 #define WORLD_H
 #include "DataMap.h"
+#include "VoxelModels.h"
 #include "WorldGenMethod.h"
 
 
@@ -36,8 +37,20 @@ struct BlockAreaRegistry
 
 };
 
+struct PlacedVoxModel
+{
+    VoxelModelName name;
+    IntTup spot;
+};
 
-inline std::optional<std::string> saveDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas) {
+struct PlacedVoxModelRegistry
+{
+    std::vector<PlacedVoxModel> models;
+    std::shared_mutex mutex = {};
+};
+
+
+inline std::optional<std::string> saveDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr) {
     std::filesystem::path filePath(filename);
     if (!filePath.parent_path().empty()) {
         std::filesystem::create_directories(filePath.parent_path());
@@ -70,6 +83,17 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
         }
     }
 
+    {
+        std::shared_lock<std::shared_mutex> lock(pvmr.mutex);
+        if (!pvmr.models.empty())
+        {
+            for (auto& vm : pvmr.models)
+            {
+                contentStream << "VM " << vm.name << " " << vm.spot.x << " " << vm.spot.y << " " << vm.spot.z << "\n";
+            }
+        }
+    }
+
     std::ofstream file(filename, std::ios::trunc);
     if (file.is_open()) {
         file << contentStream.str();
@@ -83,7 +107,7 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
 
 
 
-   inline bool loadDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas)
+   inline bool loadDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr)
     {
         std::ifstream file(filename);
         if (!file.is_open())
@@ -108,6 +132,13 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
                     //Rest are ints
                     map->set(IntTup( std::stoi(words[0]) , std::stoi(words[1]), std::stoi(words[2]) ), static_cast<uint32_t>(std::stoul(words[3])));
                 } else
+                if (words.size() == 5 && words.at(0) == "VM")
+                {
+                    std::unique_lock<std::shared_mutex> lock(pvmr.mutex);
+                    pvmr.models.push_back(PlacedVoxModel{
+                    (VoxelModelName)std::stoi(words[1]), IntTup(std::stoi(words[2]), std::stoi(words[3]), std::stoi(words[4])),});
+
+                }else
                 {
                     if (words.size() == 8 && words.at(0) == "AREA")
                     {
@@ -149,6 +180,7 @@ public:
     DataMap* nonUserDataMap;
 
     BlockAreaRegistry blockAreas = {};
+    PlacedVoxModelRegistry placedVoxModels = {};
 
     WorldGenMethod* worldGenMethod;
 
@@ -160,12 +192,12 @@ public:
 
     bool save(std::string filename)
     {
-        return saveDM(filename, userDataMap, blockAreas) ? true : false;
+        return saveDM(filename, userDataMap, blockAreas, placedVoxModels) ? true : false;
     }
 
     bool load(std::string filename)
     {
-        if (loadDM(filename, userDataMap, blockAreas))
+        if (loadDM(filename, userDataMap, blockAreas, placedVoxModels))
         {
             std::vector<BlockArea> ba;
 
@@ -207,6 +239,52 @@ public:
                     }
                 }
 
+            }
+
+
+            std::vector<PlacedVoxModel> vms;
+
+            {
+                std::shared_lock<std::shared_mutex> lock(placedVoxModels.mutex);
+                vms.reserve(placedVoxModels.models.size());
+                for (auto & vm : placedVoxModels.models)
+                {
+                    vms.push_back(vm);
+                }
+            }
+
+            std::vector<IntTup> spotsToEraseInUDM;
+            spotsToEraseInUDM.reserve(500);
+
+            {
+                auto lock = nonUserDataMap->getUniqueLock();
+
+                std::shared_lock<std::shared_mutex> udmRL(userDataMap->mutex());
+                for (auto & pvm : vms)
+                {
+                    auto & realvm = voxelModels[pvm.name];
+                    for (auto & p : realvm.points)
+                    {
+                        IntTup offset = IntTup(realvm.dimensions.x/-2, 0, realvm.dimensions.z/-2) + pvm.spot;
+                        nonUserDataMap->setLocked(p.localSpot + offset, p.colorIndex);
+                        auto bh = userDataMap->getLocked(p.localSpot + offset);
+                        if (bh != std::nullopt && bh.value() == 0)
+                        {
+                            spotsToEraseInUDM.push_back(p.localSpot + offset);
+                        }
+                    }
+
+
+                }
+
+            }
+
+            {
+                auto lock = userDataMap->getUniqueLock();
+                for (auto & spot : spotsToEraseInUDM)
+                {
+                    userDataMap->erase(spot);
+                }
             }
 
 

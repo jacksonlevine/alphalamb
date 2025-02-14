@@ -6,6 +6,7 @@
 #define SERVER_H
 
 #include "Camera.h"
+#include "LocalServerIOContext.h"
 #include "PrecompHeader.h"
 #include "Network.h"
 #include "world/DataMap.h"
@@ -25,6 +26,7 @@ extern std::unordered_map<int, ServerPlayer> clients;
 extern std::shared_mutex clientsMutex;
 
 extern BlockAreaRegistry serverBAR;
+extern PlacedVoxModelRegistry serverPVMR;
 extern DataMap* serverUserDataMap;
 
 
@@ -78,7 +80,7 @@ private:
             }
         });
 
-        auto string = saveDM("serverworld.txt", serverUserDataMap, serverBAR);
+        auto string = saveDM("serverworld.txt", serverUserDataMap, serverBAR, serverPVMR);
         if (string.has_value())
         {
             DGMessage fileInit = FileTransferInit {
@@ -203,6 +205,19 @@ private:
                         serverUserDataMap->set(m.spot, m.block);
                         redistrib = true;
                     }
+                    else if constexpr (std::is_same_v<T, VoxModelStamp>)
+                    {
+                        auto v = PlacedVoxModel {
+                        m.name, m.spot};
+                        {
+                            std::unique_lock<std::shared_mutex> barlock(serverPVMR.mutex);
+                            serverPVMR.models.push_back(v);
+                        }
+
+                        //auto & vm = voxelModels[(int)m.name];
+
+                        redistrib = true;
+                    }
                     else if constexpr (std::is_same_v<T, BulkBlockSet>) {
                         auto b = BlockArea{m.corner1, m.corner2, m.block, m.hollow
                         };
@@ -305,7 +320,7 @@ private:
                     sendMessageToAllClients(pl, m_playerIndex, true);
 
                     //Save when a player leaves too
-                    saveDM("serverworld.txt", serverUserDataMap, serverBAR);
+                    saveDM("serverworld.txt", serverUserDataMap, serverBAR, serverPVMR);
                 }
             }
         });
@@ -373,7 +388,7 @@ public:
             } else {
                 std::cout << "error: " << ec.message() << std::endl;
             }
-            // since we want multiple clients to connnect, wait for the next one by calling do_accept()
+
             do_accept();
         });
     }
@@ -388,6 +403,59 @@ inline void serverThreadFun(int port)
     Server s(io_context, port);
     io_context.run();
 }
+
+inline void localServerThreadFun(int port)
+{
+
+    if (!localserver_io_context) {
+        localserver_io_context = std::make_unique<boost::asio::io_context>();
+    }
+    localserver_io_context->restart();
+    Server s(*localserver_io_context, port);
+    localserver_io_context->run();
+}
+
+inline void launchLocalServer(int port)
+{
+    loadDM("serverworld.txt", serverUserDataMap, serverBAR, serverPVMR);
+
+    if (!localserver_running.load()) {
+        std::cout << "Starting local server...\n";
+
+        if (!localserver_io_context) {
+            localserver_io_context = std::make_unique<boost::asio::io_context>();
+        } else {
+            localserver_io_context->restart();
+        }
+
+        localserver_thread = std::thread(localServerThreadFun, port);
+        localserver_running.store(true);
+
+        localserver_io_context.reset(new boost::asio::io_context());
+
+    } else {
+        std::cout << "Local server is already running.\n";
+    }
+}
+inline void endLocalServerIfRunning()
+{
+    if (localserver_running.load())
+    {
+        localserver_io_context->stop();
+
+        localserver_thread.join();
+        localserver_running.store(false);
+
+    }
+    serverUserDataMap->clear();
+    serverBAR.baMutex.lock();
+    serverBAR.blockAreas.clear();
+    serverBAR.baMutex.unlock();
+    clientsMutex.lock();
+    clients.clear();
+    clientsMutex.unlock();
+}
+
 
 inline void launchServerThreadFun()
 {

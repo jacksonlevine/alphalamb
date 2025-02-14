@@ -11,4 +11,5 @@ std::unordered_map<int, ServerPlayer> clients;
 std::shared_mutex clientsMutex;
 
 BlockAreaRegistry serverBAR;
+PlacedVoxModelRegistry serverPVMR;
 DataMap* serverUserDataMap = new HashMapDataMap();

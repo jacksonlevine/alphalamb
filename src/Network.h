@@ -11,6 +11,7 @@
 #include "Controls.h"
 #include "IntTup.h"
 #include "world/MaterialName.h"
+#include "world/VoxelModels.h"
 using namespace boost::variant2;
 
 struct PlayerPresent
@@ -73,7 +74,13 @@ struct BulkBlockSet
     bool hollow = false;
 };
 
-using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet>;
+struct VoxModelStamp
+{
+    VoxelModelName name;
+    IntTup spot;
+};
+
+using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp>;
 
 
 

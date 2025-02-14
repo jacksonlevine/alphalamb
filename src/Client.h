@@ -102,6 +102,10 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                         //std::cout << "Got select block change update \n";
                         pushToNetworkToMainQueue(m);
                     }
+                    else if constexpr (std::is_same_v<T, VoxModelStamp>)
+                    {
+                        pushToNetworkToMainQueue(m);
+                    }
                     else if constexpr (std::is_same_v<T, PlayerLeave>) {
                         std::cout << "Got player leave \n";
                         pushToNetworkToMainQueue(m);

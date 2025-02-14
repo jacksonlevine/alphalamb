@@ -333,6 +333,53 @@ public:
 
 
                 } else
+                if (request.isVoxelModel)
+                {
+                    auto & vm = voxelModels[request.vm.name];
+                    std::vector<IntTup> spotsToEraseInUDM;
+                    spotsToEraseInUDM.reserve(500);
+
+                    {
+                        //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
+                        std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
+                        auto lock = world->nonUserDataMap->getUniqueLock();
+                        std::shared_lock<std::shared_mutex> udmRL(world->userDataMap->mutex());
+
+                        IntTup offset = IntTup(vm.dimensions.x/-2, 0, vm.dimensions.z/-2) + request.vm.spot;
+                        for ( auto & p : vm.points)
+                        {
+                            world->nonUserDataMap->setLocked(offset+p.localSpot, p.colorIndex);
+                            if (world->userDataMap->getLocked(offset+p.localSpot) != std::nullopt)
+                            {
+                                spotsToEraseInUDM.emplace_back(offset+p.localSpot);
+                            }
+
+                        }
+
+
+
+                    }
+                    {
+                        auto lock = world->userDataMap->getUniqueLock();
+                        for (auto & spot : spotsToEraseInUDM)
+                        {
+                            world->userDataMap->erase(spot, true);
+                        }
+                    }
+                    if (rebuildToMainAreaNotifications.write_available() > 0)
+                    {
+                        IntTup corner1 = IntTup(vm.dimensions.x/-2, 0, vm.dimensions.z/-2) + request.vm.spot;
+                        IntTup corner2 = IntTup(vm.dimensions.x/2, vm.dimensions.y, vm.dimensions.z/2) + request.vm.spot;
+
+                        rebuildToMainAreaNotifications.push(BlockArea{
+                            corner1, corner2, AIR, false
+                        });
+                    } else
+                    {
+                        std::cout << "No more space in rebuildtomainareanotifications \n";
+                    }
+
+                }else
                 {
                     if(request.changeTo != std::nullopt)
                     {
@@ -396,6 +443,11 @@ public:
     {
         rebuildQueue.push(ChunkRebuildRequest(area
                 ));
+    }
+
+    void requestVoxelModelPlaceFromMainThread(PlacedVoxModel vox)
+    {
+        rebuildQueue.push(ChunkRebuildRequest(vox));
     }
 
     void requestChunkRebuildFromMainThread(IntTup spot, std::optional<uint32_t> changeTo = std::nullopt, bool rebuild = true)

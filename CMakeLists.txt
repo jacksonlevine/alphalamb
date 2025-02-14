@@ -121,6 +121,8 @@ add_executable(DistantGarden
         src/OpenALStuff.h
         src/world/gizmos/VoxModelStampGizmo.cpp
         src/world/gizmos/VoxModelStampGizmo.h
+        src/LocalServerIOContext.h
+        src/LocalServerIOContext.cpp
 
 )
 

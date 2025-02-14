@@ -8,8 +8,10 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
-#include "SharedVarsBetweenMainAndGui.h"
 
+#include "Server.h"
+#include "SharedVarsBetweenMainAndGui.h"
+#include "LocalServerIOContext.h"
 extern ImGuiIO* imguiio;
 
 extern bool guiShowing;
@@ -18,7 +20,8 @@ enum GuiScreen
 {
     MainMenu,
     EscapeMenu,
-    InGame
+    InGame,
+    HostPort
 };
 
 extern GuiScreen currentGuiScreen;
@@ -57,6 +60,8 @@ static int ResizeStringCallback(ImGuiInputTextCallbackData* data)
 }
 
 
+
+
 inline void renderImGui() {
 
 
@@ -90,6 +95,52 @@ inline void renderImGui() {
 
         switch (currentGuiScreen)
         {
+        case HostPort:
+                if (ImGui::Button("Back to main menu"))
+                {
+                    currentGuiScreen = MainMenu;
+                }
+                ImGui::Text("Enter a TCP-forwarded port for hosting (or leave blank for default 25000):");
+                ImGui::InputText("Port", theScene.localServerPort.data(), theScene.localServerPort.capacity(), ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &theScene.localServerPort);
+                if (ImGui::Button("Start server and join"))
+                {
+                    try
+                    {
+
+                        std::string ip = "127.0.0.1";
+
+                        if (theScene.localServerPort.size() == 0)
+                        {
+                            theScene.localServerPort = "25000";
+                        }
+                        std::cout << "Hosting on port: " << theScene.localServerPort << "\n";
+
+                        launchLocalServer(std::stoi(theScene.localServerPort));
+
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+                        theScene.enableMultiplayer();
+
+                        if(connectToServer(ip.c_str(), theScene.localServerPort.c_str()))
+                        {
+                            while (!theScene.worldReceived.load())
+                            {
+                                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                            }
+                            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                            enterWorld(&theScene);
+                            currentGuiScreen = GuiScreen::InGame;
+                        } else
+                        {
+                            std::cout << "Couldn't connect \n";
+                        }
+                    } catch (std::exception& e)
+                    {
+                        std::cout << e.what() << "\n";
+                    }
+
+                }
+            break;
         case GuiScreen::MainMenu:
             if (                ImGui::InputText("Server address", theScene.serverAddress.data(), theScene.serverAddress.capacity(), ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &theScene.serverAddress)
 )
@@ -129,13 +180,19 @@ inline void renderImGui() {
 
 
                 }
+                if (ImGui::Button("Host"))
+                {
+
+                    currentGuiScreen = GuiScreen::HostPort;
+
+                }
                 if (ImGui::Button("Exit game"))
                 {
                     glfwSetWindowShouldClose(theScene.window, true);
                 }
                 break;
         case GuiScreen::EscapeMenu:
-
+            {
                 if (ImGui::SliderFloat("Mouse Sensitivity", &theScene.settings.mouseSensitivity, 0.0f, 2.0f))
                 {
                     theScene.saveSettings();
@@ -145,7 +202,15 @@ inline void renderImGui() {
                 {
                     currentGuiScreen = GuiScreen::InGame;
                 }
-                if (ImGui::Button("Leave to main menu"))
+                std::string leavelabel;
+                if (localserver_running.load())
+                {
+                    leavelabel = "Leave to main menu and close server";
+                } else
+                {
+                    leavelabel = "Disconnect and leave to main menu";
+                }
+                if (ImGui::Button(leavelabel.c_str()))
                 {
                     exitWorld(&theScene);
                     uncaptureMouse(&theScene);
@@ -153,6 +218,7 @@ inline void renderImGui() {
                     {
                         tsocket.close();
                     }
+                    endLocalServerIfRunning();
                     currentGuiScreen = GuiScreen::MainMenu;
                 }
                 if (ImGui::Button("Exit to desktop"))
@@ -161,14 +227,15 @@ inline void renderImGui() {
                     glfwSetWindowShouldClose(theScene.window, true);
                 }
                 break;
+            }
             case GuiScreen::InGame:
 
-                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.94cc");
+                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.95a");
 
                 ImVec2 screenSize = ImGui::GetIO().DisplaySize;
 
 
-                if (!theScene.bulkPlaceGizmo->active)
+                if (!theScene.bulkPlaceGizmo->active && !theScene.vmStampGizmo->active)
                 {
                     if (theScene.showingControls)
                     {
@@ -223,6 +290,11 @@ inline void renderImGui() {
 
                         ImGui::Text(s7);
 
+                        const char* s8 = "V: Toggle voxel model stamp mode";
+                        ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - (( textSize.y + 10.0f) * 8)));
+
+                        ImGui::Text(s8);
+
 
 
 
@@ -244,7 +316,7 @@ inline void renderImGui() {
                         ImGui::Text(s1);
                     }
 
-                } else
+                } else if (theScene.bulkPlaceGizmo->active)
                 {
                     const char* s1 = "Right click: Confirm and place";
                     ImVec2 textSize = ImGui::CalcTextSize(s1);
@@ -275,6 +347,26 @@ inline void renderImGui() {
                     ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f - textSize0.y - 10.0f));
 
                     ImGui::TextColored(ImVec4(1.0, 0.0, 0.0, 1.0),s4);
+
+
+
+                } else if (theScene.vmStampGizmo->active)
+                {
+                    const char* s1 = "Right click: Stamp model";
+                    ImVec2 textSize = ImGui::CalcTextSize(s1);
+
+                    // Set the cursor position to the bottom-left of the screen
+                    ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f));
+
+                    ImGui::Text(s1);
+
+
+                    const char* s2 = "V: Toggle Mode / Exit Stamp Mode";
+                    ImVec2 text2Size = ImGui::CalcTextSize(s2);
+
+                    ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f));
+
+                    ImGui::Text(s2);
 
 
 

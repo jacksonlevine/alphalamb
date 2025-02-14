@@ -20,6 +20,8 @@ struct ChunkRebuildRequest {
     bool isArea = false;
     BlockArea area;
 
+    bool isVoxelModel = false;
+    PlacedVoxModel vm = {};
 
     std::optional<uint32_t> changeTo = std::nullopt;
     std::chrono::steady_clock::time_point timestamp;
@@ -28,6 +30,9 @@ struct ChunkRebuildRequest {
           timestamp(std::chrono::steady_clock::now()) {}
     ChunkRebuildRequest(BlockArea area)
         : chunkPos(TwoIntTup(0,0)), chunkIndex(0), isHighPriority(true), isArea(true), area(area),
+          timestamp(std::chrono::steady_clock::now()) {}
+    ChunkRebuildRequest(PlacedVoxModel vm)
+        : chunkPos(TwoIntTup(0,0)), chunkIndex(0), isHighPriority(true), isVoxelModel(true), vm(vm),
           timestamp(std::chrono::steady_clock::now()) {}
     ChunkRebuildRequest(TwoIntTup pos, size_t index, bool priority, IntTup changeSpot, uint32_t changeTo)
         : chunkPos(pos), chunkIndex(index), isHighPriority(priority), changeSpot(changeSpot), changeTo(changeTo),

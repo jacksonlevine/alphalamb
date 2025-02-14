@@ -32,12 +32,12 @@ public:
     };
 };
 
-inline GLuint vaoNameOfChunkIndex(int chunkIndex, IndexOptimization::Vao vao)
+constexpr GLuint vaoNameOfChunkIndex(int chunkIndex, IndexOptimization::Vao vao)
 {
     return startingChunkVbo + chunkIndex*2 + vao;
 }
 
-inline GLuint bufferNameOfChunkIndex(int chunkIndex, IndexOptimization::Buffer buffer)
+constexpr GLuint bufferNameOfChunkIndex(int chunkIndex, IndexOptimization::Buffer buffer)
 {
     return startingChunkVbo + chunkIndex*8 + buffer;
 }
