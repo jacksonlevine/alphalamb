@@ -32,5 +32,9 @@
 #include <boost/container/pmr/polymorphic_allocator.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/variant2/variant.hpp>
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <sndfile.h>
+
 
 #endif //PRECOMPHEADER_H

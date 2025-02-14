@@ -31,6 +31,7 @@ struct Player {
     bool isGrounded = false;
     bool jetpackMode = false;
     bool hoverMode = false;
+    ALuint jetpackSource = 0;
     MyControllerHitReport* getMyHitReport()
     {
         return ((MyControllerHitReport*)controller->getUserData());

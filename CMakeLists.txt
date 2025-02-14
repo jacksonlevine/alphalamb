@@ -28,6 +28,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
+find_package(OpenAL CONFIG REQUIRED)
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
 
@@ -116,6 +117,8 @@ add_executable(DistantGarden
         src/world/gizmos/BulkPlaceGizmo.h
         src/AtomicRWInt.h
         src/IndexOptimization.h
+        src/OpenALStuff.cpp
+        src/OpenALStuff.h
 
 )
 
@@ -133,7 +136,7 @@ src/world/DataMap.h
         src/Transform.h
 )
 
-
+target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)
 function(add_common_libraries target)
     
     target_precompile_headers( ${target}

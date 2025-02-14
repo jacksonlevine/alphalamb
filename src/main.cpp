@@ -37,6 +37,7 @@
 #include "Texture2DArray.h"
 #include "world/gizmos/BulkPlaceGizmo.h"
 #include "IndexOptimization.h" // This is quackery I apologize
+#include "OpenALStuff.h"
 
 
 boost::asio::io_context io_context;
@@ -344,34 +345,12 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     }
     if (scene->myPlayerIndex != -1)
     {
-        // if (key == GLFW_KEY_C && action == GLFW_PRESS)
-        // {
-        //     int index = 0;
-        //     for (auto & chunk : scene->worldRenderer->chunkPool)
-        //     {
-        //         std::cout << "Index: " << index << "\n";
-        //
-        //         // struct ChunkGLInfo
-        //         // {
-        //         //     GLuint vvbo, uvvbo, bvbo, ebo = 0;
-        //         //     GLuint tvvbo, tuvvbo, tbvbo, tebo = 0;
-        //         //     DrawInstructions drawInstructions = {};
-        //         // };
-        //
-        //         std::cout << "VAOS: " << std::to_string(chunk.drawInstructions.vao) << " " << std::to_string(chunk.drawInstructions.tvao) << "\n";
-        //
-        //         std::cout << std::to_string(chunk.vvbo) << " "
-        //       << std::to_string(chunk.uvvbo) << " "
-        //       << std::to_string(chunk.bvbo) << " "
-        //       << std::to_string(chunk.ebo) << " "
-        //       << std::to_string(chunk.tvvbo) << " "
-        //       << std::to_string(chunk.tuvvbo) << " "
-        //       << std::to_string(chunk.tbvbo) << " "
-        //       << std::to_string(chunk.tebo) << std::endl;
-        //
-        //             index++;
-        //     }
-        // }
+        if (key == GLFW_KEY_C && action == GLFW_PRESS)
+        {
+            ALuint testbuffer = bufferFromFile("resources/test.mp3");
+            ALuint source = makeSource(glm::vec3(0, 100, 0));
+            playBufferFromSource(testbuffer, source);
+        }
         if (key == GLFW_KEY_F3)
         {
             if (action == GLFW_PRESS)
@@ -606,6 +585,9 @@ int main()
     glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
     glfwSwapInterval(0);
 
+
+    initOpenAL();
+
     WorldRenderer* renderer = new WorldRenderer();
 
     initializePhysX();
@@ -680,6 +662,8 @@ int main()
     std::cout << "width:" << width << " height:" << height << std::endl;
     theScene.guiCamera->updateProjection(width, height, 60.0f);
     theScene.guiCamera->updateWithYawPitch(0.0,0.0);
+
+
 
     while (!glfwWindowShouldClose(window))
     {
@@ -950,6 +934,9 @@ int main()
 
 
             gScene->simulate(deltaTime);
+            auto & camera = theScene.players.at(theScene.myPlayerIndex)->camera;
+
+            setListenerToCameraPos(&camera);
 
             BlockArea m = {};
 
@@ -981,7 +968,6 @@ int main()
             }
 
 
-            auto & camera = theScene.players.at(theScene.myPlayerIndex)->camera;
 
             if (theScene.bulkPlaceGizmo->active)
             {
@@ -1046,6 +1032,7 @@ int main()
                     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.guiCamera->mvp));
                     glUniform3f(posLoc, 3.0, -1.2, std::min((float)wwi / 600.0f, 2.0f));
                     glDisable(GL_DEPTH_TEST);
+                    glUniform3f(camPosLoc, 0, 0, 0);
                 } else
                 {
                     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera.mvp));

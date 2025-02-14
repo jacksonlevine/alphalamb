@@ -4,12 +4,21 @@
 
 #include "Player.h"
 
+#include "OpenALStuff.h"
 #include "PhysXStuff.h"
 #include "world/gizmos/ParticlesGizmo.h"
 
 
 void Player::update(const float deltaTime, World* world, ParticlesGizmo* particles)
 {
+
+    if (jetpackSource == 0)
+    {
+        jetpackSource = makeSource(camera.transform.position);
+        setSourceBuffer(sounds.at((int)SoundBuffers::JETPACK), jetpackSource);
+        alSourcei(jetpackSource, AL_LOOPING, AL_TRUE);
+    }
+
     glm::vec3 displacement(0.0f, 0.0f, 0.0f);
 
     isGrounded = false;
@@ -36,8 +45,20 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         }
     }
 
+    ALint jpSourceState;
+    alGetSourcei(jetpackSource, AL_SOURCE_STATE, &jpSourceState);
+
     if(jetpackMode && controls.secondary1)
     {
+
+        setSourcePosVel(jetpackSource, camera.transform.position - glm::vec3(0,1,0), camera.transform.velocity);
+
+        if (jpSourceState != AL_PLAYING)
+        {
+            alSourcePlay(jetpackSource);
+        }
+
+
         if(footDustTimer > 0.1)
         {
             particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 10, JETPACK_PARTICLE_BLOCK, 0.2f, 0.0f);
@@ -45,6 +66,12 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         } else
         {
             footDustTimer += deltaTime;
+        }
+    } else
+    {
+        if (jpSourceState == AL_PLAYING)
+        {
+            alSourceStop(jetpackSource);
         }
     }
 
@@ -54,8 +81,12 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         jetpackMode = true;
     }
 
+
     if (jetpackMode)
     {
+
+
+
         camera.transform.velocity /= (1.0f + deltaTime);
         if (controls.secondary1) {
             camera.transform.velocity += camera.transform.up * 70.0f * deltaTime;
@@ -72,10 +103,12 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         if (controls.left) {
             camera.transform.velocity -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult;
         }
-        camera.transform.velocity.x = glm::clamp(camera.transform.velocity.x, -5000.0f * deltaTime, 5000.0f * deltaTime);
-        camera.transform.velocity.z = glm::clamp(camera.transform.velocity.z, -5000.0f * deltaTime, 5000.0f * deltaTime);
+        camera.transform.velocity.x = glm::clamp(camera.transform.velocity.x, -8000.0f * deltaTime, 8000.0f * deltaTime);
+        camera.transform.velocity.z = glm::clamp(camera.transform.velocity.z, -8000.0f * deltaTime, 8000.0f * deltaTime);
     } else
     {
+
+
         if (controls.forward) {
             displacement += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
         }
