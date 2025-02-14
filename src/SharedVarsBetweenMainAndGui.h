@@ -65,6 +65,14 @@ inline void exitWorld(Scene* scene)
         scene->players.clear();
     }
 
+    {
+        std::unique_lock<std::shared_mutex> lock(scene->world->placedVoxModels.mutex);
+        scene->world->placedVoxModels.models.clear();
+    }
+    {
+        std::unique_lock<std::shared_mutex> lock(scene->world->blockAreas.baMutex);
+        scene->world->blockAreas.blockAreas.clear();
+    }
 
 
 
