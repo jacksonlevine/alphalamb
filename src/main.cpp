@@ -157,7 +157,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
                                 //scene->world->set(spot, AIR);
                 //std::cout << "Set the block "  << std::endl;;
-                                auto cs = scene->worldRenderer->chunkSize;
+                                auto cs = WorldRenderer::chunkSize;
                                 // Then in your code:
                                 auto xmod = properMod(spot.x, cs);
                                 auto zmod = properMod(spot.z, cs);
@@ -166,7 +166,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                                     spot, AIR, false
                                     );
 
-                                if(xmod == scene->worldRenderer->chunkSize - 1)
+                                if(xmod == WorldRenderer::chunkSize - 1)
                                 {
                                     scene->worldRenderer->requestChunkRebuildFromMainThread(
                                         IntTup(spot.x+1, spot.y, spot.z));
@@ -177,7 +177,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                                         IntTup(spot.x-1, spot.y, spot.z));
                                 }
 
-                                if(zmod == scene->worldRenderer->chunkSize - 1)
+                                if(zmod == WorldRenderer::chunkSize - 1)
                                 {
                                     scene->worldRenderer->requestChunkRebuildFromMainThread(
                                         IntTup(spot.x, spot.y, spot.z+1));
