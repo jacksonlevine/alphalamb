@@ -9,7 +9,7 @@
 #include "../WorldGenMethod.h"
 #include "../VoxelModels.h"
 
-enum Climate {
+enum Climate : uint8_t {
     PolarDesert,
     BorealForest,
     WetTundra,

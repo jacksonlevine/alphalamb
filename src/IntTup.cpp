@@ -95,10 +95,10 @@ TwoIntTup::TwoIntTup() : x(0), z(0)
 {
 }
 
-void TwoIntTup::set(int x, int z)
+void TwoIntTup::set(int x2, int z2)
 {
-    this->x = x;
-    this->z = z;
+    this->x = x2;
+    this->z = z2;
 }
 
 bool TwoIntTup::operator==(const TwoIntTup& other) const

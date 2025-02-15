@@ -6,7 +6,7 @@
 #define WORLDGENMETHOD_H
 #include "../IntTup.h"
 #include "../PrecompHeader.h"
-enum Climate;
+enum Climate : uint8_t;
 ///The interface the world gen method must satisfy
 class WorldGenMethod {
 public:

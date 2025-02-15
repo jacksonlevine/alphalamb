@@ -44,7 +44,7 @@ public:
     int z;
     TwoIntTup(int x, int z);
     TwoIntTup();
-    void set(int x, int z);
+    void set(int x2, int z);
     bool operator==(const TwoIntTup& other) const;
     bool operator!=(const TwoIntTup& other) const;
     TwoIntTup& operator=(const TwoIntTup& other);
