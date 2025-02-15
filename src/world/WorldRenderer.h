@@ -11,8 +11,6 @@
 #include "../IntTup.h"
 #include "../PrecompHeader.h"
 #include "RebuildQueue.h"
-#include "../AtomicRWInt.h"
-#include "../IndexOptimization.h"
 struct DrawInstructions
 {
     GLuint vao = 0;
@@ -37,8 +35,8 @@ struct UsableMesh
 
 struct ChunkGLInfo
 {
-    GLuint vvbo, uvvbo, bvbo, ebo = 0;
-    GLuint tvvbo, tuvvbo, tbvbo, tebo = 0;
+    GLuint vvbo{}, uvvbo{}, bvbo{}, ebo = 0;
+    GLuint tvvbo{}, tuvvbo{}, tbvbo{}, tebo = 0;
     DrawInstructions drawInstructions = {};
 };
 
@@ -115,21 +113,21 @@ inline static IntTup neighborSpots[6] = {
 };
 
 
-UsableMesh fromChunk(TwoIntTup spot, World* world, int chunkSize);
-UsableMesh fromChunkLocked(TwoIntTup spot, World* world, int chunkSize);
+UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize);
+UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize);
 
 struct UsedChunkInfo
 {
     bool confirmedByMainThread = false;
     size_t chunkIndex = 0;
-    UsedChunkInfo(size_t index) : chunkIndex(index) {}
+    explicit UsedChunkInfo(size_t index) : chunkIndex(index) {}
 };
 
 struct ReadyToDrawChunkInfo
 {
     size_t chunkIndex = 0;
     float timeBeenRendered = 0.0f;
-    ReadyToDrawChunkInfo(size_t index) : chunkIndex(index) {}
+    explicit ReadyToDrawChunkInfo(size_t index) : chunkIndex(index) {}
 };
 extern std::atomic<int> NUM_THREADS_RUNNING;
 
@@ -152,10 +150,6 @@ public:
     std::atomic<int> meshBuildingThreadRunning = false;
 
 
-    // Preallocated memory pool for activeChunks and mbtActiveChunks
-    std::vector<char> activeChunksMemoryPool;
-    std::vector<char> mbtActiveChunksMemoryPool;
-
     //For the user
     std::mutex bufferMutex = {};
     std::condition_variable bufferCV = {};
@@ -168,38 +162,26 @@ public:
     void notifyBufferFreed() {
         bufferCV.notify_one();
     }
-    // Monotonic buffer resources for these two hashmaps, because they will only ever have maxchunks size & we want to allocate as infrequently as possible.
-    boost::container::pmr::monotonic_buffer_resource activeChunksMemoryResource;
-    boost::container::pmr::monotonic_buffer_resource mbtActiveChunksMemoryResource;
-
-    // Polymorphic allocators for the unordered_maps
-    using ActiveChunksAllocator = boost::container::pmr::polymorphic_allocator<std::pair<const TwoIntTup, size_t>>;
-    using MBTActiveChunksAllocator = boost::container::pmr::polymorphic_allocator<std::pair<const TwoIntTup, UsedChunkInfo>>;
 
     ///Only for Main Thread access. The main thread will make changes to this as it buffers incoming geometry, so they will only be on this once theyre officially ready to be drawn.
     ///The main thread will also use this as its list of what chunks to draw
-    boost::unordered_map<TwoIntTup, ReadyToDrawChunkInfo, TwoIntTupHash, std::equal_to<TwoIntTup>, ActiveChunksAllocator> activeChunks;
+    boost::unordered_flat_map<TwoIntTup, ReadyToDrawChunkInfo, TwoIntTupHash, std::equal_to<>> activeChunks = {};
 
     ///Only for Mesh Building thread access. Its internal record of what spots it has generated & sent out the geometry for.
-    boost::unordered_map<TwoIntTup, UsedChunkInfo, TwoIntTupHash, std::equal_to<TwoIntTup>, MBTActiveChunksAllocator> mbtActiveChunks;
+    boost::unordered_flat_map<TwoIntTup, UsedChunkInfo, TwoIntTupHash, std::equal_to<>> mbtActiveChunks = {};
 
     ///Chunks that have had their terrain features generated already.
-    std::unordered_set<TwoIntTup, TwoIntTupHash> generatedChunks;
-    void generateChunk(World* world, TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>& implicatedChunks);
+    boost::unordered_flat_set<TwoIntTup, TwoIntTupHash> generatedChunks;
+    void generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>& implicatedChunks);
 
     WorldRenderer()
-        : activeChunksMemoryPool(maxChunks * sizeof(std::pair<TwoIntTup, size_t>)),
-          mbtActiveChunksMemoryPool(maxChunks * sizeof(std::pair<TwoIntTup, size_t>)),
-          activeChunksMemoryResource(activeChunksMemoryPool.data(), activeChunksMemoryPool.size()),
-          mbtActiveChunksMemoryResource(mbtActiveChunksMemoryPool.data(), mbtActiveChunksMemoryPool.size()),
-          activeChunks(&activeChunksMemoryResource),
-          mbtActiveChunks(&mbtActiveChunksMemoryResource)
     {
+        mbtActiveChunks.reserve(maxChunks);
+        activeChunks.reserve(maxChunks);
         //Generate them all at the beginning so we know the buffer names for sure
-        for (auto& chunk : chunkPool)
-        {
+        std::ranges::for_each(std::views::iota(0, maxChunks), [](auto) {
             genCGLBuffers();
-        }
+        });
     }
 
 
@@ -228,7 +210,7 @@ public:
 
 
 
-    void mainThreadDraw(jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod, float deltaTime);
+    void mainThreadDraw(const jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod, float deltaTime);
     void meshBuildCoroutine(jl::Camera* playerCamera, World* world);
 
     ///Add a chunk gl info with the vao == 0 (not generated yet). Calling modifyOrInitializeDrawInstructions with it and geometry will initialize it.
@@ -306,7 +288,7 @@ public:
                                         world->nonUserDataMap->setLocked(IntTup{x, y, z}, m.block);
                                         if (world->userDataMap->getLocked(IntTup{x, y, z}) != std::nullopt)
                                         {
-                                            spotsToEraseInUDM.emplace_back(IntTup{x, y, z});
+                                            spotsToEraseInUDM.emplace_back(x, y, z);
                                         }
                                     }
 
@@ -439,18 +421,18 @@ public:
         std::cout << "Rebuild thread finished!\n";
     }
 
-    void requestBlockBulkPlaceFromMainThread(BlockArea area)
+    void requestBlockBulkPlaceFromMainThread(const BlockArea& area)
     {
         rebuildQueue.push(ChunkRebuildRequest(area
                 ));
     }
 
-    void requestVoxelModelPlaceFromMainThread(PlacedVoxModel vox)
+    void requestVoxelModelPlaceFromMainThread(const PlacedVoxModel& vox)
     {
         rebuildQueue.push(ChunkRebuildRequest(vox));
     }
 
-    void requestChunkRebuildFromMainThread(IntTup spot, std::optional<uint32_t> changeTo = std::nullopt, bool rebuild = true)
+    void requestChunkRebuildFromMainThread(const IntTup& spot, std::optional<uint32_t> changeTo = std::nullopt, bool rebuild = true)
     {
         //TwoIntTup version of spot
         auto titspot = TwoIntTup(spot.x, spot.z);
@@ -483,7 +465,7 @@ public:
         }
     }
 
-    void requestChunkSpotRebuildFromMainThread(TwoIntTup chunkspot)
+    void requestChunkSpotRebuildFromMainThread(const TwoIntTup& chunkspot)
     {
         if (activeChunks.contains(chunkspot))
         {
@@ -502,12 +484,12 @@ public:
         }
     }
 
-    TwoIntTup worldToChunkPos(TwoIntTup worldPos)
+    static TwoIntTup worldToChunkPos(const TwoIntTup& worldPos)
     {
-        return TwoIntTup(
-            std::floor((float)worldPos.x / chunkSize),
-            std::floor((float)worldPos.z / chunkSize)
-        );
+        return {
+            static_cast<int>(std::floor(static_cast<float>(worldPos.x) / chunkSize)),
+            static_cast<int>(std::floor(static_cast<float>(worldPos.z) / chunkSize))
+        };
     }
 
 };

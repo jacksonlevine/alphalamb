@@ -785,11 +785,11 @@ int main()
             auto existinganim = &player->animation_state;
             AnimationState newState{
                 wantedAnim,
-                (float)glfwGetTime(),
-                wantedAnim == JUMP ? 0.5f : 1.0f
+                static_cast<float>(glfwGetTime()),
+                static_cast<AnimationName>(wantedAnim) == JUMP ? 0.5f : 1.0f
             };
 
-            bool jumpinprogress = (existinganim->actionNum == JUMP) && (glfwGetTime() - existinganim->timestarted < 0.75f);
+            bool jumpinprogress = (static_cast<AnimationName>(existinganim->actionNum) == JUMP) && (glfwGetTime() - existinganim->timestarted < 0.75f);
             if(existinganim->actionNum != wantedAnim && !jumpinprogress)
             {
                 player->animation_state = newState;

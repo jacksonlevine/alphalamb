@@ -6,6 +6,7 @@
 
 #include "MaterialName.h"
 #include "worldgenmethods/OverworldWorldGenMethod.h"
+#include "../IndexOptimization.h"
 std::atomic<int> NUM_THREADS_RUNNING = 0;
 
 
@@ -65,52 +66,52 @@ void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo
     glBindVertexArray(drawInstructions.vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, vvbo);
-    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.positions) * sizeof(PxVec3), usable_mesh.positions.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.positions) * sizeof(PxVec3)), usable_mesh.positions.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), nullptr);
     glEnableVertexAttribArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, bvbo);
-    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.brightness) * sizeof(float), usable_mesh.brightness.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.brightness) * sizeof(float)), usable_mesh.brightness.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, nullptr);
     glEnableVertexAttribArray(2);
 
-    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, (void*)(1*sizeof(float)));
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, static_cast<void*>(static_cast<char*>(nullptr)+ (1*sizeof(float))));
     glEnableVertexAttribArray(3);
 
     glBindBuffer(GL_ARRAY_BUFFER, uvvbo);
-    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.texcoords) * sizeof(glm::vec2), usable_mesh.texcoords.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.texcoords) * sizeof(glm::vec2)), usable_mesh.texcoords.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, std::size(usable_mesh.indices) * sizeof(PxU32), usable_mesh.indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.indices) * sizeof(PxU32)), usable_mesh.indices.data(), GL_STATIC_DRAW);
 
-    drawInstructions.indiceCount = std::size(usable_mesh.indices);
+    drawInstructions.indiceCount = static_cast<int>(std::size(usable_mesh.indices));
 
     glBindVertexArray(drawInstructions.tvao);
 
     glBindBuffer(GL_ARRAY_BUFFER, tvvbo);
-    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.tpositions) * sizeof(PxVec3), usable_mesh.tpositions.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.tpositions) * sizeof(PxVec3)), usable_mesh.tpositions.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), nullptr);
     glEnableVertexAttribArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, tbvbo);
-    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.tbrightness) * sizeof(float), usable_mesh.tbrightness.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.tbrightness) * sizeof(float)), usable_mesh.tbrightness.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, nullptr);
     glEnableVertexAttribArray(2);
 
-    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, (void*)(1*sizeof(float)));
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, static_cast<void*>(static_cast<char*>(nullptr) + (1*sizeof(float))));
     glEnableVertexAttribArray(3);
 
     glBindBuffer(GL_ARRAY_BUFFER, tuvvbo);
-    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.ttexcoords) * sizeof(glm::vec2), usable_mesh.ttexcoords.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.ttexcoords) * sizeof(glm::vec2)), usable_mesh.ttexcoords.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, std::size(usable_mesh.tindices) * sizeof(PxU32), usable_mesh.tindices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.tindices) * sizeof(PxU32)), usable_mesh.tindices.data(), GL_STATIC_DRAW);
 
-    drawInstructions.tindiceCount = std::size(usable_mesh.tindices);
+    drawInstructions.tindiceCount = static_cast<int>(std::size(usable_mesh.tindices));
 }
 
 
@@ -152,73 +153,73 @@ void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, Usable
     glBindVertexArray(vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, vvbo);
-    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.positions) * sizeof(PxVec3), usable_mesh.positions.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.positions) * sizeof(PxVec3)), usable_mesh.positions.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), nullptr);
     glEnableVertexAttribArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, bvbo);
-    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.brightness) * sizeof(float), usable_mesh.brightness.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.brightness) * sizeof(float)), usable_mesh.brightness.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, nullptr);
     glEnableVertexAttribArray(2);
 
-    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, (void*)(1*sizeof(float)));
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, static_cast<void*>(static_cast<char*>(nullptr) + 1*sizeof(float)));
     glEnableVertexAttribArray(3);
 
     glBindBuffer(GL_ARRAY_BUFFER, uvvbo);
-    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.texcoords) * sizeof(glm::vec2), usable_mesh.texcoords.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.texcoords) * sizeof(glm::vec2)), usable_mesh.texcoords.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, std::size(usable_mesh.indices) * sizeof(PxU32), usable_mesh.indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.indices) * sizeof(PxU32)), usable_mesh.indices.data(), GL_STATIC_DRAW);
 
-    info.indiceCount = std::size(usable_mesh.indices);
+    info.indiceCount = static_cast<int>(std::size(usable_mesh.indices));
 
     glBindVertexArray(tvao);
 
     glBindBuffer(GL_ARRAY_BUFFER, tvvbo);
-    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.tpositions) * sizeof(PxVec3), usable_mesh.tpositions.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.tpositions) * sizeof(PxVec3)), usable_mesh.tpositions.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), nullptr);
     glEnableVertexAttribArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, tbvbo);
-    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.tbrightness) * sizeof(float), usable_mesh.tbrightness.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.tbrightness) * sizeof(float)), usable_mesh.tbrightness.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, nullptr);
     glEnableVertexAttribArray(2);
 
-    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, (void*)(1*sizeof(float)));
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, static_cast<void*>(static_cast<char*>(nullptr) + 1*sizeof(float)));
     glEnableVertexAttribArray(3);
 
     glBindBuffer(GL_ARRAY_BUFFER, tuvvbo);
-    glBufferData(GL_ARRAY_BUFFER, std::size(usable_mesh.ttexcoords) * sizeof(glm::vec2), usable_mesh.ttexcoords.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.ttexcoords) * sizeof(glm::vec2)), usable_mesh.ttexcoords.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, std::size(usable_mesh.tindices) * sizeof(PxU32), usable_mesh.tindices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.tindices) * sizeof(PxU32)), usable_mesh.tindices.data(), GL_STATIC_DRAW);
 
-    info.tindiceCount = std::size(usable_mesh.tindices);
+    info.tindiceCount = static_cast<int>(std::size(usable_mesh.tindices));
 }
 
 ///This assumes shader is set up and uniforms are given values
 void drawFromDrawInstructions(const DrawInstructions& drawInstructions)
 {
     glBindVertexArray(drawInstructions.vao);
-    glDrawElements(GL_TRIANGLES, drawInstructions.indiceCount, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, drawInstructions.indiceCount, GL_UNSIGNED_INT, nullptr);
 }
 
 void drawFromChunkIndex(int chunkIndex, const SmallChunkGLInfo& cgl)
 {
     GLuint vao = vaoNameOfChunkIndex(chunkIndex, IndexOptimization::Vao::VAO);
     glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, cgl.indiceCount, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, cgl.indiceCount, GL_UNSIGNED_INT, nullptr);
 }
 
 void drawTransparentsFromChunkIndex(int chunkIndex, const SmallChunkGLInfo& cgl)
 {
     GLuint tvao = vaoNameOfChunkIndex(chunkIndex, IndexOptimization::Vao::TVAO);
     glBindVertexArray(tvao);
-    glDrawElements(GL_TRIANGLES, cgl.tindiceCount, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, cgl.tindiceCount, GL_UNSIGNED_INT, nullptr);
 }
 
 
@@ -226,15 +227,15 @@ void drawTransparentsFromChunkIndex(int chunkIndex, const SmallChunkGLInfo& cgl)
 void drawTransparentsFromDrawInstructions(const DrawInstructions& drawInstructions)
 {
     glBindVertexArray(drawInstructions.tvao);
-    glDrawElements(GL_TRIANGLES, drawInstructions.tindiceCount, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, drawInstructions.tindiceCount, GL_UNSIGNED_INT, nullptr);
 }
 
 bool isChunkInFrustum(const TwoIntTup& chunkSpot, const glm::vec3& cameraPosition, const glm::vec3& cameraDirection) {
 
     glm::vec3 chunkBottomPos = glm::vec3(
-        chunkSpot.x * WorldRenderer::chunkSize + WorldRenderer::chunkSize / 2.0f,
+        static_cast<float>(chunkSpot.x) * static_cast<float>(WorldRenderer::chunkSize) + static_cast<float>(WorldRenderer::chunkSize) / 2.0f,
         cameraPosition.y + cameraDirection.y * 125,
-        chunkSpot.z * WorldRenderer::chunkSize + WorldRenderer::chunkSize / 2.0f
+        static_cast<float>(chunkSpot.z) * static_cast<float>(WorldRenderer::chunkSize) + static_cast<float>(WorldRenderer::chunkSize) / 2.0f
     );
 
     glm::vec3 toChunk = chunkBottomPos - cameraPosition;
@@ -248,20 +249,20 @@ bool isChunkInFrustum(const TwoIntTup& chunkSpot, const glm::vec3& cameraPositio
     float angle1 = glm::degrees(std::acos(dotProduct1));
 
 
-    const float FOV_ANGLE = 65.0f; // Half of your camera's total FOV
+    constexpr float FOV_ANGLE = 65.0f; // Half of your camera's total FOV
 
     return angle1 <= FOV_ANGLE;
 }
 
 //MAIN THREAD COROUTINE
-void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod, float deltaTime)
+void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod, float deltaTime)
 {
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         auto& buffer = changeBuffers[i];
         //std::cout << "Buffer state: Ready: " << buffer.ready << " in use: " << buffer.in_use << std::endl;
         if(buffer.ready.load() && !buffer.in_use.load()) {
             //std::cout << "Mesh buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
-            modifyOrInitializeChunkIndex(buffer.chunkIndex, chunkPool.at(buffer.chunkIndex), buffer.mesh);
+            modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
 
 
             if (buffer.from == std::nullopt)
@@ -286,7 +287,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
         //std::cout << "User Buffer state: Ready: " << buffer.ready << " in use: " << buffer.in_use << std::endl;
         if(buffer.ready.load() && !buffer.in_use.load()) {
             //std::cout << "Buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
-            modifyOrInitializeChunkIndex(buffer.chunkIndex, chunkPool.at(buffer.chunkIndex), buffer.mesh);
+            modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
 
             if (buffer.from == std::nullopt)
             {
@@ -310,13 +311,13 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
         TwoIntTup(std::floor(playerCamera->transform.position.x),
             std::floor(playerCamera->transform.position.z)));
 
-    static GLuint grassRedChangeLoc = glGetUniformLocation(shader, "grassRedChange");
-    static GLuint timeRenderedLoc = glGetUniformLocation(shader, "timeRendered");
+    static GLint grassRedChangeLoc = glGetUniformLocation(shader, "grassRedChange");
+    static GLint timeRenderedLoc = glGetUniformLocation(shader, "timeRendered");
 
     for (auto& [spot, chunkinfo] : activeChunks) {
         bool isDrawingThis = true;
 
-        if (isChunkInFrustum(spot, playerCamera->transform.position - (playerCamera->transform.direction * (float)chunkSize), playerCamera->transform.direction)) {
+        if (isChunkInFrustum(spot, playerCamera->transform.position - (playerCamera->transform.direction * static_cast<float>(chunkSize)), playerCamera->transform.direction)) {
             int dist = abs(spot.x - playerChunkPosition.x) + abs(spot.z - playerChunkPosition.z);
             if (dist <= MIN_DISTANCE) {
                 auto & glInfo = chunkPool[chunkinfo.chunkIndex];
@@ -324,7 +325,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
                 float grassRedChange = (worldGenMethod->getTemperatureNoise(chunkRealSpot) - worldGenMethod->getHumidityNoise(chunkRealSpot));
                 glUniform1f(grassRedChangeLoc, grassRedChange);
                 glUniform1f(timeRenderedLoc, chunkinfo.timeBeenRendered);
-                drawFromChunkIndex(chunkinfo.chunkIndex, glInfo);
+                drawFromChunkIndex(static_cast<int>(chunkinfo.chunkIndex), glInfo);
                 chunkinfo.timeBeenRendered += deltaTime;
             } else
             {
@@ -338,7 +339,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
         }
     }
     for (const auto& [spot, chunkinfo] : activeChunks) {
-        if (isChunkInFrustum(spot, playerCamera->transform.position - (playerCamera->transform.direction * (float)chunkSize), playerCamera->transform.direction)) {
+        if (isChunkInFrustum(spot, playerCamera->transform.position - (playerCamera->transform.direction * static_cast<float>(chunkSize)), playerCamera->transform.direction)) {
             int dist = abs(spot.x - playerChunkPosition.x) + abs(spot.z - playerChunkPosition.z);
             if (dist <= MIN_DISTANCE) {
                 auto glInfo = chunkPool[chunkinfo.chunkIndex];
@@ -346,7 +347,7 @@ void WorldRenderer::mainThreadDraw(jl::Camera* playerCamera, GLuint shader, Worl
                 float grassRedChange = (worldGenMethod->getTemperatureNoise(chunkRealSpot) - worldGenMethod->getHumidityNoise(chunkRealSpot));
                 glUniform1f(grassRedChangeLoc, grassRedChange);
                 glUniform1f(timeRenderedLoc, chunkinfo.timeBeenRendered);
-                drawTransparentsFromChunkIndex(chunkinfo.chunkIndex, glInfo);
+                drawTransparentsFromChunkIndex(static_cast<int>(chunkinfo.chunkIndex), glInfo);
             }
         }
     }
@@ -397,7 +398,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
 
 
-        std::sort(checkspots.begin(), checkspots.end(), [&playerChunkPosition](const TwoIntTup& a, const TwoIntTup& b)
+        std::ranges::sort(checkspots, [&playerChunkPosition](const TwoIntTup& a, const TwoIntTup& b)
         {
             int distfroma = abs(a.x - playerChunkPosition.x) + abs(a.z - playerChunkPosition.z);
             int distfromb = abs(b.x - playerChunkPosition.x) + abs(b.z - playerChunkPosition.z);
@@ -536,10 +537,10 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                             if(!chunksWithDistances.empty())
                             {
                                 // Sort chunks by distance
-                                std::sort(chunksWithDistances.begin(), chunksWithDistances.end(),
-                                          [](const std::pair<float, TwoIntTup>& a, const std::pair<float, TwoIntTup>& b) {
-                                              return a.first > b.first;
-                                });
+                                std::ranges::sort(chunksWithDistances,
+                                                  [](const std::pair<int, TwoIntTup>& a, const std::pair<int, TwoIntTup>& b) {
+                                                      return a.first > b.first;
+                                                  });
 
                                 for (const auto& [oldDistance, oldSpot] : chunksWithDistances)
                                 {
@@ -613,7 +614,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
 }
 
-void WorldRenderer::generateChunk(World* world, TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>& implicatedChunks)
+void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>& implicatedChunks)
 {
 
     srand(chunkSpot.x * 73856093 ^ chunkSpot.z * 19349663);
@@ -621,9 +622,9 @@ void WorldRenderer::generateChunk(World* world, TwoIntTup& chunkSpot, std::unord
     if (rand() > 9000)
     {
         int y = 50;
-        float offsetNoise = world->worldGenMethod->getHumidityNoise(IntTup(chunkSpot.x, chunkSpot.z)) * 5.0;
-        float offsetNoise2 = world->worldGenMethod->getHumidityNoise(IntTup(chunkSpot.x, chunkSpot.z)) * 5.0;
-        IntTup realSpot(chunkSpot.x * chunkSize + (chunkSize >> 1) + offsetNoise , chunkSpot.z * chunkSize  + (chunkSize >> 1) + offsetNoise2);
+        float offsetNoise = world->worldGenMethod->getHumidityNoise(IntTup(chunkSpot.x, chunkSpot.z)) * 5.0f;
+        float offsetNoise2 = world->worldGenMethod->getHumidityNoise(IntTup(chunkSpot.x, chunkSpot.z)) * 5.0f;
+        IntTup realSpot(chunkSpot.x * chunkSize + (chunkSize >> 1) + static_cast<int>(offsetNoise) , chunkSpot.z * chunkSize  + (chunkSize >> 1) + static_cast<int>(offsetNoise2));
         bool surfaceBlockFound = false;
 
         MaterialName fb = OverworldWorldGenMethod::getFloorBlockInClimate(world->worldGenMethod->getClimate(realSpot));
@@ -640,12 +641,14 @@ void WorldRenderer::generateChunk(World* world, TwoIntTup& chunkSpot, std::unord
         {
             Climate climate = world->worldGenMethod->getClimate(realSpot);
             std::vector<TerrainFeature>& possibleFeatures = getTerrainFeaturesFromClimate(climate);
-            size_t selectedIndex = (int)(((float)rand()/(float)RAND_MAX) * (float)(possibleFeatures.size()));
+            size_t selectedIndex = static_cast<int>((static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * static_cast<float>(possibleFeatures.
+                size()));
             selectedIndex = std::min(selectedIndex, possibleFeatures.size() - 1);
             TerrainFeature selectedFeature = possibleFeatures[selectedIndex];
 
             std::vector<VoxelModelName>& possibleModels = getVoxelModelNamesFromTerrainFeatureName(selectedFeature);
-            size_t selectedModelIndex = (int)(((float)rand()/(float)RAND_MAX) * (float)(possibleModels.size()));
+            size_t selectedModelIndex = static_cast<int>((static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * static_cast<float>(possibleModels.
+                size()));
             selectedModelIndex = std::min(selectedModelIndex, possibleModels.size() - 1);
             VoxelModelName selectedModel = possibleModels[selectedModelIndex];
 
@@ -668,10 +671,10 @@ void WorldRenderer::generateChunk(World* world, TwoIntTup& chunkSpot, std::unord
         }
     }
 
-    for (auto & chunk: implicatedChunks)
-    {
-
-    }
+    // for (auto & chunk: implicatedChunks)
+    // {
+    //
+    // }
 
     generatedChunks.insert(chunkSpot);
 }
@@ -683,8 +686,8 @@ __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideH
     auto faceindex = (side == Side::Top) ? 2 : (side == Side::Bottom) ? 1 : 0;
     auto & face = tex[faceindex];
 
-    float uvoffsetx = (float)face.first * texSlotWidth;
-    float uvoffsety = 1.0f - ((float)face.second * texSlotWidth);
+    float uvoffsetx = static_cast<float>(face.first) * texSlotWidth;
+    float uvoffsety = 1.0f - (static_cast<float>(face.second) * texSlotWidth);
 
     static glm::vec2 texOffsets[] = {
         glm::vec2(onePixel, -onePixel),
@@ -693,9 +696,9 @@ __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideH
         glm::vec2(onePixel, -(onePixel + textureWidth)),
     };
     //If the material's transparent, add these verts to the "t____" parts of the mesh. If not, add them to the normal mesh.
-    if (std::find(transparents.begin(), transparents.end(), material) != transparents.end())
+    if (std::ranges::find(transparents, material) != transparents.end())
     {
-        std::ranges::transform(cubefaces[(int)side], std::back_inserter(mesh.tpositions), [&offset, &sideHeight](const auto& v) {
+        std::ranges::transform(cubefaces[static_cast<int>(side)], std::back_inserter(mesh.tpositions), [&offset, &sideHeight](const auto& v) {
             auto newv = v;
             newv.y *= sideHeight;
             return newv + offset;
@@ -725,7 +728,7 @@ __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideH
         tindex += 4;
     } else
     {
-        std::ranges::transform(cubefaces[(int)side], std::back_inserter(mesh.positions), [&offset, &sideHeight](const auto& v) {
+        std::ranges::transform(cubefaces[static_cast<int>(side)], std::back_inserter(mesh.positions), [&offset, &sideHeight](const auto& v) {
             auto newv = v;
             newv.y *= sideHeight;
             return newv + offset;
@@ -756,18 +759,18 @@ glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),});
 
 
 }
-UsableMesh _fromChunk(TwoIntTup spot, World* world, int chunkSize, bool locked);
-UsableMesh fromChunk(TwoIntTup spot, World* world, int chunkSize)
+UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked);
+UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize)
 {
-    return _fromChunk(spot, world, chunkSize, false);
+    return fromChunk(spot, world, chunkSize, false);
 }
-UsableMesh fromChunkLocked(TwoIntTup spot, World* world, int chunkSize)
+UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize)
 {
-    return _fromChunk(spot, world, chunkSize, true);
+    return fromChunk(spot, world, chunkSize, true);
 }
 ///Create a UsableMesh from the specified chunk spot
 ///This gets called in the mesh building coroutine
-UsableMesh _fromChunk(TwoIntTup spot, World* world, int chunkSize, bool locked)
+UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked)
 {
     UsableMesh mesh;
     PxU32 index = 0;
@@ -796,7 +799,7 @@ UsableMesh _fromChunk(TwoIntTup spot, World* world, int chunkSize, bool locked)
 
                 if (blockHere != AIR)
                 {
-                    bool blockHereTransparent = std::find(transparents.begin(), transparents.end(), blockHere) != transparents.end();
+                    bool blockHereTransparent = std::ranges::find(transparents, blockHere) != transparents.end();
                     for (int i = 0; i < std::size(neighborSpots); i++)
                     {
                         auto neigh = neighborSpots[i];
@@ -811,12 +814,12 @@ UsableMesh _fromChunk(TwoIntTup spot, World* world, int chunkSize, bool locked)
                             neighblock = world->get(neigh + here);
                         }
 
-                        auto neightransparent = std::find(transparents.begin(), transparents.end(), neighblock) != transparents.end();
+                        auto neightransparent = std::ranges::find(transparents, neighblock) != transparents.end();
                         auto neighborair = neighblock == AIR;
 
                         if (neighborair || (neightransparent && !blockHereTransparent))
                         {
-                            addFace(PxVec3(here.x, here.y, here.z), (Side)i, (MaterialName)blockHere, 1, mesh, index, tindex);
+                            addFace(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)), static_cast<Side>(i), static_cast<MaterialName>(blockHere), 1, mesh, index, tindex);
                         }
                     }
                 }

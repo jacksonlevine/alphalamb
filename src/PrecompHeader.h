@@ -35,6 +35,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <sndfile.h>
-
+#include <boost/unordered/unordered_flat_map.hpp>
+#include <boost/unordered/unordered_flat_set.hpp>
 
 #endif //PRECOMPHEADER_H

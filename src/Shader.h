@@ -6,7 +6,7 @@
 #define SHADER_H
 
 
-#include "PrecompHeader.h";
+#include "PrecompHeader.h"
 
 namespace jl {
 
