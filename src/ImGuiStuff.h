@@ -189,7 +189,7 @@ inline void renderImGui() {
                 }
                 if (ImGui::Button("Exit game"))
                 {
-                    glfwSetWindowShouldClose(theScene.window, true);
+                    jl::setWindowShouldClose(theScene.window, true);
                 }
                 break;
         case GuiScreen::EscapeMenu:
@@ -225,7 +225,7 @@ inline void renderImGui() {
                 if (ImGui::Button("Exit to desktop"))
                 {
                     exitWorld(&theScene);
-                    glfwSetWindowShouldClose(theScene.window, true);
+                    jl::setWindowShouldClose(theScene.window, true);
                 }
                 break;
             }

@@ -29,7 +29,7 @@ find_package(glm CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
-
+find_package(SDL2 CONFIG REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container variant2)
 message(STATUS "Boost version: ${Boost_VERSION}")
@@ -124,6 +124,7 @@ add_executable(DistantGarden
         src/LocalServerIOContext.cpp
         src/FPSCounter.cpp
         src/FPSCounter.h
+        src/WindowAbstraction.h
 
 )
 
@@ -142,6 +143,13 @@ src/world/DataMap.h
 )
 
 target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)
+
+target_link_libraries(DistantGarden
+        PRIVATE
+        $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+)
+
 function(add_common_libraries target)
     
     target_precompile_headers( ${target}

@@ -7,8 +7,10 @@
 
 
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
 
+#ifdef DG_USE_GLFW
+#include <GLFW/glfw3.h>
+#endif
 
 
 #endif //GLHEADERS_H

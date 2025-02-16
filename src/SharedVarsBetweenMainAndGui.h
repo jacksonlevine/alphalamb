@@ -115,7 +115,10 @@ inline void exitWorld(Scene* scene)
 
 inline void uncaptureMouse(Scene* s)
 {
-    glfwSetInputMode(s->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+
+    jl::windowUncaptureMouse(s->window);
+
     s->mouseCaptured = false;
     s->firstMouse = true;
 }

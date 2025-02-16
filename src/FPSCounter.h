@@ -4,6 +4,7 @@
 
 #ifndef FPSCOUNTER_H
 #define FPSCOUNTER_H
+#include "WindowAbstraction.h"
 
 extern double DG_FPS;
 
@@ -12,7 +13,7 @@ inline void updateFPS() {
     static double updateTimer = 0.;
 
     static double lastTime = 0;
-    const double currentTime = glfwGetTime();
+    const double currentTime = jl::windowGetTime();
     const double delta = (currentTime - lastTime);
     realFPS = 1.0 / delta;
     if (updateTimer > 0.5)

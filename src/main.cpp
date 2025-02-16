@@ -100,12 +100,12 @@ void sendControlsUpdatesLol(tcp::socket& socket, float deltaTime)
 
 
 
-void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+void mouseButtonCallback(jl::Window* window, int button, int action, int mods)
 {
-    Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
+    Scene* scene = static_cast<Scene*>(jl::getWindowUserPointer(window));
     if(action)
     {
-        if(button == GLFW_MOUSE_BUTTON_LEFT)
+        if(button == jl::LEFT_BUTTON)
         {
 
             if(!scene->mouseCaptured)
@@ -116,7 +116,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
                 }
                 if (currentGuiScreen == GuiScreen::InGame)
                 {
-                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                    jl::windowCaptureMouse(window);
                     scene->mouseCaptured = true;
                 }
             } else
@@ -203,7 +203,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
             }
 
         }
-        else if(button == GLFW_MOUSE_BUTTON_RIGHT)
+        else if(button == jl::RIGHT_BUTTON)
         {
             auto & cam = scene->players[scene->myPlayerIndex]->camera;
 
@@ -312,7 +312,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
             }
 
 
-        } else if (button == GLFW_MOUSE_BUTTON_MIDDLE)
+        } else if (button == jl::MIDDLE_BUTTON)
         {
             if (scene->world && scene->blockSelectGizmo && scene->worldRenderer && scene->myPlayerIndex != -1)
             {
@@ -342,10 +342,10 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     }
 }
 
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+void keyCallback(jl::Window* window, int key, int scancode, int action, int mods) {
 
 
-    Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
+    Scene* scene = static_cast<Scene*>(jl::getWindowUserPointer(window));
 
     if (!scene->mouseCaptured)
     {
