@@ -10,6 +10,22 @@
 
 
 
+constexpr uint32_t BLOCK_ID_BITS = 0b0000'0000'0000'0000'1111'1111'1111'1111;
+constexpr uint32_t BLOCK_FLAG_BITS = 0b1111'1111'1111'1111'0000'0000'0000'0000;
+
+constexpr uint32_t BLOCK_DIRECTION_BITS = 0b0000'0000'0000'0011'0000'0000'0000'0000;
+
+constexpr uint32_t getDirectionBits(const uint32_t& input) {
+    return (input & BLOCK_DIRECTION_BITS) >> 16;
+};
+
+constexpr void setDirectionBits(uint32_t& inout, const uint32_t& direction) {
+
+    uint32_t bits = direction << 16;
+    inout |= bits;
+
+};
+
 
 inline std::optional<std::shared_lock<std::shared_mutex>> tryToGetReadLockOnDM(DataMap* map)
 {
@@ -184,8 +200,11 @@ public:
 
     WorldGenMethod* worldGenMethod;
 
-    uint32_t get(IntTup spot);
+    uint32_t get(const IntTup& spot);
     uint32_t getLocked(IntTup spot);
+
+    uint32_t getRaw(IntTup spot);
+    uint32_t getRawLocked(IntTup spot);
 
 
 

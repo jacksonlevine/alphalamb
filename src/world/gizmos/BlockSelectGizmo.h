@@ -14,11 +14,18 @@ public:
     IntTup selectedSpot = {};
     IntTup hitNormal ={};
     bool isDrawing = false;
+
+    float hitProgress = 0.0f;
+    bool hitting = false;
+
 private:
-    GLuint vao, vbo, ebo = 0;
+    GLuint vao = 0, vbo = 0, ebo = 0;
+    GLuint overlayvao = 0, overlayvbo = 0, overlayebo = 0, overlayuvvbo = 0;
     GLuint shaderProgram = 0;
+    GLuint overlayShaderProgram = 0;
     // Indices for drawing the cube using lines
     static GLuint indices[];
+    static GLuint overlayIndices[];
 };
 
 

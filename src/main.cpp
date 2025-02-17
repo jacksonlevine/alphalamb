@@ -13,10 +13,6 @@
 #include "PrecompHeader.h"
 
 
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image.h>
 
 #include "Client.h"
 #include "FPSCounter.h"
@@ -39,6 +35,20 @@
 #include "world/gizmos/BulkPlaceGizmo.h"
 #include "IndexOptimization.h" // This is quackery I apologize
 #include "OpenALStuff.h"
+
+#include "ModelLoader.h"
+#include "BasicGLTFShader.h"
+
+
+
+
+#define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <tiny_gltf.h>
+//Tinygltf includes stb image
+//#include <stb_image.h>
+
 
 
 boost::asio::io_context io_context;
@@ -103,107 +113,49 @@ void sendControlsUpdatesLol(tcp::socket& socket, float deltaTime)
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {
     Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
-    if(action)
-    {
+
         if(button == GLFW_MOUSE_BUTTON_LEFT)
         {
-
-            if(!scene->mouseCaptured)
+            if(scene->mouseCaptured)
             {
-                if(imguiio->WantCaptureMouse)
+                scene->blockSelectGizmo->hitting = action;
+                if (!action)
                 {
-                    return;
+                    scene->blockSelectGizmo->hitProgress = 0.0f;
                 }
-                if (currentGuiScreen == GuiScreen::InGame)
-                {
-                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                    scene->mouseCaptured = true;
-                }
-            } else
+            }
+            if (action)
             {
-
-                if (scene->blockSelectGizmo)
+                if(!scene->mouseCaptured)
                 {
-                    if (scene->blockSelectGizmo->isDrawing)
+                    if(imguiio->WantCaptureMouse)
                     {
-                        auto & cam = scene->players[scene->myPlayerIndex]->camera;
-
-
-                        if (scene->multiplayer)
-                        {
-                            auto & spot = scene->blockSelectGizmo->selectedSpot;
-                            //std::cout << "Senfing blokc chagne \n";
-                            pushToMainToNetworkQueue(BlockSet{
-                                spot, AIR
-                            });
-
-                        } else
-                        {
-                            if (scene->world && scene->blockSelectGizmo && scene->worldRenderer)
-                            {
-                                //std::cout << "Setting" << std::endl;
-                                auto & spot = scene->blockSelectGizmo->selectedSpot;
-                                //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
-                                uint32_t blockThere = scene->world->get(spot);
-                                glm::vec3 burstspot = glm::vec3(
-                                    scene->blockSelectGizmo->selectedSpot.x+ 0.5,
-                                    scene->blockSelectGizmo->selectedSpot.y + 0.5,
-                                    scene->blockSelectGizmo->selectedSpot.z + 0.5);
-                                if (scene->particles)
-                                {
-                                    scene->particles->particleBurst(burstspot,
-                                                                 20, (MaterialName)blockThere, 2.0, 1.0f);
-                                }
-
-                                //scene->world->set(spot, AIR);
-                //std::cout << "Set the block "  << std::endl;;
-                                auto cs = WorldRenderer::chunkSize;
-                                // Then in your code:
-                                auto xmod = properMod(spot.x, cs);
-                                auto zmod = properMod(spot.z, cs);
-                                //std::cout << "Xmod: " << xmod << " Zmod: " << zmod << std::endl;
-                                scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                    spot, AIR, false
-                                    );
-
-                                if(xmod == WorldRenderer::chunkSize - 1)
-                                {
-                                    scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                        IntTup(spot.x+1, spot.y, spot.z));
-
-                                } else if(xmod == 0)
-                                {
-                                    scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                        IntTup(spot.x-1, spot.y, spot.z));
-                                }
-
-                                if(zmod == WorldRenderer::chunkSize - 1)
-                                {
-                                    scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                        IntTup(spot.x, spot.y, spot.z+1));
-
-                                } else if(zmod == 0)
-                                {
-                                    scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                        IntTup(spot.x, spot.y, spot.z-1));
-                                }
-                                scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                    spot
-                                    );
-
-                                //std::cout << "Request filed " << std::endl;
-                            }
-                        }
+                        return;
                     }
+                    if (currentGuiScreen == GuiScreen::InGame)
+                    {
+                        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                        scene->mouseCaptured = true;
+                    }
+                } else
+                {
+
+                    
+                    //addShootLine();
+                    //sendShootLineMessage();
+
+
                 }
-                //addShootLine();
-                //sendShootLineMessage();
-
-
             }
 
+
+
         }
-        else if(button == GLFW_MOUSE_BUTTON_RIGHT)
+
+    if(action)
+    {
+
+if(button == GLFW_MOUSE_BUTTON_RIGHT)
         {
             auto & cam = scene->players[scene->myPlayerIndex]->camera;
 
@@ -634,7 +586,8 @@ int main()
 
     ImFont* font_body = imguiio->Fonts->AddFontFromFileTTF("font.ttf", 20.0f, NULL, imguiio->Fonts->GetGlyphRangesDefault());
 
-    static jl::Shader gltfShader = getBasicShader();
+    static jl::Shader mainShader = getBasicShader();
+    static jl::Shader gltfShader = getBasicGLTFShader();
     static jl::Texture worldTex("resources/world.png");
 
     theScene.loadSettings();
@@ -653,7 +606,7 @@ int main()
     theScene.gizmos.push_back(bpg);
 
     VoxModelStampGizmo* vms = new VoxModelStampGizmo();
-    vms->shaderProgram = gltfShader.shaderID;
+    vms->shaderProgram = mainShader.shaderID;
     theScene.vmStampGizmo = vms;
 
     //theScene.gizmos.push_back(vms);
@@ -693,8 +646,8 @@ int main()
     std::cout << "width:" << width << " height:" << height << std::endl;
     theScene.guiCamera->updateProjection(width, height, 60.0f);
     theScene.guiCamera->updateWithYawPitch(0.0,0.0);
-
-
+    //
+    // static jl::ModelAndTextures clouds = jl::ModelLoader::loadModel("resources/models/clouds.glb", false);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -723,6 +676,94 @@ int main()
         {
             updateFPS();
 
+
+            if (theScene.blockSelectGizmo->hitting)
+            {
+                if (theScene.blockSelectGizmo->hitProgress < 1.0f)
+                {
+                    theScene.blockSelectGizmo->hitProgress += deltaTime;
+                } else
+                {
+                    theScene.blockSelectGizmo->hitProgress = 0.0f;
+
+                    if (theScene.blockSelectGizmo)
+                    {
+                        if (theScene.blockSelectGizmo->isDrawing)
+                        {
+                            auto & cam = theScene.players[theScene.myPlayerIndex]->camera;
+
+
+
+                            if (theScene.multiplayer)
+                            {
+                                auto & spot = theScene.blockSelectGizmo->selectedSpot;
+                                //std::cout << "Senfing blokc chagne \n";
+                                pushToMainToNetworkQueue(BlockSet{
+                                    spot, AIR
+                                });
+
+                            } else
+                            {
+                                if (theScene.world && theScene.blockSelectGizmo && theScene.worldRenderer)
+                                {
+                                    //std::cout << "Setting" << std::endl;
+                                    auto & spot = theScene.blockSelectGizmo->selectedSpot;
+                                    //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
+                                    uint32_t blockThere = theScene.world->get(spot);
+                                    glm::vec3 burstspot = glm::vec3(
+                                        theScene.blockSelectGizmo->selectedSpot.x+ 0.5,
+                                        theScene.blockSelectGizmo->selectedSpot.y + 0.5,
+                                        theScene.blockSelectGizmo->selectedSpot.z + 0.5);
+                                    if (theScene.particles)
+                                    {
+                                        theScene.particles->particleBurst(burstspot,
+                                                                     20, (MaterialName)blockThere, 2.0, 1.0f);
+                                    }
+
+                                    //theScene.world->set(spot, AIR);
+                    //std::cout << "Set the block "  << std::endl;;
+                                    auto cs = WorldRenderer::chunkSize;
+                                    // Then in your code:
+                                    auto xmod = properMod(spot.x, cs);
+                                    auto zmod = properMod(spot.z, cs);
+                                    //std::cout << "Xmod: " << xmod << " Zmod: " << zmod << std::endl;
+                                    theScene.worldRenderer->requestChunkRebuildFromMainThread(
+                                        spot, AIR, false
+                                        );
+
+                                    if(xmod == WorldRenderer::chunkSize - 1)
+                                    {
+                                        theScene.worldRenderer->requestChunkRebuildFromMainThread(
+                                            IntTup(spot.x+1, spot.y, spot.z));
+
+                                    } else if(xmod == 0)
+                                    {
+                                        theScene.worldRenderer->requestChunkRebuildFromMainThread(
+                                            IntTup(spot.x-1, spot.y, spot.z));
+                                    }
+
+                                    if(zmod == WorldRenderer::chunkSize - 1)
+                                    {
+                                        theScene.worldRenderer->requestChunkRebuildFromMainThread(
+                                            IntTup(spot.x, spot.y, spot.z+1));
+
+                                    } else if(zmod == 0)
+                                    {
+                                        theScene.worldRenderer->requestChunkRebuildFromMainThread(
+                                            IntTup(spot.x, spot.y, spot.z-1));
+                                    }
+                                    theScene.worldRenderer->requestChunkRebuildFromMainThread(
+                                        spot
+                                        );
+
+                                    //std::cout << "Request filed " << std::endl;
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
 
             std::vector<Billboard> billboards;
             std::vector<AnimationState> animStates;
@@ -977,7 +1018,12 @@ int main()
 
 
             gScene->simulate(deltaTime);
+
+
             auto & camera = theScene.players.at(theScene.myPlayerIndex)->camera;
+
+
+
 
             setListenerToCameraPos(&camera);
 
@@ -1024,18 +1070,18 @@ int main()
                     1.0f, &theScene.players[theScene.myPlayerIndex]->camera, lutTexture);
 
 
-            glUseProgram(gltfShader.shaderID);
+            glUseProgram(mainShader.shaderID);
 
-            static GLuint mvpLoc = glGetUniformLocation(gltfShader.shaderID, "mvp");
-            static GLuint texture1Loc = glGetUniformLocation(gltfShader.shaderID, "texture1");
-            static GLuint lutLoc = glGetUniformLocation(gltfShader.shaderID, "lut");
-            static GLuint posLoc = glGetUniformLocation(gltfShader.shaderID, "pos");
-            static GLuint rotLoc = glGetUniformLocation(gltfShader.shaderID, "rot");
-            static GLuint camPosLoc = glGetUniformLocation(gltfShader.shaderID, "camPos");
-            static GLuint grcLoc = glGetUniformLocation(gltfShader.shaderID, "grassRedChange");
-            static GLuint scaleLoc = glGetUniformLocation(gltfShader.shaderID, "scale");
-            static GLuint timeRenderedLoc = glGetUniformLocation(gltfShader.shaderID, "timeRendered");
-            static GLuint offsetLoc = glGetUniformLocation(gltfShader.shaderID, "offs");
+            static GLuint mvpLoc = glGetUniformLocation(mainShader.shaderID, "mvp");
+            static GLuint texture1Loc = glGetUniformLocation(mainShader.shaderID, "texture1");
+            static GLuint lutLoc = glGetUniformLocation(mainShader.shaderID, "lut");
+            static GLuint posLoc = glGetUniformLocation(mainShader.shaderID, "pos");
+            static GLuint rotLoc = glGetUniformLocation(mainShader.shaderID, "rot");
+            static GLuint camPosLoc = glGetUniformLocation(mainShader.shaderID, "camPos");
+            static GLuint grcLoc = glGetUniformLocation(mainShader.shaderID, "grassRedChange");
+            static GLuint scaleLoc = glGetUniformLocation(mainShader.shaderID, "scale");
+            static GLuint timeRenderedLoc = glGetUniformLocation(mainShader.shaderID, "timeRendered");
+            static GLuint offsetLoc = glGetUniformLocation(mainShader.shaderID, "offs");
 
             glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera.mvp));
             glActiveTexture(GL_TEXTURE0);
@@ -1059,7 +1105,7 @@ int main()
                 std::cout << "" << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << " \n";
             }
 
-            renderer->mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, gltfShader.shaderID, world.worldGenMethod, deltaTime);
+            renderer->mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, mainShader.shaderID, world.worldGenMethod, deltaTime);
             vms->draw(&world, theScene.players.at(theScene.myPlayerIndex));
 
             glUniform1f(timeRenderedLoc, 10.0f);
@@ -1084,11 +1130,32 @@ int main()
                     glUniform3f(posLoc, pos.x, pos.y, pos.z);
 
                 }
-                drawHandledBlock(player->camera.transform.position, player->currentHeldBlock, gltfShader.shaderID, player->lastHeldBlock, player->handledBlockMeshInfo);
+                drawHandledBlock(player->camera.transform.position, player->currentHeldBlock, mainShader.shaderID, player->lastHeldBlock, player->handledBlockMeshInfo);
                 glEnable(GL_DEPTH_TEST);
             }
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
             glUniform1f(scaleLoc, 1.0f);
+
+            // {
+            //     glUseProgram(gltfShader.shaderID);
+            //
+            //     glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
+            //     glActiveTexture(GL_TEXTURE0);
+            //     glBindTexture(GL_TEXTURE_2D, clouds.texids.at(0));
+            //     glUniform1i(glGetUniformLocation(gltfShader.shaderID, "texture1"), 0);
+            //     glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), 0.0f, 170.0f, 0.0f + (glfwGetTime()* 0.3));
+            //     glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), 0.0f);
+            //
+            //     for(jl::ModelGLObjects &mglo : clouds.modelGLObjects)
+            //     {
+            //         glBindVertexArray(mglo.vao);
+            //         //Indent operations on this vertex array object
+            //         glDrawElements(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr);
+            //
+            //         glBindVertexArray(0);
+            //     }
+            // }
+
             gScene->fetchResults(true);
 
 

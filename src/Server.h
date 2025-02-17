@@ -196,12 +196,12 @@ private:
                         excludeyou = true;
                     }
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>) {
-                        std::cout << "Got selectblockchange \n";
+                        //std::cout << "Got selectblockchange \n";
                         redistrib = true;
                         excludeyou = true;
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
-                        std::cout << "Got block set \n";
+                        //std::cout << "Got block set \n";
                         serverUserDataMap->set(m.spot, m.block);
                         redistrib = true;
                     }

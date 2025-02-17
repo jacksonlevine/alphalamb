@@ -124,7 +124,10 @@ add_executable(DistantGarden
         src/LocalServerIOContext.cpp
         src/FPSCounter.cpp
         src/FPSCounter.h
-
+        src/ModelLoader.cpp
+        src/ModelLoader.h
+        src/TextureFace.cpp
+        src/TextureFace.h
 )
 
 add_executable(DGServer

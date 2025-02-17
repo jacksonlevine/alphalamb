@@ -135,7 +135,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
 
 
     constexpr float JUMP_STRENGTH = 15.0f;
-    constexpr float GRAVITY = 35.0f;
+    constexpr float GRAVITY = 52.0f;
     constexpr float MAX_FALL_SPEED = 35.0f;
 
     // Apply gravity only if not grounded

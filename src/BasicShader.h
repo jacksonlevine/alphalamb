@@ -2,8 +2,8 @@
 // Created by jack on 10/13/2024.
 //
 
-#ifndef BASICGLTFSHADER_H
-#define BASICGLTFSHADER_H
+#ifndef BASICSHADER_H
+#define BASICSHADER_H
 #include "Shader.h"
 
 
@@ -135,4 +135,4 @@ uniform float scale;
 
 
 
-#endif //BASICGLTFSHADER_H
+#endif //BASICSHADER_H

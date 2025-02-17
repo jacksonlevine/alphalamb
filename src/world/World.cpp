@@ -5,7 +5,17 @@
 #include "World.h"
 
 
-uint32_t World::get(IntTup spot)
+uint32_t World::get(const IntTup& spot)
+{
+    return (getRaw(spot) & BLOCK_ID_BITS);
+}
+
+uint32_t World::getLocked(IntTup spot)
+{
+    return (getRawLocked(spot) & BLOCK_ID_BITS);
+}
+
+uint32_t World::getRaw(IntTup spot)
 {
     auto id = userDataMap->get(spot);
     if (id == std::nullopt)
@@ -23,7 +33,7 @@ uint32_t World::get(IntTup spot)
     return id.value();
 }
 
-uint32_t World::getLocked(IntTup spot)
+uint32_t World::getRawLocked(IntTup spot)
 {
     auto id = userDataMap->getLocked(spot);
     if (id == std::nullopt)
