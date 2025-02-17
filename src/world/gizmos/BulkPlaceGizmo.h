@@ -29,7 +29,12 @@ public:
     GLuint vao, vbo, ebo = 0;
     GLuint shaderProgram = 0;
 
+    GLuint mainGameShader = 0;
+    GLuint mainGameTexture = 0;
+
     static GLuint indices[];
+
+    ChunkGLInfo placeDisplayInfo = {};
 };
 
 

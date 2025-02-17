@@ -61,6 +61,10 @@ struct ChangeBuffer
 
 void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo, DrawInstructions& drawInstructions, UsableMesh& usable_mesh, GLuint& bvbo,
     GLuint& tvvbo, GLuint& tuvvbo, GLuint& tebo, GLuint& tbvbo);
+inline void modifyOrInitializeChunkGLInfo(ChunkGLInfo& info, UsableMesh& mesh)
+{
+    modifyOrInitializeDrawInstructions(info.vvbo, info.uvvbo, info.ebo, info.drawInstructions, mesh, info.bvbo, info.tvvbo, info.tuvvbo, info.tebo, info.tbvbo);
+}
 void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, UsableMesh& usable_mesh);
 void drawTransparentsFromDrawInstructions(const DrawInstructions& drawInstructions);
 void drawFromDrawInstructions(const DrawInstructions& drawInstructions);

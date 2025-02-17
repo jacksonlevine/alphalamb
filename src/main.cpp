@@ -601,9 +601,15 @@ int main()
     theScene.blockSelectGizmo = bsg;
     theScene.gizmos.push_back(bsg);
 
+
+
+
     BulkPlaceGizmo* bpg = new BulkPlaceGizmo();
     theScene.bulkPlaceGizmo = bpg;
     theScene.gizmos.push_back(bpg);
+
+    theScene.bulkPlaceGizmo->mainGameShader = mainShader.shaderID;
+    theScene.bulkPlaceGizmo->mainGameTexture = worldTex.id;
 
     VoxModelStampGizmo* vms = new VoxModelStampGizmo();
     vms->shaderProgram = mainShader.shaderID;
@@ -679,7 +685,7 @@ int main()
 
             if (theScene.blockSelectGizmo->hitting)
             {
-                if (theScene.blockSelectGizmo->hitProgress < 1.0f)
+                if (theScene.blockSelectGizmo->hitProgress < 0.25f)
                 {
                     theScene.blockSelectGizmo->hitProgress += deltaTime;
                 } else
@@ -932,7 +938,7 @@ int main()
                             if (scene->particles)
                             {
                                 scene->particles->particleBurst(burstspot,
-                                                             20, (MaterialName)blockThere, 2.0, 1.0f);
+                                                             35, (MaterialName)blockThere, 1.0, 0.0f);
                             }
 
                             if (m.block == AIR)

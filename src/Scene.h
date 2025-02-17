@@ -56,6 +56,12 @@ struct Scene
     jl::Camera* guiCamera = nullptr;
     bool showingControls = false;
     std::string localServerPort = "";
+
+
+
+
+
+
     void saveSettings()
     {
         std::ofstream settingsFile("settings.txt", std::ios::trunc);

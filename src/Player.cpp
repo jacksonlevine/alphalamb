@@ -89,7 +89,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
 
         camera.transform.velocity /= (1.0f + deltaTime);
         if (controls.secondary1) {
-            camera.transform.velocity += camera.transform.up * 70.0f * deltaTime;
+            camera.transform.velocity += camera.transform.up * 90.0f * deltaTime;
         }
         if (controls.forward) {
             camera.transform.velocity += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;

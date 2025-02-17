@@ -18,6 +18,8 @@ public:
     float hitProgress = 0.0f;
     bool hitting = false;
 
+
+
 private:
     GLuint vao = 0, vbo = 0, ebo = 0;
     GLuint overlayvao = 0, overlayvbo = 0, overlayebo = 0, overlayuvvbo = 0;

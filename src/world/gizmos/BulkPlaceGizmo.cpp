@@ -31,29 +31,85 @@ void BulkPlaceGizmo::draw(World* world, Player* player)
 
 
 
-    if (lastcorner1 != corner1 || lastcorner2 != corner2)
-    {
-        glBindVertexArray(vao);
-        std::vector<float> verts = {};
-        verts.reserve(24);
-        verts.insert(verts.end(), {
-            vertices[0] + corner1.x, vertices[1] + corner1.y, vertices[2] + corner1.z,
-            vertices[3] + corner2.x, vertices[4] + corner1.y, vertices[5] + corner1.z,
-            vertices[6] + corner2.x, vertices[7] + corner2.y, vertices[8] + corner1.z,
-            vertices[9] + corner1.x, vertices[10] + corner2.y, vertices[11] + corner1.z,
 
-            vertices[12] + corner1.x, vertices[13] + corner1.y, vertices[14] + corner2.z,
-            vertices[15] + corner2.x, vertices[16] + corner1.y, vertices[17] + corner2.z,
-            vertices[18] + corner2.x, vertices[19] + corner2.y, vertices[20] + corner2.z,
-            vertices[21] + corner1.x, vertices[22] + corner2.y, vertices[23] + corner2.z,
-        });
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
-    }
 
 
     if (active)
     {
+
+        glUseProgram(mainGameShader);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, mainGameTexture);
+
+        glUniformMatrix4fv(glGetUniformLocation(mainGameShader, "mvp"), 1, GL_FALSE,
+        glm::value_ptr(player->camera.mvp));
+        glUniform3f(glGetUniformLocation(mainGameShader, "pos"),
+            0.0f, 0.0f, 0.0f);
+
+        UsableMesh mesh = {};
+        PxU32 index = 0;
+        PxU32 tindex = 0;
+
+        auto m = *this;
+        int minX = std::min(m.corner1.x, m.corner2.x);
+        int maxX = std::max(m.corner1.x, m.corner2.x);
+        int minY = std::min(m.corner1.y, m.corner2.y);
+        int maxY = std::max(m.corner1.y, m.corner2.y);
+        int minZ = std::min(m.corner1.z, m.corner2.z);
+        int maxZ = std::max(m.corner1.z, m.corner2.z);
+
+
+
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    bool isBoundary = (x == minX || x == maxX ||
+                                       y == minY || y == maxY ||
+                                       z == minZ || z == maxZ);
+
+                    if (isBoundary || !(m.placeMode == PlaceMode::Walls))
+                    {
+                        for (int i = 0; i < 6; i++)
+                        {
+                            addFace(PxVec3(x,y,z), static_cast<Side>(i), player->currentHeldBlock, 1, mesh, index, tindex);
+                        }
+                    }
+
+                }
+            }
+        }
+
+        modifyOrInitializeChunkGLInfo(placeDisplayInfo, mesh);
+
+        drawFromDrawInstructions(placeDisplayInfo.drawInstructions);
+
+
+
+
+
+        if (lastcorner1 != corner1 || lastcorner2 != corner2)
+        {
+            glBindVertexArray(vao);
+            std::vector<float> verts = {};
+            verts.reserve(24);
+            verts.insert(verts.end(), {
+                vertices[0] + corner1.x, vertices[1] + corner1.y, vertices[2] + corner1.z,
+                vertices[3] + corner2.x, vertices[4] + corner1.y, vertices[5] + corner1.z,
+                vertices[6] + corner2.x, vertices[7] + corner2.y, vertices[8] + corner1.z,
+                vertices[9] + corner1.x, vertices[10] + corner2.y, vertices[11] + corner1.z,
+
+                vertices[12] + corner1.x, vertices[13] + corner1.y, vertices[14] + corner2.z,
+                vertices[15] + corner2.x, vertices[16] + corner1.y, vertices[17] + corner2.z,
+                vertices[18] + corner2.x, vertices[19] + corner2.y, vertices[20] + corner2.z,
+                vertices[21] + corner1.x, vertices[22] + corner2.y, vertices[23] + corner2.z,
+            });
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
+        }
+
+
+
+
         glUseProgram(shaderProgram);
         glBindVertexArray(vao);
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvp"), 1, GL_FALSE,
@@ -63,6 +119,9 @@ void BulkPlaceGizmo::draw(World* world, Player* player)
         glUniform1f(glGetUniformLocation(shaderProgram, "placemode"), placeMode);
 
         glDrawElements(GL_LINES, sizeof(indices) / sizeof(GLuint), GL_UNSIGNED_INT, 0);
+
+
+
     }
 }
 
