@@ -130,6 +130,8 @@ add_executable(DistantGarden
         src/TextureFace.h
         src/Inventory.cpp
         src/Inventory.h
+        src/world/gizmos/DropsGizmo.cpp
+        src/world/gizmos/DropsGizmo.h
 )
 
 add_executable(DGServer

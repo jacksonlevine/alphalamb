@@ -10,6 +10,7 @@ struct InventorySlot
 {
     uint32_t block = 0;
     int count = 0;
+
     bool empty() const
     {
         return count == 0;

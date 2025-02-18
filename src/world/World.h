@@ -198,6 +198,8 @@ public:
     BlockAreaRegistry blockAreas = {};
     PlacedVoxModelRegistry placedVoxModels = {};
 
+
+
     WorldGenMethod* worldGenMethod;
 
     uint32_t get(const IntTup& spot);
