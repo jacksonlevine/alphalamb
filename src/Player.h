@@ -9,6 +9,7 @@
 #include "CollisionCage.h"
 #include "Controls.h"
 #include "BillboardInstanceShader.h"
+#include "Inventory.h"
 
 inline static const PxExtendedVec3 DEFAULT_PLAYERPOS = PxExtendedVec3(0, 200, 0);
 inline static const float CAMERA_OFFSET = 0.8f;
@@ -32,6 +33,7 @@ struct Player {
     bool jetpackMode = false;
     bool hoverMode = false;
     ALuint jetpackSource = 0;
+    Inventory inventory = {};
     MyControllerHitReport* getMyHitReport()
     {
         return ((MyControllerHitReport*)controller->getUserData());

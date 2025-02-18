@@ -5,9 +5,7 @@
 #ifndef IMGUISTUFF_H
 #define IMGUISTUFF_H
 
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
+#include "PrecompHeader.h"
 
 #include "FPSCounter.h"
 #include "Server.h"
@@ -22,7 +20,8 @@ enum GuiScreen
     MainMenu,
     EscapeMenu,
     InGame,
-    HostPort
+    HostPort,
+    Inventory
 };
 
 extern GuiScreen currentGuiScreen;
@@ -96,6 +95,11 @@ inline void renderImGui() {
 
         switch (currentGuiScreen)
         {
+        case Inventory:
+            {
+                imguiInventory(theScene.players.at(theScene.myPlayerIndex)->inventory);
+                break;
+            }
         case HostPort:
                 if (ImGui::Button("Back to main menu"))
                 {
@@ -263,7 +267,7 @@ inline void renderImGui() {
 
                         ImGui::Text(s3);
 
-                        const char* s4 = "E: Hover mode";
+                        const char* s4 = "H: Hover mode";
                         ImVec2 textSize0 = ImGui::CalcTextSize(s4);
 
                         ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f - text2Size.y - 10.0f - text3Size.y - 10.0f - textSize0.y - 10.0f));
@@ -296,8 +300,13 @@ inline void renderImGui() {
 
                         ImGui::Text(s8);
 
-                        std::string fps = std::to_string(DG_FPS) + " FPS";
+                        const char* s9 = "E: Open/Close Inventory";
                         ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - (( textSize.y + 10.0f) * 9)));
+
+                        ImGui::Text(s9);
+
+                        std::string fps = std::to_string(DG_FPS) + " FPS";
+                        ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - (( textSize.y + 10.0f) * 10)));
 
                         ImGui::Text(fps.c_str());
 

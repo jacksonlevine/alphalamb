@@ -120,6 +120,10 @@ inline void uncaptureMouse(Scene* s)
     s->firstMouse = true;
 }
 
-
+inline void captureMouse(Scene* s)
+{
+    glfwSetInputMode(s->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    s->mouseCaptured = true;
+}
 
 #endif //SHAREDVARSBETWEENMAINANDGUI_H

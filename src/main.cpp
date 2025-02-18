@@ -305,6 +305,20 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     }
     if (scene->myPlayerIndex != -1)
     {
+
+        if (key == GLFW_KEY_E && action == GLFW_PRESS)
+        {
+            if (currentGuiScreen == InGame)
+            {
+                currentGuiScreen = Inventory;
+                uncaptureMouse(scene);
+            } else if (currentGuiScreen == Inventory)
+            {
+                currentGuiScreen = InGame;
+                captureMouse(scene);
+            }
+        }
+
         if (key == GLFW_KEY_V && action == GLFW_PRESS)
         {
             theScene.vmStampGizmo->active = !theScene.vmStampGizmo->active;
@@ -360,7 +374,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             {
                 std::cout << "Num threads running: " << NUM_THREADS_RUNNING << '\n';
             } else
-        if (key == GLFW_KEY_E)
+        if (key == GLFW_KEY_H)
         {
             scene->players.at(scene->myPlayerIndex)->controls.secondary2 = action;
         } else

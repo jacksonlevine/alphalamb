@@ -128,6 +128,8 @@ add_executable(DistantGarden
         src/ModelLoader.h
         src/TextureFace.cpp
         src/TextureFace.h
+        src/Inventory.cpp
+        src/Inventory.h
 )
 
 add_executable(DGServer
