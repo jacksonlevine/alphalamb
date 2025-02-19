@@ -23,7 +23,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
 
     isGrounded = false;
 
-    float walkmult = controls.sprint ? 8.0f : 5.2f;
+    float walkmult = controls.sprint ? 12.0f : 9.0f;
 
     {
         auto locked = world->tryToGetReadLockOnDMs();

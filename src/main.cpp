@@ -436,7 +436,7 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
             // print(cout, "xOffset: {}, yOffset: {} \n", xOffset, yOffset);
             auto & camera = scene->players.at(scene->myPlayerIndex)->camera;
 
-            camera.setYawPitch(camera.transform.yaw + static_cast<float>(xOffset), camera.transform.pitch + static_cast<float>(yOffset));
+            camera.updateYPIndirect(camera.targetYaw + static_cast<float>(xOffset), camera.targetPitch + static_cast<float>(yOffset));
         }
 
         lastx = xpos;
@@ -810,7 +810,7 @@ int main()
 
             player->collisionCage.updateToSpot(&world, player->camera.transform.position, deltaTime);
                 player->camera.updateWithYawPitch(player->camera.transform.yaw, player->camera.transform.pitch);
-
+                player->camera.interpTowardTargetYP(deltaTime);
             if(id != theScene.myPlayerIndex)
             {
                 billboards.push_back(player->billboard);

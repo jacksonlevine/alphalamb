@@ -16,6 +16,14 @@ namespace jl {
         glm::mat4 view;
         glm::mat4 projection;
         glm::mat4 mvp;
+        float targetYaw = 0.0f;
+        float targetPitch = 0.0f;
+
+        float unwrappedYaw = 0.0f;
+        float unwrappedPitch = 0.0f;
+
+
+
         void interpTowardTargetYP(float deltatime);
         Camera()
             : //model(glm::mat4(1.0f)),
@@ -25,6 +33,7 @@ namespace jl {
         {}
         void updateProjection(int screenwidth, int screenheight, float fov);
         void updateWithYawPitch(float nyaw, float npitch);
+        void updateYPIndirect(float nyaw, float npitch);
         void setYawPitch(float nyaw, float npitch);
     };
 }
