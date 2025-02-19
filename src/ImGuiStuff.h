@@ -203,6 +203,16 @@ inline void renderImGui() {
                     theScene.saveSettings();
                 }
 
+                if(ImGui::SliderInt("Render Distance", &theScene.worldRenderer->currentRenderDistance, 2, 128))
+
+                if(ImGui::Button("Toggle Fullscreen"))
+                {
+                    toggleFullscreen(theScene.window);
+                }
+
+
+
+
                 if (ImGui::Button("Back to game"))
                 {
                     currentGuiScreen = GuiScreen::InGame;

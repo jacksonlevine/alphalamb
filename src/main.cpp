@@ -554,6 +554,10 @@ int main()
 
     const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
 
+
+    glfwWindowHint(GLFW_SAMPLES, 32); // Set MSAA samples (4x MSAA)
+
+
     theScene.window = glfwCreateWindow(800, 800, "project7", nullptr, nullptr);
     GLFWwindow* window = theScene.window;
     glfwMakeContextCurrent(window);
@@ -561,6 +565,8 @@ int main()
     {
         std::cerr << "Failed to initialize GLEW\n";
     };
+
+
 
     glfwSetKeyCallback(window, keyCallback);
     glfwSetCursorPosCallback(window, cursorPosCallback);
@@ -575,6 +581,7 @@ int main()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
     glfwSwapInterval(0);
+    glEnable(GL_MULTISAMPLE); // Enable MSAA in OpenGL
 
     initOpenAL();
 

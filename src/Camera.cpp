@@ -16,7 +16,7 @@ namespace jl
             glm::radians(fov),
             static_cast<float>(screenwidth) / static_cast<float>(screenheight),
             0.1f,
-            512.0f
+            2048.0f
             );
             mvp = projection * view * model;
         }
@@ -33,7 +33,7 @@ namespace jl
     {
 
 
-        float t = std::min(1.0f, deltatime * 20.0f);
+        float t = std::min(1.0f, deltatime * 30.0f);
 
         float deltaYaw = targetYaw - unwrappedYaw;
         unwrappedYaw = unwrappedYaw + deltaYaw * t;

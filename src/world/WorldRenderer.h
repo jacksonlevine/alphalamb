@@ -139,9 +139,19 @@ extern std::atomic<int> NUM_THREADS_RUNNING;
 class WorldRenderer {
 public:
     static constexpr int chunkSize = 16;
-    static constexpr int renderDistance = 18;
+    static constexpr int renderDistance = 128;
+    int currentRenderDistance = 17;
     static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2));
-    static constexpr int MIN_DISTANCE = renderDistance + 1;
+    int MIN_DISTANCE = renderDistance + 1;
+
+    int currentMinDistance()
+    {
+        return currentRenderDistance + 1;
+    }
+    int currentMaxChunks()
+    {
+        return (currentRenderDistance*2) * (currentRenderDistance*2);
+    }
 
     std::array<SmallChunkGLInfo, maxChunks> chunkPool;
 
@@ -186,6 +196,11 @@ public:
         std::ranges::for_each(std::views::iota(0, maxChunks), [](auto) {
             genCGLBuffers();
         });
+    }
+
+    void setRenderDistance(int newone)
+    {
+        currentRenderDistance = newone;
     }
 
 

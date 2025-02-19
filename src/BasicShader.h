@@ -95,6 +95,7 @@ uniform float scale;
             uniform sampler3D lut;
             uniform vec3 camPos;
             in float timeRended;
+            uniform float renderDistance;
 
             in vec3 ppos;
             in vec3 grassColor;
@@ -105,7 +106,7 @@ uniform float scale;
             void main()
             {
 
-                float distance = pow((mDist(ppos.x, ppos.z, camPos.x, camPos.z)/(15.0f*5.0f))/4.0f, 3);
+                float distance = pow((mDist(ppos.x, ppos.z, camPos.x, camPos.z)/(renderDistance*5.0f))/4.0f, 2);
                 vec4 fogColor = vec4(0.4, 0.75, 1.0, 1.0);
                 vec4 tex = texture(texture1, TexCoord) + vec4(grassColor, 0.0);
                 FragColor = vec4(tex.xyz * brightness, tex.w);

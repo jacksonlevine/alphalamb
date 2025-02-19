@@ -313,13 +313,14 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
 
     static GLint grassRedChangeLoc = glGetUniformLocation(shader, "grassRedChange");
     static GLint timeRenderedLoc = glGetUniformLocation(shader, "timeRendered");
-
+    static GLint rdistLoc = glGetUniformLocation(shader, "renderDistance");
+    glUniform1f(rdistLoc, static_cast<float>(currentRenderDistance));
     for (auto& [spot, chunkinfo] : activeChunks) {
         bool isDrawingThis = true;
 
         if (isChunkInFrustum(spot, playerCamera->transform.position - (playerCamera->transform.direction * static_cast<float>(chunkSize)), playerCamera->transform.direction)) {
             int dist = abs(spot.x - playerChunkPosition.x) + abs(spot.z - playerChunkPosition.z);
-            if (dist <= MIN_DISTANCE) {
+            if (dist <= currentMinDistance()) {
                 auto & glInfo = chunkPool[chunkinfo.chunkIndex];
                 IntTup chunkRealSpot = IntTup(spot.x * chunkSize, spot.z * chunkSize);
                 float grassRedChange = (worldGenMethod->getTemperatureNoise(chunkRealSpot) - worldGenMethod->getHumidityNoise(chunkRealSpot));
@@ -341,7 +342,7 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
     for (const auto& [spot, chunkinfo] : activeChunks) {
         if (isChunkInFrustum(spot, playerCamera->transform.position - (playerCamera->transform.direction * static_cast<float>(chunkSize)), playerCamera->transform.direction)) {
             int dist = abs(spot.x - playerChunkPosition.x) + abs(spot.z - playerChunkPosition.z);
-            if (dist <= MIN_DISTANCE) {
+            if (dist <= currentMinDistance()) {
                 auto glInfo = chunkPool[chunkinfo.chunkIndex];
                 IntTup chunkRealSpot = IntTup(spot.x * chunkSize, spot.z * chunkSize);
                 float grassRedChange = (worldGenMethod->getTemperatureNoise(chunkRealSpot) - worldGenMethod->getHumidityNoise(chunkRealSpot));
@@ -387,9 +388,9 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         static std::array<TwoIntTup, (renderDistance*2)*(renderDistance*2)> checkspots = {};
 
         int index = 0;
-        for (int i = -renderDistance; i < renderDistance; i++)
+        for (int i = -currentRenderDistance; i < currentRenderDistance; i++)
         {
-            for (int j = -renderDistance; j < renderDistance; j++)
+            for (int j = -currentRenderDistance; j < currentRenderDistance; j++)
             {
                 checkspots[index] = playerChunkPosition + TwoIntTup(i,j);
                 index+=1;
@@ -460,7 +461,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                 }
 
                     int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
-                    if(dist <= MIN_DISTANCE)
+                    if(dist <= currentMinDistance())
                     {
                         if (!mbtActiveChunks.contains(spotHere))
                     {
@@ -472,7 +473,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                         //IF we havent reached the max chunks yet, we can just make a new one for this spot.
                         //ELSE, we reuse the furthest one from the player, ONLY IF the new distance will be shorter than the last distance!
-                        if (chunkPoolSize.load() < maxChunks)
+                        if (chunkPoolSize.load() < currentMaxChunks())
                         {
                             size_t changeBufferIndex = -1;
                             {
@@ -525,7 +526,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
 
                                 // Filter out chunks closer than MIN_DISTANCE
-                                if (distance > MIN_DISTANCE) {
+                                if (distance > currentMinDistance()) {
                                     chunksWithDistances.emplace_back(distance, chunkPos);
                                 }
 

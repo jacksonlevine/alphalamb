@@ -126,4 +126,16 @@ inline void captureMouse(Scene* s)
     s->mouseCaptured = true;
 }
 
+inline void toggleFullscreen(GLFWwindow* window) {
+    static int windowedWidth, windowedHeight;
+    if (glfwGetWindowMonitor(window)) {
+        glfwSetWindowMonitor(window, nullptr, 100, 100, windowedWidth, windowedHeight, GLFW_DONT_CARE);
+    } else {
+        glfwGetWindowSize(window, &windowedWidth, &windowedHeight);
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, GLFW_DONT_CARE);
+    }
+}
+
 #endif //SHAREDVARSBETWEENMAINANDGUI_H
