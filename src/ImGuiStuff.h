@@ -203,7 +203,14 @@ inline void renderImGui() {
                     theScene.saveSettings();
                 }
 
-                if(ImGui::SliderInt("Render Distance", &theScene.worldRenderer->currentRenderDistance, 2, 128))
+                if(ImGui::SliderInt("Render Distance", &theScene.rendDistSelection, 2, 128))
+                {
+                    theScene.saveSettings();
+                }
+                if (ImGui::Button("Apply Render Distance"))
+                {
+                    theScene.worldRenderer->setRenderDistance(theScene.rendDistSelection, &theScene.players.at(theScene.myPlayerIndex)->camera, theScene.world);
+                }
 
                 if(ImGui::Button("Toggle Fullscreen"))
                 {

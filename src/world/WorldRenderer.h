@@ -143,7 +143,7 @@ public:
     int currentRenderDistance = 17;
     static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2));
     int MIN_DISTANCE = renderDistance + 1;
-
+    int lastMaxChunks = maxChunks;
     int currentMinDistance()
     {
         return currentRenderDistance + 1;
@@ -198,9 +198,62 @@ public:
         });
     }
 
-    void setRenderDistance(int newone)
+    void clearInFlightMeshUpdates()
     {
+        for (auto & buffer : changeBuffers)
+        {
+            buffer.ready = false;
+            buffer.in_use = false;
+        }
+        for (auto & buffer : userChangeMeshBuffers)
+        {
+            buffer.ready = false;
+            buffer.in_use = false;
+        }
+        freedChangeBuffers.consume_all([](auto){});
+        freedUserChangeMeshBuffers.consume_all([](auto){});
+        rebuildToMainAreaNotifications.consume_all([](auto){});
+        confirmedActiveChunksQueue.consume_all([](auto){});
+
+        // for (int i = 0; i < changeBuffers.size(); i++)
+        // {
+        //     freedChangeBuffers.push(i);
+        // }
+        // for (int i = 0; i < userChangeMeshBuffers.size(); i++)
+        // {
+        //     freedUserChangeMeshBuffers.push(i);
+        // }
+    }
+
+    void setRenderDistance(int newone, jl::Camera* camera, World* world)
+    {
+
+        stopThreads();
+
+        lastMaxChunks = currentMaxChunks();
         currentRenderDistance = newone;
+
+        if (lastMaxChunks > currentMaxChunks())
+        {
+            for (int i = lastMaxChunks-1; i > currentMaxChunks(); i--)
+            {
+                auto sgl = SmallChunkGLInfo{};
+                auto mesh = UsableMesh{};
+                modifyOrInitializeChunkIndex(i, sgl, mesh);
+            }
+        }
+        chunkPoolSize.store(0);
+        activeChunks.clear();
+        mbtActiveChunks.clear();
+
+        clearInFlightMeshUpdates();
+
+
+        launchThreads(camera, world);
+
+
+
+
     }
 
 

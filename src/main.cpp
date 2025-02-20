@@ -586,6 +586,10 @@ int main()
     initOpenAL();
 
     WorldRenderer* renderer = new WorldRenderer();
+    theScene.loadSettings();
+
+    renderer->currentRenderDistance = theScene.rendDistSelection;
+    renderer->MIN_DISTANCE = renderer->currentRenderDistance + 1;
 
     initializePhysX();
 
@@ -611,7 +615,6 @@ int main()
     static jl::Shader gltfShader = getBasicGLTFShader();
     static jl::Texture worldTex("resources/world.png");
 
-    theScene.loadSettings();
 
 
     ParticlesGizmo* particles = new ParticlesGizmo();

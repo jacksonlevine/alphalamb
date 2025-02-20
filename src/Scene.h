@@ -50,6 +50,7 @@ struct Scene
     std::string serverAddress = "127.0.0.1:6969";
     int currentSeed = 0;
     bool multiplayer = false;
+    int rendDistSelection = 17;
     std::atomic<bool> worldReceived = {false};
     std::atomic<bool> clientShouldRun = {false};
     Settings settings = {};
@@ -69,6 +70,7 @@ struct Scene
         {
             settingsFile << settings.mouseSensitivity << "\n";
             settingsFile << serverAddress << "\n";
+            settingsFile << rendDistSelection << "\n";
             settingsFile.close();
         }
 
@@ -78,8 +80,30 @@ struct Scene
         std::ifstream settingsFile("settings.txt");
         if (settingsFile.is_open())
         {
-            settingsFile >> settings.mouseSensitivity;
-            settingsFile >> serverAddress;
+            try
+            {
+                settingsFile >> settings.mouseSensitivity;
+            } catch (const std::exception& e)
+            {
+                std::cout << "Couldn't load mouse sensitivity \n";
+            }
+
+            try
+            {
+                settingsFile >> serverAddress;
+            } catch (const std::exception& e)
+            {
+                std::cout << "Couldn't load server address \n";
+            }
+            try
+            {
+                settingsFile >> rendDistSelection;
+            } catch (std::exception& e)
+            {
+                std::cout << "Couldn't load render distance \n";
+            }
+
+
         }
     }
     void enableMultiplayer()
