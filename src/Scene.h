@@ -59,7 +59,7 @@ struct Scene
     bool showingControls = false;
     std::string localServerPort = "";
     float timeOfDay = 0.0f;
-    static constexpr float dayLength = 10.0f;
+    static constexpr float dayLength = 900.0f;
     PlanetType currentPlanetType = PlanetType::Home;
 
 
