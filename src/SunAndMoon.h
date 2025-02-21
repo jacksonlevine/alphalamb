@@ -133,7 +133,7 @@ inline void drawSunAndMoon(jl::Camera* camera, Scene* scene)
 
     if(vao == 0)
     {
-        for(int i = 0; i < 4000; i++)
+        for(int i = 0; i < 8000; i++)
         {
             glm::vec2 posit((float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX);
             float x = posit.x * 4000.0f - 2000.0f;
@@ -142,7 +142,7 @@ inline void drawSunAndMoon(jl::Camera* camera, Scene* scene)
             float maxDistance = sqrt(2000.0f * 2000.0f + 2000.0f * 2000.0f); // Maximum possible distance from (0, 0)
             float y = 4000.0f * (1.0f - 1.0f * (distanceFromCenter / maxDistance)) * 0.4; // Y decreases as distance increases
 
-            if (50.0f * ((float)rand() / (float)RAND_MAX) * distanceFromCenter < 20000)
+            if (500.0f * ((float)rand() / (float)RAND_MAX) * distanceFromCenter < 20000)
             {
                 positions.push_back(
                     CelestialBody{glm::vec3(x, y, z), glm::vec3(3.14159265358979323846264338327f, 0.0f, 0.0f), 0.0f, std::max(0.1f, (float)rand() / (float)RAND_MAX)}
@@ -150,7 +150,7 @@ inline void drawSunAndMoon(jl::Camera* camera, Scene* scene)
             }
 
         }
-        
+
     }
 
     float halfsize = 5.0f;
