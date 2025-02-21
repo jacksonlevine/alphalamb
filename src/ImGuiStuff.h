@@ -21,7 +21,8 @@ enum GuiScreen
     EscapeMenu,
     InGame,
     HostPort,
-    Inventory
+    Inventory,
+    Orbit
 };
 
 extern GuiScreen currentGuiScreen;

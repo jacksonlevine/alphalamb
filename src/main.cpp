@@ -40,12 +40,14 @@
 #include "BasicGLTFShader.h"
 
 
-
+#include "SunAndMoon.h"
 
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <tiny_gltf.h>
+
+#include "Planets.h"
 //Tinygltf includes stb image
 //#include <stb_image.h>
 
@@ -59,6 +61,21 @@ Scene theScene = {};
 
 constexpr double J_PI = 3.1415926535897932384626433832;
 constexpr double DEG_TO_RAD = J_PI / 180.0;
+
+__inline float gaussian(float x, float peak, float radius) {
+    float stdDev = radius / 3.0;
+    float variance = stdDev * stdDev;
+
+    float b = exp(-pow(x - peak, 2.0) / (2.0 * variance));
+
+    float peakHeight = exp(-pow(peak - peak, 2.0) / (2.0 * variance));
+    return b / peakHeight;
+};
+
+__inline float ambBrightFromTimeOfDay(float timeOfDay, float dayLength)
+{
+    return std::max(0.05f, std::min(1.0f, gaussian(timeOfDay, dayLength/1.75f, dayLength/2.0f) * 1.3f));
+}
 
 int properMod(int a, int b) {
     int m = a % b;
@@ -617,6 +634,7 @@ int main()
 
 
 
+
     ParticlesGizmo* particles = new ParticlesGizmo();
     theScene.particles = particles;
     theScene.gizmos.push_back(particles);
@@ -705,7 +723,7 @@ int main()
         if (theScene.myPlayerIndex != -1)
         {
             updateFPS();
-
+            theScene.timeOfDay = std::fmod(theScene.timeOfDay + deltaTime, theScene.dayLength);
 
             if (theScene.blockSelectGizmo->hitting)
             {
@@ -1086,7 +1104,7 @@ int main()
                 break; //Only do oen per frame
             }
 
-
+            Atmosphere currAtmos = skyAndFogColor(theScene.currentPlanetType);
 
             if (theScene.bulkPlaceGizmo->active)
             {
@@ -1095,9 +1113,9 @@ int main()
                 theScene.bulkPlaceGizmo->corner2 = theintspot;
             }
 
-            drawSky(glm::vec4(0.3, 0.65, 1.0, 1.0),
-                    glm::vec4(1.0, 1.0, 1.0, 1.0),
-                    1.0f, &theScene.players[theScene.myPlayerIndex]->camera, lutTexture);
+            drawSky(glm::vec4(currAtmos.skyTop, 1.0),
+                    glm::vec4(currAtmos.skyBottom, 1.0),
+                    ambBrightFromTimeOfDay(theScene.timeOfDay, theScene.dayLength), &theScene.players[theScene.myPlayerIndex]->camera, lutTexture);
 
 
             glUseProgram(mainShader.shaderID);
@@ -1112,10 +1130,13 @@ int main()
             static GLuint scaleLoc = glGetUniformLocation(mainShader.shaderID, "scale");
             static GLuint timeRenderedLoc = glGetUniformLocation(mainShader.shaderID, "timeRendered");
             static GLuint offsetLoc = glGetUniformLocation(mainShader.shaderID, "offs");
+            static GLuint abLoc = glGetUniformLocation(mainShader.shaderID, "ambientBrightness");
+            static GLuint fogColLoc = glGetUniformLocation(mainShader.shaderID, "fogCol");
 
             glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera.mvp));
             glActiveTexture(GL_TEXTURE0);
             glUniform1i(texture1Loc, 0);
+            glUniform1f(abLoc, ambBrightFromTimeOfDay(theScene.timeOfDay, theScene.dayLength));
             glUniform3f(posLoc, 0.0, 0.0, 0.0);
             const glm::vec3 campos = theScene.players[theScene.myPlayerIndex]->camera.transform.position;
             glUniform3f(camPosLoc, campos.x, campos.y, campos.z);
@@ -1123,6 +1144,7 @@ int main()
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
             glUniform1f(scaleLoc, 1.0f);
 
+            glUniform3f(fogColLoc, currAtmos.fogColor.x, currAtmos.fogColor.y, currAtmos.fogColor.z);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_3D, lutTexture);
             glUniform1i(lutLoc, 1);
@@ -1130,10 +1152,7 @@ int main()
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
 
-            if(FLY_MODE)
-            {
-                std::cout << "" << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << " \n";
-            }
+
 
             renderer->mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, mainShader.shaderID, world.worldGenMethod, deltaTime);
             vms->draw(&world, theScene.players.at(theScene.myPlayerIndex));
@@ -1258,7 +1277,7 @@ int main()
             }
 
 
-
+            drawSunAndMoon(&camera, &theScene);
 
 
 

@@ -10,7 +10,6 @@ struct InventorySlot
 {
     uint32_t block = 0;
     int count = 0;
-
     bool empty() const
     {
         return count == 0;
@@ -27,6 +26,10 @@ public:
     InventorySlot& getSlot(const int x, const int y)
     {
         return inventory[y * INVWIDTH + x];
+    }
+    constexpr bool isEquipSlot(int x, int y)
+    {
+        return x == INVWIDTH;
     }
     void setSlot(int x, int y, const InventorySlot& slot)
     {

@@ -8,6 +8,7 @@
 #include "world/WorldGizmo.h"
 #include "world/gizmos/BlockSelectGizmo.h"
 #include "Hud.h"
+#include "Planets.h"
 #include "world/gizmos/BulkPlaceGizmo.h"
 #include "world/gizmos/VoxModelStampGizmo.h"
 
@@ -57,8 +58,9 @@ struct Scene
     jl::Camera* guiCamera = nullptr;
     bool showingControls = false;
     std::string localServerPort = "";
-
-
+    float timeOfDay = 0.0f;
+    static constexpr float dayLength = 10.0f;
+    PlanetType currentPlanetType = PlanetType::Home;
 
 
 

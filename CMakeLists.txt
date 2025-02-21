@@ -132,6 +132,10 @@ add_executable(DistantGarden
         src/Inventory.h
         src/world/gizmos/DropsGizmo.cpp
         src/world/gizmos/DropsGizmo.h
+        src/SunAndMoon.h
+        src/TimeOfDay.h
+        src/Planets.cpp
+        src/Planets.h
 )
 
 add_executable(DGServer

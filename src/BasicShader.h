@@ -96,6 +96,8 @@ uniform float scale;
             uniform vec3 camPos;
             in float timeRended;
             uniform float renderDistance;
+            uniform float ambientBrightness;
+            uniform vec3 fogCol;
 
             in vec3 ppos;
             in vec3 grassColor;
@@ -107,7 +109,7 @@ uniform float scale;
             {
 
                 float distance = pow((mDist(ppos.x, ppos.z, camPos.x, camPos.z)/(renderDistance*5.0f))/4.0f, 2);
-                vec4 fogColor = vec4(0.4, 0.75, 1.0, 1.0);
+                vec4 fogColor = vec4(fogCol.xyz, 1.0);
                 vec4 tex = texture(texture1, TexCoord) + vec4(grassColor, 0.0);
                 FragColor = vec4(tex.xyz * brightness, tex.w);
                 float normDist = min(1.0f, max(distance, 0.0f));
@@ -118,7 +120,7 @@ uniform float scale;
                 vec4 lutTex = texture(lut, lutCoords);
 
                 FragColor = vec4(lutTex.xyz, FragColor.a * timeRended);
-
+                FragColor = vec4(FragColor.xyz * ambientBrightness, FragColor.a);
                 if(FragColor.a < 0.1f) {
                     discard;
                 }
