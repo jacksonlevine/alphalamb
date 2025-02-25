@@ -56,5 +56,26 @@ inline void stampVoxelModelInWorld(World* world, VoxModel& model)
     }
 }
 
+inline void stampPyramidInWorld(World* world, int baseWidth, int x, int z)
+{
+
+    int width = baseWidth;
+
+    int height = 0;
+    while (width > 0)
+    {
+        for (int i = -width/2; i < width/2; i++)
+        {
+            for (int j = -width/2; j < width/2; j++)
+            {
+                world->nonUserDataMap->set(IntTup(i+x, height, j+z), RED_STONE);
+            }
+        }
+        width -= 2;
+        height += 1;
+    }
+
+}
+
 
 #endif //SWCLOADER_H

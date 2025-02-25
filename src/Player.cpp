@@ -78,7 +78,13 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
 
     if (controls.secondary1)
     {
-        jetpackMode = true;
+        for (auto& item : inventory.getEquippedItems()) {
+            if (item.block == ItemName::JETPACK)
+            {
+                jetpackMode = true;
+            }
+        }
+
     }
 
 

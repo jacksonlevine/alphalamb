@@ -49,12 +49,13 @@ inline bool connectToServer(const char* addr, const char* port)
 inline void exitWorld(Scene* scene)
 {
     std::cout << "Stopping \n";
+    scene->clientShouldRun.store(false);
     scene->worldRenderer->stopThreads();
     std::cout << "Stopped \n";
 
     if(scene->multiplayer)
     {
-        scene->clientShouldRun.store(false);
+
         for(auto & player : scene->players)
         {
 

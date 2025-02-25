@@ -31,7 +31,7 @@ find_package(OpenAL CONFIG REQUIRED)
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
 
-find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container variant2)
+find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container variant2 fiber)
 message(STATUS "Boost version: ${Boost_VERSION}")
 find_package(imgui CONFIG REQUIRED)
 
@@ -136,6 +136,8 @@ add_executable(DistantGarden
         src/TimeOfDay.h
         src/Planets.cpp
         src/Planets.h
+        src/world/ItemName.h
+        src/EnumToString.h
 )
 
 add_executable(DGServer
@@ -165,7 +167,7 @@ function(add_common_libraries target)
     target_link_directories(${target} PUBLIC ${CMAKE_SOURCE_DIR}/lib)
     target_include_directories(${target} PRIVATE ${TINYGLTF_INCLUDE_DIRS})
     target_link_libraries(${target} PRIVATE imgui::imgui)
-    target_link_libraries(${target} PRIVATE Boost::asio Boost::uuid)
+    target_link_libraries(${target} PRIVATE Boost::asio Boost::uuid Boost::fiber)
     target_link_libraries(${target} PRIVATE Boost::lockfree)
     
     

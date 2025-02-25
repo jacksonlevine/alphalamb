@@ -33,7 +33,7 @@ namespace jl
     {
 
 
-        float t = std::min(1.0f, deltatime * 30.0f);
+        float t = std::min(1.0f, deltatime * 45.0f);
 
         float deltaYaw = targetYaw - unwrappedYaw;
         unwrappedYaw = unwrappedYaw + deltaYaw * t;

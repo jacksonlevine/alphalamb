@@ -58,9 +58,9 @@ struct Scene
     jl::Camera* guiCamera = nullptr;
     bool showingControls = false;
     std::string localServerPort = "";
-    float timeOfDay = 0.0f;
+    float timeOfDay = 300.0f;
     static constexpr float dayLength = 900.0f;
-    PlanetType currentPlanetType = PlanetType::Home;
+    PlanetType currentPlanetType = PlanetType::Hostile;
 
 
 

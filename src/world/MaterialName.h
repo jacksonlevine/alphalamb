@@ -6,113 +6,165 @@
 #define MATERIALNAME_H
 
 #include "../PrecompHeader.h"
-
+#include "../EnumToString.h"
 constexpr int BLOCK_COUNT = 93;
+//there is a value in the shader that needs to be updated when this is changed. annoying, fix soon
 
-enum MaterialName : uint32_t {
+DEFINE_ENUM_WITH_STRING_CONVERSIONS(MaterialName, uint32_t,
+    (AIR)
+    (SAND)
+    (WATER)
+    (GRASS)
+    (DIRT)
+    (COBBLESTONE)
+    (WOOD)
+    (LEAVES)
+    (GLASS)
+    (STONE)
+    (WOOD_PLANKS)
+    (BUSH_LEAVES)
+    (PETRIFIED_WOOD)
+    (RED_STONE)
+    (SALTED_EARTH)
+    (BEDROCK)
+    (RED_CRYSTAL_UNATTAINABLE)
+    (RED_CRYSTAL)
+    (LIGHT)
+    (DOOR)
+    (LADDER)
+    (WOODEN_TRUNK)
+    (BAMBOO)
+    (TALL_GRASS)
+    (BLUE_LIGHT)
+    (PURPLE_LIGHT)
+    (YELLOW_LIGHT)
+    (RED_LIGHT)
+    (GREEN_LIGHT)
+    (ORANGE_LIGHT)
+    (TEAL_LIGHT)
+    (CRAFTING_BENCH)
+    (APPLE)
+    (BAMBOO_PIECE)
+    (DEAD_LEAF_MULCH)
+    (METAL_ROCK)
+    (CRUDE_BLADE)
+    (CRUDE_PICK)
+    (CRUDE_MATTOCK)
+    (CRUDE_AXE)
+    (JUMP_SWITCHER_BLOCK)
+    (JUMP_SWITCHER_BLOCK2)
+    (TRAMPOLINE_BLOCK)
+    (RUBBER_TREE_WOOD)
+    (RUBBER_TREE_LEAVES)
+    (CONVEYOR)
+    (AUTO_TRAMPOLINE)
+    (METAL_PLATE_BLOCK)
+    (SNOWY_GRASS_BLOCK)
+    (TORCH)
+    (SNOWY_LEAVES)
+    (ICE)
+    (ARTIC_WILLOW_DWARF_SHRUB)
+    (PINE_WOOD)
+    (PINE_LEAVES)
+    (ARTIC_WILLOW_LEAVES)
+    (CEDAR_WOOD)
+    (CEDAR_LEAVES)
+    (PALM_WOOD)
+    (PALM_LEAVES)
+    (JOSHUA_WOOD)
+    (JOSHUA_LEAVES)
+    (SNOWY_SAND)
+    (FENCE)
+    (PAPER_BIRCH_WOOD)
+    (PAPER_BIRCH_LEAVES)
+    (GREEN_ALDER_WOOD)
+    (GREEN_ALDER_LEAVES)
+    (WILLOW_WOOD)
+    (WILLOW_LEAVES)
+    (BEECH_WOOD)
+    (BEECH_LEAVES)
+    (WESTERN_HEMLOCK_WOOD)
+    (WESTERN_HEMLOCK_LEAVES)
+    (EUCALYPTUS_WOOD)
+    (EUCALYPTUS_LEAVES)
+    (FIG_WOOD)
+    (FIG_LEAVES)
+    (SAGUARO_BLOCK)
+    (PUMPKIN)
+    (JACK_O_LANTERN)
+    (PINE_PLANKS)
+    (CEDAR_PLANKS)
+    (PALM_PLANKS)
+    (JOSHUA_PLANKS)
+    (BIRCH_PLANKS)
+    (WILLOW_PLANKS)
+    (BEECH_PLANKS)
+    (WESTERN_HEMLOCK_PLANKS)
+    (EUCALYPTUS_PLANKS)
+    (ILLUMINITE_ORE)
+    (JETPACK_PARTICLE_BLOCK)
+    (CLOUD_BLOCK)
+)
+
+
+
+
+constexpr auto transparents = std::to_array({
     AIR,
-    SAND,
-    WATER,
-    GRASS,
-    DIRT,
-    COBBLESTONE,
-    WOOD,
-    LEAVES,
-    GLASS,
-    STONE,
-    WOOD_PLANKS,
-    BUSH_LEAVES,
-    PETRIFIED_WOOD,
-    RED_STONE,
-    SALTED_EARTH,
-    BEDROCK,
-    RED_CRYSTAL_UNATTAINABLE,
-    RED_CRYSTAL,
-    LIGHT,
-    DOOR,
-    LADDER,
-    WOODEN_TRUNK,
-    BAMBOO,
-    TALL_GRASS,
-    BLUE_LIGHT,
-    PURPLE_LIGHT,
-    YELLOW_LIGHT,
-    RED_LIGHT,
-    GREEN_LIGHT,
-    ORANGE_LIGHT,
-    TEAL_LIGHT,
-    CRAFTING_BENCH,
-    APPLE,
-    BAMBOO_PIECE,
-    DEAD_LEAF_MULCH,
-    METAL_ROCK,
-    CRUDE_BLADE,
-    CRUDE_PICK,
-    CRUDE_MATTOCK,
-    CRUDE_AXE,
-    JUMP_SWITCHER_BLOCK,
-    JUMP_SWITCHER_BLOCK2,
-    TRAMPOLINE_BLOCK,
-    RUBBER_TREE_WOOD,
-    RUBBER_TREE_LEAVES,
-    CONVEYOR,
-    AUTO_TRAMPOLINE,
-    METAL_PLATE_BLOCK,
-    SNOWY_GRASS_BLOCK,
-    TORCH,
-    SNOWY_LEAVES,
-    ICE,
-    ARTIC_WILLOW_DWARF_SHRUB,
-    PINE_WOOD,
-    PINE_LEAVES,
-    ARTIC_WILLOW_LEAVES,
-    CEDAR_WOOD,
-    CEDAR_LEAVES,
-    PALM_WOOD,
-    PALM_LEAVES,
-    JOSHUA_WOOD,
-    JOSHUA_LEAVES,
-    SNOWY_SAND,
-    FENCE,
-    PAPER_BIRCH_WOOD,
-    PAPER_BIRCH_LEAVES,
-    GREEN_ALDER_WOOD,
-    GREEN_ALDER_LEAVES,
-    WILLOW_WOOD,
-    WILLOW_LEAVES,
-    BEECH_WOOD,
-    BEECH_LEAVES,
-    WESTERN_HEMLOCK_WOOD,
-    WESTERN_HEMLOCK_LEAVES,
-    EUCALYPTUS_WOOD,
-    EUCALYPTUS_LEAVES,
-    FIG_WOOD,
-    FIG_LEAVES,
-    SAGUARO_BLOCK,
-    PUMPKIN,
-    JACK_O_LANTERN,
-    PINE_PLANKS,
-    CEDAR_PLANKS,
-    PALM_PLANKS,
-    JOSHUA_PLANKS,
-    BIRCH_PLANKS,
-    WILLOW_PLANKS,
-    BEECH_PLANKS,
-    WESTERN_HEMLOCK_PLANKS,
-    EUCALYPTUS_PLANKS,
-    ILLUMINITE_ORE,
-    JETPACK_PARTICLE_BLOCK,
-    CLOUD_BLOCK
-};
 
+       LEAVES,
 
+   BUSH_LEAVES,
 
-extern std::vector<MaterialName> transparents;
+   LIGHT,
+
+   DOOR,
+
+   LADDER,
+
+   WOODEN_TRUNK,
+
+   BAMBOO,
+
+   RED_LIGHT,
+
+   SNOWY_LEAVES,
+
+   ARTIC_WILLOW_LEAVES,
+
+   CEDAR_LEAVES,
+
+   PALM_LEAVES,
+
+   JOSHUA_LEAVES,
+
+   PAPER_BIRCH_LEAVES,
+
+   GREEN_ALDER_LEAVES,
+
+   WILLOW_LEAVES,
+
+   BEECH_LEAVES,
+
+   WESTERN_HEMLOCK_LEAVES,
+
+   EUCALYPTUS_LEAVES,
+
+   FIG_LEAVES,
+
+   JACK_O_LANTERN,
+
+   ILLUMINITE_ORE,
+       WATER,
+
+   GLASS,
+
+   TORCH,});
 
 using TexCoord = std::pair<uint8_t, uint8_t>;
 using BlockTextures = std::array<TexCoord, 3>;
 
-constexpr std::array<BlockTextures, 93> TEXS = {{
+constexpr std::array<BlockTextures, BLOCK_COUNT> TEXS = {{
     // sides      // bot       // top
     {{ {0, 0}, {0, 0}, {0, 0} }},  // 0
     {{ {1, 0}, {1, 0}, {1, 0} }},  // 1 sand
@@ -208,6 +260,8 @@ constexpr std::array<BlockTextures, 93> TEXS = {{
     {{ {14, 14}, {14, 14}, {14, 14} }}, // 91 Jetback Particle Block
         {{ {8,9}, {8,9}, {8,9} }} // 91 Cloud Block
 }};
+
+
 
 
 #endif //MATERIALNAME_H

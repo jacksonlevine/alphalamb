@@ -5,7 +5,6 @@
 
 
 jl::Shader getBasicGLTFShader();
-
 inline jl::Shader getBasicGLTFShader()
 {
     jl::Shader shader(
@@ -14,39 +13,38 @@ inline jl::Shader getBasicGLTFShader()
             layout(location = 0) in vec3 inPosition;
             layout(location = 1) in vec2 inTexCoord;
 
-            mat4 getRotationMatrix(float xrot, float yrot, float zrot) {
-                mat4 Rx = mat4(1.0, 0.0, 0.0, 0.0,
-                               0.0, cos(xrot), -sin(xrot), 0.0,
-                               0.0, sin(xrot), cos(xrot), 0.0,
-                               0.0, 0.0, 0.0, 1.0);
-
-                mat4 Ry = mat4(cos(yrot), 0.0, sin(yrot), 0.0,
-                               0.0, 1.0, 0.0, 0.0,
-                               -sin(yrot), 0.0, cos(yrot), 0.0,
-                               0.0, 0.0, 0.0, 1.0);
-
-                mat4 Rz = mat4(cos(zrot), -sin(zrot), 0.0, 0.0,
-                               sin(zrot), cos(zrot), 0.0, 0.0,
-                               0.0, 0.0, 1.0, 0.0,
-                               0.0, 0.0, 0.0, 1.0);
-
-                return Rz * Ry * Rx; // Note: The order might need to be adjusted based on your specific needs
+            // Function to create a rotation matrix for yaw (around Y-axis)
+            mat4 getYawRotationMatrix(float yaw) {
+                float rad = radians(yaw); // Convert degrees to radians
+                return mat4(
+                    cos(rad), 0.0, sin(rad), 0.0,
+                    0.0,      1.0, 0.0,      0.0,
+                    -sin(rad), 0.0, cos(rad), 0.0,
+                    0.0,      0.0, 0.0,      1.0
+                );
             }
-        uniform float rot;
+
+            uniform float rot; // Yaw rotation in degrees (0-360)
 
             out vec2 TexCoord;
 
-            uniform mat4 mvp;
-            uniform vec3 pos;
+            uniform mat4 mvp; // Model-View-Projection matrix
+            uniform vec3 pos;  // Translation in world space
 
             void main()
             {
+                // Apply yaw rotation to the local coordinates
+                mat4 rotmat = getYawRotationMatrix(rot);
+                vec4 rotatedPosition = rotmat * vec4(inPosition, 1.0);
 
-                mat4 rotmat = getRotationMatrix(0.0, 0.0, rot);
-                vec4 rotposition = rotmat * vec4(inPosition, 1.0);
+                // Translate the rotated position by `pos`
+                vec4 worldPosition = vec4(rotatedPosition.xyz + pos, 1.0);
 
+                // Transform to clip space using the MVP matrix
+                gl_Position = mvp * worldPosition;
+
+                // Pass texture coordinates to the fragment shader
                 TexCoord = inTexCoord;
-                gl_Position = mvp * vec4((rotposition.xyz + pos), 1.0);
             }
         )glsl",
         R"glsl(
@@ -63,11 +61,9 @@ inline jl::Shader getBasicGLTFShader()
             }
         )glsl",
         "basicGLTFShader"
-
-        );
+    );
     return shader;
 }
-
 
 
 

@@ -310,6 +310,7 @@ public:
         );
         //rebuildThread.detach();
     }
+
     void stopThreads()
     {
         rebuildThreadRunning = false;
