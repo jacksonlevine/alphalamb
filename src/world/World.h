@@ -10,18 +10,18 @@
 
 
 
-constexpr uint32_t BLOCK_ID_BITS = 0b0000'0000'0000'0000'1111'1111'1111'1111;
-constexpr uint32_t BLOCK_FLAG_BITS = 0b1111'1111'1111'1111'0000'0000'0000'0000;
+constexpr BlockType BLOCK_ID_BITS = 0b0000'0000'0000'0000'1111'1111'1111'1111;
+constexpr BlockType BLOCK_FLAG_BITS = 0b1111'1111'1111'1111'0000'0000'0000'0000;
 
-constexpr uint32_t BLOCK_DIRECTION_BITS = 0b0000'0000'0000'0011'0000'0000'0000'0000;
+constexpr BlockType BLOCK_DIRECTION_BITS = 0b0000'0000'0000'0011'0000'0000'0000'0000;
 
-constexpr uint32_t getDirectionBits(const uint32_t& input) {
+constexpr BlockType getDirectionBits(const BlockType& input) {
     return (input & BLOCK_DIRECTION_BITS) >> 16;
 };
 
-constexpr void setDirectionBits(uint32_t& inout, const uint32_t& direction) {
+constexpr void setDirectionBits(BlockType& inout, const BlockType& direction) {
 
-    uint32_t bits = direction << 16;
+    BlockType bits = direction << 16;
     inout |= bits;
 
 };
@@ -42,7 +42,7 @@ struct BlockArea
 {
     IntTup corner1;
     IntTup corner2;
-    uint32_t block;
+    BlockType block;
     bool hollow = false;
 };
 
@@ -79,7 +79,7 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
             const std::unique_ptr<DataMap::Iterator> it = map->createIterator();
             while (it->hasNext()) {
                 auto [key, value] = it->next();
-                contentStream << key.x << " " << key.y << " " << key.z << " " << value << '\n';
+                contentStream << key.x << " " << key.y << " " << key.z << " " << (int)value << '\n';
             }
             gotlock = true;
         }
@@ -94,7 +94,7 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
             {
                 contentStream << "AREA " << area.corner1.x << " " << area.corner1.y << " " << area.corner1.z << " "
                 << area.corner2.x << " " << area.corner2.y << " " << area.corner2.z << " "
-                << area.block << " " << (int)area.hollow << '\n';
+                << (int)area.block << " " << (int)area.hollow << '\n';
             }
         }
     }
@@ -146,7 +146,7 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
                 {
                     //Read the block (words[3]) as unsigned long because that can contain all the uint32_t values
                     //Rest are ints
-                    map->set(IntTup( std::stoi(words[0]) , std::stoi(words[1]), std::stoi(words[2]) ), static_cast<uint32_t>(std::stoul(words[3])));
+                    map->set(IntTup( std::stoi(words[0]) , std::stoi(words[1]), std::stoi(words[2]) ), static_cast<BlockType>(std::stoul(words[3])));
                 } else
                 if (words.size() == 5 && words.at(0) == "VM")
                 {
@@ -162,7 +162,7 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
                         blockAreas.blockAreas.push_back(BlockArea{
                             .corner1 = IntTup(std::stoi(words[1]),std::stoi(words[2]),std::stoi(words[3])),
                             .corner2 = IntTup(std::stoi(words[4]),std::stoi(words[5]),std::stoi(words[6])),
-                            .block = static_cast<uint32_t>(std::stoul(words[7])),
+                            .block = static_cast<BlockType>(std::stoul(words[7])),
                             .hollow = false
                         });
                     }
@@ -172,7 +172,7 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
                         blockAreas.blockAreas.push_back(BlockArea{
                             .corner1 = IntTup(std::stoi(words[1]),std::stoi(words[2]),std::stoi(words[3])),
                             .corner2 = IntTup(std::stoi(words[4]),std::stoi(words[5]),std::stoi(words[6])),
-                            .block = static_cast<uint32_t>(std::stoul(words[7])),
+                            .block = static_cast<BlockType>(std::stoul(words[7])),
                             .hollow = (bool)std::stoi(words[8]),
                         });
                     }
@@ -202,11 +202,11 @@ public:
 
     WorldGenMethod* worldGenMethod;
 
-    uint32_t get(const IntTup& spot);
-    uint32_t getLocked(IntTup spot);
+    BlockType get(const IntTup& spot);
+    BlockType getLocked(IntTup spot);
 
-    uint32_t getRaw(IntTup spot);
-    uint32_t getRawLocked(IntTup spot);
+    BlockType getRaw(IntTup spot);
+    BlockType getRawLocked(IntTup spot);
 
 
 
@@ -331,7 +331,7 @@ public:
     {
         worldGenMethod->setSeed(seed);
     }
-    void set(IntTup spot, uint32_t val);
+    void set(IntTup spot, BlockType val);
 
     std::optional<std::pair<std::shared_lock<std::shared_mutex>,
                                  std::shared_lock<std::shared_mutex>>> tryToGetReadLockOnDMs()

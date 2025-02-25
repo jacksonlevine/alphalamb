@@ -12,6 +12,8 @@
 #include "IntTup.h"
 #include "world/MaterialName.h"
 #include "world/VoxelModels.h"
+#include "Inventory.h"
+
 using namespace boost::variant2;
 
 struct PlayerPresent
@@ -44,7 +46,7 @@ struct FileTransferInit
 struct BlockSet
 {
     IntTup spot;
-    uint32_t block;
+    BlockType block;
 };
 
 
@@ -70,7 +72,7 @@ struct BulkBlockSet
 {
     IntTup corner1;
     IntTup corner2;
-    uint32_t block;
+    BlockType block;
     bool hollow = false;
 };
 
@@ -78,6 +80,12 @@ struct VoxModelStamp
 {
     VoxelModelName name;
     IntTup spot;
+};
+
+struct EquippedItemsUpdate
+{
+    int myPlayerIndex;
+    std::array<InventorySlot, INVHEIGHT> equipped;
 };
 
 using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp>;

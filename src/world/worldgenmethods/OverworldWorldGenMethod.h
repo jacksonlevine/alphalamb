@@ -8,6 +8,7 @@
 #include "../MaterialName.h"
 #include "../WorldGenMethod.h"
 #include "../VoxelModels.h"
+#include "../../BlockType.h"
 
 enum Climate : uint8_t {
     PolarDesert,
@@ -64,7 +65,7 @@ inline std::vector<TerrainFeature>& getTerrainFeaturesFromClimate(Climate& clima
 class OverworldWorldGenMethod : public WorldGenMethod {
 public:
     OverworldWorldGenMethod();
-    uint32_t get(IntTup spot) override;
+    BlockType get(IntTup spot) override;
     Climate getClimate(IntTup spot) override;
     void setSeed(int seed) override;
     static MaterialName getFloorBlockInClimate(const Climate& climate);

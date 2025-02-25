@@ -6,6 +6,7 @@
 #define DROPSGIZMO_H
 
 #include "../WorldGizmo.h"
+#include "../../BlockType.h"
 #include "../../PhysXStuff.h"
 
 
@@ -39,7 +40,7 @@ class DropsGizmo : public WorldGizmo {
 public:
     void draw(World* world, Player* player) override;
     void init() override;
-    void addDrop(glm::vec3 position, uint32_t blockID, float scale, PxVec3 velocity)
+    void addDrop(glm::vec3 position, BlockType blockID, float scale, PxVec3 velocity)
     {
         PxBoxGeometry boxGeometry(0.1f, 0.1f, 0.1f);
 
@@ -71,7 +72,7 @@ public:
         gScene->addActor(*instances.back().body);
 
     }
-    void addDrop(const glm::vec3& position, uint32_t blockID)
+    void addDrop(const glm::vec3& position, BlockType blockID)
     {
         addDrop(position, blockID, 0.4, PxVec3(0.0));
     }
@@ -92,7 +93,7 @@ public:
     // }
 
 
-    void dropBurst(glm::vec3 spot, size_t amount, uint32_t blockID, float width, float energy)
+    void dropBurst(glm::vec3 spot, size_t amount, BlockType blockID, float width, float energy)
     {
         static FastNoiseLite noise;
         static auto _ = [] {

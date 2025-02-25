@@ -4,18 +4,20 @@
 
 #include "World.h"
 
+#include "../BlockType.h"
 
-uint32_t World::get(const IntTup& spot)
+
+BlockType World::get(const IntTup& spot)
 {
     return (getRaw(spot) & BLOCK_ID_BITS);
 }
 
-uint32_t World::getLocked(IntTup spot)
+BlockType World::getLocked(IntTup spot)
 {
     return (getRawLocked(spot) & BLOCK_ID_BITS);
 }
 
-uint32_t World::getRaw(IntTup spot)
+BlockType World::getRaw(IntTup spot)
 {
     auto id = userDataMap->get(spot);
     if (id == std::nullopt)
@@ -33,7 +35,7 @@ uint32_t World::getRaw(IntTup spot)
     return id.value();
 }
 
-uint32_t World::getRawLocked(IntTup spot)
+BlockType World::getRawLocked(IntTup spot)
 {
     auto id = userDataMap->getLocked(spot);
     if (id == std::nullopt)
@@ -51,7 +53,7 @@ uint32_t World::getRawLocked(IntTup spot)
     return id.value();
 }
 
-void World::set(IntTup spot, uint32_t val)
+void World::set(IntTup spot, BlockType val)
 {
     userDataMap->set(spot, val);
 }

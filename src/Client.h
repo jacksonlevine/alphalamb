@@ -14,7 +14,7 @@ using tcp = boost::asio::ip::tcp;
 struct BlockChange
 {
     IntTup spot;
-    uint32_t block;
+    BlockType block;
 };
 extern boost::lockfree::spsc_queue<DGMessage, boost::lockfree::capacity<512>> networkToMainBlockChangeQueue;
 

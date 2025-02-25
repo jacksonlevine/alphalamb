@@ -787,7 +787,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
             for (int y = 0; y < 250; y++)
             {
                 IntTup here = start + IntTup(x, y, z);
-                uint32_t blockHere = 0;
+                BlockType blockHere = 0;
 
                 switch (locked)
                 {
@@ -805,7 +805,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                     {
                         auto neigh = neighborSpots[i];
 
-                        uint32_t neighblock = 0;
+                        BlockType neighblock = 0;
                         switch (locked)
                         {
                         case true:

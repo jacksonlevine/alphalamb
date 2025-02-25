@@ -48,7 +48,7 @@ OverworldWorldGenMethod::OverworldWorldGenMethod()
     noise.SetSeed(rand());
 }
 
-uint32_t OverworldWorldGenMethod::get(IntTup spot)
+BlockType OverworldWorldGenMethod::get(IntTup spot)
 {
 
     MaterialName floorBlock = getFloorBlockInClimate(getClimate(spot));

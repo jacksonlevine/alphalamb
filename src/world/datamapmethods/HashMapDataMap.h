@@ -21,18 +21,18 @@ public:
 
     std::shared_mutex& mutex() override;
 
-    std::optional<uint32_t> get(const IntTup& spot) const override;
-    std::optional<uint32_t> getLocked(const IntTup& spot) const override;
+    std::optional<BlockType> get(const IntTup& spot) const override;
+    std::optional<BlockType> getLocked(const IntTup& spot) const override;
 
 
     void clear() override;
-    void set(const IntTup& spot, uint32_t block) override;
-    void setLocked(const IntTup& spot, uint32_t block) override;
+    void set(const IntTup& spot, BlockType block) override;
+    void setLocked(const IntTup& spot, BlockType block) override;
 
     mutable std::shared_mutex mapmutex = {};
 private:
     friend class HashMapDataMapIterator;
-    std::unordered_map<IntTup, uint32_t, IntTupHash> map;
+    std::unordered_map<IntTup, BlockType, IntTupHash> map;
 
 #ifdef MEASURE_LOOKUP
     mutable size_t lookup_count = 0;
@@ -50,13 +50,13 @@ public:
         return it != end;
     }
 
-    std::pair<const IntTup&, uint32_t&> next() override {
+    std::pair<const IntTup&, BlockType&> next() override {
         if (it == end) throw std::out_of_range("Iterator out of range");
         return *(it++);
     }
 
 private:
-    std::unordered_map<IntTup, uint32_t, IntTupHash>::iterator it, end;
+    std::unordered_map<IntTup, BlockType, IntTupHash>::iterator it, end;
 };
 
 #endif // HASHMAPUSERDATAMAP_H

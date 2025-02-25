@@ -10,7 +10,7 @@ enum Climate : uint8_t;
 ///The interface the world gen method must satisfy
 class WorldGenMethod {
 public:
-    virtual uint32_t get(IntTup spot) = 0;
+    virtual BlockType get(IntTup spot) = 0;
     virtual float getHumidityNoise(const IntTup& spot) = 0;
     virtual float getTemperatureNoise(const IntTup& spot) = 0;
     virtual Climate getClimate(IntTup spot) = 0;

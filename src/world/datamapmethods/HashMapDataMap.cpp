@@ -1,5 +1,7 @@
 #include "HashMapDataMap.h"
 
+#include "../../BlockType.h"
+
 void HashMapDataMap::erase(const IntTup& spot, bool locked)
 {
     if (!locked)
@@ -27,14 +29,14 @@ std::shared_mutex& HashMapDataMap::mutex()
     return this->mapmutex;
 }
 
-std::optional<uint32_t> HashMapDataMap::get(const IntTup& spot) const {
+std::optional<BlockType> HashMapDataMap::get(const IntTup& spot) const {
 
 #ifdef MEASURE_LOOKUP
     auto start = std::chrono::high_resolution_clock::now();
 #endif
 
     std::shared_lock<std::shared_mutex> lock(mapmutex);
-    std::optional<uint32_t> block = std::nullopt;
+    std::optional<BlockType> block = std::nullopt;
     if (map.contains(spot)) {
         block = map.at(spot);
     }
@@ -57,9 +59,9 @@ std::optional<uint32_t> HashMapDataMap::get(const IntTup& spot) const {
     return block;
 }
 
-std::optional<uint32_t> HashMapDataMap::getLocked(const IntTup& spot) const
+std::optional<BlockType> HashMapDataMap::getLocked(const IntTup& spot) const
 {
-    std::optional<uint32_t> block = std::nullopt;
+    std::optional<BlockType> block = std::nullopt;
     if (map.contains(spot)) {
         block = map.at(spot);
     }
@@ -72,7 +74,7 @@ void HashMapDataMap::clear()
     map.clear();
 }
 
-void HashMapDataMap::set(const IntTup& spot, uint32_t block)
+void HashMapDataMap::set(const IntTup& spot, BlockType block)
 {
     //std::cout << "trying to lock mapmutex \n";
     std::unique_lock<std::shared_mutex> lock(mapmutex);
@@ -80,7 +82,7 @@ void HashMapDataMap::set(const IntTup& spot, uint32_t block)
     map.insert_or_assign(spot, block);
 }
 
-void HashMapDataMap::setLocked(const IntTup& spot, uint32_t block)
+void HashMapDataMap::setLocked(const IntTup& spot, BlockType block)
 {
     map.insert_or_assign(spot, block);
 }

@@ -290,7 +290,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                     //std::cout << "Setting" << std::endl;
                     auto & spot = scene->blockSelectGizmo->selectedSpot;
                     //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
-                    uint32_t blockThere = scene->world->get(spot);
+                    BlockType blockThere = scene->world->get(spot);
                     //IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
                     scene->players.at(scene->myPlayerIndex)->currentHeldBlock = (MaterialName)blockThere;
                     //scene->world->set(spot, AIR);
@@ -762,7 +762,7 @@ int main()
                                     //std::cout << "Setting" << std::endl;
                                     auto & spot = theScene.blockSelectGizmo->selectedSpot;
                                     //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
-                                    uint32_t blockThere = theScene.world->get(spot);
+                                    BlockType blockThere = theScene.world->get(spot);
                                     glm::vec3 burstspot = glm::vec3(
                                         theScene.blockSelectGizmo->selectedSpot.x+ 0.5,
                                         theScene.blockSelectGizmo->selectedSpot.y + 0.5,
@@ -978,7 +978,7 @@ int main()
                         //std::cout << " Server Setting" << std::endl;
                             auto & spot = m.spot;
                             //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
-                            uint32_t blockThere = scene->world->get(spot);
+                            BlockType blockThere = scene->world->get(spot);
                             glm::vec3 burstspot = glm::vec3(
                                 spot.x+ 0.5,
                                 spot.y + 0.5,

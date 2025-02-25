@@ -5,12 +5,13 @@
 #ifndef MATERIALNAME_H
 #define MATERIALNAME_H
 
+#include "../BlockType.h"
 #include "../PrecompHeader.h"
 #include "../EnumToString.h"
 constexpr int BLOCK_COUNT = 93;
 //there is a value in the shader that needs to be updated when this is changed. annoying, fix soon
 
-DEFINE_ENUM_WITH_STRING_CONVERSIONS(MaterialName, uint32_t,
+DEFINE_ENUM_WITH_STRING_CONVERSIONS(MaterialName, BlockType,
     (AIR)
     (SAND)
     (WATER)

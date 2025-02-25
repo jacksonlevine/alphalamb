@@ -4,10 +4,11 @@
 
 #ifndef ITEMNAME_H
 #define ITEMNAME_H
+#include "../BlockType.h"
 #include "../PrecompHeader.h"
 #include "../EnumToString.h"
 
-DEFINE_ENUM_WITH_STRING_CONVERSIONS(ItemName, uint32_t,
+DEFINE_ENUM_WITH_STRING_CONVERSIONS(ItemName, BlockType,
     (NONE)
     (JETPACK)
 )

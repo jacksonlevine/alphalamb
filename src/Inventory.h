@@ -10,8 +10,8 @@
 
 struct InventorySlot
 {
-    uint32_t block = 0;
-    int count = 0;
+    BlockType block = 0;
+    uint8_t count = 0;
     bool isItem = false;
     bool empty() const
     {

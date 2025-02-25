@@ -40,7 +40,7 @@ public:
     void draw(World* world, Player* player) override;
     void init() override;
 
-    void addParticle(glm::vec3 position, uint32_t blockID, float scale, PxVec3 velocity)
+    void addParticle(glm::vec3 position, BlockType blockID, float scale, PxVec3 velocity)
     {
         PxBoxGeometry boxGeometry(0.1f, 0.1f, 0.1f);
 
@@ -90,7 +90,7 @@ public:
     }
 
 
-    void particleBurst(glm::vec3 spot, size_t amount, uint32_t blockID, float width, float energy)
+    void particleBurst(glm::vec3 spot, size_t amount, BlockType blockID, float width, float energy)
     {
         static FastNoiseLite noise;
         static auto _ = [] {

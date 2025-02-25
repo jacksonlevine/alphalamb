@@ -505,7 +505,7 @@ public:
         rebuildQueue.push(ChunkRebuildRequest(vox));
     }
 
-    void requestChunkRebuildFromMainThread(const IntTup& spot, std::optional<uint32_t> changeTo = std::nullopt, bool rebuild = true)
+    void requestChunkRebuildFromMainThread(const IntTup& spot, std::optional<BlockType> changeTo = std::nullopt, bool rebuild = true)
     {
         //TwoIntTup version of spot
         auto titspot = TwoIntTup(spot.x, spot.z);
