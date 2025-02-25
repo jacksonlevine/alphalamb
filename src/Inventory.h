@@ -60,19 +60,23 @@ private:
     std::array<InventorySlot, INVWIDTH * INVHEIGHT> inventory = {};
 };
 
+constexpr std::array<InventorySlot, INVWIDTH * INVHEIGHT> DEFAULT_INVENTORY = {
+    InventorySlot{ .block = ItemName::JETPACK, .count = 1, .isItem = true},
+};
+
 
 inline void imguiInventory(Inventory& inv)
 {
 
-    static bool testset = false;
-    if (!testset)
-    {
-        inv.setSlot(3, 2, InventorySlot{
-        .block = 5, .count = 10});
-        inv.setSlot(4, 2, InventorySlot{
-        .block = 1, .count = 1, .isItem = true});
-        testset = true;
-    }
+    // static bool testset = false;
+    // if (!testset)
+    // {
+    //     inv.setSlot(3, 2, InventorySlot{
+    //     .block = 5, .count = 10});
+    //     inv.setSlot(4, 2, InventorySlot{
+    //     .block = 1, .count = 1, .isItem = true});
+    //     testset = true;
+    // }
     for (int j = 0; j < INVHEIGHT; j++)
     {
         for (int i = 0; i < INVWIDTH; i++)

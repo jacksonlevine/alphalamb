@@ -934,7 +934,8 @@ int main()
 
                         theScene.players.at(m.myPlayerIndex)->camera.transform.yaw = m.startYawPitch.x;
                         theScene.players.at(m.myPlayerIndex)->camera.transform.pitch = m.startYawPitch.y;
-
+                        theScene.players.at(m.myPlayerIndex)->camera.targetYaw = m.startYawPitch.x;
+                        theScene.players.at(m.myPlayerIndex)->camera.targetPitch = m.startYawPitch.y;
                     }
                     else if constexpr (std::is_same_v<T, YawPitchUpdate>)
                     {
@@ -942,7 +943,7 @@ int main()
                         {
                             theScene.addPlayerWithIndex(m.myPlayerIndex);
                         }
-                        theScene.players.at(m.myPlayerIndex)->camera.updateWithYawPitch(m.newYaw, m.newPitch);
+                        theScene.players.at(m.myPlayerIndex)->camera.updateYPIndirect(m.newYaw, m.newPitch);
 
                     }
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>)
