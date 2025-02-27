@@ -31,8 +31,6 @@ extern DataMap* serverUserDataMap;
 
 
 
-
-
 inline void sendMessageToAllClients(const DGMessage& message, int m_playerIndex, bool excludeMe)
 {
 

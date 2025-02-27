@@ -139,6 +139,7 @@ add_executable(DistantGarden
         src/world/ItemName.h
         src/EnumToString.h
         src/BlockType.h
+        src/ClientUID.h
 )
 
 add_executable(DGServer

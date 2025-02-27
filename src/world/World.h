@@ -50,7 +50,6 @@ struct BlockAreaRegistry
 {
     std::vector<BlockArea> blockAreas = {};
     std::shared_mutex baMutex = {};
-
 };
 
 struct PlacedVoxModel
@@ -207,7 +206,6 @@ public:
 
     BlockType getRaw(IntTup spot);
     BlockType getRawLocked(IntTup spot);
-
 
 
 

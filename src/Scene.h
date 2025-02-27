@@ -4,7 +4,9 @@
 
 #ifndef SCENE_H
 #define SCENE_H
+
 #include "PrecompHeader.h"
+#include "ClientUID.h"
 #include "world/WorldGizmo.h"
 #include "world/gizmos/BlockSelectGizmo.h"
 #include "Hud.h"
@@ -16,7 +18,7 @@
 struct Settings
 {
     float mouseSensitivity = 1.0f;
-
+    ClientUID clientUID;
 };
 struct Scene
 {
@@ -73,40 +75,35 @@ struct Scene
             settingsFile << settings.mouseSensitivity << "\n";
             settingsFile << serverAddress << "\n";
             settingsFile << rendDistSelection << "\n";
+            settingsFile << settings.clientUID << "\n";
             settingsFile.close();
         }
 
     }
     void loadSettings()
     {
-        std::ifstream settingsFile("settings.txt");
-        if (settingsFile.is_open())
+        if (std::filesystem::exists("settings.txt"))
         {
-            try
+            std::ifstream settingsFile("settings.txt");
+            if (settingsFile.is_open())
             {
-                settingsFile >> settings.mouseSensitivity;
-            } catch (const std::exception& e)
-            {
-                std::cout << "Couldn't load mouse sensitivity \n";
-            }
 
-            try
-            {
-                settingsFile >> serverAddress;
-            } catch (const std::exception& e)
-            {
-                std::cout << "Couldn't load server address \n";
-            }
-            try
-            {
-                settingsFile >> rendDistSelection;
-            } catch (std::exception& e)
-            {
-                std::cout << "Couldn't load render distance \n";
-            }
+                    settingsFile >> settings.mouseSensitivity;
 
+                    settingsFile >> serverAddress;
 
+                    settingsFile >> rendDistSelection;
+
+                    settingsFile >> settings.clientUID;
+                    std::cout << "Loaded UID: " << settings.clientUID << std::endl;
+            }
+        } else
+        {
+            settings.clientUID = boost::uuids::random_generator()();
+            std::cout << "New UID: " << settings.clientUID << std::endl;
+            saveSettings();
         }
+
     }
     void enableMultiplayer()
     {

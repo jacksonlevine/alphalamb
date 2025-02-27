@@ -5,6 +5,7 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include "PrecompHeader.h"
 #include "Camera.h"
 #include "CollisionCage.h"
 #include "Controls.h"
@@ -34,10 +35,8 @@ struct Player {
     bool hoverMode = false;
     ALuint jetpackSource = 0;
     Inventory inventory = {};
-    MyControllerHitReport* getMyHitReport()
-    {
-        return ((MyControllerHitReport*)controller->getUserData());
-    }
+    std::weak_ptr<boost::asio::ip::tcp::socket> socket;
+    bool receivedWorld = false;
     Player();
     ~Player();
 };
