@@ -9,6 +9,7 @@
 #include "LocalServerIOContext.h"
 #include "PrecompHeader.h"
 #include "Network.h"
+#include "PlayerInfoMapKeyedByUID.h"
 #include "world/DataMap.h"
 #include "world/World.h"
 using tcp = boost::asio::ip::tcp;
@@ -29,6 +30,7 @@ extern std::shared_mutex clientsMutex;
 // extern PlacedVoxModelRegistry serverWorld.placedVoxModels;
 // extern DataMap* serverWorld.userDataMap;
 extern World serverWorld;
+extern InvMapKeyedByUID invMapKeyedByUID;
 
 
 inline void sendMessageToAllClients(const DGMessage& message, int m_playerIndex, bool excludeMe)
@@ -78,7 +80,7 @@ private:
             }
         });
 
-        auto string = saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels);
+        auto string = saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID);
         if (string.has_value())
         {
             DGMessage fileInit = FileTransferInit {
@@ -318,7 +320,7 @@ private:
                     sendMessageToAllClients(pl, m_playerIndex, true);
 
                     //Save when a player leaves too
-                    saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels);
+                    saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID);
                 }
             }
         });

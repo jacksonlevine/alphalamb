@@ -55,8 +55,6 @@ public:
 
         return equippedItems;
     }
-
-private:
     std::array<InventorySlot, INVWIDTH * INVHEIGHT> inventory = {};
 };
 

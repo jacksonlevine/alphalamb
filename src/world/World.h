@@ -7,7 +7,7 @@
 #include "DataMap.h"
 #include "VoxelModels.h"
 #include "WorldGenMethod.h"
-
+#include "../PlayerInfoMapKeyedByUID.h"
 
 
 constexpr BlockType BLOCK_ID_BITS = 0b0000'0000'0000'0000'1111'1111'1111'1111;
@@ -65,7 +65,7 @@ struct PlacedVoxModelRegistry
 };
 
 
-inline std::optional<std::string> saveDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr) {
+inline std::optional<std::string> saveDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr, InvMapKeyedByUID& im) {
     std::filesystem::path filePath(filename);
     if (!filePath.parent_path().empty()) {
         std::filesystem::create_directories(filePath.parent_path());
@@ -109,6 +109,19 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
         }
     }
 
+    {
+        auto read = std::shared_lock<std::shared_mutex>(im.rw);
+        for (auto &[id, inventory] : im.invMap)
+        {
+            contentStream << "INVOMAX " << id << " ";
+            for (auto & item : inventory.inventory)
+            {
+                contentStream << item.block << " " << item.count << " " << item.isItem << " ";
+            }
+            contentStream << '\n';
+        }
+    }
+
     std::ofstream file(filename, std::ios::trunc);
     if (file.is_open()) {
         file << contentStream.str();
@@ -122,8 +135,13 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
 
 
 
-   inline bool loadDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr)
+   inline bool loadDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr, InvMapKeyedByUID* im = nullptr, std::unordered_set<ClientUID>* existingInvs = nullptr)
     {
+        const bool isClient = im == nullptr;
+        if (existingInvs != nullptr)
+        {
+            existingInvs->clear();
+        }
         std::ifstream file(filename);
         if (!file.is_open())
         {
@@ -137,23 +155,34 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
                 std::istringstream iss(line);
                 std::vector<std::string> words;
                 std::string word;
-                while (iss >> word)
                 {
-                    words.push_back(word);
+                    while (iss >> word)
+                    {
+                        words.push_back(word);
+                        if (isClient && word == "INVOMAX")
+                        {
+                            iss >> word;
+                            boost::uuids::string_generator gen{};
+                            if (existingInvs != nullptr)
+                            {
+                                existingInvs->insert(gen(word));
+                            }
+                            break;
+                        }
+                    }
                 }
                 if (words.size() == 4)
                 {
                     //Read the block (words[3]) as unsigned long because that can contain all the uint32_t values
                     //Rest are ints
                     map->set(IntTup( std::stoi(words[0]) , std::stoi(words[1]), std::stoi(words[2]) ), static_cast<BlockType>(std::stoul(words[3])));
-                } else
-                if (words.size() == 5 && words.at(0) == "VM")
+                } else if (words.size() == 5 && words.at(0) == "VM")
                 {
                     std::unique_lock<std::shared_mutex> lock(pvmr.mutex);
                     pvmr.models.push_back(PlacedVoxModel{
                     (VoxelModelName)std::stoi(words[1]), IntTup(std::stoi(words[2]), std::stoi(words[3]), std::stoi(words[4])),});
 
-                }else
+                } else if (words.size() && words.at(0) == "AREA")
                 {
                     if (words.size() == 8 && words.at(0) == "AREA")
                     {
@@ -175,7 +204,25 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
                             .hollow = (bool)std::stoi(words[8]),
                         });
                     }
+                } else if (words.size() && words.at(0) == "INVOMAX")
+                {
+                    if (!isClient)
+                    {
+                        boost::uuids::string_generator gen{};
+                        auto inv = im->getWrite(gen(words.at(1)));
+                        int indexo = 0;
+                        for (auto & slot : inv.second.inventory)
+                        {
+                            int index = (indexo * 3) + 2;
+                            slot.block = static_cast<BlockType>(std::stoul(words[index]));
+                            slot.count = std::stoi(words[index + 1]);
+                            slot.isItem = std::stoi(words[index + 2]);
+                            indexo += 1;
+                        }
+                    }
                 }
+
+
             }
             file.close();
             return true;

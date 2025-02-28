@@ -140,6 +140,7 @@ add_executable(DistantGarden
         src/EnumToString.h
         src/BlockType.h
         src/ClientUID.h
+        src/PlayerInfoMapKeyedByUID.h
 )
 
 add_executable(DGServer

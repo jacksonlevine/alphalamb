@@ -16,3 +16,4 @@ std::shared_mutex clientsMutex;
 // DataMap* serverWorld.userDataMap = new HashMapDataMap();
 
 World serverWorld{new HashMapDataMap(), new OverworldWorldGenMethod(), new HashMapDataMap()};
+InvMapKeyedByUID invMapKeyedByUID = {};
