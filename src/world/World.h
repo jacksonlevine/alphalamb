@@ -208,12 +208,6 @@ public:
     BlockType getRawLocked(IntTup spot);
 
 
-
-    bool save(std::string filename)
-    {
-        return saveDM(filename, userDataMap, blockAreas, placedVoxModels) ? true : false;
-    }
-
     bool load(std::string filename)
     {
         if (loadDM(filename, userDataMap, blockAreas, placedVoxModels))

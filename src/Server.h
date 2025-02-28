@@ -24,11 +24,11 @@ struct ServerPlayer
 extern std::unordered_map<int, ServerPlayer> clients;
 
 extern std::shared_mutex clientsMutex;
-
-extern BlockAreaRegistry serverBAR;
-extern PlacedVoxModelRegistry serverPVMR;
-extern DataMap* serverUserDataMap;
-
+//
+// extern BlockAreaRegistry serverWorld.blockAreas;
+// extern PlacedVoxModelRegistry serverWorld.placedVoxModels;
+// extern DataMap* serverWorld.userDataMap;
+extern World serverWorld;
 
 
 inline void sendMessageToAllClients(const DGMessage& message, int m_playerIndex, bool excludeMe)
@@ -78,7 +78,7 @@ private:
             }
         });
 
-        auto string = saveDM("serverworld.txt", serverUserDataMap, serverBAR, serverPVMR);
+        auto string = saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels);
         if (string.has_value())
         {
             DGMessage fileInit = FileTransferInit {
@@ -112,7 +112,7 @@ private:
                 {
                     DGMessage playerPresent = PlayerPresent {
                         id, client.camera.transform.position, client.camera.transform.direction};
-                    //We are notified of others
+                    //We are notified of this person
                     boost::asio::async_write(*m_socket, boost::asio::buffer(&playerPresent, sizeof(DGMessage)),
                     [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
                     {
@@ -122,7 +122,7 @@ private:
                             std::cerr << "Error writing to socket: " << ec.message() << std::endl;
                         }
                     });
-                    //And also notify others we are here
+                    //And also notify this person we are here
                     if(!client.socket.expired() && client.receivedWorld)
                     {
                         DGMessage ourPlayerPresent = PlayerPresent {
@@ -200,7 +200,7 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
                         //std::cout << "Got block set \n";
-                        serverUserDataMap->set(m.spot, m.block);
+                        serverWorld.userDataMap->set(m.spot, m.block);
                         redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, VoxModelStamp>)
@@ -208,8 +208,8 @@ private:
                         auto v = PlacedVoxModel {
                         m.name, m.spot};
                         {
-                            std::unique_lock<std::shared_mutex> barlock(serverPVMR.mutex);
-                            serverPVMR.models.push_back(v);
+                            std::unique_lock<std::shared_mutex> barlock(serverWorld.placedVoxModels.mutex);
+                            serverWorld.placedVoxModels.models.push_back(v);
                         }
 
                         //auto & vm = voxelModels[(int)m.name];
@@ -221,11 +221,11 @@ private:
                         };
                         std::cout << "Got bulk block set \n";
                         {
-                            std::unique_lock<std::shared_mutex> barlock(serverBAR.baMutex);
-                            serverBAR.blockAreas.push_back(b);
+                            std::unique_lock<std::shared_mutex> barlock(serverWorld.blockAreas.baMutex);
+                            serverWorld.blockAreas.blockAreas.push_back(b);
                             // if (b.hollow)
                             // {
-                            //     serverBAR.blockAreas.push_back(BlockArea{
+                            //     serverWorld.blockAreas.blockAreas.push_back(BlockArea{
                             //     m.corner1 + IntTup(1,1,1), m.corner2 + IntTup(-1,-1,-1), AIR, false});
                             // }
                         }
@@ -237,7 +237,7 @@ private:
 
                            {
 
-                               std::shared_lock<std::shared_mutex> udmRL(serverUserDataMap->mutex());
+                               std::shared_lock<std::shared_mutex> udmRL(serverWorld.userDataMap->mutex());
                                auto hulk = b;
                                int minX = std::min(hulk.corner1.x, hulk.corner2.x);
                                int maxX = std::max(hulk.corner1.x, hulk.corner2.x);
@@ -256,7 +256,7 @@ private:
 
                                            if (isBoundary || !b.hollow)
                                            {
-                                               if (serverUserDataMap->getLocked(IntTup{x, y, z}) != std::nullopt)
+                                               if (serverWorld.userDataMap->getLocked(IntTup{x, y, z}) != std::nullopt)
                                                {
                                                    spotsToEraseInUDM.emplace_back(IntTup{x, y, z});
                                                }
@@ -268,10 +268,10 @@ private:
                            }
 
                            {
-                               auto lock = serverUserDataMap->getUniqueLock();
+                               auto lock = serverWorld.userDataMap->getUniqueLock();
                                for (auto & spot : spotsToEraseInUDM)
                                {
-                                   serverUserDataMap->erase(spot, true);
+                                   serverWorld.userDataMap->erase(spot, true);
                                }
                            }
 
@@ -318,7 +318,7 @@ private:
                     sendMessageToAllClients(pl, m_playerIndex, true);
 
                     //Save when a player leaves too
-                    saveDM("serverworld.txt", serverUserDataMap, serverBAR, serverPVMR);
+                    saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels);
                 }
             }
         });
@@ -415,7 +415,7 @@ inline void localServerThreadFun(int port)
 
 inline void launchLocalServer(int port)
 {
-    loadDM("serverworld.txt", serverUserDataMap, serverBAR, serverPVMR);
+    loadDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels);
 
     if (!localserver_running.load()) {
         std::cout << "Starting local server...\n";
@@ -445,10 +445,10 @@ inline void endLocalServerIfRunning()
         localserver_running.store(false);
 
     }
-    serverUserDataMap->clear();
-    serverBAR.baMutex.lock();
-    serverBAR.blockAreas.clear();
-    serverBAR.baMutex.unlock();
+    serverWorld.userDataMap->clear();
+    serverWorld.blockAreas.baMutex.lock();
+    serverWorld.blockAreas.blockAreas.clear();
+    serverWorld.blockAreas.baMutex.unlock();
     clientsMutex.lock();
     clients.clear();
     clientsMutex.unlock();

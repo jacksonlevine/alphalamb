@@ -19,6 +19,7 @@ class ParticlesGizmo;
 
 struct Player {
     jl::Camera camera = {};
+
     ChunkGLInfo handledBlockMeshInfo = {};
     Billboard billboard = {};
     CollisionCage collisionCage = {};

@@ -349,10 +349,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
 
         }
-        if (key == GLFW_KEY_L)
-        {
-            scene->world->save("testfile.txt");
-        } else
+
         if (key == GLFW_KEY_B)
         {
             if (action == GLFW_PRESS)
