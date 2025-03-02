@@ -17,12 +17,12 @@ struct InvMapKeyedByUID
 
     std::pair<std::shared_lock<std::shared_mutex>, Inventory&> getRead(const ClientUID id) {
         std::shared_lock<std::shared_mutex> lock(rw);
-        return std::make_pair(lock, std::ref(invMap[id]));
+        return std::make_pair(std::move(lock), std::ref(invMap[id]));
     }
 
     std::pair<std::unique_lock<std::shared_mutex>, Inventory&> getWrite(const ClientUID id) {
         std::unique_lock<std::shared_mutex> lock(rw);
-        return std::make_pair(lock, std::ref(invMap[id]));
+        return std::make_pair(std::move(lock), std::ref(invMap[id]));
     }
 };
 

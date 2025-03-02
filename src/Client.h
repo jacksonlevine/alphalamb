@@ -5,7 +5,7 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include "Network.h"
+#include "NetworkTypes.h"
 #include "PrecompHeader.h"
 #include "Scene.h"
 
@@ -147,9 +147,20 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
 
                                 if(isWorld)
                                 {
-                                    theScene.world->load("mpworld.txt");
+                                    theScene.world->load("mpworld.txt", theScene.existingInvs);
                                     std::cout << "Playerindex here: " << theScene.myPlayerIndex << " \n";
                                     theScene.worldReceived.store(true);
+                                    if (theScene.existingInvs.contains(theScene.settings.clientUID))
+                                    {
+                                        if (auto inv = loadInvFromFile("mpworld.txt", theScene.settings.clientUID))
+                                        {
+                                            theScene.players.at(theScene.myPlayerIndex)->inventory = inv.value();
+                                        }
+                                    }
+                                    DGMessage msg = ClientToServerGreeting {
+                                    .id = theScene.settings.clientUID};
+                                    boost::system::error_code ec;
+                                    boost::asio::write(*socket, boost::asio::buffer(&msg, sizeof(DGMessage)), ec);
                                 }
 
                             } else

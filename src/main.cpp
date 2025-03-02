@@ -965,6 +965,14 @@ int main()
                         m.position.y + CAMERA_OFFSET,
                         m.position.z)
                             );
+                        if (theScene.existingInvs.contains(m.id))
+                        {
+                            if (auto inv = loadInvFromFile("mpworld.txt", m.id))
+                            {
+                                std::cout << "Loaded inv to player " << m.index << " with id " << m.id << "\n";
+                                theScene.players.at(m.index)->inventory = inv.value();
+                            }
+                        }
                         theScene.players.at(m.index)->camera.transform.position = m.position;
                         theScene.players.at(m.index)->camera.transform.direction = m.direction;
                     }

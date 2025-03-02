@@ -2,12 +2,13 @@
 // Created by jack on 2/8/2025.
 //
 
-#ifndef NETWORK_H
-#define NETWORK_H
+#ifndef NETWORKTYPES_H
+#define NETWORKTYPES_H
 
 #include <boost/variant2/variant.hpp>
 
 #include "Camera.h"
+#include "ClientUID.h"
 #include "Controls.h"
 #include "IntTup.h"
 #include "world/MaterialName.h"
@@ -21,6 +22,7 @@ struct PlayerPresent
     int index;
     glm::vec3 position;
     glm::vec3 direction;
+    ClientUID id;
 };
 
 struct WorldInfo
@@ -82,15 +84,20 @@ struct VoxModelStamp
     IntTup spot;
 };
 
-struct EquippedItemsUpdate
+struct ClientToServerGreeting
 {
-    int myPlayerIndex;
-    std::array<InventorySlot, INVHEIGHT> equipped;
+    ClientUID id;
 };
 
-using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp>;
+// struct EquippedItemsUpdate
+// {
+//     int myPlayerIndex;
+//     std::array<InventorySlot, INVHEIGHT> equipped;
+// };
+
+using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting>;
 
 
 
 
-#endif //NETWORK_H
+#endif //NETWORKTYPES_H

@@ -8,7 +8,7 @@
 #include "Camera.h"
 #include "LocalServerIOContext.h"
 #include "PrecompHeader.h"
-#include "Network.h"
+#include "NetworkTypes.h"
 #include "PlayerInfoMapKeyedByUID.h"
 #include "world/DataMap.h"
 #include "world/World.h"
@@ -20,6 +20,7 @@ struct ServerPlayer
     Controls controls;
     jl::Camera camera;
     bool receivedWorld = false;
+    ClientUID myUID = {};
 };
 
 extern std::unordered_map<int, ServerPlayer> clients;
@@ -106,6 +107,27 @@ private:
                 }
             });
         }
+
+
+        //Client needs to send their greeting now after they've got world.
+        ClientToServerGreeting playerInit = {};
+        boost::asio::read(*m_socket, boost::asio::buffer(&playerInit, sizeof(DGMessage)));
+        std::cout << "Server got client UID: " << playerInit.id << std::endl;
+        m_clientUID = playerInit.id;
+
+        if (invMapKeyedByUID.invMap.contains(m_clientUID))
+        {
+            std::cout << "Player has existing inventory. \n";
+        } else
+        {
+            invMapKeyedByUID.invMap.insert_or_assign(m_clientUID, Inventory{.inventory = DEFAULT_INVENTORY});
+        }
+
+        {
+            std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+            clients.at(m_playerIndex).myUID = m_clientUID;
+        }
+
         {
             std::shared_lock<std::shared_mutex> clientsLock(clientsMutex);
             for(auto & [id, client] : clients)
@@ -113,7 +135,8 @@ private:
                 if(id != (int)m_playerIndex)
                 {
                     DGMessage playerPresent = PlayerPresent {
-                        id, client.camera.transform.position, client.camera.transform.direction};
+                        .index = id, .position = client.camera.transform.position, .direction = client.camera.transform.direction,
+                        .id = client.myUID};
                     //We are notified of this person
                     boost::asio::async_write(*m_socket, boost::asio::buffer(&playerPresent, sizeof(DGMessage)),
                     [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
@@ -128,7 +151,9 @@ private:
                     if(!client.socket.expired() && client.receivedWorld)
                     {
                         DGMessage ourPlayerPresent = PlayerPresent {
-                            (int)m_playerIndex, clients.at(m_playerIndex).camera.transform.position, clients.at(m_playerIndex).camera.transform.direction};
+                            .index = (int)m_playerIndex, .position = clients.at(m_playerIndex).camera.transform.position,
+                            .direction = clients.at(m_playerIndex).camera.transform.direction, .id = m_clientUID
+                        };
 
                         boost::asio::async_write(*client.socket.lock(), boost::asio::buffer(&ourPlayerPresent, sizeof(DGMessage)),
                     [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
@@ -334,6 +359,7 @@ private:
     DGMessage m_message{};         // To store the header
     std::vector<char> m_body;       // To store the raw message body
     size_t m_playerIndex;
+    ClientUID m_clientUID;
 };
 
 class Server {

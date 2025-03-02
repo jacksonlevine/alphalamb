@@ -63,7 +63,7 @@ struct Scene
     float timeOfDay = 300.0f;
     static constexpr float dayLength = 900.0f;
     PlanetType currentPlanetType = PlanetType::Hostile;
-
+    std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>> existingInvs = {};
 
 
 

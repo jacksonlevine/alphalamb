@@ -113,7 +113,7 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
         auto read = std::shared_lock<std::shared_mutex>(im.rw);
         for (auto &[id, inventory] : im.invMap)
         {
-            contentStream << "INVOMAX " << id << " ";
+            contentStream << "INVOMAX " << to_string(id) << " ";
             for (auto & item : inventory.inventory)
             {
                 contentStream << item.block << " " << item.count << " " << item.isItem << " ";
@@ -134,8 +134,7 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
 }
 
 
-
-   inline bool loadDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr, InvMapKeyedByUID* im = nullptr, std::unordered_set<ClientUID>* existingInvs = nullptr)
+   inline bool loadDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr, InvMapKeyedByUID* im = nullptr, std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>>* existingInvs = nullptr)
     {
         const bool isClient = im == nullptr;
         if (existingInvs != nullptr)
@@ -165,7 +164,8 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
                             boost::uuids::string_generator gen{};
                             if (existingInvs != nullptr)
                             {
-                                existingInvs->insert(gen(word));
+                                auto uid = gen(word);
+                                existingInvs->insert(uid);
                             }
                             break;
                         }
@@ -173,8 +173,7 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
                 }
                 if (words.size() == 4)
                 {
-                    //Read the block (words[3]) as unsigned long because that can contain all the uint32_t values
-                    //Rest are ints
+
                     map->set(IntTup( std::stoi(words[0]) , std::stoi(words[1]), std::stoi(words[2]) ), static_cast<BlockType>(std::stoul(words[3])));
                 } else if (words.size() == 5 && words.at(0) == "VM")
                 {
@@ -214,7 +213,7 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
                         for (auto & slot : inv.second.inventory)
                         {
                             int index = (indexo * 3) + 2;
-                            slot.block = static_cast<BlockType>(std::stoul(words[index]));
+                            slot.block = static_cast<BlockType>(std::stoul(words[index + 0]));
                             slot.count = std::stoi(words[index + 1]);
                             slot.isItem = std::stoi(words[index + 2]);
                             indexo += 1;
@@ -229,6 +228,53 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
         }
     return false;
     }
+
+inline std::optional<Inventory> loadInvFromFile(std::string filename, ClientUID id)
+{
+    auto result = std::nullopt;
+    std::ifstream file(filename);
+    if (!file.is_open())
+        return result;
+
+    std::string line;
+    while (std::getline(file, line))
+    {
+        if (line.starts_with("INVOMAX"))
+        {
+            std::istringstream iss(line);
+            std::string word;
+            iss >> word;
+            iss >> word;
+            boost::uuids::string_generator gen{};
+            if (gen(word) == id)
+            {
+                std::cout << "Found a matching inv! \n";
+
+                //Get all the rest of the words since its mtaching
+                std::vector<std::string> words;
+                while (iss >> word)
+                {
+                    words.push_back(word);
+                }
+
+                Inventory inv = {};
+                int indexo = 0;
+                for (auto & slot : inv.inventory)
+                {
+                    int index = (indexo * 3);
+                    slot.block = static_cast<BlockType>(std::stoul(words[index + 0]));
+                    slot.count = std::stoi(words[index + 1]);
+                    slot.isItem = std::stoi(words[index + 2]);
+                    indexo += 1;
+                }
+                return inv;
+            }
+
+        }
+    }
+
+    return result;
+}
 
 
 
@@ -255,10 +301,12 @@ public:
     BlockType getRawLocked(IntTup spot);
 
 
-    bool load(std::string filename)
+    bool load(std::string filename, std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>>& existingInvs)
     {
-        if (loadDM(filename, userDataMap, blockAreas, placedVoxModels))
+        if (loadDM(filename, userDataMap, blockAreas, placedVoxModels, nullptr, &existingInvs))
         {
+
+            //Balloon the areas and voxelmodels into the full-on blocks in nonUserDataMap (This is not at all necessary on the server)
             std::vector<BlockArea> ba;
 
             {

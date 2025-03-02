@@ -99,8 +99,8 @@ add_executable(DistantGarden
         src/Hud.cpp
         src/Hud.h
         src/Hud.cpp
-        src/Network.cpp
-        src/Network.h
+        src/NetworkTypes.cpp
+        src/NetworkTypes.h
         src/SharedVarsBetweenMainAndGui.h
         src/Server.cpp
         src/Server.h
