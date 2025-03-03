@@ -116,7 +116,7 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
             contentStream << "INVOMAX " << to_string(id) << " ";
             for (auto & item : inventory.inventory)
             {
-                contentStream << item.block << " " << item.count << " " << item.isItem << " ";
+                contentStream << std::to_string(item.block) << " " << std::to_string((int)item.count) << " " << std::to_string(item.isItem) << " ";
             }
             contentStream << '\n';
         }
@@ -254,6 +254,7 @@ inline std::optional<Inventory> loadInvFromFile(std::string filename, ClientUID 
                 std::vector<std::string> words;
                 while (iss >> word)
                 {
+                   // std::cout << "Word: " << word << "\n";
                     words.push_back(word);
                 }
 

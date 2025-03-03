@@ -89,13 +89,38 @@ struct ClientToServerGreeting
     ClientUID id;
 };
 
+struct RequestInventoryTransfer
+{
+    static_assert(INVWIDTH * INVHEIGHT < std::numeric_limits<uint8_t>::max(), "Inventory is too big for the index types on RequestInventoryTransfer update them");
+    ClientUID sourceID;
+    ClientUID destinationID;
+    uint8_t sourceIndex;
+    uint8_t destinationIndex;
+    bool mouseSlotS;
+    bool mouseSlotD;
+};
+
+struct RequestInventorySwap
+{
+    static_assert(INVWIDTH * INVHEIGHT < std::numeric_limits<uint8_t>::max(), "Inventory is too big for the index types on RequestInventoryTransfer update them");
+    ClientUID sourceID;
+    ClientUID destinationID;
+    int myPlayerIndex;
+    uint8_t sourceIndex;
+    uint8_t destinationIndex;
+    bool mouseSlotS;
+    bool mouseSlotD;
+
+};
+
+
 // struct EquippedItemsUpdate
 // {
 //     int myPlayerIndex;
 //     std::array<InventorySlot, INVHEIGHT> equipped;
 // };
 
-using DGMessage = variant<WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting>;
+using DGMessage = variant<RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting>;
 
 
 

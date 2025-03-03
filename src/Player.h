@@ -6,11 +6,12 @@
 #define PLAYER_H
 
 #include "PrecompHeader.h"
+#include "Inventory.h"
+
 #include "Camera.h"
 #include "CollisionCage.h"
 #include "Controls.h"
 #include "BillboardInstanceShader.h"
-#include "Inventory.h"
 
 inline static const PxExtendedVec3 DEFAULT_PLAYERPOS = PxExtendedVec3(0, 200, 0);
 inline static const float CAMERA_OFFSET = 0.8f;

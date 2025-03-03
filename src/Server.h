@@ -30,6 +30,7 @@ extern std::shared_mutex clientsMutex;
 // extern BlockAreaRegistry serverWorld.blockAreas;
 // extern PlacedVoxModelRegistry serverWorld.placedVoxModels;
 // extern DataMap* serverWorld.userDataMap;
+
 extern World serverWorld;
 extern InvMapKeyedByUID invMapKeyedByUID;
 
@@ -71,15 +72,28 @@ private:
 
         };
 
-        boost::asio::async_write(*m_socket, boost::asio::buffer(&wi, sizeof(DGMessage)),
-        [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
+        boost::asio::write(*m_socket, boost::asio::buffer(&wi, sizeof(DGMessage)));
+
+        //Client needs to send their greeting now after they've got world.
+        ClientToServerGreeting playerInit = {};
+        boost::asio::read(*m_socket, boost::asio::buffer(&playerInit, sizeof(DGMessage)));
+        std::cout << "Server got client UID: " << playerInit.id << std::endl;
+        m_clientUID = playerInit.id;
+
+        if (invMapKeyedByUID.invMap.contains(m_clientUID))
         {
-            if (!ec) {
-                std::cout << "Successfully wrote " << bytes_transferred << " bytes." << std::endl;
-            } else {
-                std::cerr << "Error writing to socket: " << ec.message() << std::endl;
-            }
-        });
+            std::cout << "Player has existing inventory. \n";
+        } else
+        {
+            invMapKeyedByUID.invMap.insert_or_assign(m_clientUID, Inventory{.inventory = DEFAULT_INVENTORY});
+        }
+
+        {
+            std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+            clients.at(m_playerIndex).myUID = m_clientUID;
+        }
+
+        //Now the players inv will exist in the world they download
 
         auto string = saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID);
         if (string.has_value())
@@ -109,24 +123,6 @@ private:
         }
 
 
-        //Client needs to send their greeting now after they've got world.
-        ClientToServerGreeting playerInit = {};
-        boost::asio::read(*m_socket, boost::asio::buffer(&playerInit, sizeof(DGMessage)));
-        std::cout << "Server got client UID: " << playerInit.id << std::endl;
-        m_clientUID = playerInit.id;
-
-        if (invMapKeyedByUID.invMap.contains(m_clientUID))
-        {
-            std::cout << "Player has existing inventory. \n";
-        } else
-        {
-            invMapKeyedByUID.invMap.insert_or_assign(m_clientUID, Inventory{.inventory = DEFAULT_INVENTORY});
-        }
-
-        {
-            std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-            clients.at(m_playerIndex).myUID = m_clientUID;
-        }
 
         {
             std::shared_lock<std::shared_mutex> clientsLock(clientsMutex);
@@ -224,6 +220,42 @@ private:
                         //std::cout << "Got selectblockchange \n";
                         redistrib = true;
                         excludeyou = true;
+                    }
+                    else if constexpr (std::is_same_v<T, RequestInventorySwap>)
+                    {
+                        //Swaps can only be done within ones own inventory
+                        if (m.sourceID == m.destinationID)
+                        {
+                            std::unique_lock<std::shared_mutex> invmaplock(invMapKeyedByUID.rw);
+
+                            InventorySlot* source = nullptr;
+                            InventorySlot* destination = nullptr;
+
+                            if (m.mouseSlotS)
+                            {
+                                source = &invMapKeyedByUID.invMap.at(m.sourceID).mouseHeldItem;
+                            } else
+                            {
+                                source = &invMapKeyedByUID.invMap.at(m.sourceID).inventory.at(m.sourceIndex);
+                            }
+
+                            if (m.mouseSlotD)
+                            {
+                                destination = &invMapKeyedByUID.invMap.at(m.destinationID).mouseHeldItem;
+                            } else
+                            {
+                                destination = &invMapKeyedByUID.invMap.at(m.destinationID).inventory.at(m.destinationIndex);
+                            }
+
+                            if (source && destination)
+                            {
+                                InventorySlot srcCopy = *source;
+                                *source = *destination;
+                                *destination = srcCopy;
+                                redistrib = true;
+                            }
+                        }
+
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
                         //std::cout << "Got block set \n";

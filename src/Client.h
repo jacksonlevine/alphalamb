@@ -91,6 +91,10 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                         theScene.world->setSeed(m.seed);
                         theScene.myPlayerIndex = theScene.addPlayerWithIndex(m.yourPlayerIndex);
 
+                        DGMessage msg = ClientToServerGreeting {
+                        .id = theScene.settings.clientUID};
+                        boost::system::error_code ec;
+                        boost::asio::write(*socket, boost::asio::buffer(&msg, sizeof(DGMessage)), ec);
                         //Dont do this yet, receive the file first
                         //theScene.worldReceived = true;
                     }
@@ -126,6 +130,10 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                         //std::cout << "Got block set \n";
                         pushToNetworkToMainQueue(m);
                     }
+                    else if constexpr (std::is_same_v<T, RequestInventorySwap>)
+                    {
+                        pushToNetworkToMainQueue(m);
+                    }
                     else if constexpr (std::is_same_v<T, FileTransferInit>) {
                         std::cout << "Got file transfer init \n";
 
@@ -157,10 +165,7 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                                             theScene.players.at(theScene.myPlayerIndex)->inventory = inv.value();
                                         }
                                     }
-                                    DGMessage msg = ClientToServerGreeting {
-                                    .id = theScene.settings.clientUID};
-                                    boost::system::error_code ec;
-                                    boost::asio::write(*socket, boost::asio::buffer(&msg, sizeof(DGMessage)), ec);
+
                                 }
 
                             } else

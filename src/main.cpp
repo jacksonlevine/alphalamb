@@ -957,6 +957,34 @@ int main()
                             theScene.players.erase(m.myPlayerIndex);
                         }
                     }
+                    else if constexpr (std::is_same_v<T, RequestInventorySwap>)
+                    {
+                        InventorySlot* source = nullptr;
+                        InventorySlot* destination = nullptr;
+
+                        if (m.mouseSlotS)
+                        {
+                            source = &(theScene.players.at(m.myPlayerIndex)->inventory.mouseHeldItem);
+                        } else
+                        {
+                            source = &(theScene.players.at(m.myPlayerIndex)->inventory.inventory.at(m.sourceIndex));
+                        }
+
+                        if (m.mouseSlotD)
+                        {
+                            destination = &(theScene.players.at(m.myPlayerIndex)->inventory.mouseHeldItem);
+                        } else
+                        {
+                            destination = &(theScene.players.at(m.myPlayerIndex)->inventory.inventory.at(m.destinationIndex));
+                        }
+
+                        if (source && destination)
+                        {
+                            InventorySlot srcCopy = *source;
+                            *source = *destination;
+                            *destination = srcCopy;
+                        }
+                    }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
                        std::cout << "Processing palyerpresent\n";
                         theScene.addPlayerWithIndex(m.index);
