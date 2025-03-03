@@ -110,7 +110,6 @@ struct RequestInventorySwap
     uint8_t destinationIndex;
     bool mouseSlotS;
     bool mouseSlotD;
-
 };
 
 

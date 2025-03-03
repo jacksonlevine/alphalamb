@@ -1000,6 +1000,9 @@ int main()
                                 std::cout << "Loaded inv to player " << m.index << " with id " << m.id << "\n";
                                 theScene.players.at(m.index)->inventory = inv.value();
                             }
+                        } else
+                        {
+                            theScene.players.at(m.index)->inventory.inventory = DEFAULT_INVENTORY;
                         }
                         theScene.players.at(m.index)->camera.transform.position = m.position;
                         theScene.players.at(m.index)->camera.transform.direction = m.direction;
@@ -1014,7 +1017,7 @@ int main()
                             BlockType blockThere = scene->world->get(spot);
                             glm::vec3 burstspot = glm::vec3(
                                 spot.x+ 0.5,
-                                spot.y + 0.5,
+                                spot.y + 1.0,
                                 spot.z + 0.5);
                             if (scene->particles)
                             {

@@ -223,6 +223,10 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, RequestInventorySwap>)
                     {
+                        // std::cout << "RequestInventorySwap: Source: " << m.sourceID << " Dest: " << m.destinationID << "\n";
+                        // std::cout << "PlayerIndex: " << m.myPlayerIndex << " SrcInd: " << (int)m.sourceIndex << " DstInd: " << (int)m.destinationIndex << "\n";
+                        // std::cout << "MouseSlotS: " << std::to_string(m.mouseSlotS) << " MouseSlotD: " << std::to_string(m.mouseSlotD) << "\n";
+
                         //Swaps can only be done within ones own inventory
                         if (m.sourceID == m.destinationID)
                         {

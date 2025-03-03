@@ -49,7 +49,7 @@ public:
     };
     int getIndex(int x, int y)
     {
-        return y * INVHEIGHT + x;
+        return y * INVWIDTH + x;
     }
 
     std::array<InventorySlot, INVHEIGHT> getEquippedItems()
