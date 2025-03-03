@@ -1233,30 +1233,30 @@ int main()
                 drawHandledBlock(player->camera.transform.position, player->currentHeldBlock, mainShader.shaderID, player->lastHeldBlock, player->handledBlockMeshInfo);
                 glEnable(GL_DEPTH_TEST);
 
-                // if (jpEquipped)
-                // {
-                //     {
-                //         glUseProgram(gltfShader.shaderID);
-                //
-                //         glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
-                //         glActiveTexture(GL_TEXTURE0);
-                //         glBindTexture(GL_TEXTURE_2D, jp.texids.at(0));
-                //         glUniform1i(glGetUniformLocation(gltfShader.shaderID, "texture1"), 0);
-                //
-                //         glm::vec3 posToRenderAt = player->camera.transform.position - ( player->camera.transform.direction * 0.5f);
-                //         glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
-                //         glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), player->camera.transform.yaw);
-                //
-                //         for(jl::ModelGLObjects &mglo : jp.modelGLObjects)
-                //         {
-                //             glBindVertexArray(mglo.vao);
-                //             //Indent operations on this vertex array object
-                //             glDrawElements(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr);
-                //
-                //             glBindVertexArray(0);
-                //         }
-                //     }
-                // }
+                if (jpEquipped)
+                {
+                    {
+                        glUseProgram(gltfShader.shaderID);
+
+                        glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, jp.texids.at(0));
+                        glUniform1i(glGetUniformLocation(gltfShader.shaderID, "texture1"), 0);
+
+                        glm::vec3 posToRenderAt = player->camera.transform.position - ( player->camera.transform.direction * 0.5f);
+                        glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
+                        glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), player->camera.transform.yaw);
+
+                        for(jl::ModelGLObjects &mglo : jp.modelGLObjects)
+                        {
+                            glBindVertexArray(mglo.vao);
+                            //Indent operations on this vertex array object
+                            glDrawElements(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr);
+
+                            glBindVertexArray(0);
+                        }
+                    }
+                }
 
             }
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
