@@ -698,7 +698,7 @@ int main()
     //
     // static jl::ModelAndTextures clouds = jl::ModelLoader::loadModel("resources/models/clouds.glb", false);
     static jl::ModelAndTextures jp = jl::ModelLoader::loadModel("resources/models/jetpack.glb", false);
-
+    static jl::ModelAndTextures jplit = jl::ModelLoader::loadModel("resources/models/jetpack2.glb", false);
     while (!glfwWindowShouldClose(window))
     {
         static float lastTime = glfwGetTime();
@@ -840,7 +840,11 @@ int main()
 
             player->collisionCage.updateToSpot(&world, player->camera.transform.position, deltaTime);
                 player->camera.updateWithYawPitch(player->camera.transform.yaw, player->camera.transform.pitch);
-                player->camera.interpTowardTargetYP(deltaTime);
+                if (id == theScene.myPlayerIndex)
+                {
+                    player->camera.interpTowardTargetYP(deltaTime);
+                }
+
             if(id != theScene.myPlayerIndex)
             {
                 billboards.push_back(player->billboard);
@@ -940,7 +944,7 @@ int main()
                         {
                             theScene.addPlayerWithIndex(m.myPlayerIndex);
                         }
-                        theScene.players.at(m.myPlayerIndex)->camera.updateYPIndirect(m.newYaw, m.newPitch);
+                        theScene.players.at(m.myPlayerIndex)->camera.updateWithYawPitch(m.newYaw, m.newPitch);
 
                     }
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>)
@@ -1215,6 +1219,8 @@ int main()
                 auto pos = player->camera.transform.position + (player->camera.transform.direction*0.5f) + (player->camera.transform.right * 0.5f);
                 pos.y -= 0.5f;
 
+                glUseProgram(mainShader.shaderID);
+
                 glUniform3f(offsetLoc, -0.5f, -0.5f, -0.5f);
                 bool isme = id == theScene.myPlayerIndex;
                 if (isme)
@@ -1230,7 +1236,8 @@ int main()
 
                 }
 
-
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, worldTex.id);
 
 
                 drawHandledBlock(player->camera.transform.position, player->currentHeldBlock, mainShader.shaderID, player->lastHeldBlock, player->handledBlockMeshInfo);
@@ -1243,10 +1250,24 @@ int main()
 
                         glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
                         glActiveTexture(GL_TEXTURE0);
-                        glBindTexture(GL_TEXTURE_2D, jp.texids.at(0));
+
+                        if (player->controls.secondary1)
+                        {
+                            glBindTexture(GL_TEXTURE_2D, jplit.texids.at(0));
+                        }
+                        else
+                        {
+                            glBindTexture(GL_TEXTURE_2D, jp.texids.at(0));
+                        }
+
                         glUniform1i(glGetUniformLocation(gltfShader.shaderID, "texture1"), 0);
 
-                        glm::vec3 posToRenderAt = player->camera.transform.position - ( player->camera.transform.direction * 0.5f);
+                        auto camdir = player->camera.transform.direction;
+                        camdir.y = 0;
+                        camdir = glm::normalize(camdir);
+
+                        glm::vec3 posToRenderAt = player->camera.transform.position - (camdir * 0.3f);
+                        posToRenderAt.y = player->camera.transform.position.y - 0.5f;
                         glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
                         glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), player->camera.transform.yaw);
 

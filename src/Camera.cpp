@@ -26,6 +26,7 @@ namespace jl
     void Camera::setYawPitch(float nyaw, float npitch) {
         transform.yaw = nyaw;
         transform.pitch = npitch;
+        std::cout << transform.yaw << " " << transform.pitch << std::endl;
      }
 
     //Move actual yaw pitch toward target yaw pitch
