@@ -141,6 +141,7 @@ add_executable(DistantGarden
         src/BlockType.h
         src/ClientUID.h
         src/PlayerInfoMapKeyedByUID.h
+        src/ClientUID.cpp
 )
 
 add_executable(DGServer
@@ -148,13 +149,15 @@ add_executable(DGServer
         src/Server.h
         src/Server.cpp
         src/PrecompHeader.h
-src/IntTup.cpp
-src/world/datamapmethods/HashMapDataMap.cpp
-src/world/DataMap.h
+        src/IntTup.cpp
+        src/world/datamapmethods/HashMapDataMap.cpp
+        src/world/DataMap.h
         src/Camera.cpp
         src/Camera.h
         src/Transform.cpp
         src/Transform.h
+        src/ClientUID.h
+        src/ClientUID.cpp
 )
 
 target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)

@@ -839,11 +839,14 @@ int main()
 
 
             player->collisionCage.updateToSpot(&world, player->camera.transform.position, deltaTime);
-                player->camera.updateWithYawPitch(player->camera.transform.yaw, player->camera.transform.pitch);
-                if (id == theScene.myPlayerIndex)
-                {
-                    player->camera.interpTowardTargetYP(deltaTime);
-                }
+            player->camera.updateWithYawPitch(player->camera.transform.yaw, player->camera.transform.pitch);
+            if (id == theScene.myPlayerIndex)
+            {
+                player->camera.interpTowardTargetYP(deltaTime);
+            } else
+            {
+                player->camera.interpTowardTargetYP(deltaTime*0.35f);
+            }
 
             if(id != theScene.myPlayerIndex)
             {
@@ -944,7 +947,7 @@ int main()
                         {
                             theScene.addPlayerWithIndex(m.myPlayerIndex);
                         }
-                        theScene.players.at(m.myPlayerIndex)->camera.updateWithYawPitch(m.newYaw, m.newPitch);
+                        theScene.players.at(m.myPlayerIndex)->camera.updateYPIndirect(m.newYaw, m.newPitch);
 
                     }
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>)

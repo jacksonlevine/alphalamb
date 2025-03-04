@@ -14,6 +14,8 @@ constexpr int INVWIDTH = 8;
 constexpr int INVHEIGHT = 5;
 
 
+
+
 struct InventorySlot
 {
     BlockType block = 0;
