@@ -11,11 +11,12 @@
 #include "Server.h"
 #include "SharedVarsBetweenMainAndGui.h"
 #include "LocalServerIOContext.h"
+#include "Texture.h"
 extern ImGuiIO* imguiio;
 
 extern bool guiShowing;
 
-enum GuiScreen
+enum class GuiScreen
 {
     MainMenu,
     EscapeMenu,
@@ -26,6 +27,223 @@ enum GuiScreen
 };
 
 extern GuiScreen currentGuiScreen;
+
+enum class DGButtonType
+{
+    Bad1,
+    Bad2,
+    Good1,
+    Good2
+};
+
+constexpr int BUTTONDIVS = 10;
+
+inline std::vector<float> generateSubdividedQuad(int divisions) {
+    std::vector<float> vertices;
+    float step = 1.0f / divisions;
+
+    for (int y = 0; y < divisions; ++y) {
+        for (int x = 0; x < divisions; ++x) {
+            float x0 = x * step;
+            float y0 = y * step;
+            float x1 = (x + 1) * step;
+            float y1 = (y + 1) * step;
+
+            float s0 = x0;
+            float t0 = y0;
+            float s1 = x1;
+            float t1 = y1;
+
+            // First triangle
+            vertices.insert(vertices.end(), {x0, y0, s0, t0});
+            vertices.insert(vertices.end(), {x1, y0, s1, t0});
+            vertices.insert(vertices.end(), {x1, y1, s1, t1});
+
+            // Second triangle
+            vertices.insert(vertices.end(), {x1, y1, s1, t1});
+            vertices.insert(vertices.end(), {x0, y1, s0, t1});
+            vertices.insert(vertices.end(), {x0, y0, s0, t0});
+        }
+    }
+
+    return vertices;
+}
+inline void DrawCustomButtonBackground(ImVec2& pos, const ImVec2& size, DGButtonType type)
+{
+    static jl::Texture textures[4] = {
+        jl::Texture("resources/gui/bad1.png"),
+        jl::Texture("resources/gui/bad2.png"),
+        jl::Texture("resources/gui/good1.png"),
+        jl::Texture("resources/gui/good2.png"),
+    };
+
+    static jl::Shader shader(
+        R"glsl(
+            #version 330 core
+
+layout (location = 0) in vec2 aPos;     // 2D position (0.0 to 1.0)
+layout (location = 1) in vec2 aTexCoord; // Texture coordinates
+
+out vec2 TexCoord;
+
+uniform vec2 uPos;  // Position of the quad in NDC
+uniform vec2 uSize; // Size of the quad in NDC
+uniform float uTime; // Time uniform for animation
+
+// Hash function for pseudo-random noise
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+// 2D pseudo-random noise function (Perlin-like)
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+
+    // Four corners
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+
+    // Smooth interpolation
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+}
+
+void main()
+{
+    // Scale and translate the vertex position
+    vec2 scaledPos = aPos * uSize + uPos;
+    gl_Position = vec4(scaledPos, 0.0, 1.0); // Already in NDC
+
+    // Generate seamless UV turbulence using final screen-space position
+    float displacement = noise(scaledPos * 10.0 + vec2(uTime * 0.7, uTime * 0.5)) * 0.05;
+
+    // Apply displacement to UVs
+    TexCoord = aTexCoord + vec2(displacement, displacement);
+}
+        )glsl",
+        R"glsl(
+            #version 330 core
+
+            in vec2 TexCoord;
+
+            out vec4 FragColor;
+
+            uniform sampler2D texture1;
+
+            uniform float bright;
+
+            void main()
+            {
+                FragColor = texture(texture1, TexCoord) * bright;
+            }
+        )glsl",
+        "customButtonShaderYo"
+    );
+
+    glUseProgram(shader.shaderID);
+
+    static GLuint vao = 0;
+    static GLuint vbo = 0;
+    if (vao == 0)
+    {
+        std::vector<float> vertices = generateSubdividedQuad(BUTTONDIVS);
+
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
+        glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(sizeof(float)*2));
+    }
+
+    glBindVertexArray(vao);
+
+    // Get the screen dimensions (in pixels)
+    ImVec2 screenSize = ImGui::GetIO().DisplaySize;
+
+    // Convert ImGui pixel coordinates to NDC
+    ImVec2 ndcPos;
+    ndcPos.x = (pos.x / screenSize.x) * 2.0f - 1.0f; // Convert X to NDC
+    ndcPos.y = 1.0f - (pos.y / screenSize.y) * 2.0f; // Convert Y to NDC (flip Y-axis)
+
+    ImVec2 ndcSize;
+    ndcSize.x = (size.x / screenSize.x) * 2.0f; // Convert width to NDC
+    ndcSize.y = (size.y / screenSize.y) * 2.0f; // Convert height to NDC
+
+    ndcPos.y -= ndcSize.y;
+
+    // Pass pos and size as uniforms
+    static GLint posUniform = glGetUniformLocation(shader.shaderID, "uPos");
+    static GLint sizeUniform = glGetUniformLocation(shader.shaderID, "uSize");
+
+    static GLint timeUni = glGetUniformLocation(shader.shaderID, "uTime");
+
+    static GLint brightUni = glGetUniformLocation(shader.shaderID, "bright");
+    glUniform2f(posUniform, ndcPos.x, ndcPos.y);
+    glUniform2f(sizeUniform, ndcSize.x, ndcSize.y);
+
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+    {
+        glUniform1f(timeUni, glfwGetTime() * 8.0f);
+        glUniform1f(brightUni, 2.0f);
+    } else
+    {
+
+        glUniform1f(timeUni, glfwGetTime() * 3.0f);
+        glUniform1f(brightUni, 1.0f);
+    }
+
+    // Bind texture and draw
+    textures[(int)type].bind_to_unit(4);
+    static GLint texPos = glGetUniformLocation(shader.shaderID, "texture1");
+    glUniform1i(texPos, 4);
+    glDrawArrays(GL_TRIANGLES, 0, 6 * (BUTTONDIVS  * BUTTONDIVS));
+}
+
+inline bool DGCustomButton(const char* label, DGButtonType type = DGButtonType::Good1, const ImVec2& size = ImVec2(100, 70)) {
+    // Extract display label (everything before ##)
+    const char* displayLabel = label;
+    for (const char* p = label; *p; ++p) {
+        if (p[0] == '#' && p[1] == '#') {
+            displayLabel = std::string(label, p - label).c_str();
+            break;
+        }
+    }
+
+    ImGui::PushID(label);
+
+    ImVec2 pos = ImGui::GetCursorScreenPos();
+    auto realSize = size;
+
+    auto ts = ImGui::CalcTextSize(displayLabel); // Use display label for text size
+
+    if (size.x < ts.x)
+        realSize.x = ts.x + 20;
+
+    // Create an invisible button with the same size as your custom button
+    bool clicked = ImGui::InvisibleButton(label, realSize);
+
+
+    // Render custom OpenGL background
+    DrawCustomButtonBackground(pos, realSize, type);
+
+    // Overlay ImGui text
+    auto lastpos = ImGui::GetCursorScreenPos();
+    ImGui::SetCursorScreenPos(ImVec2(pos.x + 10,
+                                      pos.y + realSize.y / 2 - ImGui::GetTextLineHeight() / 2));
+    ImGui::Text("%s", displayLabel); // Display only the cleaned-up label
+    ImGui::SetCursorScreenPos(lastpos);
+
+    ImGui::PopID();
+    return clicked;
+}
 
 inline void initializeImGui(GLFWwindow* window)
 {
@@ -44,7 +262,6 @@ inline void initializeImGui(GLFWwindow* window)
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
-
 }
 
 
@@ -96,19 +313,19 @@ inline void renderImGui() {
 
         switch (currentGuiScreen)
         {
-        case Inventory:
+        case GuiScreen::Inventory:
             {
                 imguiInventory(theScene.players.at(theScene.myPlayerIndex)->inventory);
                 break;
             }
-        case HostPort:
-                if (ImGui::Button("Back to main menu"))
+        case GuiScreen::HostPort:
+                if (DGCustomButton("Back to main menu", DGButtonType::Bad1))
                 {
-                    currentGuiScreen = MainMenu;
+                    currentGuiScreen = GuiScreen::MainMenu;
                 }
                 ImGui::Text("Enter a TCP-forwarded port for hosting (or leave blank for default 25000):");
                 ImGui::InputText("Port", theScene.localServerPort.data(), theScene.localServerPort.capacity(), ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &theScene.localServerPort);
-                if (ImGui::Button("Start server and join"))
+                if (DGCustomButton("Start server and join", DGButtonType::Good2))
                 {
                     try
                     {
@@ -153,7 +370,7 @@ inline void renderImGui() {
             {
                 theScene.saveSettings();
             }
-                if (ImGui::Button("Connect to server"))
+                if (DGCustomButton("Connect to server", DGButtonType::Good2))
                 {
 
                     size_t colonPos = theScene.serverAddress.find(':');
@@ -186,13 +403,13 @@ inline void renderImGui() {
 
 
                 }
-                if (ImGui::Button("Host"))
+                if (DGCustomButton("Host", DGButtonType::Good2))
                 {
 
                     currentGuiScreen = GuiScreen::HostPort;
 
                 }
-                if (ImGui::Button("Exit game"))
+                if (DGCustomButton("Exit game", DGButtonType::Bad2))
                 {
                     glfwSetWindowShouldClose(theScene.window, true);
                 }
@@ -208,12 +425,12 @@ inline void renderImGui() {
                 {
                     theScene.saveSettings();
                 }
-                if (ImGui::Button("Apply Render Distance"))
+                if (DGCustomButton("Apply Render Distance"))
                 {
                     theScene.worldRenderer->setRenderDistance(theScene.rendDistSelection, &theScene.players.at(theScene.myPlayerIndex)->camera, theScene.world);
                 }
 
-                if(ImGui::Button("Toggle Fullscreen"))
+                if(DGCustomButton("Toggle Fullscreen", DGButtonType::Good1))
                 {
                     toggleFullscreen(theScene.window);
                 }
@@ -221,7 +438,7 @@ inline void renderImGui() {
 
 
 
-                if (ImGui::Button("Back to game"))
+                if (DGCustomButton("Back to game", DGButtonType::Good2))
                 {
                     currentGuiScreen = GuiScreen::InGame;
                 }
@@ -233,7 +450,7 @@ inline void renderImGui() {
                 {
                     leavelabel = "Disconnect and leave to main menu";
                 }
-                if (ImGui::Button(leavelabel.c_str()))
+                if (DGCustomButton(leavelabel.c_str(), DGButtonType::Bad1))
                 {
                     exitWorld(&theScene);
                     uncaptureMouse(&theScene);
@@ -244,7 +461,7 @@ inline void renderImGui() {
                     endLocalServerIfRunning();
                     currentGuiScreen = GuiScreen::MainMenu;
                 }
-                if (ImGui::Button("Exit to desktop"))
+                if (DGCustomButton("Exit to desktop", DGButtonType::Bad2))
                 {
                     exitWorld(&theScene);
                     glfwSetWindowShouldClose(theScene.window, true);

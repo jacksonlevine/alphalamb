@@ -20,7 +20,7 @@ namespace jl
         ~Texture();                            // Destructor to clean up texture
 
     private:
-        std::vector<unsigned char> data;       // Image data storage
+        //std::vector<unsigned char> data;       // Image data storage
     };
 
 }

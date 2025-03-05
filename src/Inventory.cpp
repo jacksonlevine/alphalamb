@@ -5,6 +5,7 @@
 #include "Inventory.h"
 
 #include "Client.h"
+#include "ImGuiStuff.h"
 
 void imguiInventory(Inventory& inv)
 {
@@ -36,7 +37,7 @@ void imguiInventory(Inventory& inv)
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0,0.3,0.3,0.7));
             }
 
-            if (ImGui::Button(label.c_str(), ImVec2(50,50)))
+            if (DGCustomButton(label.c_str(), DGButtonType::Good1, ImVec2(50,50)))
             {
                 bool validswap = true;
                 if (isEquip && !mouseHeldItemEquippable)

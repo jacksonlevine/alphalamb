@@ -325,13 +325,13 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
         if (key == GLFW_KEY_E && action == GLFW_PRESS)
         {
-            if (currentGuiScreen == InGame)
+            if (currentGuiScreen == GuiScreen::InGame)
             {
-                currentGuiScreen = Inventory;
+                currentGuiScreen = GuiScreen::Inventory;
                 uncaptureMouse(scene);
-            } else if (currentGuiScreen == Inventory)
+            } else if (currentGuiScreen == GuiScreen::Inventory)
             {
-                currentGuiScreen = InGame;
+                currentGuiScreen = GuiScreen::InGame;
                 captureMouse(scene);
             }
         }
@@ -595,7 +595,7 @@ int main()
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
+    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glfwSwapInterval(0);
     glEnable(GL_MULTISAMPLE); // Enable MSAA in OpenGL
 

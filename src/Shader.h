@@ -13,8 +13,6 @@ namespace jl {
 class Shader {
 public:
     GLuint shaderID;
-    std::string vertexSource;
-    std::string fragmentSource;
     Shader(const char *vertex, const char *frag, const char *name);
 };
 

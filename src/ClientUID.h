@@ -10,7 +10,6 @@
 
 using ClientUID = boost::uuids::uuid;
 
-extern ClientUID WORLD_INVENTORY;
 
 inline std::istream& operator>>(std::istream& is, ClientUID& uid)
 {

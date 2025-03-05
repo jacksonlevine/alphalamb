@@ -5,4 +5,4 @@
 #include "ImGuiStuff.h"
 ImGuiIO* imguiio = nullptr;
 bool guiShowing = true;
-GuiScreen currentGuiScreen = MainMenu;
+GuiScreen currentGuiScreen = GuiScreen::MainMenu;
