@@ -192,7 +192,7 @@ void main()
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
     {
         glUniform1f(timeUni, glfwGetTime() * 8.0f);
-        glUniform1f(brightUni, 2.0f);
+        glUniform1f(brightUni, 1.1f);
     } else
     {
 
