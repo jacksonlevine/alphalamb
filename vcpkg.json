@@ -9,6 +9,7 @@
         },
         "physx",
         "openal-soft",
-        "boost-fiber"
+        "boost-fiber",
+        "entt"
     ]
 }

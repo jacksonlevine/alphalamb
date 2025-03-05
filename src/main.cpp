@@ -767,7 +767,7 @@ int main()
                                     if (theScene.particles)
                                     {
                                         theScene.particles->particleBurst(burstspot,
-                                                                     20, (MaterialName)blockThere, 2.0, 1.0f);
+                                                                     12, (MaterialName)blockThere, 2.0, 1.0f);
                                     }
 
                                     //theScene.world->set(spot, AIR);
@@ -1024,12 +1024,12 @@ int main()
                             BlockType blockThere = scene->world->get(spot);
                             glm::vec3 burstspot = glm::vec3(
                                 spot.x+ 0.5,
-                                spot.y + 1.0,
+                                spot.y + 0.5,
                                 spot.z + 0.5);
                             if (scene->particles)
                             {
                                 scene->particles->particleBurst(burstspot,
-                                                             35, (MaterialName)blockThere, 1.0, 0.0f);
+                                                             12, (MaterialName)blockThere, 0.8, 0.0f);
                             }
 
                             if (m.block == AIR)

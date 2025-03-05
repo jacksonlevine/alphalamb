@@ -29,7 +29,7 @@ find_package(glm CONFIG REQUIRED)
 find_package(SndFile CONFIG REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
-
+find_package(EnTT CONFIG REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container variant2 fiber)
 message(STATUS "Boost version: ${Boost_VERSION}")
@@ -142,6 +142,7 @@ add_executable(DistantGarden
         src/ClientUID.h
         src/PlayerInfoMapKeyedByUID.h
         src/ClientUID.cpp
+        src/menupage/FullscreenKaleidoscope.h
 )
 
 add_executable(DGServer
@@ -158,6 +159,8 @@ add_executable(DGServer
         src/Transform.h
         src/ClientUID.h
         src/ClientUID.cpp
+        src/creatures/CreatureWorld.cpp
+        src/creatures/CreatureWorld.h
 )
 
 target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)
@@ -165,7 +168,8 @@ function(add_common_libraries target)
     
     target_precompile_headers( ${target}
             PRIVATE ${CMAKE_SOURCE_DIR}/src/PrecompHeader.h )
-    
+
+    target_link_libraries(${target} PRIVATE EnTT::EnTT)
     
     # Include directories
     target_include_directories(${target} PUBLIC ${CMAKE_SOURCE_DIR}/include)

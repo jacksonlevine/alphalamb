@@ -12,6 +12,7 @@
 #include "SharedVarsBetweenMainAndGui.h"
 #include "LocalServerIOContext.h"
 #include "Texture.h"
+#include "menupage/FullscreenKaleidoscope.h"
 extern ImGuiIO* imguiio;
 
 extern bool guiShowing;
@@ -107,6 +108,8 @@ inline std::vector<float> generateSubdividedQuad(int divisions) {
 }
 inline void DrawCustomButtonBackground(ImVec2& pos, const ImVec2& size, DGButtonType type)
 {
+    GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
     static jl::Texture textures[4] = {
         jl::Texture("resources/gui/bad1.png"),
         jl::Texture("resources/gui/bad2.png"),
@@ -242,6 +245,10 @@ void main()
     static GLint texPos = glGetUniformLocation(shader.shaderID, "texture1");
     glUniform1i(texPos, 4);
     glDrawArrays(GL_TRIANGLES, 0, 6 * (BUTTONDIVS  * BUTTONDIVS));
+    if (depthTestEnabled)
+        glEnable(GL_DEPTH_TEST);
+    else
+        glDisable(GL_DEPTH_TEST);
 }
 inline bool DGCustomButton(const char* label, DGButtonType type = DGButtonType::Good1, const ImVec2& size_arg = ImVec2(300, 70)) {
 
@@ -277,7 +284,9 @@ inline bool DGCustomButton(const char* label, DGButtonType type = DGButtonType::
     ImVec2 pos = ImGui::GetCursorScreenPos();
 
     // InvisibleButton with proper size
-    bool clicked = ImGui::InvisibleButton(label, size);
+    ImGui::InvisibleButton(label, size);
+
+    bool clicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
 
     // Draw your custom background
     DrawCustomButtonBackground(pos, size, type);
@@ -371,6 +380,7 @@ inline void renderImGui() {
                 break;
             }
         case GuiScreen::HostPort:
+            drawFullscreenKaleidoscope();
                 if (DGCustomButton("Back to main menu", DGButtonType::Bad1))
                 {
                     currentGuiScreen = GuiScreen::MainMenu;
@@ -417,6 +427,7 @@ inline void renderImGui() {
                 }
             break;
         case GuiScreen::MainMenu:
+            drawFullscreenKaleidoscope();
             if (                ImGui::InputText("Server address", theScene.serverAddress.data(), theScene.serverAddress.capacity(), ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &theScene.serverAddress)
 )
             {
