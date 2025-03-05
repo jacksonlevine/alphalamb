@@ -36,6 +36,43 @@ enum class DGButtonType
     Good2
 };
 
+inline float GetDPIScaling(GLFWwindow* window) {
+    // Get the monitor the window is currently on
+    GLFWmonitor* monitor = glfwGetWindowMonitor(window);
+    if (!monitor) {
+        monitor = glfwGetPrimaryMonitor();
+    }
+
+    // Get the monitor's physical size and resolution
+    int widthMM, heightMM;
+    glfwGetMonitorPhysicalSize(monitor, &widthMM, &heightMM);
+
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    int widthPx = mode->width;
+    int heightPx = mode->height;
+
+    // Calculate DPI (1 inch = 25.4 mm)
+    float dpiX = static_cast<float>(widthPx) / (static_cast<float>(widthMM) / 25.4f);
+    float dpiY = static_cast<float>(heightPx) / (static_cast<float>(heightMM) / 25.4f);
+
+    // Use the average DPI for scaling
+    return (dpiX + dpiY) / 2.0f / 96.0f; // 96 DPI is the baseline
+}
+
+inline void SetImGuiScaling(GLFWwindow* window) {
+    ImGuiIO& io = ImGui::GetIO();
+
+    // Get the DPI scaling factor
+    float scale = GetDPIScaling(window);
+
+    // Set global font scaling
+    io.FontGlobalScale = scale;
+
+    // Scale ImGui style (e.g., FramePadding, ItemSpacing)
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.ScaleAllSizes(scale);
+}
+
 constexpr int BUTTONDIVS = 10;
 
 inline std::vector<float> generateSubdividedQuad(int divisions) {
@@ -206,45 +243,59 @@ void main()
     glUniform1i(texPos, 4);
     glDrawArrays(GL_TRIANGLES, 0, 6 * (BUTTONDIVS  * BUTTONDIVS));
 }
+inline bool DGCustomButton(const char* label, DGButtonType type = DGButtonType::Good1, const ImVec2& size_arg = ImVec2(300, 70)) {
 
-inline bool DGCustomButton(const char* label, DGButtonType type = DGButtonType::Good1, const ImVec2& size = ImVec2(100, 70)) {
-    // Extract display label (everything before ##)
-    const char* displayLabel = label;
-    for (const char* p = label; *p; ++p) {
-        if (p[0] == '#' && p[1] == '#') {
-            displayLabel = std::string(label, p - label).c_str();
-            break;
-        }
+    ImGuiStyle& style = ImGui::GetStyle();
+
+    // Extract visible label (stop at "##")
+    const char* label_display_end = label;
+    while (*label_display_end != '\0' && !(label_display_end[0] == '#' && label_display_end[1] == '#')) {
+        label_display_end++;
     }
 
+    // Calculate text size
+    ImVec2 label_size = ImGui::CalcTextSize(label, label_display_end);
+
+    auto realsizex = size_arg.x;
+
+
+    float scale = imguiio->FontGlobalScale;
+
+    if (size_arg.x * scale < label_size.x)
+        realsizex = (label_size.x + 100) / scale;
+
+
+    // Calculate button size (respecting FramePadding)
+    ImVec2 size = ImVec2(
+        realsizex > 0.0f ? realsizex : label_size.x + style.FramePadding.x * 2.0f,
+        size_arg.y > 0.0f ? size_arg.y : label_size.y + style.FramePadding.y * 2.0f
+    );
+
+    size = ImVec2(size.x * scale, size.y * scale);
+
     ImGui::PushID(label);
-
     ImVec2 pos = ImGui::GetCursorScreenPos();
-    auto realSize = size;
 
-    auto ts = ImGui::CalcTextSize(displayLabel); // Use display label for text size
+    // InvisibleButton with proper size
+    bool clicked = ImGui::InvisibleButton(label, size);
 
-    if (size.x < ts.x)
-        realSize.x = ts.x + 20;
+    // Draw your custom background
+    DrawCustomButtonBackground(pos, size, type);
 
-    // Create an invisible button with the same size as your custom button
-    bool clicked = ImGui::InvisibleButton(label, realSize);
+    // Position text CORRECTLY (match standard Button alignment)
+    ImVec2 text_pos = ImVec2(
+        pos.x + style.FramePadding.x,
+        pos.y + (size.y - label_size.y) * 0.5f // Center vertically
+    );
 
-
-    // Render custom OpenGL background
-    DrawCustomButtonBackground(pos, realSize, type);
-
-    // Overlay ImGui text
-    auto lastpos = ImGui::GetCursorScreenPos();
-    ImGui::SetCursorScreenPos(ImVec2(pos.x + 10,
-                                      pos.y + realSize.y / 2 - ImGui::GetTextLineHeight() / 2));
-    ImGui::Text("%s", displayLabel); // Display only the cleaned-up label
-    ImGui::SetCursorScreenPos(lastpos);
+    // Render text directly to avoid cursor disruption
+    ImGui::GetWindowDrawList()->AddText(text_pos,
+        ImGui::GetColorU32(ImGuiCol_Text),
+        label, label_display_end);
 
     ImGui::PopID();
     return clicked;
 }
-
 inline void initializeImGui(GLFWwindow* window)
 {
     // Setup Dear ImGui context
@@ -262,6 +313,7 @@ inline void initializeImGui(GLFWwindow* window)
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
+    SetImGuiScaling(window);
 }
 
 
@@ -470,7 +522,7 @@ inline void renderImGui() {
             }
             case GuiScreen::InGame:
 
-                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.95ab");
+                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.97s");
 
                 ImVec2 screenSize = ImGui::GetIO().DisplaySize;
 

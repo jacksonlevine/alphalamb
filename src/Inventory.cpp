@@ -31,13 +31,15 @@ void imguiInventory(Inventory& inv)
 
             bool isEquip = Inventory::isEquipSlot(i,j);
             bool mouseHeldItemEquippable = equippable(static_cast<ItemName>(inv.mouseHeldItem.block));
+            //
+            // if (isEquip)
+            // {
+            //     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0,0.3,0.3,0.7));
+            // }
 
-            if (isEquip)
-            {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0,0.3,0.3,0.7));
-            }
+            auto bt = isEquip ? DGButtonType::Bad1 : DGButtonType::Good1;
 
-            if (DGCustomButton(label.c_str(), DGButtonType::Good1, ImVec2(50,50)))
+            if (DGCustomButton(label.c_str(), bt, ImVec2(50,50)))
             {
                 bool validswap = true;
                 if (isEquip && !mouseHeldItemEquippable)
@@ -70,10 +72,10 @@ void imguiInventory(Inventory& inv)
                     }
                 }
             }
-            if (isEquip)
-            {
-                ImGui::PopStyleColor();
-            }
+            // if (isEquip)
+            // {
+            //     ImGui::PopStyleColor();
+            // }
             ImGui::PopID();
         }
         ImGui::NewLine();
