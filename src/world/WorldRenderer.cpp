@@ -906,7 +906,7 @@ void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, 
         switch (solidCount) {
             case 1: occlusionValue = -0.3f; break;
             case 2: occlusionValue = -0.5f; break;
-            case 3: occlusionValue = -0.9f; break;
+            case 3: occlusionValue = -0.7f; break;
             default: occlusionValue = 0.0f; break;
         }
 
