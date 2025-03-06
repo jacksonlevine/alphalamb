@@ -69,7 +69,7 @@ uniform float scale;
                 timeRended = fadeInProgress;
                 vec3 rotpos = rotposition.xyz  + offs;
                 vec3 scaledPos = vec3(rotpos.x * scale, rotpos.y * scale, rotpos.z * scale);
-                vec3 pos2 = (scaledPos.xyz + pos + vec3(0.0, (-1.0 + fadeInProgress) * 5.0f, 0.0));
+                vec3 pos2 = (scaledPos.xyz + pos + vec3(0.0, 0.0, 0.0));
 
                 ppos = pos2;
                 gl_Position = mvp * vec4(pos2, 1.0);

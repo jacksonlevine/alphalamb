@@ -61,33 +61,35 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
 
     static float WL = 60.0f;
 
-    float notype = std::max(0.007f, noise.GetNoise(
+    float notype = std::min(0.01f, std::max(0.003f, noise.GetNoise(
         spot.x * 0.25f,
-        spot.z * 0.25f));
+        spot.z * 0.25f)));
+
+    float yoff = 60.0f;
 
     float no = noise.GetNoise(
         spot.x * blockScaleInPerlin,
         spot.y * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-    - ((spot.y - 60.0) * notype);
+    - ((spot.y - yoff) * notype);
 
     float noabove = noise.GetNoise(
         spot.x * blockScaleInPerlin,
-        (spot.y + 2) * blockScaleInPerlin,
+        (spot.y + 1) * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-    - ((spot.y - 60.0) * notype);
+    - ((spot.y + 1 - yoff) * notype);
 
     float no5up = noise.GetNoise(
         spot.x * blockScaleInPerlin,
         (spot.y + 6) * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-    - ((spot.y - 60.0) * notype);
+    - ((spot.y + 6 - yoff) * notype);
 
     float no10up = noise.GetNoise(
         spot.x * blockScaleInPerlin,
         (spot.y + 12) * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-    - ((spot.y - 60.0) * notype);
+    - ((spot.y + 12 - yoff) * notype);
 
     static float THRESHOLD = 0.02f;
 
@@ -102,7 +104,7 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
                 spot.x * beachNoiseScale,
                 spot.y * beachNoiseScale,
                 spot.z * beachNoiseScale);
-            if (spot.y > (WL + beachNoise) ||
+            if (spot.y > (WL + (beachNoise*3.0f)) ||
                 no5up > THRESHOLD)
             {
                 if (noabove > THRESHOLD)

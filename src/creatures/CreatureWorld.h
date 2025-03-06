@@ -14,7 +14,17 @@ struct CreatureWorld
 
      void update()
      {
-          auto view = registry.view;
+          // // To get all entities with Billboard components
+          // auto view = registry.view<Billboard>();
+          //
+          // // Iterate through all entities with Billboard components
+          // for (auto entity : view) {
+          //      // Access the Billboard component for this entity
+          //      Billboard& billboard = view.get<Billboard>(entity);
+          //
+          //      // Do something with the entity and its Billboard component
+          //      // ...
+          // }
      }
 };
 

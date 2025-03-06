@@ -73,10 +73,10 @@ public:
     float getTemperatureNoise(const IntTup& spot) override;
 private:
     FastNoiseLite noise = {};
-    static constexpr float blockScaleInPerlin = 1.7f;
-    static constexpr float tempNoiseScale = 0.2f;
-    static constexpr float humidityNoiseScale = 0.4f;
-    static constexpr float beachNoiseScale = 2.7f;
+    static constexpr float blockScaleInPerlin = 0.25f;
+    static constexpr float tempNoiseScale = 0.35f;
+    static constexpr float humidityNoiseScale = 0.55f;
+    static constexpr float beachNoiseScale = 1.7f;
 };
 
 

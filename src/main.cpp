@@ -430,7 +430,7 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
     static double lastx = 0.0;
     static double lasty = 0.0;
     Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
-    if(scene->mouseCaptured)
+    if(scene->mouseCaptured && scene->worldIntroTimer > 10.0f)
     {
 
         if(scene->firstMouse)
@@ -539,6 +539,7 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 
 void enterWorld(Scene* s)
 {
+    s->worldIntroTimer = 0.0f;
 
     int width, height = 0;
     glfwGetWindowSize(s->window, &width, &height);
@@ -699,6 +700,9 @@ int main()
     // static jl::ModelAndTextures clouds = jl::ModelLoader::loadModel("resources/models/clouds.glb", false);
     static jl::ModelAndTextures jp = jl::ModelLoader::loadModel("resources/models/jetpack.glb", false);
     static jl::ModelAndTextures jplit = jl::ModelLoader::loadModel("resources/models/jetpack2.glb", false);
+    static jl::ModelAndTextures planet = jl::ModelLoader::loadModel("resources/models/planet.glb", false);
+
+
     while (!glfwWindowShouldClose(window))
     {
         static float lastTime = glfwGetTime();
@@ -724,6 +728,10 @@ int main()
 
         if (theScene.myPlayerIndex != -1)
         {
+
+
+
+            theScene.worldIntroTimer += deltaTime;
             updateFPS();
             theScene.timeOfDay = std::fmod(theScene.timeOfDay + deltaTime, theScene.dayLength);
 
@@ -1161,10 +1169,13 @@ int main()
                 auto theintspot = IntTup(thespot.x, thespot.y, thespot.z);
                 theScene.bulkPlaceGizmo->corner2 = theintspot;
             }
-
-            drawSky(glm::vec4(currAtmos.skyTop, 1.0),
+            if (theScene.worldIntroTimer > 10.0f)
+            {
+                drawSky(glm::vec4(currAtmos.skyTop, 1.0),
                     glm::vec4(currAtmos.skyBottom, 1.0),
                     ambBrightFromTimeOfDay(theScene.timeOfDay, theScene.dayLength), &theScene.players[theScene.myPlayerIndex]->camera, lutTexture);
+
+            }
 
 
             glUseProgram(mainShader.shaderID);
@@ -1203,7 +1214,7 @@ int main()
 
 
 
-            renderer->mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, mainShader.shaderID, world.worldGenMethod, deltaTime);
+            renderer->mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, mainShader.shaderID, world.worldGenMethod, deltaTime, theScene.worldIntroTimer > 10.0f);
             vms->draw(&world, theScene.players.at(theScene.myPlayerIndex));
 
             glUniform1f(timeRenderedLoc, 10.0f);
@@ -1378,6 +1389,40 @@ int main()
 
                 jl::drawBillboards(billboards.size());
                 glEnable(GL_CULL_FACE);
+            }
+
+            if (theScene.worldIntroTimer < 10.0f)
+            {
+
+                drawFullscreenKaleidoscope();
+                glClear(GL_DEPTH_BUFFER_BIT);
+                {
+                    glUseProgram(gltfShader.shaderID);
+
+                    glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
+                    glActiveTexture(GL_TEXTURE0);
+
+                        glBindTexture(GL_TEXTURE_2D, planet.texids.at(0));
+
+
+                    glUniform1i(glGetUniformLocation(gltfShader.shaderID, "texture1"), 0);
+
+                    auto camdir = camera.transform.direction;
+
+                    glm::vec3 posToRenderAt = camera.transform.position + (camdir * (100.0f - 100.0f *(theScene.worldIntroTimer / 11.3f)));
+
+                    glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
+                    glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), camera.transform.yaw);
+
+                    for(jl::ModelGLObjects &mglo : planet.modelGLObjects)
+                    {
+                        glBindVertexArray(mglo.vao);
+                        //Indent operations on this vertex array object
+                        glDrawElements(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr);
+
+                        glBindVertexArray(0);
+                    }
+                }
             }
 
 

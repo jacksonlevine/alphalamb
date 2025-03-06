@@ -22,7 +22,7 @@ Shader::Shader(const char *vert, const char *frag, const char *name) {
     }
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if(!success) {
-        glGetShaderInfoLog(vertexShader, 512, nullptr, errorLog);
+        glGetShaderInfoLog(fragmentShader, 512, nullptr, errorLog);
         std::cerr << name << " frag shade comp error:" << errorLog << '\n';
     }
     shaderID = glCreateProgram();
