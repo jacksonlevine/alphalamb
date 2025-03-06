@@ -896,7 +896,7 @@ void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, 
         for (const auto& offset : adjacentOffsets) {
             IntTup adjPos = blockPos + offset;
             BlockType adjBlock = locked ? world->getLocked(adjPos) : world->get(adjPos);
-            if (adjBlock != AIR && std::ranges::find(transparents, adjBlock) == transparents.end()) {
+            if (adjBlock != AIR ) {
                 solidCount++;
             }
         }
