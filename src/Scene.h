@@ -5,6 +5,7 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+#include "AmbOcclSetting.h"
 #include "PrecompHeader.h"
 #include "ClientUID.h"
 #include "world/WorldGizmo.h"
@@ -19,6 +20,7 @@ struct Settings
 {
     float mouseSensitivity = 1.0f;
     ClientUID clientUID;
+    bool ambientOccl = false;
 };
 struct Scene
 {
@@ -76,6 +78,7 @@ struct Scene
             settingsFile << serverAddress << "\n";
             settingsFile << rendDistSelection << "\n";
             settingsFile << settings.clientUID << "\n";
+            settingsFile << ambOccl << "\n";
             settingsFile.close();
         }
 
@@ -95,6 +98,8 @@ struct Scene
                     settingsFile >> rendDistSelection;
 
                     settingsFile >> settings.clientUID;
+
+                    settingsFile >> ambOccl;
                     std::cout << "Loaded UID: " << settings.clientUID << std::endl;
             }
         } else

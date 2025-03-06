@@ -143,6 +143,8 @@ add_executable(DistantGarden
         src/PlayerInfoMapKeyedByUID.h
         src/ClientUID.cpp
         src/menupage/FullscreenKaleidoscope.h
+        src/AmbOcclSetting.cpp
+        src/AmbOcclSetting.h
 )
 
 add_executable(DGServer

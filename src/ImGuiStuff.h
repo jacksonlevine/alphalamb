@@ -492,6 +492,11 @@ inline void renderImGui() {
                 {
                     theScene.worldRenderer->setRenderDistance(theScene.rendDistSelection, &theScene.players.at(theScene.myPlayerIndex)->camera, theScene.world);
                 }
+                if (ImGui::Checkbox("Ambient Occlusion", &ambOccl))
+                {
+                    theScene.saveSettings();
+                    theScene.worldRenderer->setRenderDistance(theScene.rendDistSelection, &theScene.players.at(theScene.myPlayerIndex)->camera, theScene.world);
+                }
 
                 if(DGCustomButton("Toggle Fullscreen", DGButtonType::Good1))
                 {

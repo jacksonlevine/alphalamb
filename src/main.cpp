@@ -737,7 +737,7 @@ int main()
 
             if (theScene.blockSelectGizmo->hitting)
             {
-                if (theScene.blockSelectGizmo->hitProgress < 0.25f)
+                if (theScene.blockSelectGizmo->hitProgress < 10.0f)
                 {
                     theScene.blockSelectGizmo->hitProgress += deltaTime;
                 } else
@@ -1412,7 +1412,7 @@ int main()
                     glm::vec3 posToRenderAt = camera.transform.position + (camdir * (100.0f - 100.0f *(theScene.worldIntroTimer / 11.3f)));
 
                     glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
-                    glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), camera.transform.yaw);
+                    glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), theScene.worldIntroTimer * 5.0f);
 
                     for(jl::ModelGLObjects &mglo : planet.modelGLObjects)
                     {

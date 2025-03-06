@@ -5,6 +5,7 @@
 #include "WorldRenderer.h"
 
 #include "MaterialName.h"
+#include "../AmbOcclSetting.h"
 #include "worldgenmethods/OverworldWorldGenMethod.h"
 #include "../IndexOptimization.h"
 std::atomic<int> NUM_THREADS_RUNNING = 0;
@@ -694,6 +695,7 @@ void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std:
 }
 
 ///Call this with an external index and UsableMesh to mutate them
+template<bool doBrightness>
 __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, PxU32& index, PxU32& tindex)
 {
     auto & tex = TEXS[material];
@@ -729,15 +731,19 @@ __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideH
             glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),
             });
 
-        float isGrass = material == GRASS ? 1.0f : 0.0f;
+        if constexpr(doBrightness)
+        {
+            float isGrass = material == GRASS ? 1.0f : 0.0f;
 
-        switch(side) {
-        case Side::Top:    mesh.tbrightness.insert(mesh.tbrightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
-        case Side::Left:   mesh.tbrightness.insert(mesh.tbrightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
-        case Side::Bottom: mesh.tbrightness.insert(mesh.tbrightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
-        case Side::Right:  mesh.tbrightness.insert(mesh.tbrightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
-        default:          mesh.tbrightness.insert(mesh.tbrightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
+            switch(side) {
+            case Side::Top:    mesh.tbrightness.insert(mesh.tbrightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
+            case Side::Left:   mesh.tbrightness.insert(mesh.tbrightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
+            case Side::Bottom: mesh.tbrightness.insert(mesh.tbrightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
+            case Side::Right:  mesh.tbrightness.insert(mesh.tbrightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
+            default:          mesh.tbrightness.insert(mesh.tbrightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
+            }
         }
+
 
         tindex += 4;
     } else
@@ -758,14 +764,17 @@ glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
 glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
 glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),});
 
-        float isGrass = material == GRASS ? 1.0f : 0.0f;
+        if constexpr(doBrightness)
+        {
+            float isGrass = material == GRASS ? 1.0f : 0.0f;
 
-        switch(side) {
-        case Side::Top:    mesh.brightness.insert(mesh.brightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
-        case Side::Left:   mesh.brightness.insert(mesh.brightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
-        case Side::Bottom: mesh.brightness.insert(mesh.brightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
-        case Side::Right:  mesh.brightness.insert(mesh.brightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
-        default:          mesh.brightness.insert(mesh.brightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
+            switch(side) {
+            case Side::Top:    mesh.brightness.insert(mesh.brightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
+            case Side::Left:   mesh.brightness.insert(mesh.brightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
+            case Side::Bottom: mesh.brightness.insert(mesh.brightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
+            case Side::Right:  mesh.brightness.insert(mesh.brightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
+            default:          mesh.brightness.insert(mesh.brightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
+            }
         }
         index += 4;
     }
@@ -773,6 +782,9 @@ glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),});
 
 
 }
+
+
+
 UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked);
 UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize)
 {
@@ -782,6 +794,8 @@ UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize)
 {
     return fromChunk(spot, world, chunkSize, true);
 }
+
+
 ///Create a UsableMesh from the specified chunk spot
 ///This gets called in the mesh building coroutine
 UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked)
@@ -791,7 +805,6 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
     PxU32 tindex = 0;
 
     IntTup start(spot.x * chunkSize, spot.z * chunkSize);
-
 
     for (int x = 0; x < chunkSize; x++)
     {
@@ -833,7 +846,21 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
 
                         if (neighborair || (neightransparent && !blockHereTransparent))
                         {
-                            addFace(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)), static_cast<Side>(i), static_cast<MaterialName>(blockHere), 1, mesh, index, tindex);
+                            Side side = static_cast<Side>(i);
+
+                            if (!ambOccl) {
+                                // Use the original addFace with built-in brightness calculations
+                                addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
+                                              side, static_cast<MaterialName>(blockHere), 1, mesh, index, tindex);
+                            } else {
+                                // Use addFace without brightness calculations
+                                //std::cout << "Amboc \n";
+                                addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
+                                               side, static_cast<MaterialName>(blockHere), 1, mesh, index, tindex);
+
+                                // Calculate and add our own ambient occlusion brightness values
+                                calculateAmbientOcclusion(here, side, world, locked, blockHere, mesh);
+                            }
                         }
                     }
                 }
@@ -842,4 +869,115 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
     }
 
     return mesh;
+}
+
+// This function calculates and adds ambient occlusion brightness values for a face
+void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, bool locked, BlockType blockType, UsableMesh& mesh)
+{
+    float baseBrightness;
+    switch(side) {
+        case Side::Top:    baseBrightness = 1.0f; break;
+        case Side::Left:   baseBrightness = 0.7f; break;
+        case Side::Bottom: baseBrightness = 0.4f; break;
+        case Side::Right:  baseBrightness = 0.8f; break;
+        default:           baseBrightness = 0.9f; break;
+    }
+
+    float isGrass = blockType == GRASS ? 1.0f : 0.0f;
+
+    // Calculate occlusion for each vertex of the face
+    float occlusion[4];
+    for (int v = 0; v < 4; v++) {
+        // Get the 3 adjacent blocks for this vertex
+        std::array<IntTup, 3> adjacentOffsets = getAdjacentOffsets(side, v);
+
+        // Count solid adjacent blocks
+        int solidCount = 0;
+        for (const auto& offset : adjacentOffsets) {
+            IntTup adjPos = blockPos + offset;
+            BlockType adjBlock = locked ? world->getLocked(adjPos) : world->get(adjPos);
+            if (adjBlock != AIR && std::ranges::find(transparents, adjBlock) == transparents.end()) {
+                solidCount++;
+            }
+        }
+
+        // Apply occlusion based on how many adjacent blocks are solid
+        float occlusionValue = 0.0f;
+        switch (solidCount) {
+            case 1: occlusionValue = -0.3f; break;
+            case 2: occlusionValue = -0.5f; break;
+            case 3: occlusionValue = -0.9f; break;
+            default: occlusionValue = 0.0f; break;
+        }
+
+        // Clamp final brightness to valid range
+        occlusion[v] = std::max(0.0f, baseBrightness + occlusionValue);
+    }
+
+    // Add brightness data to the appropriate arrays based on transparency
+    bool isTransparent = std::ranges::find(transparents, blockType) != transparents.end();
+    if (isTransparent) {
+        mesh.tbrightness.insert(mesh.tbrightness.end(), {
+            occlusion[0], isGrass, occlusion[1], isGrass,
+            occlusion[2], isGrass, occlusion[3], isGrass
+        });
+    } else {
+        mesh.brightness.insert(mesh.brightness.end(), {
+            occlusion[0], isGrass, occlusion[1], isGrass,
+            occlusion[2], isGrass, occlusion[3], isGrass
+        });
+    }
+}
+
+// This function returns the 3 adjacent block offsets for a specific vertex of a face
+std::array<IntTup, 3> getAdjacentOffsets(Side side, int vertexIndex)
+{
+    // Map of adjacent block checks for each vertex of each face
+    // Format: [side][vertexIndex][3 adjacent blocks]
+    static const std::array<std::array<std::array<IntTup, 3>, 4>, 6> adjacentOffsets = {{
+        // Front face (0, 0, 0) -> (1, 1, 0)
+        {{
+            {IntTup(-1, 0, -1), IntTup(0, -1, -1), IntTup(-1, -1, -1)}, // bottom-left vertex
+            {IntTup(1, 0, -1), IntTup(0, -1, -1), IntTup(1, -1, -1)},   // bottom-right vertex
+            {IntTup(1, 0, -1), IntTup(0, 1, -1), IntTup(1, 1, -1)},     // top-right vertex
+            {IntTup(-1, 0, -1), IntTup(0, 1, -1), IntTup(-1, 1, -1)}    // top-left vertex
+        }},
+        // Right face (1, 0, 0) -> (1, 1, 1)
+        {{
+            {IntTup(1, 0, -1), IntTup(1, -1, 0), IntTup(1, -1, -1)},    // bottom-front vertex
+            {IntTup(1, 0, 1), IntTup(1, -1, 0), IntTup(1, -1, 1)},      // bottom-back vertex
+            {IntTup(1, 0, 1), IntTup(1, 1, 0), IntTup(1, 1, 1)},        // top-back vertex
+            {IntTup(1, 0, -1), IntTup(1, 1, 0), IntTup(1, 1, -1)}       // top-front vertex
+        }},
+        // Back face (1, 0, 1) -> (0, 1, 1)
+        {{
+            {IntTup(1, 0, 1), IntTup(0, -1, 1), IntTup(1, -1, 1)},      // bottom-right vertex
+            {IntTup(-1, 0, 1), IntTup(0, -1, 1), IntTup(-1, -1, 1)},    // bottom-left vertex
+            {IntTup(-1, 0, 1), IntTup(0, 1, 1), IntTup(-1, 1, 1)},      // top-left vertex
+            {IntTup(1, 0, 1), IntTup(0, 1, 1), IntTup(1, 1, 1)}         // top-right vertex
+        }},
+        // Left face (0, 0, 1) -> (0, 1, 0)
+        {{
+            {IntTup(-1, 0, 1), IntTup(-1, -1, 0), IntTup(-1, -1, 1)},   // bottom-back vertex
+            {IntTup(-1, 0, -1), IntTup(-1, -1, 0), IntTup(-1, -1, -1)}, // bottom-front vertex
+            {IntTup(-1, 0, -1), IntTup(-1, 1, 0), IntTup(-1, 1, -1)},   // top-front vertex
+            {IntTup(-1, 0, 1), IntTup(-1, 1, 0), IntTup(-1, 1, 1)}      // top-back vertex
+        }},
+        // Top face (0, 1, 0) -> (1, 1, 1)
+        {{
+            {IntTup(-1, 1, 0), IntTup(0, 1, -1), IntTup(-1, 1, -1)},    // front-left vertex
+            {IntTup(1, 1, 0), IntTup(0, 1, -1), IntTup(1, 1, -1)},      // front-right vertex
+            {IntTup(1, 1, 0), IntTup(0, 1, 1), IntTup(1, 1, 1)},        // back-right vertex
+            {IntTup(-1, 1, 0), IntTup(0, 1, 1), IntTup(-1, 1, 1)}       // back-left vertex
+        }},
+        // Bottom face (0, 0, 1) -> (1, 0, 0)
+        {{
+            {IntTup(-1, -1, 1), IntTup(0, -1, 1), IntTup(-1, -1, 1)},   // back-left vertex
+            {IntTup(1, -1, 1), IntTup(0, -1, 1), IntTup(1, -1, 1)},     // back-right vertex
+            {IntTup(1, -1, 0), IntTup(0, -1, -1), IntTup(1, -1, -1)},   // front-right vertex
+            {IntTup(-1, -1, 0), IntTup(0, -1, -1), IntTup(-1, -1, -1)}  // front-left vertex
+        }}
+    }};
+
+    return adjacentOffsets[static_cast<int>(side)][vertexIndex];
 }

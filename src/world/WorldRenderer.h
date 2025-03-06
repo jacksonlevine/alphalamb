@@ -78,12 +78,15 @@ enum class Side
     Front = 0,Right,Back,Left,Top,Bottom
 };
 
+template<bool doBrightness = true>
 __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex);
+
 void genCGLBuffers();
 constexpr float onePixel = 0.00183823529411764705882352941176f;     //  1/544      Padding
 constexpr float textureWidth = 0.02941176470588235294117647058824f; // 16/544      16 pixel texture width
 constexpr float texSlotWidth = 0.03308823529411764705882352941176f;
-
+std::array<IntTup, 3> getAdjacentOffsets(Side side, int vertexIndex);
+void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, bool locked, BlockType blockType, UsableMesh& mesh);
 inline static PxVec3 cubefaces[6][4] = {
     {//front
         PxVec3(0.0, 0.0, 0.0),PxVec3(1.0, 0.0, 0.0),PxVec3(1.0, 1.0, 0.0),PxVec3(0.0, 1.0, 0.0)},

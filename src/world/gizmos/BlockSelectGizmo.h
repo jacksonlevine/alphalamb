@@ -7,6 +7,8 @@
 
 #include "../WorldGizmo.h"
 
+constexpr float BLOCK_BREAK_TIME = 10.0f;
+
 class BlockSelectGizmo : public WorldGizmo {
 public:
     void draw(World* world, Player* player) override;

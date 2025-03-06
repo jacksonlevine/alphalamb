@@ -103,7 +103,7 @@ void BlockSelectGizmo::draw(World* world, Player* player)
                 glBindVertexArray(overlayvao);
                 glUseProgram(overlayShaderProgram);
                 TextureFace startingFace(0, 15);
-                glm::vec2 offset(std::floor((hitProgress / 0.25) * 7.0f) * texSlotWidth, 0.0f);
+                glm::vec2 offset(std::floor((hitProgress / BLOCK_BREAK_TIME) * 7.0f) * texSlotWidth, 0.0f);
                 glm::vec2 uvs[] = {
                     startingFace.bl + offset,
                     startingFace.br + offset,
