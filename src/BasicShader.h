@@ -124,7 +124,10 @@ uniform float scale;
                 if(FragColor.a < 0.1f) {
                     discard;
                 }
-
+                //Fresnel effect on semi-transparent stuff right here, I was wondering wtf this was I just remembered though
+                if(FragColor.a < 1.0) {
+                    FragColor.a += distance*100.5f;
+                }
 
             }
         )glsl",

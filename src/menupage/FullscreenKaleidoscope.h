@@ -26,7 +26,7 @@ inline void drawFullscreenKaleidoscope()
             }
         )glsl",
         R"glsl(
-            #version 330 core
+#version 330 core
 
 in vec2 FragPos;
 out vec4 FragColor;
@@ -96,6 +96,48 @@ float smoothKaleidoscope(inout vec2 p, float sm, float rep) {
     return rn;
 }
 
+// Star field generation
+float stars(vec2 p, float density) {
+    vec2 pp = floor(p * 500.0);
+    float r = rand(pp);
+    if (r > 1.0 - density) {
+        float sparkle = pow(0.5 + 0.5 * sin(TIME * (r * 5.0) + r * 10.0), 15.0);
+        return (r - (1.0 - density)) / density * sparkle * 0.8;
+    }
+    return 0.0;
+}
+
+// Nebula-like function
+vec3 nebula(vec2 p, float time) {
+    vec2 uv = p * 0.2;
+    float t = time * 0.1;
+
+    // Create base noise layers
+    float n1 = sin(uv.x * 1.5 + t) * sin(uv.y * 1.0 - t) * 0.5 + 0.5;
+    float n2 = sin(uv.x * 2.3 - t) * sin(uv.y * 1.8 + t * 1.5) * 0.5 + 0.5;
+    float n3 = sin(uv.x * 3.7 + t * 0.5) * sin(uv.y * 2.9 - t * 0.7) * 0.5 + 0.5;
+
+    // Combine noise layers
+    float finalNoise = pow(n1 * n2 * n3, 2.0);
+
+    // Color mapping
+    vec3 col1 = vec3(0.05, 0.0, 0.15); // Deep space blue
+    vec3 col2 = vec3(0.3, 0.0, 0.5);   // Purple
+    vec3 col3 = vec3(0.0, 0.2, 0.4);   // Blue
+    vec3 col4 = vec3(0.1, 0.4, 0.6);   // Light blue
+
+    // Create color gradient based on noise
+    vec3 color = mix(col1, col2, smoothstep(0.0, 0.3, finalNoise));
+    color = mix(color, col3, smoothstep(0.3, 0.6, finalNoise));
+    color = mix(color, col4, smoothstep(0.6, 0.9, finalNoise));
+
+    // Add some dust-like turbulence
+    float dust = pow(rand(p * 10.0 + time), 10.0) * 0.2;
+    color += dust * vec3(0.4, 0.4, 0.6);
+
+    return color * smoothstep(0.1, 0.3, finalNoise);
+}
+
 float cell0(vec2 p) {
     float d0 = circle(p + 0.5, 0.5);
     float d1 = circle(p - 0.5, 0.5);
@@ -141,22 +183,46 @@ float df(vec2 p, float rep, float time) {
     return truchet(cp, lw * mix(0.25, 2.0, PSIN(-2.0 * time + 5.0 * cp.x + (0.5 * rep) * cp.y)));
 }
 
-vec3 color(vec2 q, vec2 p, float rep, float tm) {
+vec3 spaceColor(vec2 q, vec2 p, float rep, float tm) {
     vec2 pp = toPolar(p);
     float d = df(p, rep, tm);
-    vec3 col = vec3(0.0);
+
+    // Base deep space color
+    vec3 col = vec3(0.0, 0.0, 0.05);
+
+    // Add nebula effect
+    col += nebula(p, tm);
+
+    // Add star field
+    col += vec3(stars(p, 0.4)) * vec3(0.8, 0.9, 1.0);
+
+    // Add structure from the original kaleidoscope
     float aa = 2.0 / RESOLUTION.y;
-    vec3 baseCol = hsv2rgb(vec3(-0.25 * tm + sin(5.5 * d), tanh(pp.x), 1.0));
-    col = mix(col, baseCol, smoothstep(-aa, aa, -d));
-    col = baseCol + 0.5 * col.zxy;
+    vec3 kaleColor = mix(
+        vec3(0.0, 0.1, 0.2),
+        vec3(0.1, 0.3, 0.6),
+        smoothstep(-aa, aa, -d)
+    );
+
+    // Add shimmering effect to the structure
+    kaleColor *= 0.5 + 0.5 * pow(sin(tm * 2.0 + pp.x * 3.0), 2.0);
+
+    // Blend nebula and kaleidoscope
+    col = mix(col, kaleColor, 0.7 * smoothstep(-aa, aa, -d));
+
     return col;
 }
 
 vec3 postProcess(vec3 col, vec2 q) {
-    col = pow(clamp(col, 0.0, 1.0), vec3(0.75));
-    col = col * 0.6 + 0.4 * col * col * (3.0 - 2.0 * col);
-    col = mix(col, vec3(dot(col, vec3(0.33))), -0.4);
-    col *= 0.5 + 0.5 * pow(19.0 * q.x * q.y * (1.0 - q.x) * (1.0 - q.y), 0.7);
+    // Add subtle vignette
+    col *= 0.5 + 0.5 * pow(16.0 * q.x * q.y * (1.0 - q.x) * (1.0 - q.y), 0.3);
+
+    // Enhance contrast
+    col = pow(col, vec3(1.2));
+
+    // Color grading - pull slightly toward deep blue
+    col = mix(col, vec3(0.1, 0.1, 0.3), 0.1);
+
     return col;
 }
 
@@ -166,22 +232,32 @@ void main() {
     p.x *= RESOLUTION.x / RESOLUTION.y;
     vec2 op = p;
     vec3 col = vec3(0.0);
-    float tm = TIME * 0.25;
+    float tm = TIME * 0.15; // Slower movement for space feel
+
+    // Add distant stars first (background layer)
+    col = vec3(0.01, 0.01, 0.03); // Deep space background
+    col += vec3(stars(p * 0.5, 0.7)) * vec3(0.7, 0.8, 1.0);
+
+    // Layer multiple kaleidoscopic structures
     float aa = -1.0 + 0.5 * length(p);
-    float a = 1.0;
+    float a = 0.8; // Reduced intensity for more space-like feel
     float ra = tanh(length(0.5 * p));
 
-    for (int i = 0; i < 6; ++i) {
+    // Fewer layers for cleaner space look
+    for (int i = 0; i < 4; ++i) {
         p *= ROT(sqrt(0.1 * float(i)) * tm - ra);
-        col += a * color(q, p, 30.0 - 6.0 * float(i), 1.0 * tm + float(i));
-        a *= aa;
+        col += a * spaceColor(q, p, 20.0 - 4.0 * float(i), 0.8 * tm + float(i));
+        a *= aa * 0.9;
     }
 
-    col = tanh(col);
-    col = abs(p.y - col);
-    col = max(1.0 - col, 0.0);
-    col = pow(col, tanh(0.0 + length(op) * 1.0 * vec3(1.0, 1.5, 3.0)));
+    // Add final distant nebula background
+    col += nebula(op * 0.2, tm) * 0.3;
+
+    // Post-processing
     col = postProcess(col, q);
+
+    // Enhance brightness of highlights for star-like shimmer
+    col = mix(col, vec3(1.0), pow(length(col), 5.0) * 0.5);
 
     FragColor = vec4(col, 1.0);
 }

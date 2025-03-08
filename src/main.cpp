@@ -61,6 +61,7 @@ Scene theScene = {};
 
 constexpr double J_PI = 3.1415926535897932384626433832;
 constexpr double DEG_TO_RAD = J_PI / 180.0;
+constexpr float INTROFLYTIME = 5.0f;
 
 __inline float gaussian(float x, float peak, float radius) {
     float stdDev = radius / 3.0;
@@ -430,7 +431,7 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
     static double lastx = 0.0;
     static double lasty = 0.0;
     Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
-    if(scene->mouseCaptured && scene->worldIntroTimer > 10.0f)
+    if(scene->mouseCaptured && scene->worldIntroTimer > INTROFLYTIME)
     {
 
         if(scene->firstMouse)
@@ -737,7 +738,7 @@ int main()
 
             if (theScene.blockSelectGizmo->hitting)
             {
-                if (theScene.blockSelectGizmo->hitProgress < 10.0f)
+                if (theScene.blockSelectGizmo->hitProgress < BLOCK_BREAK_TIME)
                 {
                     theScene.blockSelectGizmo->hitProgress += deltaTime;
                 } else
@@ -1169,7 +1170,7 @@ int main()
                 auto theintspot = IntTup(thespot.x, thespot.y, thespot.z);
                 theScene.bulkPlaceGizmo->corner2 = theintspot;
             }
-            if (theScene.worldIntroTimer > 10.0f)
+            if (theScene.worldIntroTimer > INTROFLYTIME)
             {
                 drawSky(glm::vec4(currAtmos.skyTop, 1.0),
                     glm::vec4(currAtmos.skyBottom, 1.0),
@@ -1213,8 +1214,8 @@ int main()
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
 
 
-
-            renderer->mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, mainShader.shaderID, world.worldGenMethod, deltaTime, theScene.worldIntroTimer > 10.0f);
+            //std::cout << "World intro time" << theScene.worldIntroTimer << std::endl;
+            renderer->mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, mainShader.shaderID, world.worldGenMethod, deltaTime, theScene.worldIntroTimer > INTROFLYTIME);
             vms->draw(&world, theScene.players.at(theScene.myPlayerIndex));
 
             glUniform1f(timeRenderedLoc, 10.0f);
@@ -1391,7 +1392,7 @@ int main()
                 glEnable(GL_CULL_FACE);
             }
 
-            if (theScene.worldIntroTimer < 10.0f)
+            if (theScene.worldIntroTimer < INTROFLYTIME)
             {
 
                 drawFullscreenKaleidoscope();
@@ -1409,7 +1410,7 @@ int main()
 
                     auto camdir = camera.transform.direction;
 
-                    glm::vec3 posToRenderAt = camera.transform.position + (camdir * (100.0f - 100.0f *(theScene.worldIntroTimer / 11.3f)));
+                    glm::vec3 posToRenderAt = camera.transform.position + (camdir * (100.0f - 100.0f *(theScene.worldIntroTimer / (INTROFLYTIME + 1.3f))));
 
                     glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
                     glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), theScene.worldIntroTimer * 5.0f);

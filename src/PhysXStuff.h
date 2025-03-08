@@ -99,7 +99,7 @@ inline void affectTransformAndPhysicsObjWithControls(jl::Transform& transform, C
 
 
     // Jumping mechanics
-    const float JUMP_STRENGTH = 30.0f;
+    const float JUMP_STRENGTH = 40.0f;
     const float GRAVITY = 35.0f;
     const float MAX_FALL_SPEED = 50.0f;
 
