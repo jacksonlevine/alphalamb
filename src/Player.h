@@ -42,6 +42,16 @@ struct Player {
     bool receivedWorld = false;
     Player();
     ~Player();
+private:
+    // Ledge grab variables
+    glm::vec3 ledgePosition;
+    glm::vec3 ledgeNormal; // Store the normal for better positioning
+    glm::vec3 climbStartPosition;
+    bool isLedgeGrabbing = false;
+    bool isClimbingUp = false;
+    float climbUpTimer = 0.0f;
+    float ledgeGrabCooldown = 0.0f; // Cooldown to prevent immediately grabbing again
+
 };
 
 
