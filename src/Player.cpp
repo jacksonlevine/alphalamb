@@ -62,7 +62,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         {
             // Cast a ray forward to detect a ledge
             PxRaycastBuffer raycastResult;
-            PxVec3 rayOrigin(camera.transform.position.x, camera.transform.position.y + 0.5f, camera.transform.position.z);
+            PxVec3 rayOrigin(camera.transform.position.x, camera.transform.position.y, camera.transform.position.z);
             PxVec3 rayDir(camera.transform.direction.x, 0, camera.transform.direction.z);
             rayDir.normalize();
 
