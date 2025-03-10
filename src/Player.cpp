@@ -21,7 +21,40 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
 
     glm::vec3 displacement(0.0f, 0.0f, 0.0f);
     isGrounded = false;
-    float walkmult = controls.sprint ? 9.0f : 4.0f;
+
+    if (dashtimer > 0.0f)
+    {
+        dashtimer -= deltaTime;
+    } else
+    {
+        dashing = false;
+    }
+
+    if (stamCount < 3)
+    {
+        if (dashrebuild < 3.0f)
+        {
+            dashrebuild += deltaTime;
+        } else
+        {
+            dashrebuild = 0.0f;
+            stamCount++;
+        }
+    }
+
+    if (controls.sprint)
+    {
+        if (stamCount > 0 && dashtimer <= 0.0f)
+        {
+            dashing = true;
+            stamCount-= 1;
+            dashtimer = 2.0f;
+            dashrebuild = 0.0f;
+        }
+        controls.sprint = false;
+    }
+
+    float walkmult = dashing ? 9.0f : 4.0f;
 
     // Check what block we're standing on...
     {
@@ -33,7 +66,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
     }
 
     // Handle sprint dust particles...
-    if (controls.sprint && camera.transform.grounded)
+    if (dashing && camera.transform.grounded)
     {
         if (footDustTimer > 0.07f)
         {

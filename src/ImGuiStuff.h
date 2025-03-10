@@ -34,7 +34,8 @@ enum class DGButtonType
     Bad1,
     Bad2,
     Good1,
-    Good2
+    Good2,
+    Stam1
 };
 
 inline float GetDPIScaling(GLFWwindow* window) {
@@ -110,11 +111,12 @@ inline void DrawCustomButtonBackground(ImVec2& pos, const ImVec2& size, DGButton
 {
     GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
     glDisable(GL_DEPTH_TEST);
-    static jl::Texture textures[4] = {
+    static jl::Texture textures[5] = {
         jl::Texture("resources/gui/bad1.png"),
         jl::Texture("resources/gui/bad2.png"),
         jl::Texture("resources/gui/good1.png"),
         jl::Texture("resources/gui/good2.png"),
+        jl::Texture("resources/gui/stam1.png"),
     };
 
     static jl::Shader shader(
@@ -539,6 +541,12 @@ inline void renderImGui() {
             case GuiScreen::InGame:
 
                 ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.97s");
+
+            for (int i = 0; i < theScene.players.at(theScene.myPlayerIndex)->stamCount; i++)
+            {
+                DGCustomButton((std::string("##stam") + std::to_string(i)).c_str(), DGButtonType::Stam1, ImVec2(15, 40));
+            }
+
 
                 ImVec2 screenSize = ImGui::GetIO().DisplaySize;
 

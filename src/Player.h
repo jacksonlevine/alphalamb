@@ -40,6 +40,10 @@ struct Player {
     Inventory inventory = {};
     std::weak_ptr<boost::asio::ip::tcp::socket> socket;
     bool receivedWorld = false;
+    int stamCount = 3;
+    bool dashing = false;
+    float dashtimer = 0.0f;
+    float dashrebuild = 0.0f;
     Player();
     ~Player();
 private:
