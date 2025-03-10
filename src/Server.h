@@ -64,7 +64,7 @@ private:
     void sayInitialThings()
     {
         auto self(shared_from_this());
-        constexpr int seed = 0;
+        constexpr int seed = 987654321;
         DGMessage wi = WorldInfo {
             .seed = seed,
             .yourPosition = glm::vec3(0, 200, 0),

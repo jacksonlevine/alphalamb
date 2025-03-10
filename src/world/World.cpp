@@ -19,6 +19,11 @@ BlockType World::getLocked(IntTup spot)
 
 BlockType World::getRaw(IntTup spot)
 {
+    // if (auto mem = blockMemo->get(spot); mem != std::nullopt)
+    // {
+    //     return mem.value();
+    // }
+
     auto id = userDataMap->get(spot);
     if (id == std::nullopt)
     {
@@ -37,6 +42,11 @@ BlockType World::getRaw(IntTup spot)
 
 BlockType World::getRawLocked(IntTup spot)
 {
+    // if (auto mem = blockMemo->get(spot); mem != std::nullopt)
+    // {
+    //     return mem.value();
+    // }
+
     auto id = userDataMap->getLocked(spot);
     if (id == std::nullopt)
     {
@@ -53,7 +63,19 @@ BlockType World::getRawLocked(IntTup spot)
     return id.value();
 }
 
-void World::set(IntTup spot, BlockType val)
+void World::set(IntTup spot, const BlockType val)
 {
     userDataMap->set(spot, val);
+    //blockMemo->set(spot, val);
+}
+
+void World::setNUDM(const IntTup& spot, const BlockType val)
+{
+    nonUserDataMap->set(spot, val);
+    //blockMemo->set(spot, val);
+}
+void World::setNUDMLocked(const IntTup& spot, const BlockType val)
+{
+    nonUserDataMap->setLocked(spot, val);
+    //blockMemo->set(spot, val);
 }

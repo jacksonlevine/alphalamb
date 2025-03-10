@@ -8,6 +8,7 @@
 #include "VoxelModels.h"
 #include "WorldGenMethod.h"
 #include "../PlayerInfoMapKeyedByUID.h"
+#include "datamapmethods/HashMapDataMap.h"
 
 
 constexpr BlockType BLOCK_ID_BITS = 0b0000'0000'0000'0000'1111'1111'1111'1111;
@@ -291,7 +292,7 @@ public:
     BlockAreaRegistry blockAreas = {};
     PlacedVoxModelRegistry placedVoxModels = {};
 
-
+    DataMap* blockMemo = new HashMapDataMap();
 
     WorldGenMethod* worldGenMethod;
 
@@ -340,7 +341,7 @@ public:
                                                        z == minZ || z == maxZ);
                                 if (isBoundary || !m.hollow)
                                 {
-                                    nonUserDataMap->setLocked(IntTup{x, y, z}, m.block);
+                                    setNUDMLocked(IntTup{x, y, z}, m.block);
                                 }
 
                             }
@@ -375,7 +376,7 @@ public:
                     for (auto & p : realvm.points)
                     {
                         IntTup offset = IntTup(realvm.dimensions.x/-2, 0, realvm.dimensions.z/-2) + pvm.spot;
-                        nonUserDataMap->setLocked(p.localSpot + offset, p.colorIndex);
+                        setNUDMLocked(p.localSpot + offset, p.colorIndex);
                         auto bh = userDataMap->getLocked(p.localSpot + offset);
                         if (bh != std::nullopt && bh.value() == 0)
                         {
@@ -420,7 +421,8 @@ public:
         worldGenMethod->setSeed(seed);
     }
     void set(IntTup spot, BlockType val);
-
+    void setNUDM(const IntTup& spot, BlockType val);
+    void setNUDMLocked(const IntTup& spot, BlockType val);
     std::optional<std::pair<std::shared_lock<std::shared_mutex>,
                                  std::shared_lock<std::shared_mutex>>> tryToGetReadLockOnDMs()
     {

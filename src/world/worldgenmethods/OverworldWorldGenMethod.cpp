@@ -44,6 +44,8 @@ std::vector<std::vector<TerrainFeature>> climateTerrainFeatures = {
 OverworldWorldGenMethod::OverworldWorldGenMethod()
 {
     noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    voronoiNoise.SetNoiseType(FastNoiseLite::NoiseType_Cellular);
+    voronoiNoise.SetCellularReturnType(FastNoiseLite::CellularReturnType_Distance2Sub);
     srand(time(NULL));
     noise.SetSeed(rand());
 }
@@ -67,25 +69,25 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
 
     float yoff = 60.0f;
 
-    float no = noise.GetNoise(
+    float no = getNoiseMix(
         spot.x * blockScaleInPerlin,
         spot.y * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
     - ((spot.y - yoff) * notype);
 
-    float noabove = noise.GetNoise(
+    float noabove = getNoiseMix(
         spot.x * blockScaleInPerlin,
         (spot.y + 1) * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
     - ((spot.y + 1 - yoff) * notype);
 
-    float no5up = noise.GetNoise(
+    float no5up = getNoiseMix(
         spot.x * blockScaleInPerlin,
         (spot.y + 6) * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
     - ((spot.y + 6 - yoff) * notype);
 
-    float no10up = noise.GetNoise(
+    float no10up = getNoiseMix(
         spot.x * blockScaleInPerlin,
         (spot.y + 12) * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
@@ -153,6 +155,7 @@ Climate OverworldWorldGenMethod::getClimate(IntTup spot)
 void OverworldWorldGenMethod::setSeed(int seed)
 {
     noise.SetSeed(seed);
+    voronoiNoise.SetSeed(seed);
 }
 
 MaterialName OverworldWorldGenMethod::getFloorBlockInClimate(const Climate& climate)
@@ -184,4 +187,9 @@ float OverworldWorldGenMethod::getTemperatureNoise(const IntTup& spot)
         (spot.y + 1000) * tempNoiseScale,
         spot.z * tempNoiseScale)
     * 2.0 - ((spot.y - 60) / 500.0f);
+}
+
+float OverworldWorldGenMethod::getNoiseMix(float x, float y, float z)
+{
+    return noise.GetNoise(x,y,z);
 }

@@ -139,14 +139,36 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
                             grabPosition.x = floor(grabPosition.x) + 0.5f + (ledgeNormal.x * 0.2f);
                             grabPosition.z = floor(grabPosition.z) + 0.5f + (ledgeNormal.z * 0.2f);
 
-                            // Update controller position
-                            controller->setPosition(PxExtendedVec3(grabPosition.x, grabPosition.y - CAMERA_OFFSET, grabPosition.z));
 
-                            // Zero out velocity
-                            camera.transform.velocity = glm::vec3(0.0f);
+                            bool spotclear = true;
+                            {
+                                auto locked = world->tryToGetReadLockOnDMs();
+                                if (locked != std::nullopt)
+                                {
+                                    int blockType = world->getLocked(IntTup(
+                                        std::floor(grabPosition.x),
+                                        std::floor(grabPosition.y-CAMERA_OFFSET),
+                                        std::floor(grabPosition.z)));
+                                    int blockType2 = world->getLocked(IntTup(
+                                        std::floor(grabPosition.x),
+                                        std::floor(grabPosition.y-CAMERA_OFFSET)+1,
+                                        std::floor(grabPosition.z)));
+                                    spotclear = ((blockType == AIR) && (blockType2 == AIR));
+                                }
+                            }
 
-                            // Play grab sound if you have one
-                            // playSound(sounds.at((int)SoundBuffers::LEDGE_GRAB));
+                            if (spotclear)
+                            {
+                                // Update controller position
+                                controller->setPosition(PxExtendedVec3(grabPosition.x, grabPosition.y - CAMERA_OFFSET, grabPosition.z));
+
+                                // Zero out velocity
+                                camera.transform.velocity = glm::vec3(0.0f);
+
+                                // Play grab sound if you have one
+                                // playSound(sounds.at((int)SoundBuffers::LEDGE_GRAB));
+                            }
+
                         }
                     }
                 }
@@ -162,7 +184,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         displacement = glm::vec3(0.0f);
 
         // Start climbing if jump is pressed
-        if (controls.jump)
+        if (controls.jump || controls.forward)
         {
             isClimbingUp = true;
             isLedgeGrabbing = false;
@@ -206,11 +228,33 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
             // Set proper Y position
             finalPos.y = ceil(ledgePosition.y) + 1.5f; // Slightly above block
 
-            // Update controller position
-            controller->setPosition(PxExtendedVec3(finalPos.x, finalPos.y - CAMERA_OFFSET, finalPos.z));
 
-            // Update camera position
-            camera.transform.position = finalPos;
+            bool spotclear = true;
+            {
+                auto locked = world->tryToGetReadLockOnDMs();
+                if (locked != std::nullopt)
+                {
+                    int blockType = world->getLocked(IntTup(
+                        std::floor(finalPos.x),
+                        std::floor(finalPos.y-CAMERA_OFFSET),
+                        std::floor(finalPos.z)));
+                    int blockType2 = world->getLocked(IntTup(
+                        std::floor(finalPos.x),
+                        std::floor(finalPos.y-CAMERA_OFFSET)+1,
+                        std::floor(finalPos.z)));
+                    spotclear = ((blockType == AIR) && (blockType2 == AIR));
+                }
+            }
+
+            if (spotclear)
+            {
+                // Update controller position
+                controller->setPosition(PxExtendedVec3(finalPos.x, finalPos.y - CAMERA_OFFSET, finalPos.z));
+
+                // Update camera position
+                camera.transform.position = finalPos;
+            }
+
         }
         else
         {
@@ -247,15 +291,35 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
                 newPos = glm::mix(midPoint, targetPos, adjustedT);
             }
 
-            // Update controller position
-            controller->setPosition(PxExtendedVec3(newPos.x, newPos.y - CAMERA_OFFSET, newPos.z));
+            bool spotclear = false;
+            {
+                auto locked = world->tryToGetReadLockOnDMs();
+                if (locked != std::nullopt)
+                {
+                    int blockType = world->getLocked(IntTup(
+                        std::floor(newPos.x),
+                        std::floor(newPos.y-CAMERA_OFFSET),
+                        std::floor(newPos.z)));
+                    int blockType2 = world->getLocked(IntTup(
+                        std::floor(newPos.x),
+                        std::floor(newPos.y-CAMERA_OFFSET)+1,
+                        std::floor(newPos.z)));
+                    spotclear = ((blockType == AIR) && (blockType2 == AIR));
+                }
+            }
+            if (spotclear)
+            {
+                // Update controller position
+                controller->setPosition(PxExtendedVec3(newPos.x, newPos.y - CAMERA_OFFSET, newPos.z));
 
-            // Update camera position directly
-            camera.transform.position = newPos;
+                // Update camera position directly
+                camera.transform.position = newPos;
 
-            // Zero out velocity and displacement during climb
-            camera.transform.velocity = glm::vec3(0.0f);
-            displacement = glm::vec3(0.0f);
+                // Zero out velocity and displacement during climb
+                camera.transform.velocity = glm::vec3(0.0f);
+                displacement = glm::vec3(0.0f);
+            }
+
         }
     }
 

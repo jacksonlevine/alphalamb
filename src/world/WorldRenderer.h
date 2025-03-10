@@ -77,6 +77,14 @@ enum class Side
 {
     Front = 0,Right,Back,Left,Top,Bottom
 };
+// inline static IntTup neighborSpots[6] = {
+//     IntTup(0,0,-1),
+//     IntTup(1, 0,0),
+//     IntTup(0,0,1),
+//     IntTup(-1,0,0),
+//     IntTup(0,1,0),
+//     IntTup(0,-1,0)
+// };
 
 template<bool doBrightness = true>
 __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex);
@@ -165,6 +173,7 @@ public:
     std::thread chunkWorker;
     std::atomic<int> rebuildThreadRunning = false;
     std::atomic<int> meshBuildingThreadRunning = false;
+
 
 
     //For the user
@@ -361,7 +370,7 @@ public:
                                                        z == minZ || z == maxZ);
 
                                     if (isBoundary || !m.hollow) {
-                                        world->nonUserDataMap->setLocked(IntTup{x, y, z}, m.block);
+                                        world->setNUDMLocked(IntTup{x, y, z}, m.block);
                                         if (world->userDataMap->getLocked(IntTup{x, y, z}) != std::nullopt)
                                         {
                                             spotsToEraseInUDM.emplace_back(x, y, z);
@@ -406,7 +415,7 @@ public:
                         IntTup offset = IntTup(vm.dimensions.x/-2, 0, vm.dimensions.z/-2) + request.vm.spot;
                         for ( auto & p : vm.points)
                         {
-                            world->nonUserDataMap->setLocked(offset+p.localSpot, p.colorIndex);
+                            world->setNUDMLocked(offset+p.localSpot, p.colorIndex);
                             if (world->userDataMap->getLocked(offset+p.localSpot) != std::nullopt)
                             {
                                 spotsToEraseInUDM.emplace_back(offset+p.localSpot);
