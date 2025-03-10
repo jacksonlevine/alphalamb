@@ -22,13 +22,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
     glm::vec3 displacement(0.0f, 0.0f, 0.0f);
     isGrounded = false;
 
-    if (dashtimer > 0.0f)
-    {
-        dashtimer -= deltaTime;
-    } else
-    {
-        dashing = false;
-    }
+
 
     if (stamCount < 3)
     {
@@ -42,7 +36,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         }
     }
 
-    if (controls.sprint)
+    if (controls.sprint && !dashing)
     {
         if (stamCount > 0 && dashtimer <= 0.0f)
         {
@@ -51,7 +45,22 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
             dashtimer = 2.0f;
             dashrebuild = 0.0f;
         }
+    }
+
+    if(!controls.sprint && dashing)
+    {
+        dashing = false;
+        dashtimer = 0.0f;
+        dashrebuild = 0.0f;
+    }
+
+    if (dashtimer > 0.0f)
+    {
+        dashtimer -= deltaTime;
+    } else
+    {
         controls.sprint = false;
+        dashing = false;
     }
 
     float walkmult = dashing ? 9.0f : 4.0f;
@@ -351,6 +360,9 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
                 // Zero out velocity and displacement during climb
                 camera.transform.velocity = glm::vec3(0.0f);
                 displacement = glm::vec3(0.0f);
+            } else
+            {
+                isClimbingUp = false;
             }
 
         }
