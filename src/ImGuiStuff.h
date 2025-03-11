@@ -540,7 +540,7 @@ inline void renderImGui() {
             }
             case GuiScreen::InGame:
 
-                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.97s");
+                ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.98s2");
 
             for (int i = 0; i < theScene.players.at(theScene.myPlayerIndex)->stamCount; i++)
             {

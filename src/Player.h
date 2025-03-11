@@ -44,6 +44,14 @@ struct Player {
     bool dashing = false;
     float dashtimer = 0.0f;
     float dashrebuild = 0.0f;
+    // Sliding variables
+    bool isSliding = false;
+    float slideTimer = 0.0f;
+    const float slideDuration = 1.5f;
+    float originalStepHeight = 0.5f; // Store original step height
+    bool slidThisDash = false;
+    float originalCharHeight = 0.0f;
+    bool crouchOverride = false;
     Player();
     ~Player();
 private:

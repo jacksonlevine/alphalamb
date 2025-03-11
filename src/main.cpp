@@ -337,6 +337,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             }
         }
 
+        if (key == GLFW_KEY_LEFT_CONTROL)
+        {
+            scene->players.at(scene->myPlayerIndex)->controls.crouch = action;
+        }
+
         if (key == GLFW_KEY_V && action == GLFW_PRESS)
         {
             theScene.vmStampGizmo->active = !theScene.vmStampGizmo->active;

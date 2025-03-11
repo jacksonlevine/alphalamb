@@ -8,9 +8,10 @@
 #include "PhysXStuff.h"
 #include "world/gizmos/ParticlesGizmo.h"
 
-
 void Player::update(const float deltaTime, World* world, ParticlesGizmo* particles)
 {
+
+    
     // Existing jetpack source code...
     if (jetpackSource == 0)
     {
@@ -21,8 +22,6 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
 
     glm::vec3 displacement(0.0f, 0.0f, 0.0f);
     isGrounded = false;
-
-
 
     if (stamCount < 3)
     {
@@ -36,11 +35,23 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         }
     }
 
+    if (crouchOverride)
+    {
+        PxCapsuleController* capsuleController = static_cast<PxCapsuleController*>(controller);
+        originalCharHeight = capsuleController->getHeight();
+        capsuleController->resize(0.001f);
+    } else
+    {
+        PxCapsuleController* capsuleController = static_cast<PxCapsuleController*>(controller);
+        capsuleController->resize(originalCharHeight);
+    }
+
     if (controls.sprint && !dashing)
     {
         if (stamCount > 0 && dashtimer <= 0.0f)
         {
             dashing = true;
+            slidThisDash = false;
             stamCount-= 1;
             dashtimer = 2.0f;
             dashrebuild = 0.0f;
@@ -63,7 +74,74 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         dashing = false;
     }
 
-    float walkmult = dashing ? 9.0f : 4.0f;
+    // Handle sliding logic
+    if (dashing && crouchOverride && !isSliding && !slidThisDash)
+    {
+        // Start sliding
+        isSliding = true;
+        slideTimer = slideDuration;
+        slidThisDash = true;
+        // Store original step height and set to lower height while sliding
+        originalStepHeight = controller->getStepOffset();
+        controller->setStepOffset(1.5f); //Slide up blocks
+        isClimbingUp = false;
+        isLedgeGrabbing = false;
+
+    }
+
+    // Update sliding state
+    if (isSliding)
+    {
+        isClimbingUp = false;
+        isLedgeGrabbing = false;
+        // Update slide timer
+        slideTimer -= deltaTime;
+
+        // Handle slide dust particles
+        if (camera.transform.grounded)
+        {
+            if (footDustTimer > 0.05f) // More frequent particles during slide
+            {
+                footDustTimer = 0.0f;
+                particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 2, lastBlockStandingOn, 0.5f, 0.05f);
+            }
+            else
+            {
+                footDustTimer += deltaTime;
+            }
+        }
+
+        // End slide if timer runs out
+        if (slideTimer <= 0.0f)
+        {
+            isSliding = false;
+            slideTimer = 0.0f;
+
+            // Restore original step height
+            controller->setStepOffset(originalStepHeight);
+            PxCapsuleController* capsuleController = static_cast<PxCapsuleController*>(controller);
+            capsuleController->resize(originalCharHeight);
+        }
+
+        // If player releases crouch during slide, end it early
+        if (!crouchOverride)
+        {
+            isSliding = false;
+            slideTimer = 0.0f;
+            controller->setStepOffset(originalStepHeight);
+            PxCapsuleController* capsuleController = static_cast<PxCapsuleController*>(controller);
+            capsuleController->resize(originalCharHeight);
+        }
+    }
+
+    float walkmult = 4.0f;
+    if (dashing && !isSliding) {
+        walkmult = 9.0f;
+    } else if (isSliding) {
+        // Increase speed at start of slide, then gradually reduce
+        float slideSpeedMultiplier = 1.0f * (slideTimer / slideDuration);
+        walkmult = 9.0f * (1.0f + slideSpeedMultiplier);
+    }
 
     // Check what block we're standing on...
     {
@@ -71,11 +149,18 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         if (locked != std::nullopt)
         {
             lastBlockStandingOn = (MaterialName)world->getLocked(IntTup(camera.transform.position.x, camera.transform.position.y-2, camera.transform.position.z));
+            if (world->getLocked(IntTup(std::floor(camera.transform.position.x), std::floor(camera.transform.position.y), std::floor(camera.transform.position.z))) != AIR)
+            {
+                crouchOverride = true;
+            } else if (world->getLocked(IntTup(std::floor(camera.transform.position.x), std::floor(camera.transform.position.y + 1), std::floor(camera.transform.position.z))) == AIR)
+            {
+                crouchOverride = controls.crouch;
+            }
         }
     }
 
     // Handle sprint dust particles...
-    if (dashing && camera.transform.grounded)
+    if (dashing && camera.transform.grounded && !isSliding)
     {
         if (footDustTimer > 0.07f)
         {
@@ -87,8 +172,6 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         }
     }
 
-
-
     static const float climbUpDuration = 0.5f; // Time to climb up in seconds
 
     // Update cooldown
@@ -97,7 +180,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
     }
 
     // Ledge detection and handling
-    if (!isLedgeGrabbing && !isClimbingUp && !camera.transform.grounded && !jetpackMode && !hoverMode && ledgeGrabCooldown <= 0.0f)
+    if (!isLedgeGrabbing && !isClimbingUp && !camera.transform.grounded && !jetpackMode && !hoverMode && ledgeGrabCooldown <= 0.0f && slideTimer <= 0.0f && !isSliding)
     {
         // Check if we're falling
         if (camera.transform.velocity.y < 0)
@@ -108,8 +191,13 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
             PxVec3 rayDir(camera.transform.direction.x, 0, camera.transform.direction.z);
             rayDir.normalize();
 
-            // Cast ray forward to detect a wall
-            if (gScene->raycast(rayOrigin, rayDir, 1.2f, raycastResult))
+            // Setup query filter data - only hit static objects (word0 = 1), not controllers (word0 = 2)
+            PxQueryFilterData filterData;
+            filterData.flags = PxQueryFlag::eSTATIC; // Only hit static geometry
+            filterData.data.word0 = 1; // Only hit objects with this filter bit
+
+            // Cast ray forward to detect a wall with filter
+            if (gScene->raycast(rayOrigin, rayDir, 1.2f, raycastResult, PxHitFlag::eDEFAULT, filterData))
             {
                 // Save normal for proper positioning
                 PxVec3 normal = raycastResult.block.normal;
@@ -134,7 +222,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
 
                     // Ensure the ledge is at a valid height for grabbing
                     if (ledgeHeight > camera.transform.position.y &&
-                        ledgeHeight < camera.transform.position.y + 2.0f)
+                        ledgeHeight < camera.transform.position.y + 1.0f)
                     {
                         // Check if the space above the ledge is clear (not a block)
                         // We need to make sure there's room to climb up
@@ -217,16 +305,19 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
             }
         }
     }
-
+    //std::cout << "isledgegrabbing" << isLedgeGrabbing << std::endl;
+    //std::cout << "isclimbingup: " << isClimbingUp << std::endl;
+    //std::cout << "issliding: " << isSliding << std::endl;
+    //std::cout << "isledgegrabbing: " << isLedgeGrabbing << std::endl;
     // Handle ledge grabbing state
-    if (isLedgeGrabbing && !isClimbingUp)
+    if (isLedgeGrabbing && !isClimbingUp && !isSliding)
     {
         // Zero out velocity and displacement while hanging
         camera.transform.velocity = glm::vec3(0.0f);
         displacement = glm::vec3(0.0f);
 
         // Start climbing if jump is pressed
-        if (controls.jump || controls.forward)
+        if ((controls.jump || controls.forward) && !isSliding)
         {
             isClimbingUp = true;
             isLedgeGrabbing = false;
@@ -245,7 +336,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
     }
 
     // Handle climbing up
-    if (isClimbingUp)
+    if (isClimbingUp && !isSliding)
     {
         // Advance timer
         climbUpTimer += deltaTime;
@@ -432,17 +523,42 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
             camera.transform.velocity.z = glm::clamp(camera.transform.velocity.z, -8000.0f * deltaTime, 8000.0f * deltaTime);
         } else
         {
-            if (controls.forward) {
-                displacement += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
+            if (isSliding)
+            {
+                // During sliding, prioritize forward momentum and limit turning
+                if (controls.forward)
+                {
+                    displacement += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
+                }
+
+                // Allow slight steering during slide (reduced effect)
+                if (controls.right)
+                {
+                    displacement += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult * 0.3f;
+                }
+                if (controls.left)
+                {
+                    displacement -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult * 0.3f;
+                }
+
+                // Ignore backward input during slide
+                // controls.backward is not processed during sliding
             }
-            if (controls.backward) {
-                displacement -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
-            }
-            if (controls.right) {
-                displacement += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult;
-            }
-            if (controls.left) {
-                displacement -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult;
+            else
+            {
+                // Normal movement when not sliding
+                if (controls.forward) {
+                    displacement += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
+                }
+                if (controls.backward) {
+                    displacement -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
+                }
+                if (controls.right) {
+                    displacement += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult;
+                }
+                if (controls.left) {
+                    displacement -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult;
+                }
             }
         }
 
@@ -478,8 +594,8 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
                 camera.transform.velocity.y = glm::max(camera.transform.velocity.y, -MAX_FALL_SPEED); // Clamp fall speed
             }
 
-            // Handle jumping
-            if ((camera.transform.grounded && controls.jump)) {
+            // Handle jumping - don't allow jumping during sliding
+            if ((camera.transform.grounded && controls.jump && !isSliding)) {
                 camera.transform.velocity.y = JUMP_STRENGTH;
                 controls.jump = false;
             }
@@ -495,6 +611,11 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
 
         PxControllerFilters filters;
         filters.mFilterFlags = PxQueryFlag::eSTATIC; // Only collides with static geometry
+
+        // Set step height based on sliding state for the controller move
+        if (isSliding) {
+            controller->setStepOffset(1.5f);
+        }
 
         // Move the character controller
         PxControllerCollisionFlags collisionFlags = controller->move(
@@ -514,20 +635,37 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
             isClimbingUp = false;
         }
 
+        // // If we're sliding and hit a wall, end the slide
+        // if (isSliding && (
+        //     (collisionFlags & PxControllerCollisionFlag::eCOLLISION_SIDES) ))
+        // {
+        //     isSliding = false;
+        //     slideTimer = 0.0f;
+        //     controller->setStepOffset(originalStepHeight);
+        // }
+
         // Reset vertical velocity if grounded
         if (camera.transform.grounded) {
             camera.transform.velocity.y = 0.0f;
-            camera.transform.velocity.z = 0.0f;
-            camera.transform.velocity.x = 0.0f;
+            if (!isSliding) {
+                // Only zero out horizontal velocity if not sliding
+                camera.transform.velocity.z = 0.0f;
+                camera.transform.velocity.x = 0.0f;
+            } else {
+                // Gradually reduce horizontal velocity during slide
+                camera.transform.velocity.z *= 0.98f;
+                camera.transform.velocity.x *= 0.98f;
+            }
         }
 
         // Update position
         PxExtendedVec3 newPos = controller->getPosition();
         camera.transform.position.x = static_cast<float>(newPos.x);
-        camera.transform.position.y = static_cast<float>(newPos.y + CAMERA_OFFSET);
+        camera.transform.position.y = static_cast<float>(newPos.y + CAMERA_OFFSET - (crouchOverride ? 1.0f: 0.0f));
         camera.transform.position.z = static_cast<float>(newPos.z);
     }
 }
+
 Player::Player()
 {
     controller = createPlayerController(

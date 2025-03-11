@@ -145,6 +145,7 @@ add_executable(DistantGarden
         src/menupage/FullscreenKaleidoscope.h
         src/AmbOcclSetting.cpp
         src/AmbOcclSetting.h
+        src/specialblocks/SpecialBlockInfo.h
 )
 
 add_executable(DGServer
