@@ -81,6 +81,13 @@ inline void addFence(UsableMesh& mesh, BlockType block, IntTup position, PxU32& 
         PxVec3(1.0f - postDistFromEdge, 1.0f, 1.0f - postDistFromEdge),
         PxVec3(1.0f - postDistFromEdge, 1.0f, postDistFromEdge),
         PxVec3(postDistFromEdge, 1.0f, postDistFromEdge),
+
+        //Bottom
+        PxVec3(postDistFromEdge, 0.0f, postDistFromEdge),
+        PxVec3(1.0f - postDistFromEdge, 0.0f, postDistFromEdge),
+        PxVec3(1.0f - postDistFromEdge, 0.0f, 1.0f - postDistFromEdge),
+        PxVec3(postDistFromEdge, 0.0f, 1.0f - postDistFromEdge),
+
     };
 
     static std::vector<PxVec3> baseConnectyBit = { // Corrected clockwise ordering for each face
@@ -97,10 +104,11 @@ inline void addFence(UsableMesh& mesh, BlockType block, IntTup position, PxU32& 
         PxVec3(1.0f, 1.0f - postDistFromEdge, (1.0f - postDistFromEdge) - 0.1f),     // Bottom-right
 
         // Back (clockwise, viewed from outside)
+        PxVec3(1.0f - postDistFromEdge, 1.0f - postDistFromEdge, (1.0f - postDistFromEdge) - 0.1f), // Top-left
         PxVec3(1.0f - postDistFromEdge, postDistFromEdge, (1.0f - postDistFromEdge) - 0.1f), // Bottom-left
         PxVec3(1.0f, postDistFromEdge, (1.0f - postDistFromEdge) - 0.1f),                    // Bottom-right
         PxVec3(1.0f, 1.0f - postDistFromEdge, (1.0f - postDistFromEdge) - 0.1f),             // Top-right
-        PxVec3(1.0f - postDistFromEdge, 1.0f - postDistFromEdge, (1.0f - postDistFromEdge) - 0.1f), // Top-left
+
 
         // Bottom (clockwise, viewed from outside)
         PxVec3(1.0f, postDistFromEdge, (1.0f - postDistFromEdge) - 0.1f),                  // Bottom-left
