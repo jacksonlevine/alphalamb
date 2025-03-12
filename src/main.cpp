@@ -62,7 +62,7 @@ Scene theScene = {};
 
 constexpr double J_PI = 3.1415926535897932384626433832;
 constexpr double DEG_TO_RAD = J_PI / 180.0;
-constexpr float INTROFLYTIME = 5.0f;
+constexpr float INTROFLYTIME = 2.5f;
 
 __inline float gaussian(float x, float peak, float radius) {
     float stdDev = radius / 3.0;

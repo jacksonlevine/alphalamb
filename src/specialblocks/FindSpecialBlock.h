@@ -19,6 +19,8 @@ constexpr std::optional<addBlockFunc> findSpecialBlock(MaterialName bt)
 }
 
 
+
+
 constexpr std::optional<setBitsFunc> findSpecialSetBits(MaterialName bt)
 {
     if (bt == FENCE)
@@ -27,6 +29,5 @@ constexpr std::optional<setBitsFunc> findSpecialSetBits(MaterialName bt)
     }
     return std::nullopt;
 }
-
 
 #endif //FINDSPECIALBLOCK_H

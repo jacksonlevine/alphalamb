@@ -10,6 +10,7 @@
 #include "PrecompHeader.h"
 #include "NetworkTypes.h"
 #include "PlayerInfoMapKeyedByUID.h"
+#include "specialblocks/FindSpecialBlock.h"
 #include "world/DataMap.h"
 #include "world/World.h"
 using tcp = boost::asio::ip::tcp;
@@ -48,6 +49,7 @@ inline void sendMessageToAllClients(const DGMessage& message, int m_playerIndex,
     }
 
 }
+
 
 
 class Session : public std::enable_shared_from_this<Session>
@@ -263,7 +265,15 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
                         //std::cout << "Got block set \n";
-                        serverWorld.userDataMap->set(m.spot, m.block);
+                        if(auto func = findSpecialSetBits((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
+                        {
+                            func.value()(&serverWorld, m.spot);
+
+                        } else
+                        {
+                            serverWorld.userDataMap->set(m.spot, m.block);
+                        }
+
                         redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, VoxModelStamp>)
