@@ -107,7 +107,8 @@ DEFINE_ENUM_WITH_STRING_CONVERSIONS(MaterialName, BlockType,
     (CLOUD_BLOCK)
 )
 
-
+constexpr auto noAmbOccl = std::to_array({
+    FENCE, GLASS});
 
 
 constexpr auto transparents = std::to_array({
@@ -160,7 +161,8 @@ constexpr auto transparents = std::to_array({
 
    GLASS,
 
-   TORCH,});
+   TORCH,
+FENCE});
 
 using TexCoord = std::pair<uint8_t, uint8_t>;
 using BlockTextures = std::array<TexCoord, 3>;

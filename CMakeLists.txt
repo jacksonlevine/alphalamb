@@ -146,6 +146,8 @@ add_executable(DistantGarden
         src/AmbOcclSetting.cpp
         src/AmbOcclSetting.h
         src/specialblocks/SpecialBlockInfo.h
+        src/specialblocks/Fence.h
+        src/specialblocks/FindSpecialBlock.h
 )
 
 add_executable(DGServer

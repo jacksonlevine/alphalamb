@@ -542,10 +542,10 @@ inline void renderImGui() {
 
                 ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.98s2");
 
-            for (int i = 0; i < theScene.players.at(theScene.myPlayerIndex)->stamCount; i++)
-            {
-                DGCustomButton((std::string("##stam") + std::to_string(i)).c_str(), DGButtonType::Stam1, ImVec2(15, 40));
-            }
+                for (int i = 0; i < theScene.players.at(theScene.myPlayerIndex)->stamCount; i++)
+                {
+                    DGCustomButton((std::string("##stam") + std::to_string(i)).c_str(), DGButtonType::Stam1, ImVec2(15, 40));
+                }
 
 
                 ImVec2 screenSize = ImGui::GetIO().DisplaySize;

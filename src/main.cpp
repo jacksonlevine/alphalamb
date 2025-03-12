@@ -48,6 +48,7 @@
 #include <tiny_gltf.h>
 
 #include "Planets.h"
+#include "specialblocks/FindSpecialBlock.h"
 //Tinygltf includes stb image
 //#include <stb_image.h>
 
@@ -1046,15 +1047,14 @@ int main()
                                                              12, (MaterialName)blockThere, 0.8, 0.0f);
                             }
 
-                            if (m.block == AIR)
+                            if (m.block == AIR || findSpecialBlock((MaterialName)(m.block & BLOCK_ID_BITS)) != std::nullopt)
                             {
                                 auto cs = scene->worldRenderer->chunkSize;
-                                // Then in your code:
                                 auto xmod = properMod(spot.x, cs);
                                 auto zmod = properMod(spot.z, cs);
 
                                 scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                    spot, AIR, false
+                                    spot, m.block, false
                                     );
 
 
