@@ -1050,7 +1050,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
         // Out of bounds check
         if (x < 0 || x >= chunkSize || y < 0 || y >= 250 || z < 0 || z >= chunkSize) {
             IntTup pos = start + IntTup(x, y, z);
-            return locked ? world->getLocked(pos) : world->get(pos);
+            return locked ? world->getRawLocked(pos) : world->getRaw(pos);
         }
 
         int idx = (x * chunkSize * 250) + (z * 250) + y;
@@ -1062,8 +1062,8 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
         // Out of bounds check
         if (x < 0 || x >= chunkSize || y < 0 || y >= 250 || z < 0 || z >= chunkSize) {
             IntTup pos = start + IntTup(x, y, z);
-            BlockType block = locked ? world->getLocked(pos) : world->get(pos);
-            return (block == AIR) || (std::ranges::find(transparents, block) != transparents.end());
+            BlockType block = locked ? world->getRawLocked(pos) : world->getRaw(pos);
+            return (block == AIR) || (std::ranges::find(transparents, block & BLOCK_ID_BITS) != transparents.end());
         }
 
         int idx = (x * chunkSize * 250) + (z * 250) + y;

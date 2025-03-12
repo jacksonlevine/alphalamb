@@ -18,7 +18,7 @@ constexpr BlockType BLOCK_DIRECTION_BITS = 0b0000'0000'0000'0011'0000'0000'0000'
 
 constexpr BlockType CONNECT_X_BIT =    0b1000'0000'0000'0000'0000'0000'0000'0000;
 constexpr BlockType CONNECT_NEGX_BIT = 0b0100'0000'0000'0000'0000'0000'0000'0000;
-constexpr BlockType CONNECT_Z_BIT =   0b0010'0000'0000'0000'0000'0000'0000'0000;
+constexpr BlockType CONNECT_Z_BIT =    0b0010'0000'0000'0000'0000'0000'0000'0000;
 constexpr BlockType CONNECT_NEGZ_BIT = 0b0001'0000'0000'0000'0000'0000'0000'0000;
 
 
@@ -86,7 +86,11 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
             const std::unique_ptr<DataMap::Iterator> it = map->createIterator();
             while (it->hasNext()) {
                 auto [key, value] = it->next();
-                contentStream << key.x << " " << key.y << " " << key.z << " " << (int)value << '\n';
+                if((value & BLOCK_ID_BITS) == FENCE)
+                {
+                    std::cout << "A fence with id: " <<  << " 0x" << std::hex << (uint32_t)value << std::dec << '\n';
+                }
+                contentStream << key.x << " " << key.y << " " << key.z << " 0x" << std::hex << (uint32_t)value << std::dec << '\n';
             }
             gotlock = true;
         }
@@ -182,7 +186,8 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
                 if (words.size() == 4)
                 {
 
-                    map->set(IntTup( std::stoi(words[0]) , std::stoi(words[1]), std::stoi(words[2]) ), static_cast<BlockType>(std::stoul(words[3])));
+                    map->set(IntTup(std::stoi(words[0]), std::stoi(words[1]), std::stoi(words[2])),
+                    static_cast<BlockType>(std::stoul(words[3], nullptr, 0)));
                 } else if (words.size() == 5 && words.at(0) == "VM")
                 {
                     std::unique_lock<std::shared_mutex> lock(pvmr.mutex);
