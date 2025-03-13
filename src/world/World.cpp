@@ -65,6 +65,7 @@ BlockType World::getRawLocked(IntTup spot)
 
 void World::set(IntTup spot, const BlockType val)
 {
+    std::cout << "Setting " << spot.x << " " << spot.y << " " << spot.z << " " << val << std::endl;
     userDataMap->set(spot, val);
     //blockMemo->set(spot, val);
 }

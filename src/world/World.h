@@ -86,10 +86,10 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
             const std::unique_ptr<DataMap::Iterator> it = map->createIterator();
             while (it->hasNext()) {
                 auto [key, value] = it->next();
-                // if((value & BLOCK_ID_BITS) == FENCE)
-                // {
-                //     std::cout << "A fence with id: " << value << " Hex: "  << " 0x" << std::hex << (uint32_t)value << std::dec << '\n';
-                // }
+                if((value & BLOCK_ID_BITS) == STONE_STAIRS)
+                {
+                    std::cout << "A stone stair with id: " << value << " Hex: "  << " 0x" << std::hex << (uint32_t)value << std::dec << '\n';
+                }
                 contentStream << key.x << " " << key.y << " " << key.z << " 0x" << std::hex << (uint32_t)value << std::dec << '\n';
             }
             gotlock = true;

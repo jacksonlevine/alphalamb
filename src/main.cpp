@@ -197,6 +197,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                         if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
                         {
                             //std::cout << "Senfing blokc place \n";
+                            std::cout << "Place at: " << placeSpot.x << " " << placeSpot.y << " " << placeSpot.z << " " << scene->players.at(scene->myPlayerIndex)->currentHeldBlock << std::endl;
                             pushToMainToNetworkQueue(BlockSet{
                                 placeSpot, scene->players.at(scene->myPlayerIndex)->currentHeldBlock
                             });

@@ -28,8 +28,8 @@ DEFINE_ENUM_WITH_STRING_CONVERSIONS(MaterialName, BlockType,
     (RED_STONE)
     (SALTED_EARTH)
     (BEDROCK)
-    (RED_CRYSTAL_UNATTAINABLE)
-    (RED_CRYSTAL)
+    (STONE_STAIRS)
+    (WOOD_STAIRS)
     (LIGHT)
     (DOOR)
     (LADDER)
@@ -114,6 +114,9 @@ constexpr auto noAmbOccl = std::to_array({
 constexpr auto transparents = std::to_array({
     AIR,
 
+    STONE_STAIRS,
+    WOOD_STAIRS,
+
        LEAVES,
 
    BUSH_LEAVES,
@@ -185,8 +188,8 @@ constexpr std::array<BlockTextures, BLOCK_COUNT> TEXS = {{
     {{ {6, 2}, {6, 2}, {6, 2} }}, // 13 red stone
     {{ {7, 2}, {7, 2}, {7, 2} }}, // 14 salted earth
     {{ {8, 2}, {8, 2}, {8, 2} }}, // 15 bedrock
-    {{ {0, 3}, {0, 3}, {0, 3} }}, // 16 red crystal unattainable
-    {{ {0, 4}, {0, 4}, {0, 4} }}, // 17 red crystal
+    {{ {9, 0}, {9, 0}, {9, 0} }}, // 16 stone stairs
+    {{ {10, 0}, {10, 0}, {10, 0} }}, // 17 wood stairs
     {{ {12, 1}, {12, 1}, {12, 1} }}, // 18 light
     {{ {12, 0}, {12, 0}, {12, 0} }}, // 19 door
     {{ {0, 1}, {0, 1}, {0, 1} }}, // 20 ladder

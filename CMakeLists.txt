@@ -148,6 +148,7 @@ add_executable(DistantGarden
         src/specialblocks/SpecialBlockInfo.h
         src/specialblocks/Fence.h
         src/specialblocks/FindSpecialBlock.h
+        src/specialblocks/Stairs.h
 )
 
 add_executable(DGServer

@@ -35,6 +35,7 @@ extern std::shared_mutex clientsMutex;
 extern World serverWorld;
 extern InvMapKeyedByUID invMapKeyedByUID;
 
+constexpr int DGSEEDSEED = 987654321;
 
 inline void sendMessageToAllClients(const DGMessage& message, int m_playerIndex, bool excludeMe)
 {
@@ -66,9 +67,10 @@ private:
     void sayInitialThings()
     {
         auto self(shared_from_this());
-        constexpr int seed = 987654321;
+
+
         DGMessage wi = WorldInfo {
-            .seed = seed,
+            .seed = DGSEEDSEED,
             .yourPosition = glm::vec3(0, 200, 0),
             .yourPlayerIndex = (int)m_playerIndex
 
@@ -264,9 +266,10 @@ private:
 
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
-                        //std::cout << "Got block set \n";
+                        std::cout << "Got block set" << m.block << "\n";
                         if(auto func = findSpecialSetBits((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
                         {
+                            std::cout << "Calling custom func on server \n";
                             func.value()(&serverWorld, m.spot);
 
                         } else
@@ -412,6 +415,7 @@ class Server {
 public:
     Server(boost::asio::io_context& io_context, short port) : m_acceptor(io_context, tcp::endpoint(tcp::v4(), port)) {
         // now we call do_accept() where we wait for clients
+        serverWorld.setSeed(DGSEEDSEED);
         do_accept();
     }
     void do_accept() {

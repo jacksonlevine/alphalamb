@@ -5,6 +5,7 @@
 #include "CollisionCage.h"
 
 #include "PhysXStuff.h"
+#include "specialblocks/FindSpecialBlock.h"
 #include "world/WorldRenderer.h"
 
 
@@ -32,12 +33,20 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot, float deltaTime)
                         for(int y = 6; y > -6; y--)
                         {
                             IntTup spotHere = blockSpot + IntTup(x,y,z);
-                            if(world->getLocked(spotHere) != AIR)
+                            auto rawhere = world->getRawLocked(spotHere);
+                            if(rawhere != AIR)
                             {
-                                for (int i = 0; i < 6; i++)
+                                if (auto func = findSpecialBlock((MaterialName)(rawhere & BLOCK_ID_BITS)); func != std::nullopt)
                                 {
-                                    addFace(PxVec3(spotHere.x, spotHere.y, spotHere.z), (Side)i, GRASS, 1, mesh, index, tindex);
+                                    func.value()(mesh, rawhere, IntTup(spotHere.x, spotHere.y, spotHere.z), index, tindex);
+                                } else
+                                {
+                                    for (int i = 0; i < 6; i++)
+                                    {
+                                        addFace(PxVec3(spotHere.x, spotHere.y, spotHere.z), (Side)i, GRASS, 1, mesh, index, tindex);
+                                    }
                                 }
+
                             }
                         }
                     }
