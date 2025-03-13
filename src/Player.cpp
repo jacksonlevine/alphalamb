@@ -180,7 +180,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
     }
 
     // Ledge detection and handling
-    if (!isLedgeGrabbing && !isClimbingUp && !camera.transform.grounded && !jetpackMode && !hoverMode && ledgeGrabCooldown <= 0.0f && slideTimer <= 0.0f && !isSliding)
+    if (!isLedgeGrabbing && !isClimbingUp && !camera.transform.grounded && !jetpackMode && !hoverMode && ledgeGrabCooldown <= 0.0f && slideTimer <= 0.0f && !isSliding && !controls.crouch)
     {
         // Check if we're falling
         if (camera.transform.velocity.y < 0)

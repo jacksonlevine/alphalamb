@@ -10,33 +10,34 @@
 #include "Stairs.h"
 #include "../PrecompHeader.h"
 
-constexpr std::optional<addBlockFunc> findSpecialBlock(MaterialName bt)
+constexpr std::optional<addBlockFunc> findSpecialBlockMeshFunc(MaterialName bt)
 {
-    if (bt == FENCE)
+    switch (bt)
     {
+    case FENCE:
         return addFence;
+    case STONE_STAIRS:
+        return addStairs<STONE>;
+    case WOOD_STAIRS:
+        return addStairs<WOOD_PLANKS>;
+    default:
+        return std::nullopt;
     }
-    if (bt == STONE_STAIRS)
-    {
-        return addStairs;
-    }
-    return std::nullopt;
 }
-
-
-
 
 constexpr std::optional<setBitsFunc> findSpecialSetBits(MaterialName bt)
 {
-    if (bt == FENCE)
+    switch (bt)
     {
-        return setFenceBits;
+        case FENCE:
+            return setFenceBits;
+        case STONE_STAIRS:
+            return setStairBits<STONE_STAIRS>;
+        case WOOD_STAIRS:
+            return setStairBits<WOOD_STAIRS>;
+        default:
+            return std::nullopt;
     }
-    if (bt == STONE_STAIRS)
-    {
-        return setStairBits;
-    }
-    return std::nullopt;
 }
 
 #endif //FINDSPECIALBLOCK_H

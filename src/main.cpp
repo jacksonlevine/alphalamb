@@ -1048,7 +1048,7 @@ int main()
                                                              12, (MaterialName)blockThere, 0.8, 0.0f);
                             }
 
-                            if (m.block == AIR || findSpecialBlock((MaterialName)(m.block & BLOCK_ID_BITS)) != std::nullopt)
+                            if (m.block == AIR || findSpecialBlockMeshFunc((MaterialName)(m.block & BLOCK_ID_BITS)) != std::nullopt)
                             {
                                 auto cs = scene->worldRenderer->chunkSize;
                                 auto xmod = properMod(spot.x, cs);

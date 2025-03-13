@@ -2,7 +2,7 @@
 #define STAIRS_H
 
 #include "SpecialBlockInfo.h"
-
+template <MaterialName stairID>
 inline void setStairBits(World* world, IntTup spot)
 {
     static std::vector<IntTup> neighbs = {
@@ -20,7 +20,7 @@ inline void setStairBits(World* world, IntTup spot)
     };
 
     // Start with base STAIRS block type
-    BlockType myBits = STONE_STAIRS;
+    BlockType myBits = stairID;
 
     for (int i = 0; i < 4; i++)
     {
@@ -30,7 +30,7 @@ inline void setStairBits(World* world, IntTup spot)
         auto mname = static_cast<MaterialName>(bid);
 
         // Connect to any non-stair block
-        if (mname != STONE_STAIRS && mname != AIR)
+        if (mname != stairID && mname != AIR)
         {
             myBits |= bits[i];
         }
@@ -39,6 +39,7 @@ inline void setStairBits(World* world, IntTup spot)
     world->set(spot, myBits);
 }
 
+template <MaterialName stairMaterial>
 inline void addStairs(UsableMesh& mesh, BlockType block, IntTup position, PxU32& index, PxU32& tindex)
 {
     // Base half-slab vertices
@@ -131,14 +132,14 @@ inline void addStairs(UsableMesh& mesh, BlockType block, IntTup position, PxU32&
     };
 
     // First add the base half-slab
-    addShapeWithMaterial(baseHalfSlab, STONE, mesh, position, index, tindex);
+    addShapeWithMaterial(baseHalfSlab, stairMaterial, mesh, position, index, tindex);
 
     // Then add the top back sections for each set connection bit
     for (int i = 0; i < 4; i++)
     {
         if (block & bits[i])
         {
-            addShapeWithMaterial(topBackSections[i], STONE, mesh, position, index, tindex);
+            addShapeWithMaterial(topBackSections[i], stairMaterial, mesh, position, index, tindex);
         }
     }
 }

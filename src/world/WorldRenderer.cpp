@@ -1084,7 +1084,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
 
                 IntTup here = start + IntTup(x, y, z);
 
-                if (auto specialFunc = findSpecialBlock(mat); specialFunc != std::nullopt)
+                if (auto specialFunc = findSpecialBlockMeshFunc(mat); specialFunc != std::nullopt)
                 {
                     specialFunc.value()(mesh, rawBlockHere, here, index, tindex);
                 } else

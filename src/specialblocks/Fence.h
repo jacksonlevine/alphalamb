@@ -6,6 +6,7 @@
 #define FENCE_H
 
 #include "SpecialBlockInfo.h"
+
 inline void setFenceBits(World* world, IntTup spot)
 {
     static std::vector<IntTup> neighbs = {
