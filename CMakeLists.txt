@@ -165,8 +165,6 @@ add_executable(DGServer
         src/Transform.h
         src/ClientUID.h
         src/ClientUID.cpp
-        src/creatures/CreatureWorld.cpp
-        src/creatures/CreatureWorld.h
 )
 
 target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)

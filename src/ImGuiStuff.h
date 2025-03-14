@@ -89,9 +89,9 @@ inline std::vector<float> generateSubdividedQuad(int divisions) {
             float y1 = (y + 1) * step;
 
             float s0 = x0;
-            float t0 = y0;
+            float t0 = 1.0f - y0; // Flip Y coordinate
             float s1 = x1;
-            float t1 = y1;
+            float t1 = 1.0f - y1; // Flip Y coordinate
 
             // First triangle
             vertices.insert(vertices.end(), {x0, y0, s0, t0});
