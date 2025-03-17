@@ -33,7 +33,7 @@ struct WorldInfo
 };
 
 struct ControlsUpdate {
-    int myPlayerIndex;
+    entt::entity myPlayerIndex;
     Controls myControls;
     glm::vec3 startPos;
     glm::vec2 startYawPitch;
@@ -54,19 +54,19 @@ struct BlockSet
 
 struct YawPitchUpdate
 {
-    int myPlayerIndex;
+    entt::entity myPlayerIndex;
     float newYaw;
     float newPitch;
 };
 
 struct PlayerLeave
 {
-    int myPlayerIndex;
+    entt::entity myPlayerIndex;
 };
 
 struct PlayerSelectBlockChange
 {
-    int myPlayerIndex;
+    entt::entity myPlayerIndex;
     MaterialName newMaterial;
 };
 
@@ -105,7 +105,7 @@ struct RequestInventorySwap
     static_assert(INVWIDTH * INVHEIGHT < std::numeric_limits<uint8_t>::max(), "Inventory is too big for the index types on RequestInventoryTransfer update them");
     ClientUID sourceID;
     ClientUID destinationID;
-    int myPlayerIndex;
+    entt::entity myPlayerIndex;
     uint8_t sourceIndex;
     uint8_t destinationIndex;
     bool mouseSlotS;
@@ -115,7 +115,7 @@ struct RequestInventorySwap
 
 // struct EquippedItemsUpdate
 // {
-//     int myPlayerIndex;
+//     entt::entity myPlayerIndex;
 //     std::array<InventorySlot, INVHEIGHT> equipped;
 // };
 

@@ -18,6 +18,7 @@ using namespace physx;
 class CollisionCage {
 public:
     void updateToSpot(World* world, glm::vec3 spot, float deltaTime);
+
     ~CollisionCage();
     PxRigidStatic* collider = nullptr;
 private:

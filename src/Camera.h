@@ -30,7 +30,11 @@ namespace jl {
               view(glm::mat4(1.0f)),
               projection(glm::mat4(1.0f)),
               mvp(glm::mat4(1.0f))
-        {}
+        {
+            updateWithYawPitch(0.0, 0.0);
+            updateProjection(1280, 1024, 90.0f);
+        }
+
         void updateProjection(int screenwidth, int screenheight, float fov);
         void updateWithYawPitch(float nyaw, float npitch);
         void updateYPIndirect(float nyaw, float npitch);

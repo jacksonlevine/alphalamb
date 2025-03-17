@@ -149,6 +149,12 @@ add_executable(DistantGarden
         src/specialblocks/Fence.h
         src/specialblocks/FindSpecialBlock.h
         src/specialblocks/Stairs.h
+        src/components/InventoryComponent.h
+        src/components/MovementComponent.h
+        src/components/ParticleEffectComponent.h
+        src/components/NetworkComponent.h
+        src/components/RenderComponent.h
+        src/components/PhysicsComponent.h
 )
 
 add_executable(DGServer
@@ -165,6 +171,12 @@ add_executable(DGServer
         src/Transform.h
         src/ClientUID.h
         src/ClientUID.cpp
+        src/components/InventoryComponent.h
+        src/components/MovementComponent.h
+        src/components/ParticleEffectComponent.h
+        src/components/NetworkComponent.h
+        src/components/RenderComponent.h
+        src/components/PhysicsComponent.h
 )
 
 target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)

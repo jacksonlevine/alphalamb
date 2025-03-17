@@ -88,12 +88,16 @@ void sendControlsUpdatesLol(tcp::socket& socket, float deltaTime)
 {
     static float timer = 0.0f;
 
-    auto& player = theScene.players.at(theScene.myPlayerIndex);
-    static Controls lastcontrols = player->controls;
-    if(player->controls != lastcontrols)
+    //auto& player = theScene.players.at(theScene.myPlayerIndex);
+
+    static Controls lastcontrols = theScene.getOur<Controls>();
+
+    auto ourcontrols = theScene.getOur<Controls>();
+    if(ourcontrols != lastcontrols)
     {
-        lastcontrols = player->controls;
-        DGMessage cu = ControlsUpdate(theScene.myPlayerIndex, player->controls, player->camera.transform.position, glm::vec2(player->camera.transform.yaw, player->camera.transform.pitch));
+        lastcontrols = ourcontrols;
+        auto ourt = theScene.getOur<jl::Camera>().transform;
+        DGMessage cu = ControlsUpdate(theScene.myPlayerIndex, ourcontrols, ourt.position, glm::vec2(ourt.yaw, ourt.pitch));
         pushToMainToNetworkQueue(cu);
 
     }
@@ -102,14 +106,15 @@ void sendControlsUpdatesLol(tcp::socket& socket, float deltaTime)
     {
         timer = 0.0f;
 
+        auto ourt = theScene.getOur<jl::Camera>().transform;
 
-        static float lastpitch = player->camera.transform.pitch;
-        static float lastyaw = player->camera.transform.yaw;
+        static float lastpitch = ourt.pitch;
+        static float lastyaw = ourt.yaw;
 
-        if(lastpitch != player->camera.transform.pitch || lastyaw != player->camera.transform.yaw)
+        if(lastpitch != ourt.pitch || lastyaw != ourt.yaw)
         {
-            lastpitch = player->camera.transform.pitch;
-            lastyaw = player->camera.transform.yaw;
+            lastpitch = ourt.pitch;
+            lastyaw = ourt.yaw;
 
             DGMessage player_yaw_pitch_update = YawPitchUpdate {
                 theScene.myPlayerIndex,
@@ -176,7 +181,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
 if(button == GLFW_MOUSE_BUTTON_RIGHT)
         {
-            auto & cam = scene->players[scene->myPlayerIndex]->camera;
+            auto & cam = theScene.getOur<jl::Camera>();
 
 
             if (scene->multiplayer)
@@ -197,16 +202,16 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                         if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
                         {
                             //std::cout << "Senfing blokc place \n";
-                            std::cout << "Place at: " << placeSpot.x << " " << placeSpot.y << " " << placeSpot.z << " " << scene->players.at(scene->myPlayerIndex)->currentHeldBlock << std::endl;
+                            std::cout << "Place at: " << placeSpot.x << " " << placeSpot.y << " " << placeSpot.z << " " << scene->getOur<InventoryComponent>().currentHeldBlock << std::endl;
                             pushToMainToNetworkQueue(BlockSet{
-                                placeSpot, scene->players.at(scene->myPlayerIndex)->currentHeldBlock
+                                placeSpot, scene->getOur<InventoryComponent>().currentHeldBlock
                             });
                         }
                     }
                 } else if (scene->bulkPlaceGizmo->active)
                 {
 
-                        auto playerpos = scene->players[scene->myPlayerIndex]->camera.transform.position;
+                        auto playerpos = scene->getOur<jl::Camera>().transform.position;
 
                         bool isInside =
                         playerpos.x >= std::min(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x) &&
@@ -221,7 +226,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                             if (scene->bulkPlaceGizmo->placeMode == BulkPlaceGizmo::Solid)
                             {
                                 DGMessage bulkPlace = BulkBlockSet{
-                                    .corner1 = scene->bulkPlaceGizmo->corner1, .corner2 = scene->bulkPlaceGizmo->corner2, .block = scene->players.at(scene->myPlayerIndex)->currentHeldBlock, .hollow = false};
+                                    .corner1 = scene->bulkPlaceGizmo->corner1, .corner2 = scene->bulkPlaceGizmo->corner2, .block = scene->getOur<InventoryComponent>().currentHeldBlock, .hollow = false};
                                 pushToMainToNetworkQueue(bulkPlace);
                                 scene->bulkPlaceGizmo->active = false;
                             } else
@@ -239,7 +244,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                                 };
 
                                 DGMessage bulkPlace = BulkBlockSet{
-                                    .corner1 = minCorner, .corner2 = maxCorner, .block = scene->players.at(scene->myPlayerIndex)->currentHeldBlock, .hollow = true};
+                                    .corner1 = minCorner, .corner2 = maxCorner, .block = scene->getOur<InventoryComponent>().currentHeldBlock, .hollow = true};
                                 pushToMainToNetworkQueue(bulkPlace);
                                 // DGMessage bulkCutout = BulkBlockSet{
                                 //     minCorner + IntTup(1,1,1), maxCorner + IntTup(-1,-1,-1), AIR};
@@ -275,7 +280,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                     //scene->world->set(spot, AIR);
                     //std::cout << "Set the block "  << std::endl;;
                     scene->worldRenderer->requestChunkRebuildFromMainThread(
-                        placeSpot, scene->players.at(scene->myPlayerIndex)->currentHeldBlock
+                        placeSpot, scene->getOur<InventoryComponent>().currentHeldBlock
                         );
 
 
@@ -286,7 +291,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
 
         } else if (button == GLFW_MOUSE_BUTTON_MIDDLE)
         {
-            if (scene->world && scene->blockSelectGizmo && scene->worldRenderer && scene->myPlayerIndex != -1)
+            if (scene->world && scene->blockSelectGizmo && scene->worldRenderer && scene->myPlayerIndex != entt::null)
             {
                 if (scene->blockSelectGizmo->isDrawing)
                 {
@@ -295,7 +300,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                     //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
                     BlockType blockThere = scene->world->get(spot);
                     //IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
-                    scene->players.at(scene->myPlayerIndex)->currentHeldBlock = (MaterialName)blockThere;
+                    scene->getOur<InventoryComponent>().currentHeldBlock = (MaterialName)blockThere;
                     //scene->world->set(spot, AIR);
                     //std::cout << "Set the block "  << std::endl;;
                     // scene->worldRenderer->requestChunkRebuildFromMainThread(
@@ -305,7 +310,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
 
                 } else
                 {
-                    scene->players.at(scene->myPlayerIndex)->currentHeldBlock = AIR;
+                    scene->getOur<InventoryComponent>().currentHeldBlock = AIR;
                 }
 
                 //std::cout << "Request filed " << std::endl;
@@ -323,7 +328,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     {
         if (imguiio->WantCaptureKeyboard) return;
     }
-    if (scene->myPlayerIndex != -1)
+    if (scene->myPlayerIndex != entt::null)
     {
 
         if (key == GLFW_KEY_E && action == GLFW_PRESS)
@@ -341,7 +346,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
         if (key == GLFW_KEY_LEFT_CONTROL)
         {
-            scene->players.at(scene->myPlayerIndex)->controls.crouch = action;
+            scene->getOur<Controls>().crouch = action;
         }
 
         if (key == GLFW_KEY_V && action == GLFW_PRESS)
@@ -398,38 +403,38 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             } else
         if (key == GLFW_KEY_H)
         {
-            scene->players.at(scene->myPlayerIndex)->controls.secondary2 = action;
+            scene->getOur<Controls>().secondary2 = action;
         } else
         if (key == GLFW_KEY_LEFT_SHIFT)
         {
-            scene->players.at(scene->myPlayerIndex)->controls.sprint = action;
+            scene->getOur<Controls>().sprint = action;
         } else
         if (key == GLFW_KEY_F)
         {
 
-            scene->players.at(scene->myPlayerIndex)->controls.secondary1 = action;
-            scene->players.at(scene->myPlayerIndex)->controls.jump = action;
+            scene->getOur<Controls>().secondary1 = action;
+            scene->getOur<Controls>().jump = action;
 
         } else
         if (key == GLFW_KEY_W)
         {
-            scene->players.at(scene->myPlayerIndex)->controls.forward = action;
+            scene->getOur<Controls>().forward = action;
         } else
         if (key == GLFW_KEY_A)
         {
-            scene->players.at(scene->myPlayerIndex)->controls.left = action;
+            scene->getOur<Controls>().left = action;
         } else
         if (key == GLFW_KEY_S)
         {
-            scene->players.at(scene->myPlayerIndex)->controls.backward = action;
+            scene->getOur<Controls>().backward = action;
         } else
         if (key == GLFW_KEY_D)
         {
-            scene->players.at(scene->myPlayerIndex)->controls.right = action;
+            scene->getOur<Controls>().right = action;
         } else
         if (key == GLFW_KEY_SPACE)
         {
-            scene->players.at(scene->myPlayerIndex)->controls.jump = action;
+            scene->getOur<Controls>().jump = action;
         }
     }
 }
@@ -455,10 +460,10 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 
         //std::cout << "Yaw: " << std::to_string(CAMERA.transform.yaw) << " Pitch: " << std::to_string(CAMERA.transform.pitch) << "\n";
 
-        if (scene->myPlayerIndex != -1)
+        if (scene->myPlayerIndex != entt::null)
         {
             // print(cout, "xOffset: {}, yOffset: {} \n", xOffset, yOffset);
-            auto & camera = scene->players.at(scene->myPlayerIndex)->camera;
+            auto & camera = scene->getOur<jl::Camera>();
 
             camera.updateYPIndirect(camera.targetYaw + static_cast<float>(xOffset), camera.targetPitch + static_cast<float>(yOffset));
         }
@@ -472,9 +477,9 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
     Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
-    if (scene->myPlayerIndex != -1)
+    if (scene->myPlayerIndex != entt::null)
     {
-        auto & camera = scene->players.at(scene->myPlayerIndex)->camera;
+        auto & camera = scene->getOur<jl::Camera>();
         camera.updateProjection(width, height, 90.0f);
         scene->guiCamera->updateProjection(width, height, 60.0f);
     }
@@ -495,30 +500,30 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
     {
         lastTime = glfwGetTime();
         Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
-        if (scene->myPlayerIndex != -1)
+        if (scene->myPlayerIndex != entt::null)
         {
 
             if (!scene->vmStampGizmo->active)
             {
                 if (yoffset > 0)
                 {
-                    scene->players.at(scene->myPlayerIndex)->currentHeldBlock = (MaterialName)(((int)scene->players.at(scene->myPlayerIndex)->currentHeldBlock + 1 ) % BLOCK_COUNT);
+                    scene->getOur<InventoryComponent>().currentHeldBlock = (MaterialName)(((int)scene->getOur<InventoryComponent>().currentHeldBlock + 1 ) % BLOCK_COUNT);
                 }
                 if (yoffset < 0)
                 {
-                    int newMat = (scene->players.at(scene->myPlayerIndex)->currentHeldBlock - 1);
+                    int newMat = (scene->getOur<InventoryComponent>().currentHeldBlock - 1);
                     if (newMat < 0)
                     {
                         newMat = BLOCK_COUNT - 1;
                     }
-                    scene->players.at(scene->myPlayerIndex)->currentHeldBlock = (MaterialName)newMat;
+                    scene->getOur<InventoryComponent>().currentHeldBlock = (MaterialName)newMat;
                 }
 
                 if (scene->multiplayer)
                 {
                     DGMessage sbu = PlayerSelectBlockChange{
                         scene->myPlayerIndex,
-                    scene->players.at(scene->myPlayerIndex)->currentHeldBlock};
+                    scene->getOur<InventoryComponent>().currentHeldBlock};
                     pushToMainToNetworkQueue(sbu);
                 }
             } else
@@ -561,14 +566,12 @@ void enterWorld(Scene* s)
 
 
     {
-        auto & players = s->players;
-        //std::cout << "Player index on entering: " << s->myPlayerIndex;
-        auto & player = players.at(s->myPlayerIndex);
-        auto & camera = player->camera;
+
+        auto & camera = s->getOur<jl::Camera>();
         camera.updateProjection(width, height, 90.0f);
     }
 
-    s->worldRenderer->launchThreads(&s->players.at(s->myPlayerIndex)->camera, s->world);
+    s->worldRenderer->launchThreads(&s->getOur<jl::Camera>(), s->world);
 }
 
 int main()
@@ -734,7 +737,7 @@ int main()
 
 
 
-        if (theScene.myPlayerIndex != -1)
+        if (theScene.myPlayerIndex != entt::null)
         {
 
 
@@ -756,7 +759,7 @@ int main()
                     {
                         if (theScene.blockSelectGizmo->isDrawing)
                         {
-                            auto & cam = theScene.players[theScene.myPlayerIndex]->camera;
+                            auto & cam = theScene.getOur<jl::Camera>();
 
 
 
@@ -833,85 +836,106 @@ int main()
 
             std::vector<Billboard> billboards;
             std::vector<AnimationState> animStates;
-            billboards.reserve(theScene.players.size());
-            animStates.reserve(theScene.players.size());
+            // billboards.reserve(10);
+            // animStates.reserve(10);
 
             if(theScene.multiplayer)
             {
                 sendControlsUpdatesLol(tsocket, deltaTime);
             }
 
-            for (auto & [id, player] : theScene.players)
-        {
+            auto view = theScene.REG.view<RenderComponent, PhysicsComponent, Controls, jl::Camera, MovementComponent, InventoryComponent, ParticleEffectComponent>();
 
-
-
-
-            player->billboard.position = player->camera.transform.position;
-            player->billboard.direction = player->camera.transform.direction;
-                player->billboard.characterNum = id % 4;
-
-
-
-
-            player->collisionCage.updateToSpot(&world, player->camera.transform.position, deltaTime);
-            player->camera.updateWithYawPitch(player->camera.transform.yaw, player->camera.transform.pitch);
-            if (id == theScene.myPlayerIndex)
+            for (auto entity : view)
             {
-                player->camera.interpTowardTargetYP(deltaTime);
-            } else
-            {
-                player->camera.interpTowardTargetYP(deltaTime*0.35f);
-            }
+                auto & renderComponent = view.get<RenderComponent>(entity);
+                auto & movementComponent = view.get<MovementComponent>(entity);
+                auto & inventory = view.get<InventoryComponent>(entity);
+                auto & particleComponent = view.get<ParticleEffectComponent>(entity);
+                auto & billboard = renderComponent.billboard;
 
-            if(id != theScene.myPlayerIndex)
-            {
-                billboards.push_back(player->billboard);
-                animStates.push_back(player->animation_state);
-            }
+                auto & camera = view.get<jl::Camera>(entity);
+
+                auto & physicsComponent = view.get<PhysicsComponent>(entity);
+                auto & collisionCage = physicsComponent.collisionCage;
+                auto & animation_state = renderComponent.animation_state;
+                auto & controls = view.get<Controls>(entity);
+                auto id = entity;
 
 
-            float wantedAnim = IDLE;
-            if(player->controls.anyMovement())
-            {
-                if(player->controls.jump)
+                billboard.position = camera.transform.position;
+                billboard.direction = camera.transform.direction;
+                billboard.characterNum = static_cast<int>(id) % 4;
+
+
+
+
+                collisionCage.updateToSpot(&world, camera.transform.position, deltaTime);
+                camera.updateWithYawPitch(camera.transform.yaw, camera.transform.pitch);
+                if (id == theScene.myPlayerIndex)
                 {
-                    wantedAnim = JUMP;
+                    camera.interpTowardTargetYP(deltaTime);
+                } else
+                {
+                    camera.interpTowardTargetYP(deltaTime*0.35f);
                 }
-                else
-                    if(player->controls.left && !player->controls.right)
+
+                if(id != theScene.myPlayerIndex)
+                {
+                    billboards.push_back(billboard);
+                    animStates.push_back(animation_state);
+                }
+
+
+                float wantedAnim = IDLE;
+                if(controls.anyMovement())
+                {
+                    if(controls.jump)
                     {
-                        wantedAnim = LEFTSTRAFE;
-                    } else
-                        if(player->controls.right && !player->controls.left)
+                        wantedAnim = JUMP;
+                    }
+                    else
+                        if(controls.left && !controls.right)
                         {
-                            wantedAnim = RIGHTSTRAFE;
+                            wantedAnim = LEFTSTRAFE;
                         } else
-                            if(player->controls.backward && !player->controls.forward)
+                            if(controls.right && !controls.left)
                             {
-                                wantedAnim = BACKWARDSRUN;
+                                wantedAnim = RIGHTSTRAFE;
                             } else
-                            {
-                                wantedAnim = RUN;
-                            }
+                                if(controls.backward && !controls.forward)
+                                {
+                                    wantedAnim = BACKWARDSRUN;
+                                } else
+                                {
+                                    wantedAnim = RUN;
+                                }
+                }
+
+                auto existinganim = &animation_state;
+                AnimationState newState{
+                    wantedAnim,
+                    static_cast<float>(glfwGetTime()),
+                    static_cast<AnimationName>(wantedAnim) == JUMP ? 0.5f : 1.0f
+                };
+
+                bool jumpinprogress = (static_cast<AnimationName>(existinganim->actionNum) == JUMP) && (glfwGetTime() - existinganim->timestarted < 0.75f);
+                if(existinganim->actionNum != wantedAnim && !jumpinprogress)
+                {
+                    animation_state = newState;
+                }
+                PlayerUpdate(deltaTime, &world, particles, renderComponent, physicsComponent, movementComponent, controls, camera, particleComponent, inventory);
             }
 
-            auto existinganim = &player->animation_state;
-            AnimationState newState{
-                wantedAnim,
-                static_cast<float>(glfwGetTime()),
-                static_cast<AnimationName>(wantedAnim) == JUMP ? 0.5f : 1.0f
-            };
+        //     for (auto & [id, player] : theScene.players)
+        // {
+        //
+        // }
 
-            bool jumpinprogress = (static_cast<AnimationName>(existinganim->actionNum) == JUMP) && (glfwGetTime() - existinganim->timestarted < 0.75f);
-            if(existinganim->actionNum != wantedAnim && !jumpinprogress)
-            {
-                player->animation_state = newState;
-            }
-            player->update(deltaTime, &world, particles);
-        }
+
         jl::updateBillboards(billboards);
         jl::updateAnimStates(animStates);
+
 
 
 
@@ -940,30 +964,35 @@ int main()
                         // std::cout << "Got a controls update from " << m.myPlayerIndex << "\n";
                         // std::cout << m.myControls << " \n";
                         // std::cout << m.startPos.x << " " << m.startPos.y << " " << m.startPos.z << "\n";
-                        if(!theScene.players.contains(m.myPlayerIndex))
+                        if(!theScene.REG.valid(m.myPlayerIndex))
                         {
                             theScene.addPlayerWithIndex(m.myPlayerIndex);
                         }
-                        theScene.players.at(m.myPlayerIndex)->controls = m.myControls;
-                        theScene.players.at(m.myPlayerIndex)->camera.transform.position = m.startPos;
-                        theScene.players.at(m.myPlayerIndex)->controller->setPosition(PxExtendedVec3(
+                        theScene.REG.patch<Controls>(m.myPlayerIndex, m.myControls);
+                        //theScene.players.at(m.myPlayerIndex)->controls = m.myControls;
+
+                        //theScene.players.at(m.myPlayerIndex)->camera.transform.position = m.startPos;
+                        auto & pos = theScene.REG.get<jl::Camera>(m.myPlayerIndex).transform.position;
+                        pos = m.startPos;
+
+                        theScene.REG.get<PhysicsComponent>(m.myPlayerIndex).controller->setPosition(PxExtendedVec3(
                     m.startPos.x,
                     m.startPos.y - CAMERA_OFFSET,
                     m.startPos.z)
                         );
 
-                        theScene.players.at(m.myPlayerIndex)->camera.transform.yaw = m.startYawPitch.x;
-                        theScene.players.at(m.myPlayerIndex)->camera.transform.pitch = m.startYawPitch.y;
-                        theScene.players.at(m.myPlayerIndex)->camera.targetYaw = m.startYawPitch.x;
-                        theScene.players.at(m.myPlayerIndex)->camera.targetPitch = m.startYawPitch.y;
+                        theScene.REG.get<jl::Camera>(m.myPlayerIndex).transform.yaw = m.startYawPitch.x;
+                        theScene.REG.get<jl::Camera>(m.myPlayerIndex).transform.pitch = m.startYawPitch.y;
+                        theScene.REG.get<jl::Camera>(m.myPlayerIndex).targetYaw = m.startYawPitch.x;
+                        theScene.REG.get<jl::Camera>(m.myPlayerIndex).targetPitch = m.startYawPitch.y;
                     }
                     else if constexpr (std::is_same_v<T, YawPitchUpdate>)
                     {
-                        if(!theScene.players.contains(m.myPlayerIndex))
+                        if(!theScene.REG.valid(m.myPlayerIndex))
                         {
                             theScene.addPlayerWithIndex(m.myPlayerIndex);
                         }
-                        theScene.players.at(m.myPlayerIndex)->camera.updateYPIndirect(m.newYaw, m.newPitch);
+                        theScene.REG.get<jl::Camera>(m.myPlayerIndex).updateYPIndirect(m.newYaw, m.newPitch);
 
                     }
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>)

@@ -12,6 +12,12 @@
 #include "world/gizmos/BlockSelectGizmo.h"
 #include "Hud.h"
 #include "Planets.h"
+#include "components/InventoryComponent.h"
+#include "components/MovementComponent.h"
+#include "components/NetworkComponent.h"
+#include "components/ParticleEffectComponent.h"
+#include "components/PhysicsComponent.h"
+#include "components/RenderComponent.h"
 #include "world/gizmos/BulkPlaceGizmo.h"
 #include "world/gizmos/VoxModelStampGizmo.h"
 
@@ -24,22 +30,58 @@ struct Settings
 };
 struct Scene
 {
-    std::unordered_map<int, Player*> players = {};
-    int myPlayerIndex = -1;
-    size_t addPlayer()
+    //std::unordered_map<int, Player*> players = {};
+    entt::registry REG = {};
+
+    entt::entity myPlayerIndex = entt::null;
+
+    entt::entity addPlayer()
     {
-        int index = 0;
-        while (players.contains(index))
-        {
-            index++;
-        };
-        players.insert({index, new Player()});
-        return index;
+        // int index = 0;
+        // while (players.contains(index))
+        // {
+        //     index++;
+        // };
+        // players.insert({index, new Player()});
+        // return index;
+        auto pers = REG.create();
+
+        // EMPLACE THINGS HERE BITCH
+        REG.emplace<jl::Camera>(pers);
+        REG.emplace<RenderComponent>(pers);
+        REG.emplace<PhysicsComponent>(pers);
+        REG.emplace<Controls>(pers);
+        REG.emplace<InventoryComponent>(pers);
+        REG.emplace<ParticleEffectComponent>(pers);
+        REG.emplace<NetworkComponent>(pers);
+        REG.emplace<MovementComponent>(pers);
+
+        return pers;
     }
-    size_t addPlayerWithIndex(size_t index)
+
+    template <typename Component>
+    Component& getOur()
     {
-        players.insert_or_assign(index, new Player());
-        return index;
+        return REG.get<Component>(myPlayerIndex);
+    }
+
+    entt::entity addPlayerWithIndex(entt::entity index)
+    {
+        auto pers = REG.create(index);
+
+        REG.emplace<jl::Camera>(pers);
+        REG.emplace<RenderComponent>(pers);
+        REG.emplace<PhysicsComponent>(pers);
+        REG.emplace<Controls>(pers);
+        REG.emplace<InventoryComponent>(pers);
+        REG.emplace<ParticleEffectComponent>(pers);
+        REG.emplace<NetworkComponent>(pers);
+        REG.emplace<MovementComponent>(pers);
+
+
+        return pers;
+        // players.insert_or_assign(index, new Player());
+        // return index;
     }
     bool mouseCaptured = false;
     bool firstMouse = true;
@@ -69,6 +111,8 @@ struct Scene
     float worldIntroTimer = 0.0f;
 
 
+
+
     void saveSettings()
     {
         std::ofstream settingsFile("settings.txt", std::ios::trunc);
@@ -81,8 +125,8 @@ struct Scene
             settingsFile << ambOccl << "\n";
             settingsFile.close();
         }
-
     }
+
     void loadSettings()
     {
         if (std::filesystem::exists("settings.txt"))

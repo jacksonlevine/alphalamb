@@ -6,13 +6,47 @@
 
 #include "OpenALStuff.h"
 #include "PhysXStuff.h"
+#include "components/InventoryComponent.h"
+#include "components/ParticleEffectComponent.h"
 #include "world/gizmos/ParticlesGizmo.h"
 
-void Player::update(const float deltaTime, World* world, ParticlesGizmo* particles)
+// void Player::update(const float deltaTime, World* world, ParticlesGizmo* particles)
+// {
+//
+//
+//
+// }
+void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, RenderComponent& renderComponent,
+    PhysicsComponent& physicsComponent, MovementComponent& movementComponent, Controls& controls, jl::Camera & camera, ParticleEffectComponent & particleComponent, InventoryComponent& inventory)
 {
 
-    
-    // Existing jetpack source code...
+    auto & jetpackSource = movementComponent.jetpackSource;
+    auto & isGrounded = physicsComponent.isGrounded;
+    auto & stamCount = movementComponent.stamCount;
+    auto & dashrebuild = movementComponent.dashrebuild;
+    auto & crouchOverride = movementComponent.crouchOverride;
+    auto & originalCharHeight = physicsComponent.originalCharHeight;
+    auto & controller = physicsComponent.controller;
+    auto & dashing = movementComponent.dashing;
+    auto & dashtimer = movementComponent.dashtimer;
+    auto & slidThisDash = movementComponent.slidThisDash;
+    auto & isSliding = movementComponent.isSliding;
+    auto & lastBlockStandingOn = particleComponent.lastBlockStandingOn;
+    auto & slideTimer = movementComponent.slideTimer;
+    auto & slideDuration = movementComponent.slideDuration;
+    auto & originalStepHeight = physicsComponent.originalStepHeight;
+    auto & isClimbingUp = movementComponent.isClimbingUp;
+    auto & isLedgeGrabbing = movementComponent.isLedgeGrabbing;
+    auto & footDustTimer = particleComponent.footDustTimer;
+    auto & ledgeGrabCooldown = movementComponent.ledgeGrabCooldown;
+    auto & jetpackMode = movementComponent.jetpackMode;
+    auto & hoverMode = movementComponent.hoverMode;
+    auto & ledgeNormal = movementComponent.ledgeNormal;
+    auto & ledgePosition = movementComponent.ledgePosition;
+    auto & climbUpTimer = movementComponent.climbUpTimer;
+    auto & climbStartPosition = movementComponent.climbStartPosition;
+
+
     if (jetpackSource == 0)
     {
         jetpackSource = makeSource(camera.transform.position);
@@ -73,6 +107,9 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         controls.sprint = false;
         dashing = false;
     }
+
+
+
 
     // Handle sliding logic
     if (dashing && crouchOverride && !isSliding && !slidThisDash)
@@ -493,7 +530,7 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
 
         if (controls.secondary1)
         {
-            for (auto& item : inventory.getEquippedItems()) {
+            for (auto& item : inventory.inventory.getEquippedItems()) {
                 if (item.block == ItemName::JETPACK)
                 {
                     jetpackMode = true;
@@ -665,22 +702,22 @@ void Player::update(const float deltaTime, World* world, ParticlesGizmo* particl
         camera.transform.position.z = static_cast<float>(newPos.z);
     }
 }
-
-Player::Player()
-{
-    controller = createPlayerController(
-        PxVec3(DEFAULT_PLAYERPOS.x, DEFAULT_PLAYERPOS.y, DEFAULT_PLAYERPOS.z),
-        0.4,
-        0.7
-    );
-    PxVec3T controllerPosition = controller->getPosition();
-    camera.transform.position = glm::vec3(controllerPosition.x, controllerPosition.y, controllerPosition.z);
-    camera.updateWithYawPitch(0.0, 0.0);
-    camera.updateProjection(1280, 1024, 90.0f);
-}
-
-Player::~Player()
-{
-    //std::cout << "Destructor called \n";
-    controller->release();
-}
+//
+// Player::Player()
+// {
+//     controller = createPlayerController(
+//         PxVec3(DEFAULT_PLAYERPOS.x, DEFAULT_PLAYERPOS.y, DEFAULT_PLAYERPOS.z),
+//         0.4,
+//         0.7
+//     );
+//     PxVec3T controllerPosition = controller->getPosition();
+//     camera.transform.position = glm::vec3(controllerPosition.x, controllerPosition.y, controllerPosition.z);
+//     camera.updateWithYawPitch(0.0, 0.0);
+//     camera.updateProjection(1280, 1024, 90.0f);
+// }
+//
+// Player::~Player()
+// {
+//     //std::cout << "Destructor called \n";
+//     controller->release();
+// }

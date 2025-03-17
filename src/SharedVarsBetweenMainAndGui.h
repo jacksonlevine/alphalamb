@@ -55,15 +55,16 @@ inline void exitWorld(Scene* scene)
 
     if(scene->multiplayer)
     {
-
-        for(auto & player : scene->players)
-        {
-
-
-            player.second->controller->release();
-            player.second->collisionCage.collider->release();
-        }
-        scene->players.clear();
+        scene->REG.clear();
+        //Prob need to do something w this
+        // for(auto & player : scene->players)
+        // {
+        //
+        //
+        //     player.second->controller->release();
+        //     player.second->collisionCage.collider->release();
+        // }
+        // scene->players.clear();
     }
 
     {
@@ -108,10 +109,13 @@ inline void exitWorld(Scene* scene)
     // scene->worldRenderer->chunkPool.clear();
 
     scene->world->clearWorld();
+    //
+    // entt::entity myPlayerIndex = scene->myPlayerIndex;
+    // scene->players.erase(myPlayerIndex);
+    // scene->myPlayerIndex = -1;
 
-    int myPlayerIndex = scene->myPlayerIndex;
-    scene->players.erase(myPlayerIndex);
-    scene->myPlayerIndex = -1;
+    scene->REG.destroy(scene->myPlayerIndex);
+    scene->myPlayerIndex = entt::null;
 }
 
 inline void uncaptureMouse(Scene* s)
