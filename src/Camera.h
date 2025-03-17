@@ -39,6 +39,12 @@ namespace jl {
         void updateWithYawPitch(float nyaw, float npitch);
         void updateYPIndirect(float nyaw, float npitch);
         void setYawPitch(float nyaw, float npitch);
+
+        template<class Archive>
+        void serialize(Archive& archive)
+        {
+            archive(transform);
+        }
     };
 }
 

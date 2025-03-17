@@ -36,7 +36,7 @@ message(STATUS "Boost version: ${Boost_VERSION}")
 find_package(imgui CONFIG REQUIRED)
 
 find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
-
+find_package(cereal CONFIG REQUIRED)
 
 
 # Print all available targets
@@ -155,6 +155,11 @@ add_executable(DistantGarden
         src/components/PhysicsComponent.h
         src/components/PhysicsComponent.cpp
         src/components/PlayerEmplacer.h
+        src/FileArchives.h
+        src/CerealHelpers.h
+        src/SaveRegistry.h
+        src/components/UUIDComponent.h
+        src/SaveRegistry.cpp
 )
 
 add_executable(DGServer
@@ -179,6 +184,11 @@ add_executable(DGServer
         src/components/PhysicsComponent.h
         src/components/PhysicsComponent.cpp
         src/components/PlayerEmplacer.h
+        src/FileArchives.h
+        src/CerealHelpers.h
+        src/SaveRegistry.h
+        src/components/UUIDComponent.h
+        src/SaveRegistry.cpp
 )
 
 target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)
@@ -188,7 +198,8 @@ function(add_common_libraries target)
             PRIVATE ${CMAKE_SOURCE_DIR}/src/PrecompHeader.h )
 
     target_link_libraries(${target} PRIVATE EnTT::EnTT)
-    
+
+    target_link_libraries(${target} PRIVATE cereal::cereal)
     # Include directories
     target_include_directories(${target} PUBLIC ${CMAKE_SOURCE_DIR}/include)
     

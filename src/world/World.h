@@ -8,6 +8,7 @@
 #include "VoxelModels.h"
 #include "WorldGenMethod.h"
 #include "../PlayerInfoMapKeyedByUID.h"
+#include "../SaveRegistry.h"
 #include "datamapmethods/HashMapDataMap.h"
 
 
@@ -73,11 +74,25 @@ struct PlacedVoxModelRegistry
 };
 
 
-inline std::optional<std::string> saveDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr, InvMapKeyedByUID& im) {
+inline std::optional<std::string> saveDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr, InvMapKeyedByUID& im, entt
+                                         ::registry& reg, const char* regsnapshotfilename) {
     std::filesystem::path filePath(filename);
     if (!filePath.parent_path().empty()) {
         std::filesystem::create_directories(filePath.parent_path());
     }
+
+    // {
+    //     using namespace entt;
+    //     output_archive output;
+    //
+    //     entt::snapshot{reg}
+    //     .get<entt::entity>(output)
+    //     .get<a_component>(output)
+    //     .get<another_component>(output);
+    // }
+
+    saveRegistry(reg, regsnapshotfilename);
+
 
     std::ostringstream contentStream; // String stream to store content before writing to file
     bool gotlock = false;
@@ -86,10 +101,10 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
             const std::unique_ptr<DataMap::Iterator> it = map->createIterator();
             while (it->hasNext()) {
                 auto [key, value] = it->next();
-                if((value & BLOCK_ID_BITS) == STONE_STAIRS)
-                {
-                    std::cout << "A stone stair with id: " << value << " Hex: "  << " 0x" << std::hex << (uint32_t)value << std::dec << '\n';
-                }
+                // if((value & BLOCK_ID_BITS) == STONE_STAIRS)
+                // {
+                //     std::cout << "A stone stair with id: " << value << " Hex: "  << " 0x" << std::hex << (uint32_t)value << std::dec << '\n';
+                // }
                 contentStream << key.x << " " << key.y << " " << key.z << " 0x" << std::hex << (uint32_t)value << std::dec << '\n';
             }
             gotlock = true;

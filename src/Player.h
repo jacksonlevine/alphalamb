@@ -10,7 +10,6 @@
 #include "Inventory.h"
 
 #include "Camera.h"
-#include "CollisionCage.h"
 #include "Controls.h"
 #include "BillboardInstanceShader.h"
 #include "components/InventoryComponent.h"

@@ -47,5 +47,8 @@
 #include <boost/uuid/random_generator.hpp>
 #include <boost/uuid/nil_generator.hpp>
 #include <entt/entt.hpp>
-
+#include <cereal/cereal.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/array.hpp>
+#include "CerealHelpers.h"
 #endif //PRECOMPHEADER_H

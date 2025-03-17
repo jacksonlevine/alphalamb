@@ -17,6 +17,11 @@ public:
     PhysicsComponent();
     void release();
     ~PhysicsComponent();
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+        //deliberately empty
+    }
 };
 
 #endif //PHYSICSCOMPONENT_H

@@ -19,6 +19,11 @@ struct Controls
     bool secondary2 = false;
     bool crouch = false;
     [[nodiscard]] bool anyMovement() const;
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+        //empty
+    }
 };
 
 

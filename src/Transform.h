@@ -41,6 +41,12 @@ namespace jl
             this->updateWithYawPitch(yaw, pitch);
         }
         void updateWithYawPitch(float nyaw, float npitch);
+
+        template<class Archive>
+        void serialize(Archive& archive)
+        {
+            archive(position, direction, yaw, pitch);
+        }
     };
 }
 

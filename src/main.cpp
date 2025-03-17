@@ -47,7 +47,9 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <tiny_gltf.h>
 
+#include "FileArchives.h"
 #include "Planets.h"
+#include "SaveRegistry.h"
 #include "specialblocks/FindSpecialBlock.h"
 //Tinygltf includes stb image
 //#include <stb_image.h>
@@ -342,6 +344,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
                 currentGuiScreen = GuiScreen::InGame;
                 captureMouse(scene);
             }
+        }
+
+        if (key == GLFW_KEY_L && action == GLFW_PRESS)
+        {
+            saveRegistry(scene->REG, "snapshot.bin");
         }
 
         if (key == GLFW_KEY_LEFT_CONTROL)

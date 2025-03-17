@@ -10,6 +10,7 @@
         "physx",
         "openal-soft",
         "boost-fiber",
-        "entt"
+        "entt",
+        "cereal"
     ]
 }

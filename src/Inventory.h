@@ -25,6 +25,12 @@ struct InventorySlot
     {
         return count == 0;
     }
+
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+        archive(block, count, isItem);
+    }
 };
 
 
@@ -67,6 +73,12 @@ public:
         return equippedItems;
     }
     std::array<InventorySlot, INVWIDTH * INVHEIGHT> inventory = {};
+
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+        archive(mouseHeldItem, inventory);
+    }
 };
 
 constexpr std::array<InventorySlot, INVWIDTH * INVHEIGHT> DEFAULT_INVENTORY = {

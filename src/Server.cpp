@@ -17,3 +17,4 @@ std::shared_mutex clientsMutex;
 
 World serverWorld{new HashMapDataMap(), new OverworldWorldGenMethod(), new HashMapDataMap()};
 InvMapKeyedByUID invMapKeyedByUID = {};
+entt::registry serverReg = {};

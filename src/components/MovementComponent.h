@@ -34,6 +34,12 @@ struct MovementComponent {
     bool isClimbingUp = false;
     float climbUpTimer = 0.0f;
     float ledgeGrabCooldown = 0.0f;
+
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+        archive(stamCount, ledgePosition, ledgeNormal, climbStartPosition, isLedgeGrabbing, isClimbingUp, climbUpTimer, ledgeGrabCooldown);
+    }
 };
 
 #endif //MOVEMENTCOMPONENT_H

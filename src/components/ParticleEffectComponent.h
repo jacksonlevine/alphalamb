@@ -10,6 +10,11 @@
 struct ParticleEffectComponent {
     float footDustTimer = 0.0f;
     MaterialName lastBlockStandingOn = AIR;
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+        //deliberately empty
+    }
 };
 
 #endif //PARTICLEEFFECTCOMPONENT_H

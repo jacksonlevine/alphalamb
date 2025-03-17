@@ -34,6 +34,7 @@ extern std::shared_mutex clientsMutex;
 
 extern World serverWorld;
 extern InvMapKeyedByUID invMapKeyedByUID;
+extern entt::registry serverReg;
 
 constexpr int DGSEEDSEED = 987654321;
 
@@ -99,7 +100,7 @@ private:
 
         //Now the players inv will exist in the world they download
 
-        auto string = saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID);
+        auto string = saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "snapshot.bin");
         if (string.has_value())
         {
             DGMessage fileInit = FileTransferInit {
@@ -394,7 +395,7 @@ private:
                     sendMessageToAllClients(pl, m_playerIndex, true);
 
                     //Save when a player leaves too
-                    saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID);
+                    saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "snapshot.bin");
                 }
             }
         });
@@ -413,7 +414,6 @@ private:
 
 class Server {
 public:
-    entt::registry serverReg = {};
     Server(boost::asio::io_context& io_context, short port) : m_acceptor(io_context, tcp::endpoint(tcp::v4(), port)) {
         // now we call do_accept() where we wait for clients
         serverWorld.setSeed(DGSEEDSEED);
@@ -438,6 +438,10 @@ public:
                               << ":" << shared_socket->remote_endpoint().port() << '\n';
 
                     auto index = serverReg.create();
+                    //emplacePlayerParts(serverReg, index);
+
+                    // static int ind = 0;
+                    // auto index = ind++;
 
                     {
                         std::shared_lock<std::shared_mutex> clientslock(clientsMutex);
