@@ -997,16 +997,16 @@ int main()
                     }
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>)
                     {
-                        if(theScene.players.contains(m.myPlayerIndex))
+                        if(theScene.REG.valid(m.myPlayerIndex))
                         {
-                            theScene.players.at(m.myPlayerIndex)->currentHeldBlock = m.newMaterial;
+                            theScene.REG.get<InventoryComponent>(m.myPlayerIndex).currentHeldBlock = m.newMaterial;
                         }
                     }
                     else if constexpr (std::is_same_v<T, PlayerLeave>)
                     {
-                        if(theScene.players.contains(m.myPlayerIndex))
+                        if(theScene.REG.valid(m.myPlayerIndex))
                         {
-                            theScene.players.erase(m.myPlayerIndex);
+                            theScene.REG.destroy(m.myPlayerIndex);
                         }
                     }
                     else if constexpr (std::is_same_v<T, RequestInventorySwap>)
@@ -1016,18 +1016,18 @@ int main()
 
                         if (m.mouseSlotS)
                         {
-                            source = &(theScene.players.at(m.myPlayerIndex)->inventory.mouseHeldItem);
+                            source = &(theScene.REG.get<InventoryComponent>(m.myPlayerIndex).inventory.mouseHeldItem);
                         } else
                         {
-                            source = &(theScene.players.at(m.myPlayerIndex)->inventory.inventory.at(m.sourceIndex));
+                            source = &(theScene.REG.get<InventoryComponent>(m.myPlayerIndex).inventory.inventory.at(m.sourceIndex));
                         }
 
                         if (m.mouseSlotD)
                         {
-                            destination = &(theScene.players.at(m.myPlayerIndex)->inventory.mouseHeldItem);
+                            destination = &(theScene.REG.get<InventoryComponent>(m.myPlayerIndex).inventory.mouseHeldItem);
                         } else
                         {
-                            destination = &(theScene.players.at(m.myPlayerIndex)->inventory.inventory.at(m.destinationIndex));
+                            destination = &(theScene.REG.get<InventoryComponent>(m.myPlayerIndex).inventory.inventory.at(m.destinationIndex));
                         }
 
                         if (source && destination)
@@ -1040,7 +1040,7 @@ int main()
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
                        std::cout << "Processing palyerpresent\n";
                         theScene.addPlayerWithIndex(m.index);
-                        theScene.players.at(m.index)->controller->setPosition(PxExtendedVec3(
+                        theScene.REG.get<PhysicsComponent>(m.index).controller->setPosition(PxExtendedVec3(
                         m.position.x,
                         m.position.y + CAMERA_OFFSET,
                         m.position.z)
@@ -1050,14 +1050,14 @@ int main()
                             if (auto inv = loadInvFromFile("mpworld.txt", m.id))
                             {
                                 std::cout << "Loaded inv to player " << m.index << " with id " << m.id << "\n";
-                                theScene.players.at(m.index)->inventory = inv.value();
+                                theScene.REG.get<InventoryComponent>(m.index).inventory = inv.value();
                             }
                         } else
                         {
-                            theScene.players.at(m.index)->inventory.inventory = DEFAULT_INVENTORY;
+                            theScene.REG.get<InventoryComponent>(m.index).inventory.inventory = DEFAULT_INVENTORY;
                         }
-                        theScene.players.at(m.index)->camera.transform.position = m.position;
-                        theScene.players.at(m.index)->camera.transform.direction = m.direction;
+                        theScene.REG.get<jl::Camera>(m.index).transform.position = m.position;
+                        theScene.REG.get<jl::Camera>(m.index).transform.direction = m.direction;
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
                         //std::cout << "Processing network block change \n";
@@ -1161,7 +1161,7 @@ int main()
             gScene->simulate(deltaTime);
 
 
-            auto & camera = theScene.players.at(theScene.myPlayerIndex)->camera;
+            auto & camera = theScene.getOur<jl::Camera>();
 
 
 
@@ -1209,7 +1209,7 @@ int main()
             {
                 drawSky(glm::vec4(currAtmos.skyTop, 1.0),
                     glm::vec4(currAtmos.skyBottom, 1.0),
-                    ambBrightFromTimeOfDay(theScene.timeOfDay, theScene.dayLength), &theScene.players[theScene.myPlayerIndex]->camera, lutTexture);
+                    ambBrightFromTimeOfDay(theScene.timeOfDay, theScene.dayLength), &theScene.getOur<jl::Camera>(), lutTexture);
 
             }
 
@@ -1250,7 +1250,7 @@ int main()
 
 
             //std::cout << "World intro time" << theScene.worldIntroTimer << std::endl;
-            renderer->mainThreadDraw(&theScene.players[theScene.myPlayerIndex]->camera, mainShader.shaderID, world.worldGenMethod, deltaTime, theScene.worldIntroTimer > INTROFLYTIME);
+            renderer->mainThreadDraw(&theScene.getOur<jl::Camera>(), mainShader.shaderID, world.worldGenMethod, deltaTime, theScene.worldIntroTimer > INTROFLYTIME);
             vms->draw(&world, theScene.players.at(theScene.myPlayerIndex));
 
             glUniform1f(timeRenderedLoc, 10.0f);
