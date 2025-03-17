@@ -88,6 +88,6 @@ CollisionCage::~CollisionCage()
 {
     if(collider != nullptr)
     {
-        collider->release();
+        //collider->release();
     }
 }

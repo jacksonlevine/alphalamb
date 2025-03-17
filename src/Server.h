@@ -24,7 +24,7 @@ struct ServerPlayer
     ClientUID myUID = {};
 };
 
-extern std::unordered_map<int, ServerPlayer> clients;
+extern std::unordered_map<entt::entity, ServerPlayer> clients;
 
 extern std::shared_mutex clientsMutex;
 //
@@ -37,13 +37,13 @@ extern InvMapKeyedByUID invMapKeyedByUID;
 
 constexpr int DGSEEDSEED = 987654321;
 
-inline void sendMessageToAllClients(const DGMessage& message, int m_playerIndex, bool excludeMe)
+inline void sendMessageToAllClients(const DGMessage& message, entt::entity m_playerIndex, bool excludeMe)
 {
 
     std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
     for(auto & [id, client] : clients)
     {
-        if(!((id == (int)m_playerIndex) && excludeMe) && !client.socket.expired() && client.receivedWorld)
+        if(!((id == m_playerIndex) && excludeMe) && !client.socket.expired() && client.receivedWorld)
         {
             boost::asio::write(*client.socket.lock(), boost::asio::buffer(&message, sizeof(DGMessage)));
         }
@@ -56,7 +56,7 @@ inline void sendMessageToAllClients(const DGMessage& message, int m_playerIndex,
 class Session : public std::enable_shared_from_this<Session>
 {
 public:
-    explicit Session(std::shared_ptr<tcp::socket> socket, size_t playerIndex)
+    explicit Session(std::shared_ptr<tcp::socket> socket, entt::entity playerIndex)
     : m_socket(std::move(socket)), m_playerIndex(playerIndex) { }
 
     void run() {
@@ -72,7 +72,7 @@ private:
         DGMessage wi = WorldInfo {
             .seed = DGSEEDSEED,
             .yourPosition = glm::vec3(0, 200, 0),
-            .yourPlayerIndex = (int)m_playerIndex
+            .yourPlayerIndex = m_playerIndex
 
         };
 
@@ -132,7 +132,7 @@ private:
             std::shared_lock<std::shared_mutex> clientsLock(clientsMutex);
             for(auto & [id, client] : clients)
             {
-                if(id != (int)m_playerIndex)
+                if(id != m_playerIndex)
                 {
                     DGMessage playerPresent = PlayerPresent {
                         .index = id, .position = client.camera.transform.position, .direction = client.camera.transform.direction,
@@ -151,7 +151,7 @@ private:
                     if(!client.socket.expired() && client.receivedWorld)
                     {
                         DGMessage ourPlayerPresent = PlayerPresent {
-                            .index = (int)m_playerIndex, .position = clients.at(m_playerIndex).camera.transform.position,
+                            .index = m_playerIndex, .position = clients.at(m_playerIndex).camera.transform.position,
                             .direction = clients.at(m_playerIndex).camera.transform.direction, .id = m_clientUID
                         };
 
@@ -383,7 +383,7 @@ private:
 
 
                     DGMessage pl = PlayerLeave {
-                                    (int)m_playerIndex};
+                                    m_playerIndex};
 
                     {
                         std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
@@ -407,12 +407,13 @@ private:
 
     DGMessage m_message{};         // To store the header
     std::vector<char> m_body;       // To store the raw message body
-    size_t m_playerIndex;
+    entt::entity m_playerIndex;
     ClientUID m_clientUID;
 };
 
 class Server {
 public:
+    entt::registry serverReg = {};
     Server(boost::asio::io_context& io_context, short port) : m_acceptor(io_context, tcp::endpoint(tcp::v4(), port)) {
         // now we call do_accept() where we wait for clients
         serverWorld.setSeed(DGSEEDSEED);
@@ -435,14 +436,12 @@ public:
                     std::cout << "creating session on: "
                               << shared_socket->remote_endpoint().address().to_string()
                               << ":" << shared_socket->remote_endpoint().port() << '\n';
-                    int index = 0;
+
+                    auto index = serverReg.create();
+
                     {
                         std::shared_lock<std::shared_mutex> clientslock(clientsMutex);
 
-                        while (clients.contains(index))
-                        {
-                            index++;
-                        }
                         clients.insert({index, ServerPlayer{
                             .socket = shared_socket,
                             .controls = Controls{},

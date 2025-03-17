@@ -15,21 +15,8 @@ public:
     float originalStepHeight = 0.5f;
     float originalCharHeight = 0.0f;
     PhysicsComponent();
+    void release();
     ~PhysicsComponent();
 };
 
-
-inline PhysicsComponent::PhysicsComponent()
-{
-    controller = createPlayerController(
-        PxVec3(DEFAULT_PLAYERPOS.x, DEFAULT_PLAYERPOS.y, DEFAULT_PLAYERPOS.z),
-        0.4,
-        0.7
-    );
-}
-
-inline PhysicsComponent::~PhysicsComponent()
-{
-    controller->release();
-}
 #endif //PHYSICSCOMPONENT_H

@@ -15,11 +15,11 @@
 #include "world/VoxelModels.h"
 #include "Inventory.h"
 
-using namespace boost::variant2;
+
 
 struct PlayerPresent
 {
-    int index;
+    entt::entity index;
     glm::vec3 position;
     glm::vec3 direction;
     ClientUID id;
@@ -29,7 +29,7 @@ struct WorldInfo
 {
     int seed;
     glm::vec3 yourPosition;
-    int yourPlayerIndex;
+    entt::entity yourPlayerIndex;
 };
 
 struct ControlsUpdate {
@@ -119,7 +119,7 @@ struct RequestInventorySwap
 //     std::array<InventorySlot, INVHEIGHT> equipped;
 // };
 
-using DGMessage = variant<RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting>;
+using DGMessage = std::variant<RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting>;
 
 
 

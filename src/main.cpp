@@ -844,22 +844,22 @@ int main()
                 sendControlsUpdatesLol(tsocket, deltaTime);
             }
 
-            auto view = theScene.REG.view<RenderComponent, PhysicsComponent, Controls, jl::Camera, MovementComponent, InventoryComponent, ParticleEffectComponent>();
+            auto playerView = theScene.REG.view<RenderComponent, PhysicsComponent, Controls, jl::Camera, MovementComponent, InventoryComponent, ParticleEffectComponent>();
 
-            for (auto entity : view)
+            for (auto entity : playerView)
             {
-                auto & renderComponent = view.get<RenderComponent>(entity);
-                auto & movementComponent = view.get<MovementComponent>(entity);
-                auto & inventory = view.get<InventoryComponent>(entity);
-                auto & particleComponent = view.get<ParticleEffectComponent>(entity);
+                auto & renderComponent = playerView.get<RenderComponent>(entity);
+                auto & movementComponent = playerView.get<MovementComponent>(entity);
+                auto & inventory = playerView.get<InventoryComponent>(entity);
+                auto & particleComponent = playerView.get<ParticleEffectComponent>(entity);
                 auto & billboard = renderComponent.billboard;
 
-                auto & camera = view.get<jl::Camera>(entity);
+                auto & camera = playerView.get<jl::Camera>(entity);
 
-                auto & physicsComponent = view.get<PhysicsComponent>(entity);
+                auto & physicsComponent = playerView.get<PhysicsComponent>(entity);
                 auto & collisionCage = physicsComponent.collisionCage;
                 auto & animation_state = renderComponent.animation_state;
-                auto & controls = view.get<Controls>(entity);
+                auto & controls = playerView.get<Controls>(entity);
                 auto id = entity;
 
 
@@ -951,7 +951,7 @@ int main()
                     using T = std::decay_t<decltype(m)>;
                     if constexpr (std::is_same_v<T, WorldInfo>) {
                         std::cout << "Got world info " << m.seed << " \n"
-                        << "playerIndex: " << m.yourPlayerIndex << " \n"
+                        << "playerIndex: " << (int)m.yourPlayerIndex << " \n"
                         << "yourPosition: " << m.yourPosition.x << " " << m.yourPosition.y << " " << m.yourPosition.z << " \n";
 
                         theScene.world->setSeed(m.seed);
@@ -968,7 +968,7 @@ int main()
                         {
                             theScene.addPlayerWithIndex(m.myPlayerIndex);
                         }
-                        theScene.REG.patch<Controls>(m.myPlayerIndex, m.myControls);
+                        theScene.REG.patch<Controls>(m.myPlayerIndex, [&](auto &cont){ cont = m.myControls; });
                         //theScene.players.at(m.myPlayerIndex)->controls = m.myControls;
 
                         //theScene.players.at(m.myPlayerIndex)->camera.transform.position = m.startPos;
@@ -1006,7 +1006,9 @@ int main()
                     {
                         if(theScene.REG.valid(m.myPlayerIndex))
                         {
+                            theScene.REG.get<PhysicsComponent>(m.myPlayerIndex).release();
                             theScene.REG.destroy(m.myPlayerIndex);
+
                         }
                     }
                     else if constexpr (std::is_same_v<T, RequestInventorySwap>)
@@ -1049,7 +1051,7 @@ int main()
                         {
                             if (auto inv = loadInvFromFile("mpworld.txt", m.id))
                             {
-                                std::cout << "Loaded inv to player " << m.index << " with id " << m.id << "\n";
+                                std::cout << "Loaded inv to player " << (int)m.index << " with id " << m.id << "\n";
                                 theScene.REG.get<InventoryComponent>(m.index).inventory = inv.value();
                             }
                         } else
@@ -1160,7 +1162,6 @@ int main()
 
             gScene->simulate(deltaTime);
 
-
             auto & camera = theScene.getOur<jl::Camera>();
 
 
@@ -1234,7 +1235,7 @@ int main()
             glUniform1i(texture1Loc, 0);
             glUniform1f(abLoc, ambBrightFromTimeOfDay(theScene.timeOfDay, theScene.dayLength));
             glUniform3f(posLoc, 0.0, 0.0, 0.0);
-            const glm::vec3 campos = theScene.players[theScene.myPlayerIndex]->camera.transform.position;
+            const glm::vec3 campos = theScene.getOur<jl::Camera>().transform.position;
             glUniform3f(camPosLoc, campos.x, campos.y, campos.z);
             glUniform1f(rotLoc, 0.0f);
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
@@ -1251,13 +1252,22 @@ int main()
 
             //std::cout << "World intro time" << theScene.worldIntroTimer << std::endl;
             renderer->mainThreadDraw(&theScene.getOur<jl::Camera>(), mainShader.shaderID, world.worldGenMethod, deltaTime, theScene.worldIntroTimer > INTROFLYTIME);
-            vms->draw(&world, theScene.players.at(theScene.myPlayerIndex));
+            vms->draw(&world, theScene.myPlayerIndex, theScene.REG);
 
             glUniform1f(timeRenderedLoc, 10.0f);
             glUniform1f(scaleLoc, 0.4f);
-            for (auto& [id, player] : theScene.players)
+
+            for (auto entity : playerView)
             {
-                auto equippeditems = player->inventory.getEquippedItems();
+                auto id = entity;
+
+                auto inventory = playerView.get<InventoryComponent>(entity);
+                auto camera = playerView.get<jl::Camera>(entity);
+                auto controls = playerView.get<Controls>(entity);
+                auto invComp = playerView.get<InventoryComponent>(entity);
+                auto renderComp = playerView.get<RenderComponent>(entity);
+
+                auto equippeditems = inventory.inventory.getEquippedItems();
                 bool jpEquipped = false;
                 for (auto& equippeditem : equippeditems)
                 {
@@ -1266,7 +1276,7 @@ int main()
                         jpEquipped = true;
                     }
                 }
-                auto pos = player->camera.transform.position + (player->camera.transform.direction*0.5f) + (player->camera.transform.right * 0.5f);
+                auto pos = camera.transform.position + (camera.transform.direction*0.5f) + (camera.transform.right * 0.5f);
                 pos.y -= 0.5f;
 
                 glUseProgram(mainShader.shaderID);
@@ -1281,16 +1291,15 @@ int main()
                     glUniform3f(camPosLoc, 0, 0, 0);
                 } else
                 {
-                    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera.mvp));
+                    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.getOur<jl::Camera>().mvp));
                     glUniform3f(posLoc, pos.x, pos.y, pos.z);
-
                 }
 
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, worldTex.id);
 
 
-                drawHandledBlock(player->camera.transform.position, player->currentHeldBlock, mainShader.shaderID, player->lastHeldBlock, player->handledBlockMeshInfo);
+                drawHandledBlock(camera.transform.position, invComp.currentHeldBlock, mainShader.shaderID, invComp.lastHeldBlock, renderComp.handledBlockMeshInfo);
                 glEnable(GL_DEPTH_TEST);
 
                 if (jpEquipped)
@@ -1301,7 +1310,7 @@ int main()
                         glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
                         glActiveTexture(GL_TEXTURE0);
 
-                        if (player->controls.secondary1)
+                        if (controls.secondary1)
                         {
                             glBindTexture(GL_TEXTURE_2D, jplit.texids.at(0));
                         }
@@ -1312,14 +1321,14 @@ int main()
 
                         glUniform1i(glGetUniformLocation(gltfShader.shaderID, "texture1"), 0);
 
-                        auto camdir = player->camera.transform.direction;
+                        auto camdir = camera.transform.direction;
                         camdir.y = 0;
                         camdir = glm::normalize(camdir);
 
-                        glm::vec3 posToRenderAt = player->camera.transform.position - (camdir * 0.3f);
-                        posToRenderAt.y = player->camera.transform.position.y - 0.5f;
+                        glm::vec3 posToRenderAt = camera.transform.position - (camdir * 0.3f);
+                        posToRenderAt.y = camera.transform.position.y - 0.5f;
                         glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
-                        glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), player->camera.transform.yaw);
+                        glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), camera.transform.yaw);
 
                         for(jl::ModelGLObjects &mglo : jp.modelGLObjects)
                         {
@@ -1331,7 +1340,6 @@ int main()
                         }
                     }
                 }
-
             }
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
             glUniform1f(scaleLoc, 1.0f);
@@ -1369,7 +1377,7 @@ int main()
 
             for(auto & gizmo : theScene.gizmos)
             {
-                gizmo->draw(&world, theScene.players[theScene.myPlayerIndex]);
+                gizmo->draw(&world, theScene.myPlayerIndex, theScene.REG);
             }
 
 

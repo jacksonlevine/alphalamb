@@ -37,7 +37,7 @@ struct ParticleInstance
 
 class ParticlesGizmo : public WorldGizmo {
 public:
-    void draw(World* world, Player* player) override;
+    void draw(World* world, entt::entity playerIndex, entt::registry& reg) override;
     void init() override;
 
     void addParticle(glm::vec3 position, BlockType blockID, float scale, PxVec3 velocity)

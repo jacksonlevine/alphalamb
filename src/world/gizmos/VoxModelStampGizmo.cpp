@@ -6,7 +6,7 @@
 
 #include "../VoxelModels.h"
 
-void VoxModelStampGizmo::draw(World* world, Player* player)
+void VoxModelStampGizmo::draw(World* world, entt::entity playerIndex, entt::registry& reg)
 {
     static size_t lastModelIndex = 9999;
     if (active)

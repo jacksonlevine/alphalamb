@@ -24,7 +24,7 @@ GLuint BlockSelectGizmo::overlayIndices[] = {
 };
 
 
-void BlockSelectGizmo::draw(World* world, Player* player)
+void BlockSelectGizmo::draw(World* world, entt::entity playerIndex, entt::registry& reg)
 {
 
 
@@ -32,9 +32,10 @@ void BlockSelectGizmo::draw(World* world, Player* player)
     constexpr int DISTANCE = 10;
 
 
+    auto camera = reg.get<jl::Camera>(playerIndex);
+    glm::vec3 direction = camera.transform.direction;
 
-    glm::vec3 direction = player->camera.transform.direction;
-    glm::vec3 position = player->camera.transform.position;
+    glm::vec3 position = camera.transform.position;
     glLineWidth(3.0);
 
     PxRaycastBuffer hit;
@@ -91,7 +92,7 @@ void BlockSelectGizmo::draw(World* world, Player* player)
 
 
             glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvp"), 1, GL_FALSE,
-            glm::value_ptr(player->camera.mvp));
+            glm::value_ptr(camera.mvp));
             glUniform3f(glGetUniformLocation(shaderProgram, "pos"),
                 spot.x, spot.y, spot.z);
 
@@ -123,7 +124,7 @@ void BlockSelectGizmo::draw(World* world, Player* player)
                 glEnableVertexAttribArray(1);
 
                 glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvp"), 1, GL_FALSE,
-            glm::value_ptr(player->camera.mvp));
+            glm::value_ptr(camera.mvp));
                 glUniform3f(glGetUniformLocation(shaderProgram, "pos"),
                     spot.x, spot.y, spot.z);
                 glDrawElements(GL_TRIANGLES, sizeof(overlayIndices) / sizeof(GLuint), GL_UNSIGNED_INT, 0);

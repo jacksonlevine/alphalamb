@@ -12,7 +12,7 @@
 class WorldGizmo
 {
 public:
-    virtual void draw(World* world, Player* player) = 0;
+    virtual void draw(World* world, entt::entity playerIndex, entt::registry& reg) = 0;
     virtual void init() = 0;
 };
 

@@ -7,7 +7,7 @@
 #include "../../LUTLoader.h"
 #include "../../Shader.h"
 
-void ParticlesGizmo::draw(World* world, Player* player)
+void ParticlesGizmo::draw(World* world, entt::entity playerIndex, entt::registry& reg)
 {
     updateParticlesCollisionCage(world);
     glBindVertexArray(vao);
@@ -15,8 +15,10 @@ void ParticlesGizmo::draw(World* world, Player* player)
     static GLuint mvploc = glGetUniformLocation(shaderProgram, "mvp");
     static GLuint camPosloc = glGetUniformLocation(shaderProgram, "camPos");
 
-    glUniformMatrix4fv(mvploc, 1, GL_FALSE, glm::value_ptr(player->camera.mvp));
-    glUniform3f(camPosloc, player->camera.transform.position.x, player->camera.transform.position.y, player->camera.transform.position.z);
+    auto camera = reg.get<jl::Camera>(playerIndex);
+
+    glUniformMatrix4fv(mvploc, 1, GL_FALSE, glm::value_ptr(camera.mvp));
+    glUniform3f(camPosloc, camera.transform.position.x, camera.transform.position.y, camera.transform.position.z);
 
     glUniform1i(glGetUniformLocation(shaderProgram, "lut"), 1);
 

@@ -7,7 +7,7 @@
 #include "world/datamapmethods/HashMapDataMap.h"
 #include "world/worldgenmethods/OverworldWorldGenMethod.h"
 
-std::unordered_map<int, ServerPlayer> clients;
+std::unordered_map<entt::entity, ServerPlayer> clients;
 
 std::shared_mutex clientsMutex;
 //

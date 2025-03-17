@@ -10,11 +10,13 @@ GLuint BulkPlaceGizmo::indices[] = {
    0, 4,   1, 5,   2, 6,   3, 7   // Connecting lines
 };
 
-void BulkPlaceGizmo::draw(World* world, Player* player)
+void BulkPlaceGizmo::draw(World* world, entt::entity playerIndex, entt::registry& reg)
 {
     static IntTup lastcorner1 = corner1;
     static IntTup lastcorner2 = corner2;
 
+    auto camera = reg.get<jl::Camera>(playerIndex);
+    auto invComp = reg.get<InventoryComponent>(playerIndex);
 
     static GLfloat vertices[] = {
         // Front face vertices
@@ -42,7 +44,7 @@ void BulkPlaceGizmo::draw(World* world, Player* player)
         glBindTexture(GL_TEXTURE_2D, mainGameTexture);
 
         glUniformMatrix4fv(glGetUniformLocation(mainGameShader, "mvp"), 1, GL_FALSE,
-        glm::value_ptr(player->camera.mvp));
+        glm::value_ptr(camera.mvp));
         glUniform3f(glGetUniformLocation(mainGameShader, "pos"),
             0.0f, 0.0f, 0.0f);
 
@@ -71,7 +73,7 @@ void BulkPlaceGizmo::draw(World* world, Player* player)
                     {
                         for (int i = 0; i < 6; i++)
                         {
-                            addFace(PxVec3(x,y,z), static_cast<Side>(i), player->currentHeldBlock, 1, mesh, index, tindex);
+                            addFace(PxVec3(x,y,z), static_cast<Side>(i), invComp.currentHeldBlock, 1, mesh, index, tindex);
                         }
                     }
 
@@ -113,7 +115,7 @@ void BulkPlaceGizmo::draw(World* world, Player* player)
         glUseProgram(shaderProgram);
         glBindVertexArray(vao);
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "mvp"), 1, GL_FALSE,
-        glm::value_ptr(player->camera.mvp));
+        glm::value_ptr(camera.mvp));
         glUniform3f(glGetUniformLocation(shaderProgram, "pos"),
             0.0f, 0.0f, 0.0f);
         glUniform1f(glGetUniformLocation(shaderProgram, "placemode"), placeMode);

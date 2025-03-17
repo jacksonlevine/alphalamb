@@ -12,12 +12,7 @@
 #include "world/gizmos/BlockSelectGizmo.h"
 #include "Hud.h"
 #include "Planets.h"
-#include "components/InventoryComponent.h"
-#include "components/MovementComponent.h"
-#include "components/NetworkComponent.h"
-#include "components/ParticleEffectComponent.h"
-#include "components/PhysicsComponent.h"
-#include "components/RenderComponent.h"
+#include "components/PlayerEmplacer.h"
 #include "world/gizmos/BulkPlaceGizmo.h"
 #include "world/gizmos/VoxModelStampGizmo.h"
 
@@ -46,15 +41,7 @@ struct Scene
         // return index;
         auto pers = REG.create();
 
-        // EMPLACE THINGS HERE BITCH
-        REG.emplace<jl::Camera>(pers);
-        REG.emplace<RenderComponent>(pers);
-        REG.emplace<PhysicsComponent>(pers);
-        REG.emplace<Controls>(pers);
-        REG.emplace<InventoryComponent>(pers);
-        REG.emplace<ParticleEffectComponent>(pers);
-        REG.emplace<NetworkComponent>(pers);
-        REG.emplace<MovementComponent>(pers);
+        emplacePlayerParts(REG, pers);
 
         return pers;
     }
@@ -69,14 +56,7 @@ struct Scene
     {
         auto pers = REG.create(index);
 
-        REG.emplace<jl::Camera>(pers);
-        REG.emplace<RenderComponent>(pers);
-        REG.emplace<PhysicsComponent>(pers);
-        REG.emplace<Controls>(pers);
-        REG.emplace<InventoryComponent>(pers);
-        REG.emplace<ParticleEffectComponent>(pers);
-        REG.emplace<NetworkComponent>(pers);
-        REG.emplace<MovementComponent>(pers);
+        emplacePlayerParts(REG, pers);
 
 
         return pers;

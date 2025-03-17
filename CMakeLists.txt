@@ -130,8 +130,6 @@ add_executable(DistantGarden
         src/TextureFace.h
         src/Inventory.cpp
         src/Inventory.h
-        src/world/gizmos/DropsGizmo.cpp
-        src/world/gizmos/DropsGizmo.h
         src/SunAndMoon.h
         src/TimeOfDay.h
         src/Planets.cpp
@@ -155,6 +153,8 @@ add_executable(DistantGarden
         src/components/NetworkComponent.h
         src/components/RenderComponent.h
         src/components/PhysicsComponent.h
+        src/components/PhysicsComponent.cpp
+        src/components/PlayerEmplacer.h
 )
 
 add_executable(DGServer
@@ -177,6 +177,8 @@ add_executable(DGServer
         src/components/NetworkComponent.h
         src/components/RenderComponent.h
         src/components/PhysicsComponent.h
+        src/components/PhysicsComponent.cpp
+        src/components/PlayerEmplacer.h
 )
 
 target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)

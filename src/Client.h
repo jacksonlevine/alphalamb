@@ -85,7 +85,7 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                     using T = std::decay_t<decltype(m)>;
                     if constexpr (std::is_same_v<T, WorldInfo>) {
                         std::cout << "Got world info " << m.seed << " \n"
-                        << "playerIndex: " << m.yourPlayerIndex << " \n"
+                        << "playerIndex: " << (int)m.yourPlayerIndex << " \n"
                         << "yourPosition: " << m.yourPosition.x << " " << m.yourPosition.y << " " << m.yourPosition.z << " \n";
 
                         theScene.world->setSeed(m.seed);
@@ -156,13 +156,13 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                                 if(isWorld)
                                 {
                                     theScene.world->load("mpworld.txt", theScene.existingInvs);
-                                    std::cout << "Playerindex here: " << theScene.myPlayerIndex << " \n";
+                                    std::cout << "Playerindex here: " << (int)theScene.myPlayerIndex << " \n";
                                     theScene.worldReceived.store(true);
                                     if (theScene.existingInvs.contains(theScene.settings.clientUID))
                                     {
                                         if (auto inv = loadInvFromFile("mpworld.txt", theScene.settings.clientUID))
                                         {
-                                            theScene.players.at(theScene.myPlayerIndex)->inventory = inv.value();
+                                            theScene.getOur<InventoryComponent>().inventory = inv.value();
                                         }
                                     }
 

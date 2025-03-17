@@ -10,7 +10,7 @@
 
 class VoxModelStampGizmo : public WorldGizmo {
 public:
-    void draw(World* world, Player* player) override;
+    void draw(World* world, entt::entity playerIndex, entt::registry& reg) override;
     void init() override;
     ChunkGLInfo cgl = {};
     bool active = false;
