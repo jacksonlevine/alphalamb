@@ -52,15 +52,12 @@ struct SnapshotInputArchive {
         archive(size);
     }
 
+
     template<typename Component>
     void operator()(Component& component) {
         archive(component);
     }
 
-    template<typename Component>
-    void operator()(entt::entity& entity, Component& component) {
-        archive(entity, component);
-    }
 };
 
 #endif //FILEARCHIVES_H

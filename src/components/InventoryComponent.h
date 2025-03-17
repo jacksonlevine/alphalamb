@@ -15,7 +15,7 @@ struct InventoryComponent {
     template<typename Archive>
     void serialize(Archive& archive)
     {
-        //archive(inventory);
+        archive(lastHeldBlock, currentHeldBlock, inventory);
     }
 };
 

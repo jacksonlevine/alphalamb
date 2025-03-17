@@ -29,7 +29,7 @@ void loadRegistry(entt::registry & reg, const char* filename)
     std::ifstream input(filename, std::ios::binary);
     SnapshotInputArchive inputArchive(input);
 
-    entt::snapshot{reg}
+    entt::snapshot_loader{reg}
     .get<entt::entity>(inputArchive)
     .get<InventoryComponent>(inputArchive)
     .get<jl::Camera>(inputArchive)
