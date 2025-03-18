@@ -44,12 +44,16 @@ inline void sendMessageToAllClients(const DGMessage& message, entt::entity m_pla
 {
 
     std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-    for(auto & [id, client] : clients)
+
+    auto view = serverReg.view<NetworkComponent>();
+    for (auto entity : view)
     {
-        if(!((id == m_playerIndex) && excludeMe) && !client.socket.expired() && client.receivedWorld)
+        auto nc = view.get<NetworkComponent>(entity);
+        if(!((entity == m_playerIndex) && excludeMe) && !nc.socket.expired() && nc.receivedWorld)
         {
-            boost::asio::write(*client.socket.lock(), boost::asio::buffer(&message, sizeof(DGMessage)));
+            boost::asio::write(*nc.socket.lock(), boost::asio::buffer(&message, sizeof(DGMessage)));
         }
+
     }
 
 }
@@ -144,18 +148,11 @@ private:
 
 
 
-        if (invMapKeyedByUID.invMap.contains(m_clientUID))
-        {
-            std::cout << "Player has existing inventory. \n";
-        } else
-        {
-            invMapKeyedByUID.invMap.insert_or_assign(m_clientUID, Inventory{.inventory = DEFAULT_INVENTORY});
-        }
-
-        {
-            std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-            clients.at(m_playerIndex).myUID = m_clientUID;
-        }
+        //
+        // {
+        //     std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+        //     clients.at(m_playerIndex).myUID = m_clientUID;
+        // }
 
         //Now the players inv will exist in the world they download
 
@@ -205,13 +202,22 @@ private:
 
         {
             std::shared_lock<std::shared_mutex> clientsLock(clientsMutex);
-            for(auto & [id, client] : clients)
+
+
+            auto view = serverReg.view<NetworkComponent, UUIDComponent, jl::Camera>();
+
+            for (auto entity : view)
             {
+                auto nc = view.get<NetworkComponent>(entity);
+                auto id = entity;
+                auto camera = view.get<jl::Camera>(entity);
+                auto myUID = view.get<UUIDComponent>(entity).uuid;
+
                 if(id != m_playerIndex)
                 {
                     DGMessage playerPresent = PlayerPresent {
-                        .index = id, .position = client.camera.transform.position, .direction = client.camera.transform.direction,
-                        .id = client.myUID};
+                        .index = id, .position = camera.transform.position, .direction = camera.transform.direction,
+                        .id = myUID};
                     //We are notified of this person
                     boost::asio::async_write(*m_socket, boost::asio::buffer(&playerPresent, sizeof(DGMessage)),
                     [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
@@ -223,14 +229,14 @@ private:
                         }
                     });
                     //And also notify this person we are here
-                    if(!client.socket.expired() && client.receivedWorld)
+                    if(!nc.socket.expired() && nc.receivedWorld)
                     {
                         DGMessage ourPlayerPresent = PlayerPresent {
-                            .index = m_playerIndex, .position = clients.at(m_playerIndex).camera.transform.position,
-                            .direction = clients.at(m_playerIndex).camera.transform.direction, .id = m_clientUID
+                            .index = m_playerIndex, .position = serverReg.get<jl::Camera>(m_playerIndex).transform.position,
+                            .direction = serverReg.get<jl::Camera>(m_playerIndex).transform.direction, .id = m_clientUID
                         };
 
-                        boost::asio::async_write(*client.socket.lock(), boost::asio::buffer(&ourPlayerPresent, sizeof(DGMessage)),
+                        boost::asio::async_write(*nc.socket.lock(), boost::asio::buffer(&ourPlayerPresent, sizeof(DGMessage)),
                     [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
                         {
                             if (!ec) {
@@ -241,9 +247,8 @@ private:
                         });
                     }
                 }
-
             }
-            clients.at(m_playerIndex).receivedWorld = true;
+            serverReg.get<NetworkComponent>(m_playerIndex).receivedWorld = true;
         }
 
 
@@ -272,13 +277,21 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
                         //std::cout << "Got controls update from " << m_playerIndex << " \n";
+                        // {
+                        //     //std::cout << "Waiting on clients lock \n";
+                        //     std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+                        //     clients.at(m_playerIndex).camera.transform.position = m.startPos;
+                        //     clients.at(m_playerIndex).controls = m.myControls;
+                        //     clients.at(m_playerIndex).camera.transform.updateWithYawPitch(m.startYawPitch.x, m.startYawPitch.y);
+                        //     //std::cout << "Got clients lock \n";
+                        // }
+
                         {
-                            //std::cout << "Waiting on clients lock \n";
                             std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-                            clients.at(m_playerIndex).camera.transform.position = m.startPos;
-                            clients.at(m_playerIndex).controls = m.myControls;
-                            clients.at(m_playerIndex).camera.transform.updateWithYawPitch(m.startYawPitch.x, m.startYawPitch.y);
-                            //std::cout << "Got clients lock \n";
+                            auto & c = serverReg.get<jl::Camera>(m_playerIndex);
+                            c.transform.position = m.startPos;
+                            serverReg.get<Controls>(m_playerIndex) = m.myControls;
+                            c.transform.updateWithYawPitch(m.startYawPitch.x, m.startYawPitch.y);
                         }
 
                         redistrib = true;
@@ -309,25 +322,41 @@ private:
                         //Swaps can only be done within ones own inventory
                         if (m.sourceID == m.destinationID)
                         {
-                            std::unique_lock<std::shared_mutex> invmaplock(invMapKeyedByUID.rw);
+
+                            std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
 
                             InventorySlot* source = nullptr;
                             InventorySlot* destination = nullptr;
 
-                            if (m.mouseSlotS)
-                            {
-                                source = &invMapKeyedByUID.invMap.at(m.sourceID).mouseHeldItem;
-                            } else
-                            {
-                                source = &invMapKeyedByUID.invMap.at(m.sourceID).inventory.at(m.sourceIndex);
-                            }
+                            auto view = serverReg.view<UUIDComponent, InventoryComponent>();
 
-                            if (m.mouseSlotD)
+                            for (auto entity : view)
                             {
-                                destination = &invMapKeyedByUID.invMap.at(m.destinationID).mouseHeldItem;
-                            } else
-                            {
-                                destination = &invMapKeyedByUID.invMap.at(m.destinationID).inventory.at(m.destinationIndex);
+                                auto inventory = view.get<InventoryComponent>(entity);
+                                auto uuid = view.get<UUIDComponent>(entity);
+
+                                if (uuid.uuid == m.destinationID)
+                                {
+                                    if (m.mouseSlotD)
+                                    {
+                                        destination = &inventory.inventory.mouseHeldItem;
+                                    }
+                                    else
+                                    {
+                                        destination = &inventory.inventory.inventory.at(m.destinationIndex);
+                                    }
+
+                                }
+                                if (uuid.uuid == m.sourceID)
+                                {
+                                    if (m.mouseSlotS)
+                                    {
+                                        source = &inventory.inventory.mouseHeldItem;
+                                    } else
+                                    {
+                                        source = &inventory.inventory.inventory.at(m.sourceIndex);
+                                    }
+                                }
                             }
 
                             if (source && destination)
@@ -337,6 +366,7 @@ private:
                                 *destination = srcCopy;
                                 redistrib = true;
                             }
+
                         }
 
                     }
@@ -460,11 +490,11 @@ private:
                     DGMessage pl = PlayerLeave {
                                     m_playerIndex};
 
-                    {
-                        std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-                        std::cout << "New player count: " << clients.size()-1 << std::endl;
-                        clients.erase(m_playerIndex);
-                    }
+                    // {
+                    //     std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+                    //     //std::cout << "New player count: " << clients.size()-1 << std::endl;
+                    //     //serverReg.erase(m_playerIndex);
+                    // }
 
                     sendMessageToAllClients(pl, m_playerIndex, true);
 
@@ -489,10 +519,12 @@ private:
 class Server {
 public:
     Server(boost::asio::io_context& io_context, short port) : m_acceptor(io_context, tcp::endpoint(tcp::v4(), port)) {
+        loadRegistry(serverReg, "savedreg.bin");
         // now we call do_accept() where we wait for clients
         serverWorld.setSeed(DGSEEDSEED);
         do_accept();
     }
+
     void do_accept() {
         // this is an async accept which means the lambda function is
         // executed, when a client connects
@@ -604,8 +636,9 @@ inline void endLocalServerIfRunning()
     serverWorld.blockAreas.baMutex.lock();
     serverWorld.blockAreas.blockAreas.clear();
     serverWorld.blockAreas.baMutex.unlock();
+    saveRegistry(serverReg, "savedreg.bin");
     clientsMutex.lock();
-    clients.clear();
+    serverReg.clear();
     clientsMutex.unlock();
 }
 

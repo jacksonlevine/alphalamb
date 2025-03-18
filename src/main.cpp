@@ -1054,17 +1054,17 @@ int main()
                         m.position.y + CAMERA_OFFSET,
                         m.position.z)
                             );
-                        if (theScene.existingInvs.contains(m.id))
-                        {
-                            if (auto inv = loadInvFromFile("mpworld.txt", m.id))
-                            {
-                                std::cout << "Loaded inv to player " << (int)m.index << " with id " << m.id << "\n";
-                                theScene.REG.get<InventoryComponent>(m.index).inventory = inv.value();
-                            }
-                        } else
-                        {
-                            theScene.REG.get<InventoryComponent>(m.index).inventory.inventory = DEFAULT_INVENTORY;
-                        }
+                        // if (theScene.existingInvs.contains(m.id))
+                        // {
+                        //     if (auto inv = loadInvFromFile("mpworld.txt", m.id))
+                        //     {
+                        //         std::cout << "Loaded inv to player " << (int)m.index << " with id " << m.id << "\n";
+                        //         theScene.REG.get<InventoryComponent>(m.index).inventory = inv.value();
+                        //     }
+                        // } else
+                        // {
+                        //     theScene.REG.get<InventoryComponent>(m.index).inventory.inventory = DEFAULT_INVENTORY;
+                        // }
                         theScene.REG.get<jl::Camera>(m.index).transform.position = m.position;
                         theScene.REG.get<jl::Camera>(m.index).transform.direction = m.direction;
                     }
