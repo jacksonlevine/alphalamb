@@ -7,6 +7,6 @@
 
 int main()
 {
-    loadDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels);
+    loadDM("serverworld.txt", serverWorld.userDataMap, serverReg, serverWorld.blockAreas, serverWorld.placedVoxModels);
     serverThreadFun(6969);
 }

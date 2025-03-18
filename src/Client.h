@@ -71,6 +71,12 @@ inline void pushToNetworkToMainQueue(const DGMessage& m)
 
 inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) {
     try {
+
+        DGMessage msg = ClientToServerGreeting {
+            .id = theScene.settings.clientUID};
+        boost::system::error_code ec;
+        boost::asio::write(*socket, boost::asio::buffer(&msg, sizeof(DGMessage)), ec);
+
         while (shouldRun->load()) {
             DGMessage message{};
             boost::system::error_code ec;
@@ -89,12 +95,9 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                         << "yourPosition: " << m.yourPosition.x << " " << m.yourPosition.y << " " << m.yourPosition.z << " \n";
 
                         theScene.world->setSeed(m.seed);
-                        theScene.myPlayerIndex = theScene.addPlayerWithIndex(m.yourPlayerIndex);
+                        theScene.myPlayerIndex = theScene.addPlayerWithIndex(m.yourPlayerIndex, theScene.settings.clientUID);
 
-                        DGMessage msg = ClientToServerGreeting {
-                        .id = theScene.settings.clientUID};
-                        boost::system::error_code ec;
-                        boost::asio::write(*socket, boost::asio::buffer(&msg, sizeof(DGMessage)), ec);
+
                         //Dont do this yet, receive the file first
                         //theScene.worldReceived = true;
                     }
@@ -155,16 +158,33 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
 
                                 if(isWorld)
                                 {
-                                    theScene.world->load("mpworld.txt", theScene.existingInvs);
-                                    std::cout << "Playerindex here: " << (int)theScene.myPlayerIndex << " \n";
-                                    theScene.worldReceived.store(true);
-                                    if (theScene.existingInvs.contains(theScene.settings.clientUID))
+                                    std::vector<char> rfb(m.regFileSize);
+
+                                    boost::asio::read(*socket, boost::asio::buffer(rfb.data(), sizeof(m.regFileSize * sizeof(char))), ec);
+                                    if (!ec)
                                     {
-                                        if (auto inv = loadInvFromFile("mpworld.txt", theScene.settings.clientUID))
+                                        std::cout << "Got reg file \n";
+                                        std::ofstream f2("snapshot.bin", std::ios::trunc);
+
+                                        if(f2.is_open())
                                         {
-                                            theScene.getOur<InventoryComponent>().inventory = inv.value();
+                                            f2.write(rfb.data(), sizeof(m.regFileSize * sizeof(char)));
+                                            f2.close();
+
+                                            theScene.world->load("mpworld.txt", theScene.existingInvs, theScene.REG);
+                                            std::cout << "Playerindex here: " << (int)theScene.myPlayerIndex << " \n";
+                                            theScene.worldReceived.store(true);
+                                            // if (theScene.existingInvs.contains(theScene.settings.clientUID))
+                                            // {
+                                            //     if (auto inv = loadInvFromFile("mpworld.txt", theScene.settings.clientUID))
+                                            //     {
+                                            //         theScene.getOur<InventoryComponent>().inventory = inv.value();
+                                            //     }
+                                            // }
                                         }
                                     }
+
+
 
                                 }
 

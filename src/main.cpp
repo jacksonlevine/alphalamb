@@ -564,11 +564,11 @@ void enterWorld(Scene* s)
     int width, height = 0;
     glfwGetWindowSize(s->window, &width, &height);
 
-    if (!s->multiplayer)
-    {
-        //std::cout << " This happening \n";
-        s->myPlayerIndex = s->addPlayer();
-    }
+    // if (!s->multiplayer)
+    // {
+    //     //std::cout << " This happening \n";
+    //     s->myPlayerIndex = s->addPlayer();
+    // }
     //Add ourselves to the scene
 
 
@@ -957,15 +957,15 @@ int main()
                 visit([&](const auto& m) {
                     using T = std::decay_t<decltype(m)>;
                     if constexpr (std::is_same_v<T, WorldInfo>) {
-                        std::cout << "Got world info " << m.seed << " \n"
-                        << "playerIndex: " << (int)m.yourPlayerIndex << " \n"
-                        << "yourPosition: " << m.yourPosition.x << " " << m.yourPosition.y << " " << m.yourPosition.z << " \n";
-
-                        theScene.world->setSeed(m.seed);
-                        theScene.myPlayerIndex = theScene.addPlayerWithIndex(m.yourPlayerIndex);
-
-                        //Dont do this yet, receive the file first
-                        //theScene.worldReceived = true;
+                        // std::cout << "Got world info " << m.seed << " \n"
+                        // << "playerIndex: " << (int)m.yourPlayerIndex << " \n"
+                        // << "yourPosition: " << m.yourPosition.x << " " << m.yourPosition.y << " " << m.yourPosition.z << " \n";
+                        //
+                        // theScene.world->setSeed(m.seed);
+                        // theScene.myPlayerIndex = theScene.addPlayerWithIndex(m.yourPlayerIndex, theScene.settings.clientUID);
+                        //
+                        // //Dont do this yet, receive the file first
+                        // //theScene.worldReceived = true;
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
                         // std::cout << "Got a controls update from " << m.myPlayerIndex << "\n";
@@ -973,7 +973,7 @@ int main()
                         // std::cout << m.startPos.x << " " << m.startPos.y << " " << m.startPos.z << "\n";
                         if(!theScene.REG.valid(m.myPlayerIndex))
                         {
-                            theScene.addPlayerWithIndex(m.myPlayerIndex);
+                            theScene.addPlayerWithIndex(m.myPlayerIndex, m.id);
                         }
                         theScene.REG.patch<Controls>(m.myPlayerIndex, [&](auto &cont){ cont = m.myControls; });
                         //theScene.players.at(m.myPlayerIndex)->controls = m.myControls;
@@ -997,7 +997,7 @@ int main()
                     {
                         if(!theScene.REG.valid(m.myPlayerIndex))
                         {
-                            theScene.addPlayerWithIndex(m.myPlayerIndex);
+                            theScene.addPlayerWithIndex(m.myPlayerIndex, m.id);
                         }
                         theScene.REG.get<jl::Camera>(m.myPlayerIndex).updateYPIndirect(m.newYaw, m.newPitch);
 
@@ -1048,7 +1048,7 @@ int main()
                     }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
                        std::cout << "Processing palyerpresent\n";
-                        theScene.addPlayerWithIndex(m.index);
+                        theScene.addPlayerWithIndex(m.index, m.id);
                         theScene.REG.get<PhysicsComponent>(m.index).controller->setPosition(PxExtendedVec3(
                         m.position.x,
                         m.position.y + CAMERA_OFFSET,

@@ -1005,7 +1005,7 @@ UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize)
     return fromChunk(spot, world, chunkSize, true);
 }
 
-#define MEASURE_CHUNKREB
+//#define MEASURE_CHUNKREB
 ///Create a UsableMesh from the specified chunk spot
 ///This gets called in the mesh building coroutine
 UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked)

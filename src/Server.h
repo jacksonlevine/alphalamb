@@ -10,6 +10,8 @@
 #include "PrecompHeader.h"
 #include "NetworkTypes.h"
 #include "PlayerInfoMapKeyedByUID.h"
+#include "components/PlayerEmplacer.h"
+#include "components/UUIDComponent.h"
 #include "specialblocks/FindSpecialBlock.h"
 #include "world/DataMap.h"
 #include "world/World.h"
@@ -52,13 +54,27 @@ inline void sendMessageToAllClients(const DGMessage& message, entt::entity m_pla
 
 }
 
+inline std::vector<char> loadBinaryFile(const std::string& filename) {
+    std::ifstream file(filename, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file: " << filename << std::endl;
+        return {};
+    }
 
+    size_t fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    std::vector<char> buffer(fileSize);
+    file.read(buffer.data(), fileSize);
+
+    return buffer;
+}
 
 class Session : public std::enable_shared_from_this<Session>
 {
 public:
-    explicit Session(std::shared_ptr<tcp::socket> socket, entt::entity playerIndex)
-    : m_socket(std::move(socket)), m_playerIndex(playerIndex) { }
+    explicit Session(std::shared_ptr<tcp::socket> socket)
+    : m_socket(std::move(socket)), m_playerIndex(entt::null) { }
 
     void run() {
         sayInitialThings();
@@ -70,6 +86,53 @@ private:
         auto self(shared_from_this());
 
 
+        //Client needs to send their greeting before they get anything.
+        ClientToServerGreeting playerInit = {};
+        boost::asio::read(*m_socket, boost::asio::buffer(&playerInit, sizeof(DGMessage)));
+        std::cout << "Server got client UID: " << playerInit.id << std::endl;
+        m_clientUID = playerInit.id;
+
+        {
+            std::shared_lock<std::shared_mutex> clientslock(clientsMutex);
+
+
+            auto view = serverReg.view<UUIDComponent>();
+            for (auto entity : view)
+            {
+                auto comp = view.get<UUIDComponent>(entity);
+                if (m_clientUID == comp.uuid)
+                {
+                    std::cout << "Player already exists in registry! " << m_clientUID << std::endl;
+                    m_playerIndex = entity;
+                    break;
+                }
+
+            }
+            if (m_playerIndex == entt::null)
+            {
+                std::cout << "Player is new to this registry. " << m_clientUID << std::endl;
+                m_playerIndex = serverReg.create();
+                emplacePlayerParts(serverReg, m_playerIndex, m_clientUID);
+
+            }
+
+
+            // clients.insert({index, ServerPlayer{
+            //     .socket = shared_socket,
+            //     .controls = Controls{},
+            //     .camera = jl::Camera{},
+            //     .receivedWorld = std::atomic<bool>{false},
+            // }});
+        }
+
+        {
+            std::unique_lock<std::shared_mutex> clientslock(clientsMutex);
+            auto & nw = serverReg.get<NetworkComponent>(m_playerIndex);
+            nw.socket = m_socket;
+        }
+
+
+
         DGMessage wi = WorldInfo {
             .seed = DGSEEDSEED,
             .yourPosition = glm::vec3(0, 200, 0),
@@ -79,11 +142,7 @@ private:
 
         boost::asio::write(*m_socket, boost::asio::buffer(&wi, sizeof(DGMessage)));
 
-        //Client needs to send their greeting now after they've got world.
-        ClientToServerGreeting playerInit = {};
-        boost::asio::read(*m_socket, boost::asio::buffer(&playerInit, sizeof(DGMessage)));
-        std::cout << "Server got client UID: " << playerInit.id << std::endl;
-        m_clientUID = playerInit.id;
+
 
         if (invMapKeyedByUID.invMap.contains(m_clientUID))
         {
@@ -100,12 +159,15 @@ private:
 
         //Now the players inv will exist in the world they download
 
-        auto string = saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "snapshot.bin");
+        auto string = saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "serversnap.bin");
         if (string.has_value())
         {
+
+            auto regfile = loadBinaryFile("serversnap.bin");
+
             DGMessage fileInit = FileTransferInit {
             .fileSize = string.value().size() * sizeof(char),
-            .isWorld  = true};
+            .isWorld  = true, .regFileSize = regfile.size(),};
             boost::asio::async_write(*m_socket, boost::asio::buffer(&fileInit, sizeof(DGMessage)),
             [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
             {
@@ -123,6 +185,18 @@ private:
                     std::cout << "Successfully wrote world " << bytes_transferred << " bytes." << std::endl;
                 } else {
                     std::cerr << "Error writing to socket: " << ec.message() << std::endl;
+                }
+            });
+
+            //Write the registry snapshot
+
+            boost::asio::async_write(*m_socket, boost::asio::buffer(regfile.data(), regfile.size() * sizeof(char)),
+            [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
+            {
+                if (!ec) {
+                    std::cout << "Successfully wrote regfile " << bytes_transferred << " bytes." << std::endl;
+                } else {
+                    std::cerr << "Error writing to socket w regfile: " << ec.message() << std::endl;
                 }
             });
         }
@@ -395,7 +469,7 @@ private:
                     sendMessageToAllClients(pl, m_playerIndex, true);
 
                     //Save when a player leaves too
-                    saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "snapshot.bin");
+                    saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "serversnap.bin");
                 }
             }
         });
@@ -437,25 +511,25 @@ public:
                               << shared_socket->remote_endpoint().address().to_string()
                               << ":" << shared_socket->remote_endpoint().port() << '\n';
 
-                    auto index = serverReg.create();
-                    //emplacePlayerParts(serverReg, index);
-
-                    // static int ind = 0;
-                    // auto index = ind++;
-
-                    {
-                        std::shared_lock<std::shared_mutex> clientslock(clientsMutex);
-
-                        clients.insert({index, ServerPlayer{
-                            .socket = shared_socket,
-                            .controls = Controls{},
-                            .camera = jl::Camera{},
-                            .receivedWorld = std::atomic<bool>{false},
-                        }});
-                    }
+                    // auto index = serverReg.create();
+                    // //emplacePlayerParts(serverReg, index);
+                    //
+                    // // static int ind = 0;
+                    // // auto index = ind++;
+                    //
+                    // {
+                    //     std::shared_lock<std::shared_mutex> clientslock(clientsMutex);
+                    //
+                    //     clients.insert({index, ServerPlayer{
+                    //         .socket = shared_socket,
+                    //         .controls = Controls{},
+                    //         .camera = jl::Camera{},
+                    //         .receivedWorld = std::atomic<bool>{false},
+                    //     }});
+                    // }
 
                     // Pass the shared_ptr to the session
-                    auto sesh = std::make_shared<Session>(shared_socket, index);
+                    auto sesh = std::make_shared<Session>(shared_socket);
                      sesh->run();
                 } catch (std::exception& e)
                 {
@@ -496,7 +570,7 @@ inline void localServerThreadFun(int port)
 
 inline void launchLocalServer(int port)
 {
-    loadDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels);
+    loadDM("serverworld.txt", serverWorld.userDataMap, serverReg, serverWorld.blockAreas, serverWorld.placedVoxModels);
 
     if (!localserver_running.load()) {
         std::cout << "Starting local server...\n";

@@ -11,10 +11,11 @@
 #include "ParticleEffectComponent.h"
 #include "PhysicsComponent.h"
 #include "RenderComponent.h"
+#include "UUIDComponent.h"
 #include "../PrecompHeader.h"
 #include "../Controls.h"
 
-inline void emplacePlayerParts(entt::registry &REG, entt::entity pers)
+inline void emplacePlayerParts(entt::registry &REG, entt::entity pers, ClientUID id)
 {
     REG.emplace<jl::Camera>(pers);
     REG.emplace<RenderComponent>(pers);
@@ -24,6 +25,7 @@ inline void emplacePlayerParts(entt::registry &REG, entt::entity pers)
     REG.emplace<ParticleEffectComponent>(pers);
     REG.emplace<NetworkComponent>(pers);
     REG.emplace<MovementComponent>(pers);
+    REG.emplace<UUIDComponent>(pers, id);
 }
 
 

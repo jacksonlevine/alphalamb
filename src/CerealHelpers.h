@@ -14,10 +14,10 @@ namespace cereal {
         archive(vec.x, vec.y, vec.z);
     }
 
-    // template <class Archive>
-    // void serialize(Archive& ar, boost::uuids::uuid& uuid) {
-    //     ar(cereal::make_nvp("uuid", uuid.data));
-    // }
+    template <class Archive>
+    void serialize(Archive& ar, boost::uuids::uuid& uuid) {
+        ar(cereal::make_nvp("uuid", uuid.data));
+    }
 }
 
 

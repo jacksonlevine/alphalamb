@@ -161,8 +161,12 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
 }
 
 
-   inline bool loadDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr, InvMapKeyedByUID* im = nullptr, std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>>* existingInvs = nullptr)
+   inline bool loadDM(std::string filename, DataMap* map, entt::registry& reg, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr, InvMapKeyedByUID* im = nullptr, std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>>* existingInvs = nullptr, const
+                      char* regfilename = "snapshot.bin")
     {
+
+        loadRegistry(reg, regfilename);
+
         const bool isClient = im == nullptr;
         if (existingInvs != nullptr)
         {
@@ -330,9 +334,9 @@ public:
     BlockType getRawLocked(IntTup spot);
 
 
-    bool load(std::string filename, std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>>& existingInvs)
+    bool load(std::string filename, std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>>& existingInvs, entt::registry& reg)
     {
-        if (loadDM(filename, userDataMap, blockAreas, placedVoxModels, nullptr, &existingInvs))
+        if (loadDM(filename, userDataMap, reg, blockAreas, placedVoxModels, nullptr, &existingInvs))
         {
 
             //Balloon the areas and voxelmodels into the full-on blocks in nonUserDataMap (This is not at all necessary on the server)

@@ -30,21 +30,6 @@ struct Scene
 
     entt::entity myPlayerIndex = entt::null;
 
-    entt::entity addPlayer()
-    {
-        // int index = 0;
-        // while (players.contains(index))
-        // {
-        //     index++;
-        // };
-        // players.insert({index, new Player()});
-        // return index;
-        auto pers = REG.create();
-
-        emplacePlayerParts(REG, pers);
-
-        return pers;
-    }
 
     template <typename Component>
     Component& getOur()
@@ -52,11 +37,11 @@ struct Scene
         return REG.get<Component>(myPlayerIndex);
     }
 
-    entt::entity addPlayerWithIndex(entt::entity index)
+    entt::entity addPlayerWithIndex(entt::entity index, ClientUID id)
     {
         auto pers = REG.create(index);
 
-        emplacePlayerParts(REG, pers);
+        emplacePlayerParts(REG, pers, id);
 
 
         return pers;

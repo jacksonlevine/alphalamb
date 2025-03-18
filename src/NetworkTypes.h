@@ -37,12 +37,14 @@ struct ControlsUpdate {
     Controls myControls;
     glm::vec3 startPos;
     glm::vec2 startYawPitch;
+    ClientUID id;
 };
 
 struct FileTransferInit
 {
     size_t fileSize;
     bool isWorld;
+    size_t regFileSize = 0;
 };
 
 struct BlockSet
@@ -57,6 +59,7 @@ struct YawPitchUpdate
     entt::entity myPlayerIndex;
     float newYaw;
     float newPitch;
+    ClientUID id;
 };
 
 struct PlayerLeave
