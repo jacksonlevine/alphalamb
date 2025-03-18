@@ -400,11 +400,12 @@ inline void renderImGui() {
                         {
                             theScene.localServerPort = "25000";
                         }
-                        std::cout << "Hosting on port: " << theScene.localServerPort << "\n";
+                        std::cout << "Hosting on port: " << theScene.localServerPort << std::endl;
 
                         launchLocalServer(std::stoi(theScene.localServerPort));
 
                         std::this_thread::sleep_for(std::chrono::seconds(1));
+                        std::cout << "launched and slept " << std::endl;
 
                         theScene.enableMultiplayer();
 
@@ -423,7 +424,7 @@ inline void renderImGui() {
                         }
                     } catch (std::exception& e)
                     {
-                        std::cout << e.what() << "\n";
+                        std::cout << "HERE AT IGUI" <<  e.what() << "\n";
                     }
 
                 }

@@ -26,8 +26,12 @@ void saveRegistry(entt::registry & reg, const char* filename)
 
 void loadRegistry(entt::registry & reg, const char* filename)
 {
+    std::cout << "Loading registry..." << std::endl;
     if (std::filesystem::exists(filename))
     {
+        std::cout << "Registry exists." << std::endl;
+        reg.clear();
+
         std::ifstream input(filename, std::ios::binary);
         SnapshotInputArchive inputArchive(input);
 
@@ -42,4 +46,5 @@ void loadRegistry(entt::registry & reg, const char* filename)
         .get<MovementComponent>(inputArchive)
         .get<ParticleEffectComponent>(inputArchive);
     }
+    std::cout << "Done loading registry" << std::endl;
 }

@@ -159,16 +159,16 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                                 if(isWorld)
                                 {
                                     std::vector<char> rfb(m.regFileSize);
-
-                                    boost::asio::read(*socket, boost::asio::buffer(rfb.data(), sizeof(m.regFileSize * sizeof(char))), ec);
+                                    std::cout << "About to read that shit " << m.regFileSize * sizeof(char) << " bytes" << std::endl;
+                                    boost::asio::read(*socket, boost::asio::buffer(rfb.data(), m.regFileSize * sizeof(char)), ec);
                                     if (!ec)
                                     {
                                         std::cout << "Got reg file \n";
-                                        std::ofstream f2("snapshot.bin", std::ios::trunc);
+                                        std::ofstream f2("snapshot.bin", std::ios::binary | std::ios::trunc);
 
                                         if(f2.is_open())
                                         {
-                                            f2.write(rfb.data(), sizeof(m.regFileSize * sizeof(char)));
+                                            f2.write(rfb.data(), m.regFileSize * sizeof(char));
                                             f2.close();
 
                                             theScene.world->load("mpworld.txt", theScene.existingInvs, theScene.REG);
@@ -181,7 +181,13 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                                             //         theScene.getOur<InventoryComponent>().inventory = inv.value();
                                             //     }
                                             // }
+                                        } else
+                                        {
+                                            std::cout << "Failed to load reg file \n" << std::endl;
                                         }
+                                    } else
+                                    {
+                                        std::cout << "ec on reading reg file: " <<  ec.message() << std::endl;
                                     }
 
 

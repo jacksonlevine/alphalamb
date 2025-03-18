@@ -59,19 +59,26 @@ inline void sendMessageToAllClients(const DGMessage& message, entt::entity m_pla
 }
 
 inline std::vector<char> loadBinaryFile(const std::string& filename) {
-    std::ifstream file(filename, std::ios::binary | std::ios::ate);
-    if (!file.is_open()) {
-        std::cerr << "Error opening file: " << filename << std::endl;
-        return {};
+    if (std::filesystem::exists(filename))
+    {
+        std::ifstream file(filename, std::ios::binary | std::ios::ate);
+        if (!file.is_open()) {
+            std::cerr << "Error opening file: " << filename << std::endl;
+            return {};
+        }
+
+        size_t fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        std::vector<char> buffer(fileSize);
+        file.read(buffer.data(), fileSize);
+
+        return buffer;
+    } else
+    {
+        std::cout << "Error opening file for binary: " << filename << std::endl;
     }
-
-    size_t fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    std::vector<char> buffer(fileSize);
-    file.read(buffer.data(), fileSize);
-
-    return buffer;
+    return std::vector<char>();
 }
 
 class Session : public std::enable_shared_from_this<Session>
@@ -165,37 +172,15 @@ private:
             DGMessage fileInit = FileTransferInit {
             .fileSize = string.value().size() * sizeof(char),
             .isWorld  = true, .regFileSize = regfile.size(),};
-            boost::asio::async_write(*m_socket, boost::asio::buffer(&fileInit, sizeof(DGMessage)),
-            [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
-            {
-                if (!ec) {
-                    std::cout << "Successfully wrote fileinit " << bytes_transferred << " bytes." << std::endl;
-                } else {
-                    std::cerr << "Error writing to socket: " << ec.message() << std::endl;
-                }
-            });
+            boost::asio::write(*m_socket, boost::asio::buffer(&fileInit, sizeof(DGMessage))
+            );
 
-            boost::asio::async_write(*m_socket, boost::asio::buffer(string.value().data(), string.value().size() * sizeof(char)),
-            [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
-            {
-                if (!ec) {
-                    std::cout << "Successfully wrote world " << bytes_transferred << " bytes." << std::endl;
-                } else {
-                    std::cerr << "Error writing to socket: " << ec.message() << std::endl;
-                }
-            });
+            boost::asio::write(*m_socket, boost::asio::buffer(string.value().data(), string.value().size() * sizeof(char))
+            );
 
             //Write the registry snapshot
 
-            boost::asio::async_write(*m_socket, boost::asio::buffer(regfile.data(), regfile.size() * sizeof(char)),
-            [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
-            {
-                if (!ec) {
-                    std::cout << "Successfully wrote regfile " << bytes_transferred << " bytes." << std::endl;
-                } else {
-                    std::cerr << "Error writing to socket w regfile: " << ec.message() << std::endl;
-                }
-            });
+            boost::asio::write(*m_socket, boost::asio::buffer(regfile.data(), regfile.size() * sizeof(char)));
         }
 
 
