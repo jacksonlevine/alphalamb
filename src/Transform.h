@@ -23,7 +23,7 @@ namespace jl
             yaw(0.0),
             pitch(0.0),
             direction(glm::vec3(0.0, 0.0, 1.0)),
-            position(glm::vec3(0.0, 0.0, 0.0)),
+            position(glm::vec3(0.0, 200.0, 0.0)),
             right(glm::vec3(1.0, 0.0, 0.0)),
             up(glm::vec3(0.0, 1.0, 0.0)),
             velocity(glm::vec3(0.0, 0.0, 0.0)),

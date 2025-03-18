@@ -74,9 +74,9 @@ public:
     float getNoiseMix(float x, float y, float z);
 private:
     FastNoiseLite noise = {};
-    static constexpr float blockScaleInPerlin = 0.25f;
-    static constexpr float tempNoiseScale = 0.35f;
-    static constexpr float humidityNoiseScale = 0.55f;
+    static constexpr float blockScaleInPerlin = 0.35f;
+    static constexpr float tempNoiseScale = 0.01f;
+    static constexpr float humidityNoiseScale = 0.15f;
     static constexpr float beachNoiseScale = 1.7f;
     FastNoiseLite voronoiNoise = {};
 };

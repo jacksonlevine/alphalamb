@@ -5,6 +5,7 @@
 #ifndef CEREALHELPERS_H
 #define CEREALHELPERS_H
 
+#include "ClientUID.h"
 #include "PrecompHeader.h"
 #include "world/MaterialName.h"
 
@@ -15,9 +16,10 @@ namespace cereal {
     }
 
     template <class Archive>
-    void serialize(Archive& ar, boost::uuids::uuid& uuid) {
-        ar(cereal::make_nvp("uuid", uuid.data));
+    void serialize(Archive& ar, ClientUID& uuid) {
+        ar(cereal::binary_data(uuid.data, 16));
     }
+
 }
 
 

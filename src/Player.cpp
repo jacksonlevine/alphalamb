@@ -46,6 +46,13 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
     auto & climbUpTimer = movementComponent.climbUpTimer;
     auto & climbStartPosition = movementComponent.climbStartPosition;
 
+    controller->setPosition(PxExtendedVec3(
+        camera.transform.position.x,
+        camera.transform.position.y - CAMERA_OFFSET + (crouchOverride ? 1.0f: 0.0f),
+        camera.transform.position.z
+        ));
+
+
 
     if (jetpackSource == 0)
     {

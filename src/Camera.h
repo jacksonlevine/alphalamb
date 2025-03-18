@@ -13,9 +13,9 @@ namespace jl {
     public:
         jl::Transform transform = {};
         static glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 projection;
-        glm::mat4 mvp;
+        glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 projection = glm::mat4(1.0f);
+        glm::mat4 mvp = glm::mat4(1.0f);
         float targetYaw = 0.0f;
         float targetPitch = 0.0f;
 
@@ -26,10 +26,7 @@ namespace jl {
 
         void interpTowardTargetYP(float deltatime);
         Camera()
-            : //model(glm::mat4(1.0f)),
-              view(glm::mat4(1.0f)),
-              projection(glm::mat4(1.0f)),
-              mvp(glm::mat4(1.0f))
+
         {
             updateWithYawPitch(0.0, 0.0);
             updateProjection(1280, 1024, 90.0f);

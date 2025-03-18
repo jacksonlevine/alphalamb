@@ -109,12 +109,13 @@ inline void exitWorld(Scene* scene)
     // scene->worldRenderer->chunkPool.clear();
 
     scene->world->clearWorld();
+    scene->REG.clear();
     //
     // entt::entity myPlayerIndex = scene->myPlayerIndex;
     // scene->players.erase(myPlayerIndex);
     // scene->myPlayerIndex = -1;
 
-    scene->REG.destroy(scene->myPlayerIndex);
+    //scene->REG.destroy(scene->myPlayerIndex);
     scene->myPlayerIndex = entt::null;
 }
 

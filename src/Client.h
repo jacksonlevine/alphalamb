@@ -95,9 +95,10 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                         << "yourPosition: " << m.yourPosition.x << " " << m.yourPosition.y << " " << m.yourPosition.z << " \n";
 
                         theScene.world->setSeed(m.seed);
-                        theScene.myPlayerIndex = theScene.addPlayerWithIndex(m.yourPlayerIndex, theScene.settings.clientUID);
-
-
+                        //theScene.myPlayerIndex = theScene.addPlayerWithIndex(m.yourPlayerIndex, theScene.settings.clientUID);
+                        auto pos = theScene.REG.get<jl::Camera>(theScene.myPlayerIndex).transform.position;
+                        std::cout << "My starting position: " << pos.x << " " << pos.y << " " << pos.z << std::endl;
+                        theScene.worldReceived.store(true);
                         //Dont do this yet, receive the file first
                         //theScene.worldReceived = true;
                     }
@@ -172,8 +173,18 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                                             f2.close();
 
                                             theScene.world->load("mpworld.txt", theScene.existingInvs, theScene.REG);
+
+                                            auto view = theScene.REG.view<UUIDComponent>();
+                                            for(auto entity : view)
+                                            {
+                                                auto uuid = view.get<UUIDComponent>(entity);
+                                                if(uuid.uuid == theScene.settings.clientUID)
+                                                {
+                                                    theScene.myPlayerIndex = entity;
+                                                }
+                                            }
                                             std::cout << "Playerindex here: " << (int)theScene.myPlayerIndex << " \n";
-                                            theScene.worldReceived.store(true);
+
                                             // if (theScene.existingInvs.contains(theScene.settings.clientUID))
                                             // {
                                             //     if (auto inv = loadInvFromFile("mpworld.txt", theScene.settings.clientUID))

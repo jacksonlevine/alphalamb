@@ -7,9 +7,10 @@
 #include "../PrecompHeader.h"
 
 struct UUIDComponent {
-    ClientUID uuid;
+    ClientUID uuid = boost::uuids::nil_uuid();
 
     explicit UUIDComponent(ClientUID uid) : uuid(uid) {}
+    UUIDComponent() = default;
 
     template<class Archive>
     void serialize(Archive& archive)

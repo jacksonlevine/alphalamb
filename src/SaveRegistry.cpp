@@ -20,7 +20,8 @@ void saveRegistry(entt::registry & reg, const char* filename)
     .get<Controls>(outputArchive)
     .get<NetworkComponent>(outputArchive)
     .get<MovementComponent>(outputArchive)
-    .get<ParticleEffectComponent>(outputArchive);
+    .get<ParticleEffectComponent>(outputArchive)
+    .get<UUIDComponent>(outputArchive);
 }
 
 
@@ -44,7 +45,8 @@ void loadRegistry(entt::registry & reg, const char* filename)
         .get<Controls>(inputArchive)
         .get<NetworkComponent>(inputArchive)
         .get<MovementComponent>(inputArchive)
-        .get<ParticleEffectComponent>(inputArchive);
+        .get<ParticleEffectComponent>(inputArchive)
+        .get<UUIDComponent>(inputArchive);
     }
     std::cout << "Done loading registry" << std::endl;
 }

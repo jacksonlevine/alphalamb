@@ -144,15 +144,6 @@ private:
 
 
 
-        DGMessage wi = WorldInfo {
-            .seed = DGSEEDSEED,
-            .yourPosition = glm::vec3(0, 200, 0),
-            .yourPlayerIndex = m_playerIndex
-
-        };
-
-        boost::asio::write(*m_socket, boost::asio::buffer(&wi, sizeof(DGMessage)));
-
 
 
         //
@@ -182,6 +173,17 @@ private:
 
             boost::asio::write(*m_socket, boost::asio::buffer(regfile.data(), regfile.size() * sizeof(char)));
         }
+
+
+        DGMessage wi = WorldInfo {
+            .seed = DGSEEDSEED,
+            .yourPosition = glm::vec3(0, 200, 0),
+            .yourPlayerIndex = m_playerIndex
+
+        };
+
+        boost::asio::write(*m_socket, boost::asio::buffer(&wi, sizeof(DGMessage)));
+
 
 
 

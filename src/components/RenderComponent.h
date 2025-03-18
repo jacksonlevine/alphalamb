@@ -9,9 +9,9 @@
 
 
 struct RenderComponent {
-    ChunkGLInfo handledBlockMeshInfo;
-    Billboard billboard;
-    AnimationState animation_state;
+    ChunkGLInfo handledBlockMeshInfo = {};
+    Billboard billboard = {};
+    AnimationState animation_state = {};
     template<class Archive>
     void serialize(Archive& archive)
     {

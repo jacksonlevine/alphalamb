@@ -65,7 +65,7 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
 
     float notype = std::min(0.01f, std::max(0.003f, noise.GetNoise(
         spot.x * 0.25f,
-        spot.z * 0.25f)));
+        spot.z * 0.25f) * 0.2f));
 
     float yoff = 60.0f;
 
@@ -191,5 +191,6 @@ float OverworldWorldGenMethod::getTemperatureNoise(const IntTup& spot)
 
 float OverworldWorldGenMethod::getNoiseMix(float x, float y, float z)
 {
-    return noise.GetNoise(x,y,z);
+    return (noise.GetNoise(x,y-20,z)*0.5) + (noise.GetNoise(x*3.0f, y*3.0f, z*3.0f) * 0.5f) +  (noise.GetNoise(x*6.0f, y*6.0f, z*6.0f) * 0.006f);
+
 }
