@@ -407,6 +407,8 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             if (key == GLFW_KEY_T)
             {
                 std::cout << "Num threads running: " << NUM_THREADS_RUNNING << '\n';
+                auto & pos = scene->getOur<jl::Camera>().transform.position;
+                std::cout << "Position: " << pos.x << " " << pos.y << " " << pos.z << '\n';
             } else
         if (key == GLFW_KEY_H)
         {
@@ -590,7 +592,8 @@ int main()
     const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
 
 
-    glfwWindowHint(GLFW_SAMPLES, 32); // Set MSAA samples (4x MSAA)
+   // glfwWindowHint(GLFW_SAMPLES, 32); // Set MSAA samples (4x MSAA)
+
 
 
     theScene.window = glfwCreateWindow(800, 800, "project7", nullptr, nullptr);
@@ -616,7 +619,7 @@ int main()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     glfwSwapInterval(0);
-    glEnable(GL_MULTISAMPLE); // Enable MSAA in OpenGL
+    //glEnable(GL_MULTISAMPLE); // Enable MSAA in OpenGL
 
     initOpenAL();
 
@@ -746,7 +749,9 @@ int main()
 
         if (theScene.myPlayerIndex != entt::null)
         {
-
+            // auto pos = theScene.getOur<jl::Camera>().transform.position;
+            // std::cout << "Position: " << pos.x << " " << pos.y << " " << pos.z << std::endl;
+            //std::cout << "world received and stuff" << std::endl;
 
 
             theScene.worldIntroTimer += deltaTime;
@@ -845,94 +850,100 @@ int main()
             std::vector<AnimationState> animStates;
             // billboards.reserve(10);
             // animStates.reserve(10);
-
-            if(theScene.multiplayer)
-            {
-                sendControlsUpdatesLol(tsocket, deltaTime);
-            }
+            auto simscene = (theScene.worldIntroTimer > INTROFLYTIME);
 
             auto playerView = theScene.REG.view<RenderComponent, PhysicsComponent, Controls, jl::Camera, MovementComponent, InventoryComponent, ParticleEffectComponent>();
 
-            for (auto entity : playerView)
+            if (simscene)
             {
-                auto & renderComponent = playerView.get<RenderComponent>(entity);
-                auto & movementComponent = playerView.get<MovementComponent>(entity);
-                auto & inventory = playerView.get<InventoryComponent>(entity);
-                auto & particleComponent = playerView.get<ParticleEffectComponent>(entity);
-                auto & billboard = renderComponent.billboard;
-
-                auto & camera = playerView.get<jl::Camera>(entity);
-
-                auto & physicsComponent = playerView.get<PhysicsComponent>(entity);
-                auto & collisionCage = physicsComponent.collisionCage;
-                auto & animation_state = renderComponent.animation_state;
-                auto & controls = playerView.get<Controls>(entity);
-                auto id = entity;
-
-
-                billboard.position = camera.transform.position;
-                billboard.direction = camera.transform.direction;
-                billboard.characterNum = static_cast<int>(id) % 4;
-
-
-
-
-                collisionCage.updateToSpot(&world, camera.transform.position, deltaTime);
-                camera.updateWithYawPitch(camera.transform.yaw, camera.transform.pitch);
-                if (id == theScene.myPlayerIndex)
+                if(theScene.multiplayer)
                 {
-                    camera.interpTowardTargetYP(deltaTime);
-                } else
-                {
-                    camera.interpTowardTargetYP(deltaTime*0.35f);
-                }
-
-                if(id != theScene.myPlayerIndex)
-                {
-                    billboards.push_back(billboard);
-                    animStates.push_back(animation_state);
+                    sendControlsUpdatesLol(tsocket, deltaTime);
                 }
 
 
-                float wantedAnim = IDLE;
-                if(controls.anyMovement())
+                for (auto entity : playerView)
                 {
-                    if(controls.jump)
+                    auto & renderComponent = playerView.get<RenderComponent>(entity);
+                    auto & movementComponent = playerView.get<MovementComponent>(entity);
+                    auto & inventory = playerView.get<InventoryComponent>(entity);
+                    auto & particleComponent = playerView.get<ParticleEffectComponent>(entity);
+                    auto & billboard = renderComponent.billboard;
+
+                    auto & camera = playerView.get<jl::Camera>(entity);
+
+                    auto & physicsComponent = playerView.get<PhysicsComponent>(entity);
+                    auto & collisionCage = physicsComponent.collisionCage;
+                    auto & animation_state = renderComponent.animation_state;
+                    auto & controls = playerView.get<Controls>(entity);
+                    auto id = entity;
+
+
+                    billboard.position = camera.transform.position;
+                    billboard.direction = camera.transform.direction;
+                    billboard.characterNum = static_cast<int>(id) % 4;
+
+
+
+
+                    collisionCage.updateToSpot(&world, camera.transform.position, deltaTime);
+                    camera.updateWithYawPitch(camera.transform.yaw, camera.transform.pitch);
+                    if (id == theScene.myPlayerIndex)
                     {
-                        wantedAnim = JUMP;
+                        camera.interpTowardTargetYP(deltaTime);
+                    } else
+                    {
+                        camera.interpTowardTargetYP(deltaTime*0.35f);
                     }
-                    else
-                        if(controls.left && !controls.right)
+
+                    if(id != theScene.myPlayerIndex)
+                    {
+                        billboards.push_back(billboard);
+                        animStates.push_back(animation_state);
+                    }
+
+
+                    float wantedAnim = IDLE;
+                    if(controls.anyMovement())
+                    {
+                        if(controls.jump)
                         {
-                            wantedAnim = LEFTSTRAFE;
-                        } else
-                            if(controls.right && !controls.left)
+                            wantedAnim = JUMP;
+                        }
+                        else
+                            if(controls.left && !controls.right)
                             {
-                                wantedAnim = RIGHTSTRAFE;
+                                wantedAnim = LEFTSTRAFE;
                             } else
-                                if(controls.backward && !controls.forward)
+                                if(controls.right && !controls.left)
                                 {
-                                    wantedAnim = BACKWARDSRUN;
+                                    wantedAnim = RIGHTSTRAFE;
                                 } else
-                                {
-                                    wantedAnim = RUN;
-                                }
-                }
+                                    if(controls.backward && !controls.forward)
+                                    {
+                                        wantedAnim = BACKWARDSRUN;
+                                    } else
+                                    {
+                                        wantedAnim = RUN;
+                                    }
+                    }
 
-                auto existinganim = &animation_state;
-                AnimationState newState{
-                    wantedAnim,
-                    static_cast<float>(glfwGetTime()),
-                    static_cast<AnimationName>(wantedAnim) == JUMP ? 0.5f : 1.0f
-                };
+                    auto existinganim = &animation_state;
+                    AnimationState newState{
+                        wantedAnim,
+                        static_cast<float>(glfwGetTime()),
+                        static_cast<AnimationName>(wantedAnim) == JUMP ? 0.5f : 1.0f
+                    };
 
-                bool jumpinprogress = (static_cast<AnimationName>(existinganim->actionNum) == JUMP) && (glfwGetTime() - existinganim->timestarted < 0.75f);
-                if(existinganim->actionNum != wantedAnim && !jumpinprogress)
-                {
-                    animation_state = newState;
+                    bool jumpinprogress = (static_cast<AnimationName>(existinganim->actionNum) == JUMP) && (glfwGetTime() - existinganim->timestarted < 0.75f);
+                    if(existinganim->actionNum != wantedAnim && !jumpinprogress)
+                    {
+                        animation_state = newState;
+                    }
+                    PlayerUpdate(deltaTime, &world, particles, renderComponent, physicsComponent, movementComponent, controls, camera, particleComponent, inventory);
                 }
-                PlayerUpdate(deltaTime, &world, particles, renderComponent, physicsComponent, movementComponent, controls, camera, particleComponent, inventory);
             }
+
 
         //     for (auto & [id, player] : theScene.players)
         // {
@@ -1167,7 +1178,16 @@ int main()
 
 
 
-            gScene->simulate(deltaTime);
+
+            if (simscene)
+            {
+                gScene->simulate(deltaTime);
+                //std::cout << "Simming scene with seed " <<
+            }
+
+
+
+
 
             auto & camera = theScene.getOur<jl::Camera>();
 
@@ -1371,7 +1391,11 @@ int main()
             //     }
             // }
 
-            gScene->fetchResults(true);
+            if (simscene)
+            {
+                gScene->fetchResults(true);
+            }
+
 
 
             //std::cout << "Passing " << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << " \n";

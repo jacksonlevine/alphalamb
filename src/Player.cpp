@@ -20,6 +20,8 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
     PhysicsComponent& physicsComponent, MovementComponent& movementComponent, Controls& controls, jl::Camera & camera, ParticleEffectComponent & particleComponent, InventoryComponent& inventory)
 {
 
+    //std::cout << "PlayerUpdate with seed " << world->worldGenMethod->getSeed() << std::endl;
+
     auto & jetpackSource = movementComponent.jetpackSource;
     auto & isGrounded = physicsComponent.isGrounded;
     auto & stamCount = movementComponent.stamCount;

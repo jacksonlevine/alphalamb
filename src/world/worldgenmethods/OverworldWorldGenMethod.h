@@ -72,6 +72,7 @@ public:
     float getHumidityNoise(const IntTup& spot) override;
     float getTemperatureNoise(const IntTup& spot) override;
     float getNoiseMix(float x, float y, float z);
+    int getSeed() override;
 private:
     FastNoiseLite noise = {};
     static constexpr float blockScaleInPerlin = 0.35f;

@@ -194,3 +194,8 @@ float OverworldWorldGenMethod::getNoiseMix(float x, float y, float z)
     return (noise.GetNoise(x,y-20,z)*0.5) + (noise.GetNoise(x*3.0f, y*3.0f, z*3.0f) * 0.5f) +  (noise.GetNoise(x*6.0f, y*6.0f, z*6.0f) * 0.006f);
 
 }
+
+int OverworldWorldGenMethod::getSeed()
+{
+    return noise.mSeed;
+}

@@ -392,7 +392,7 @@ public:
             break;
         }
     }
-
+    int mSeed;
 private:
     template <typename T>
     struct Arguments_must_be_floating_point_values;
@@ -405,7 +405,7 @@ private:
         TransformType3D_DefaultOpenSimplex2
     };
 
-    int mSeed;
+
     float mFrequency;
     NoiseType mNoiseType;
     RotationType3D mRotationType3D;
