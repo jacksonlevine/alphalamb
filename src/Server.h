@@ -506,11 +506,32 @@ private:
 class Server {
 public:
     Server(boost::asio::io_context& io_context, short port) : m_acceptor(io_context, tcp::endpoint(tcp::v4(), port)) {
-        loadRegistry(serverReg, "savedreg.bin");
-        // now we call do_accept() where we wait for clients
         serverWorld.setSeed(DGSEEDSEED);
+        loadDM("serverworld.txt", serverWorld.userDataMap, serverReg, serverWorld.blockAreas, serverWorld.placedVoxModels, nullptr, nullptr, "savedReg.bin");
+
+        // now we call do_accept() where we wait for clients
+
         do_accept();
     }
+
+    ~Server()
+    {
+        saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "savedReg.bin");
+        serverWorld.userDataMap->clear();
+        serverWorld.blockAreas.baMutex.lock();
+        serverWorld.blockAreas.blockAreas.clear();
+        serverWorld.blockAreas.baMutex.unlock();
+        clientsMutex.lock();
+        serverReg.clear();
+        std::cout << "Cleared serverReg" << std::endl;
+        clientsMutex.unlock();
+    }
+
+    Server(const Server& other) = delete;
+    Server(Server&& other) = delete;
+    Server& operator=(const Server& other) = delete;
+    Server& operator=(Server&& other) = delete;
+
 
     void do_accept() {
         // this is an async accept which means the lambda function is
@@ -589,7 +610,6 @@ inline void localServerThreadFun(int port)
 
 inline void launchLocalServer(int port)
 {
-    loadDM("serverworld.txt", serverWorld.userDataMap, serverReg, serverWorld.blockAreas, serverWorld.placedVoxModels);
 
     if (!localserver_running.load()) {
         std::cout << "Starting local server...\n";
@@ -619,14 +639,7 @@ inline void endLocalServerIfRunning()
         localserver_running.store(false);
 
     }
-    serverWorld.userDataMap->clear();
-    serverWorld.blockAreas.baMutex.lock();
-    serverWorld.blockAreas.blockAreas.clear();
-    serverWorld.blockAreas.baMutex.unlock();
-    clientsMutex.lock();
-    serverReg.clear();
-    std::cout << "Cleared serverReg" << std::endl;
-    clientsMutex.unlock();
+
 }
 
 
