@@ -36,6 +36,9 @@ struct InventorySlot
 
 
 
+constexpr std::array<InventorySlot, INVWIDTH * INVHEIGHT> DEFAULT_INVENTORY = {
+    InventorySlot{ .block = ItemName::JETPACK, .count = 1, .isItem = true},
+};
 
 class Inventory {
 public:
@@ -72,7 +75,7 @@ public:
 
         return equippedItems;
     }
-    std::array<InventorySlot, INVWIDTH * INVHEIGHT> inventory = {};
+    std::array<InventorySlot, INVWIDTH * INVHEIGHT> inventory = DEFAULT_INVENTORY;
 
     template<class Archive>
     void serialize(Archive& archive)
@@ -81,9 +84,6 @@ public:
     }
 };
 
-constexpr std::array<InventorySlot, INVWIDTH * INVHEIGHT> DEFAULT_INVENTORY = {
-    InventorySlot{ .block = ItemName::JETPACK, .count = 1, .isItem = true},
-};
 
 
 void imguiInventory(Inventory& inv);

@@ -410,3 +410,15 @@ void destroyPhysXStuff()
     gPhysics->release();
     gFoundation->release();
 }
+
+// bool isControllerValid(PxControllerManager* manager, const PxController* controller) {
+//     if (!manager || !controller) return false;
+//
+//     PxU32 numControllers = manager->getNbControllers();
+//     for (PxU32 i = 0; i < numControllers; i++) {
+//         if (manager->getController(i) == controller) {
+//             return true;
+//         }
+//     }
+//     return false;
+// }

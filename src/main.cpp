@@ -582,6 +582,10 @@ void enterWorld(Scene* s)
 
     s->worldRenderer->launchThreads(&s->getOur<jl::Camera>(), s->world);
 }
+// Define a regular function with the correct signature
+static void onPhysicsComponentAdded(entt::registry& reg, entt::entity entity) {
+    std::cout << "Physics component added. " << std::endl;
+}
 
 int main()
 {
@@ -605,6 +609,8 @@ int main()
     };
 
 
+    // Connect using the function pointer
+    theScene.REG.on_construct<PhysicsComponent>().connect<&onPhysicsComponentAdded>();
 
     glfwSetKeyCallback(window, keyCallback);
     glfwSetCursorPosCallback(window, cursorPosCallback);
@@ -698,6 +704,9 @@ int main()
 
     theScene.hud = new Hud();
     theScene.hud->rebuildDisplayData();
+
+
+
 
 
 
@@ -1024,7 +1033,7 @@ int main()
                     {
                         if(theScene.REG.valid(m.myPlayerIndex))
                         {
-                            theScene.REG.get<PhysicsComponent>(m.myPlayerIndex).release();
+                            //theScene.REG.get<PhysicsComponent>(m.myPlayerIndex).release();
                             theScene.REG.destroy(m.myPlayerIndex);
 
                         }

@@ -5,20 +5,32 @@
 #include "../PhysXStuff.h"
 #include "../Player.h"
 
-PhysicsComponent::PhysicsComponent()
+// PhysicsComponent::PhysicsComponent()
+// {
+//     controller = createPlayerController(
+//         PxVec3(DEFAULT_PLAYERPOS.x, DEFAULT_PLAYERPOS.y, DEFAULT_PLAYERPOS.z),
+//         0.4,
+//         0.7
+//     );
+// }
+
+// void PhysicsComponent::release()
+// {
+//     controller->release();
+//     controller = nullptr;
+//     collisionCage.collider->release();
+//     collisionCage.collider = nullptr;
+// }
+physx::PxController* getCont()
 {
-    controller = createPlayerController(
+    return createPlayerController(
         PxVec3(DEFAULT_PLAYERPOS.x, DEFAULT_PLAYERPOS.y, DEFAULT_PLAYERPOS.z),
         0.4,
         0.7
     );
 }
 
-void PhysicsComponent::release()
-{
-    controller->release();
-    collisionCage.collider->release();
-}
+
 
 PhysicsComponent::~PhysicsComponent()
 {
@@ -27,4 +39,24 @@ PhysicsComponent::~PhysicsComponent()
     // std::cout << "RELEASE Number of controllers before release: " << gControllerManager->getNbControllers();
     // controller->release();
     // std::cout << "RELEASE Number of controllers: " << gControllerManager->getNbControllers();
+
+    if (controller != nullptr)
+    {
+        controller->release();
+        controller = nullptr;
+        std::cout << "Controller released." << std::endl;
+    } else
+    {
+        std::cout << "Controller already released" << std::endl;
+    }
+
+    if (collisionCage.collider != nullptr)
+    {
+        collisionCage.collider->release();
+        collisionCage.collider = nullptr;
+        std::cout << "Collcage collider released." << std::endl;
+    } else
+    {
+        std::cout << "collcage collider already released" << std::endl;
+    }
 }

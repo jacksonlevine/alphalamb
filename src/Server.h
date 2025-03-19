@@ -623,9 +623,9 @@ inline void endLocalServerIfRunning()
     serverWorld.blockAreas.baMutex.lock();
     serverWorld.blockAreas.blockAreas.clear();
     serverWorld.blockAreas.baMutex.unlock();
-    saveRegistry(serverReg, "savedreg.bin");
     clientsMutex.lock();
     serverReg.clear();
+    std::cout << "Cleared serverReg" << std::endl;
     clientsMutex.unlock();
 }
 

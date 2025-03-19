@@ -31,7 +31,7 @@ void loadRegistry(entt::registry & reg, const char* filename)
     if (std::filesystem::exists(filename))
     {
         std::cout << "Registry exists." << std::endl;
-        reg.clear();
+        //reg.clear();
 
         std::ifstream input(filename, std::ios::binary);
         SnapshotInputArchive inputArchive(input);
