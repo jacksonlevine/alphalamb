@@ -10,6 +10,7 @@ struct UUIDComponent {
     ClientUID uuid = boost::uuids::nil_uuid();
 
     explicit UUIDComponent(ClientUID uid) : uuid(uid) {}
+
     UUIDComponent() = default;
 
     template<class Archive>

@@ -11,14 +11,14 @@ namespace jl
 {
     class Transform {
     public:
-        float yaw;
-        float pitch;
-        glm::vec3 direction;
-        glm::vec3 position;
-        glm::vec3 right;
-        glm::vec3 up;
-        glm::vec3 velocity;
-        bool grounded;
+        float yaw = 0.0f;
+        float pitch = 0.0f;
+        glm::vec3 direction = {};
+        glm::vec3 position = {};
+        glm::vec3 right = {};
+        glm::vec3 up = {};
+        glm::vec3 velocity = {};
+        bool grounded = false;
         Transform() :
             yaw(0.0),
             pitch(0.0),

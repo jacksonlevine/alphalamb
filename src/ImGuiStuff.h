@@ -378,7 +378,7 @@ inline void renderImGui() {
         {
         case GuiScreen::Inventory:
             {
-                imguiInventory(theScene.getOur<InventoryComponent>().inventory);
+                imguiInventory(theScene.our<InventoryComponent>().inventory);
                 break;
             }
         case GuiScreen::HostPort:
@@ -493,12 +493,12 @@ inline void renderImGui() {
                 }
                 if (DGCustomButton("Apply Render Distance"))
                 {
-                    theScene.worldRenderer->setRenderDistance(theScene.rendDistSelection, &theScene.getOur<jl::Camera>(), theScene.world);
+                    theScene.worldRenderer->setRenderDistance(theScene.rendDistSelection, &theScene.our<jl::Camera>(), theScene.world);
                 }
                 if (ImGui::Checkbox("Ambient Occlusion", &ambOccl))
                 {
                     theScene.saveSettings();
-                    theScene.worldRenderer->setRenderDistance(theScene.rendDistSelection, &theScene.getOur<jl::Camera>(), theScene.world);
+                    theScene.worldRenderer->setRenderDistance(theScene.rendDistSelection, &theScene.our<jl::Camera>(), theScene.world);
                 }
 
                 if(DGCustomButton("Toggle Fullscreen", DGButtonType::Good1))
@@ -550,7 +550,7 @@ inline void renderImGui() {
 
                 ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.98e4");
 
-                for (int i = 0; i < theScene.getOur<MovementComponent>().stamCount; i++)
+                for (int i = 0; i < theScene.our<MovementComponent>().stamCount; i++)
                 {
                     DGCustomButton((std::string("##stam") + std::to_string(i)).c_str(), DGButtonType::Stam1, ImVec2(15, 40));
                 }
@@ -634,7 +634,7 @@ inline void renderImGui() {
 
 
                         static std::string coordinatesString = "";
-                        glm::vec3 pp = theScene.getOur<jl::Camera>().transform.position;
+                        glm::vec3 pp = theScene.our<jl::Camera>().transform.position;
                         coordinatesString = std::string("X: ") + std::to_string(pp.x) + ", Y: " + std::to_string(pp.y) + ", Z: " + std::to_string(pp.z);
 
                         ImGui::SetCursorPos(ImVec2(10.0f, 10.0f  + textSize.y));

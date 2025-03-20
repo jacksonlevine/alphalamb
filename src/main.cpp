@@ -92,13 +92,13 @@ void sendControlsUpdatesLol(tcp::socket& socket, float deltaTime)
 
     //auto& player = theScene.players.at(theScene.myPlayerIndex);
 
-    static Controls lastcontrols = theScene.getOur<Controls>();
+    static Controls lastcontrols = theScene.our<Controls>();
 
-    auto ourcontrols = theScene.getOur<Controls>();
+    auto ourcontrols = theScene.our<Controls>();
     if(ourcontrols != lastcontrols)
     {
         lastcontrols = ourcontrols;
-        auto ourt = theScene.getOur<jl::Camera>().transform;
+        auto ourt = theScene.our<jl::Camera>().transform;
         DGMessage cu = ControlsUpdate(theScene.myPlayerIndex, ourcontrols, ourt.position, glm::vec2(ourt.yaw, ourt.pitch));
         pushToMainToNetworkQueue(cu);
 
@@ -108,7 +108,7 @@ void sendControlsUpdatesLol(tcp::socket& socket, float deltaTime)
     {
         timer = 0.0f;
 
-        auto ourt = theScene.getOur<jl::Camera>().transform;
+        auto ourt = theScene.our<jl::Camera>().transform;
 
         static float lastpitch = ourt.pitch;
         static float lastyaw = ourt.yaw;
@@ -183,7 +183,7 @@ void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 
 if(button == GLFW_MOUSE_BUTTON_RIGHT)
         {
-            auto & cam = theScene.getOur<jl::Camera>();
+            auto & cam = theScene.our<jl::Camera>();
 
 
             if (scene->multiplayer)
@@ -204,16 +204,16 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                         if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
                         {
                             //std::cout << "Senfing blokc place \n";
-                            std::cout << "Place at: " << placeSpot.x << " " << placeSpot.y << " " << placeSpot.z << " " << scene->getOur<InventoryComponent>().currentHeldBlock << std::endl;
+                            std::cout << "Place at: " << placeSpot.x << " " << placeSpot.y << " " << placeSpot.z << " " << scene->our<InventoryComponent>().currentHeldBlock << std::endl;
                             pushToMainToNetworkQueue(BlockSet{
-                                placeSpot, scene->getOur<InventoryComponent>().currentHeldBlock
+                                placeSpot, scene->our<InventoryComponent>().currentHeldBlock
                             });
                         }
                     }
                 } else if (scene->bulkPlaceGizmo->active)
                 {
 
-                        auto playerpos = scene->getOur<jl::Camera>().transform.position;
+                        auto playerpos = scene->our<jl::Camera>().transform.position;
 
                         bool isInside =
                         playerpos.x >= std::min(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x) &&
@@ -228,7 +228,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                             if (scene->bulkPlaceGizmo->placeMode == BulkPlaceGizmo::Solid)
                             {
                                 DGMessage bulkPlace = BulkBlockSet{
-                                    .corner1 = scene->bulkPlaceGizmo->corner1, .corner2 = scene->bulkPlaceGizmo->corner2, .block = scene->getOur<InventoryComponent>().currentHeldBlock, .hollow = false};
+                                    .corner1 = scene->bulkPlaceGizmo->corner1, .corner2 = scene->bulkPlaceGizmo->corner2, .block = scene->our<InventoryComponent>().currentHeldBlock, .hollow = false};
                                 pushToMainToNetworkQueue(bulkPlace);
                                 scene->bulkPlaceGizmo->active = false;
                             } else
@@ -246,7 +246,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                                 };
 
                                 DGMessage bulkPlace = BulkBlockSet{
-                                    .corner1 = minCorner, .corner2 = maxCorner, .block = scene->getOur<InventoryComponent>().currentHeldBlock, .hollow = true};
+                                    .corner1 = minCorner, .corner2 = maxCorner, .block = scene->our<InventoryComponent>().currentHeldBlock, .hollow = true};
                                 pushToMainToNetworkQueue(bulkPlace);
                                 // DGMessage bulkCutout = BulkBlockSet{
                                 //     minCorner + IntTup(1,1,1), maxCorner + IntTup(-1,-1,-1), AIR};
@@ -282,7 +282,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                     //scene->world->set(spot, AIR);
                     //std::cout << "Set the block "  << std::endl;;
                     scene->worldRenderer->requestChunkRebuildFromMainThread(
-                        placeSpot, scene->getOur<InventoryComponent>().currentHeldBlock
+                        placeSpot, scene->our<InventoryComponent>().currentHeldBlock
                         );
 
 
@@ -302,7 +302,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                     //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
                     BlockType blockThere = scene->world->get(spot);
                     //IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
-                    scene->getOur<InventoryComponent>().currentHeldBlock = (MaterialName)blockThere;
+                    scene->our<InventoryComponent>().currentHeldBlock = (MaterialName)blockThere;
                     //scene->world->set(spot, AIR);
                     //std::cout << "Set the block "  << std::endl;;
                     // scene->worldRenderer->requestChunkRebuildFromMainThread(
@@ -312,7 +312,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
 
                 } else
                 {
-                    scene->getOur<InventoryComponent>().currentHeldBlock = AIR;
+                    scene->our<InventoryComponent>().currentHeldBlock = AIR;
                 }
 
                 //std::cout << "Request filed " << std::endl;
@@ -353,7 +353,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
         if (key == GLFW_KEY_LEFT_CONTROL)
         {
-            scene->getOur<Controls>().crouch = action;
+            scene->our<Controls>().crouch = action;
         }
 
         if (key == GLFW_KEY_V && action == GLFW_PRESS)
@@ -404,46 +404,52 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             scene->firstMouse = true;
         } else
 
-            if (key == GLFW_KEY_T)
-            {
-                std::cout << "Num threads running: " << NUM_THREADS_RUNNING << '\n';
-                auto & pos = scene->getOur<jl::Camera>().transform.position;
-                std::cout << "Position: " << pos.x << " " << pos.y << " " << pos.z << '\n';
-            } else
+        if (key == GLFW_KEY_T)
+        {
+            std::cout << "Num threads running: " << NUM_THREADS_RUNNING << '\n';
+            auto & pos = scene->our<jl::Camera>().transform.position;
+            std::cout << "Position: " << pos.x << " " << pos.y << " " << pos.z << '\n';
+
+        } else
         if (key == GLFW_KEY_H)
         {
-            scene->getOur<Controls>().secondary2 = action;
+            scene->our<Controls>().secondary2 = action;
         } else
         if (key == GLFW_KEY_LEFT_SHIFT)
         {
-            scene->getOur<Controls>().sprint = action;
+            scene->our<Controls>().sprint = action;
         } else
         if (key == GLFW_KEY_F)
         {
 
-            scene->getOur<Controls>().secondary1 = action;
-            scene->getOur<Controls>().jump = action;
+            scene->our<Controls>().secondary1 = action;
+            scene->our<Controls>().jump = action;
+
+
+
+
+
 
         } else
         if (key == GLFW_KEY_W)
         {
-            scene->getOur<Controls>().forward = action;
+            scene->our<Controls>().forward = action;
         } else
         if (key == GLFW_KEY_A)
         {
-            scene->getOur<Controls>().left = action;
+            scene->our<Controls>().left = action;
         } else
         if (key == GLFW_KEY_S)
         {
-            scene->getOur<Controls>().backward = action;
+            scene->our<Controls>().backward = action;
         } else
         if (key == GLFW_KEY_D)
         {
-            scene->getOur<Controls>().right = action;
+            scene->our<Controls>().right = action;
         } else
         if (key == GLFW_KEY_SPACE)
         {
-            scene->getOur<Controls>().jump = action;
+            scene->our<Controls>().jump = action;
         }
     }
 }
@@ -472,7 +478,7 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
         if (scene->myPlayerIndex != entt::null)
         {
             // print(cout, "xOffset: {}, yOffset: {} \n", xOffset, yOffset);
-            auto & camera = scene->getOur<jl::Camera>();
+            auto & camera = scene->our<jl::Camera>();
 
             camera.updateYPIndirect(camera.targetYaw + static_cast<float>(xOffset), camera.targetPitch + static_cast<float>(yOffset));
         }
@@ -488,7 +494,7 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
     Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
     if (scene->myPlayerIndex != entt::null)
     {
-        auto & camera = scene->getOur<jl::Camera>();
+        auto & camera = scene->our<jl::Camera>();
         camera.updateProjection(width, height, 90.0f);
         scene->guiCamera->updateProjection(width, height, 60.0f);
     }
@@ -516,23 +522,23 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
             {
                 if (yoffset > 0)
                 {
-                    scene->getOur<InventoryComponent>().currentHeldBlock = (MaterialName)(((int)scene->getOur<InventoryComponent>().currentHeldBlock + 1 ) % BLOCK_COUNT);
+                    scene->our<InventoryComponent>().currentHeldBlock = (MaterialName)(((int)scene->our<InventoryComponent>().currentHeldBlock + 1 ) % BLOCK_COUNT);
                 }
                 if (yoffset < 0)
                 {
-                    int newMat = (scene->getOur<InventoryComponent>().currentHeldBlock - 1);
+                    int newMat = (scene->our<InventoryComponent>().currentHeldBlock - 1);
                     if (newMat < 0)
                     {
                         newMat = BLOCK_COUNT - 1;
                     }
-                    scene->getOur<InventoryComponent>().currentHeldBlock = (MaterialName)newMat;
+                    scene->our<InventoryComponent>().currentHeldBlock = (MaterialName)newMat;
                 }
 
                 if (scene->multiplayer)
                 {
                     DGMessage sbu = PlayerSelectBlockChange{
                         scene->myPlayerIndex,
-                    scene->getOur<InventoryComponent>().currentHeldBlock};
+                    scene->our<InventoryComponent>().currentHeldBlock};
                     pushToMainToNetworkQueue(sbu);
                 }
             } else
@@ -576,11 +582,11 @@ void enterWorld(Scene* s)
 
     {
 
-        auto & camera = s->getOur<jl::Camera>();
+        auto & camera = s->our<jl::Camera>();
         camera.updateProjection(width, height, 90.0f);
     }
 
-    s->worldRenderer->launchThreads(&s->getOur<jl::Camera>(), s->world);
+    s->worldRenderer->launchThreads(&s->our<jl::Camera>(), s->world);
 }
 // Define a regular function with the correct signature
 static void onPhysicsComponentAdded(entt::registry& reg, entt::entity entity) {
@@ -781,7 +787,7 @@ int main()
                     {
                         if (theScene.blockSelectGizmo->isDrawing)
                         {
-                            auto & cam = theScene.getOur<jl::Camera>();
+                            auto & cam = theScene.our<jl::Camera>();
 
 
 
@@ -1073,7 +1079,21 @@ int main()
                     }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
                        std::cout << "Processing palyerpresent\n";
-                        theScene.addPlayerWithIndex(m.index, m.id);
+                        bool isInReg = false;
+                        auto view = theScene.REG.view<UUIDComponent>();
+                        for(auto entity : view)
+                        {
+                            auto uid = view.get<UUIDComponent>(entity).uuid;
+                            if(uid == m.id)
+                            {
+                                isInReg = true;
+                            }
+                        }
+                        if(!isInReg)
+                        {
+                            theScene.addPlayerWithIndex(m.index, m.id);
+                        }
+
                         theScene.REG.get<PhysicsComponent>(m.index).controller->setPosition(PxExtendedVec3(
                         m.position.x,
                         m.position.y + CAMERA_OFFSET,
@@ -1203,7 +1223,7 @@ int main()
 
 
 
-            auto & camera = theScene.getOur<jl::Camera>();
+            auto & camera = theScene.our<jl::Camera>();
 
 
 
@@ -1251,7 +1271,7 @@ int main()
             {
                 drawSky(glm::vec4(currAtmos.skyTop, 1.0),
                     glm::vec4(currAtmos.skyBottom, 1.0),
-                    ambBrightFromTimeOfDay(theScene.timeOfDay, theScene.dayLength), &theScene.getOur<jl::Camera>(), lutTexture);
+                    ambBrightFromTimeOfDay(theScene.timeOfDay, theScene.dayLength), &theScene.our<jl::Camera>(), lutTexture);
 
             }
 
@@ -1276,7 +1296,7 @@ int main()
             glUniform1i(texture1Loc, 0);
             glUniform1f(abLoc, ambBrightFromTimeOfDay(theScene.timeOfDay, theScene.dayLength));
             glUniform3f(posLoc, 0.0, 0.0, 0.0);
-            const glm::vec3 campos = theScene.getOur<jl::Camera>().transform.position;
+            const glm::vec3 campos = theScene.our<jl::Camera>().transform.position;
             glUniform3f(camPosLoc, campos.x, campos.y, campos.z);
             glUniform1f(rotLoc, 0.0f);
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
@@ -1292,7 +1312,7 @@ int main()
 
 
             //std::cout << "World intro time" << theScene.worldIntroTimer << std::endl;
-            renderer->mainThreadDraw(&theScene.getOur<jl::Camera>(), mainShader.shaderID, world.worldGenMethod, deltaTime, theScene.worldIntroTimer > INTROFLYTIME);
+            renderer->mainThreadDraw(&theScene.our<jl::Camera>(), mainShader.shaderID, world.worldGenMethod, deltaTime, theScene.worldIntroTimer > INTROFLYTIME);
             vms->draw(&world, theScene.myPlayerIndex, theScene.REG);
 
             glUniform1f(timeRenderedLoc, 10.0f);
@@ -1332,7 +1352,7 @@ int main()
                     glUniform3f(camPosLoc, 0, 0, 0);
                 } else
                 {
-                    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.getOur<jl::Camera>().mvp));
+                    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.our<jl::Camera>().mvp));
                     glUniform3f(posLoc, pos.x, pos.y, pos.z);
                 }
 

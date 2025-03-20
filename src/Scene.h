@@ -31,11 +31,14 @@ struct Scene
     entt::entity myPlayerIndex = entt::null;
 
 
-    template <typename Component>
-    Component& getOur()
+    template <typename Type>
+    Type& our()
     {
-        return REG.get<Component>(myPlayerIndex);
+        return REG.get<Type>(myPlayerIndex);
     }
+
+
+
 
     entt::entity addPlayerWithIndex(entt::entity index, ClientUID id)
     {

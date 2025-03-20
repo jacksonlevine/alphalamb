@@ -179,7 +179,6 @@ private:
             .seed = DGSEEDSEED,
             .yourPosition = glm::vec3(0, 200, 0),
             .yourPlayerIndex = m_playerIndex
-
         };
 
         boost::asio::write(*m_socket, boost::asio::buffer(&wi, sizeof(DGMessage)));
@@ -224,7 +223,7 @@ private:
                         };
 
                         boost::asio::async_write(*nc.socket.lock(), boost::asio::buffer(&ourPlayerPresent, sizeof(DGMessage)),
-                    [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
+                        [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
                         {
                             if (!ec) {
                                 std::cout << "Successfully wrote ourplayerpresent " << bytes_transferred << " bytes." << std::endl;
@@ -326,8 +325,8 @@ private:
 
                             for (auto entity : view)
                             {
-                                auto inventory = view.get<InventoryComponent>(entity);
-                                auto uuid = view.get<UUIDComponent>(entity);
+                                auto & inventory = view.get<InventoryComponent>(entity);
+                                auto & uuid = view.get<UUIDComponent>(entity);
 
                                 if (uuid.uuid == m.destinationID)
                                 {

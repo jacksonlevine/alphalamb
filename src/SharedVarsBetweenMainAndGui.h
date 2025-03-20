@@ -79,7 +79,7 @@ inline void exitWorld(Scene* scene)
 
 
     scene->worldRenderer->activeChunks.clear();
-    //scene->worldRenderer->mbtActiveChunks.clear();
+    scene->worldRenderer->mbtActiveChunks.clear();
     scene->worldRenderer->generatedChunks.clear();
 
     for (auto & c : scene->worldRenderer->changeBuffers)
