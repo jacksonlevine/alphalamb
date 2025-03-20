@@ -726,6 +726,7 @@ int main()
     std::cout << "width:" << width << " height:" << height << std::endl;
     theScene.guiCamera->updateProjection(width, height, 60.0f);
     theScene.guiCamera->updateWithYawPitch(0.0,0.0);
+
     //
     // static jl::ModelAndTextures clouds = jl::ModelLoader::loadModel("resources/models/clouds.glb", false);
     static jl::ModelAndTextures jp = jl::ModelLoader::loadModel("resources/models/jetpack.glb", false);
@@ -949,6 +950,7 @@ int main()
                     {
                         animation_state = newState;
                     }
+
                     PlayerUpdate(deltaTime, &world, particles, renderComponent, physicsComponent, movementComponent, controls, camera, particleComponent, inventory);
                 }
             }
@@ -1026,7 +1028,10 @@ int main()
                     {
                         if(theScene.REG.valid(m.myPlayerIndex))
                         {
-                            theScene.REG.get<InventoryComponent>(m.myPlayerIndex).currentHeldBlock = m.newMaterial;
+                            theScene.REG.patch<InventoryComponent>(m.myPlayerIndex, [&](InventoryComponent & inv)
+                            {
+                                inv.currentHeldBlock = m.newMaterial;
+                            });
                         }
                     }
                     else if constexpr (std::is_same_v<T, PlayerLeave>)

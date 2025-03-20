@@ -297,6 +297,13 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>) {
                         //std::cout << "Got selectblockchange \n";
+                        {
+                            std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+                            serverReg.patch<InventoryComponent>(m_playerIndex, [&](InventoryComponent & inv)
+                            {
+                                inv.currentHeldBlock = m.newMaterial;
+                            });
+                        }
                         redistrib = true;
                         excludeyou = true;
                     }

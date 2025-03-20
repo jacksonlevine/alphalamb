@@ -97,6 +97,11 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                         theScene.world->setSeed(m.seed);
                         //theScene.myPlayerIndex = theScene.addPlayerWithIndex(m.yourPlayerIndex, theScene.settings.clientUID);
                         auto pos = theScene.REG.get<jl::Camera>(theScene.myPlayerIndex).transform.position;
+                        auto width = 0, height = 0;
+                        glfwGetWindowSize(theScene.window, &width, &height);
+                        theScene.REG.get<jl::Camera>(theScene.myPlayerIndex).updateProjection(width, height, 90.0f);
+                        theScene.REG.get<jl::Camera>(theScene.myPlayerIndex).updateWithYawPitch(0.0f, 0.0f);
+                        
                         std::cout << "My starting position: " << pos.x << " " << pos.y << " " << pos.z << std::endl;
                         theScene.worldReceived.store(true);
                         //Dont do this yet, receive the file first
