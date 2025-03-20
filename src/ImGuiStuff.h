@@ -62,17 +62,23 @@ inline float GetDPIScaling(GLFWwindow* window) {
 }
 
 inline void SetImGuiScaling(GLFWwindow* window) {
+    float systemScale = GetDPIScaling(window);
+
     ImGuiIO& io = ImGui::GetIO();
 
-    // Get the DPI scaling factor
-    float scale = GetDPIScaling(window);
+    int fbWidth, fbHeight, winWidth, winHeight;
+    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+    glfwGetWindowSize(window, &winWidth, &winHeight);
 
-    // Set global font scaling
-    io.FontGlobalScale = scale;
+    float pixelRatio = (float)fbWidth / winWidth;
+    io.DisplayFramebufferScale = ImVec2(pixelRatio, pixelRatio);
 
-    // Scale ImGui style (e.g., FramePadding, ItemSpacing)
+    io.FontGlobalScale = systemScale;
+
+    ImGuiStyle defaultStyle;
     ImGuiStyle& style = ImGui::GetStyle();
-    style.ScaleAllSizes(scale);
+    style = defaultStyle;
+    style.ScaleAllSizes(systemScale);
 }
 
 constexpr int BUTTONDIVS = 10;
