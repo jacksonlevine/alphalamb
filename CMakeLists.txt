@@ -160,6 +160,8 @@ add_executable(DistantGarden
         src/SaveRegistry.h
         src/components/UUIDComponent.h
         src/SaveRegistry.cpp
+        src/world/FootstepSounds.cpp
+        src/world/FootstepSounds.h
 )
 
 add_executable(DGServer

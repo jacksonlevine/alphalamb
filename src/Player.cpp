@@ -8,6 +8,7 @@
 #include "PhysXStuff.h"
 #include "components/InventoryComponent.h"
 #include "components/ParticleEffectComponent.h"
+#include "world/FootstepSounds.h"
 #include "world/gizmos/ParticlesGizmo.h"
 
 // void Player::update(const float deltaTime, World* world, ParticlesGizmo* particles)
@@ -16,6 +17,11 @@
 //
 //
 // }
+
+
+
+
+
 void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, RenderComponent& renderComponent,
     PhysicsComponent& physicsComponent, MovementComponent& movementComponent, Controls& controls, jl::Camera & camera, ParticleEffectComponent & particleComponent, InventoryComponent& inventory)
 {
@@ -48,6 +54,8 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
     auto & climbUpTimer = movementComponent.climbUpTimer;
     auto & climbStartPosition = movementComponent.climbStartPosition;
 
+
+
     controller->setPosition(PxExtendedVec3(
         camera.transform.position.x,
         camera.transform.position.y - CAMERA_OFFSET + (crouchOverride ? 1.0f: 0.0f),
@@ -61,6 +69,37 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         jetpackSource = makeSource(camera.transform.position);
         setSourceBuffer(sounds.at((int)SoundBuffers::JETPACK), jetpackSource);
         alSourcei(jetpackSource, AL_LOOPING, AL_TRUE);
+
+        movementComponent.footstepSource = makeSource(camera.transform.position - glm::vec3(0,1,0));
+
+        alSourcei(jetpackSource, AL_LOOPING, AL_FALSE);
+    }
+
+    if(controls.anyMovement())
+    {
+        if(auto b =  getFootstepSound(lastBlockStandingOn); b != std::nullopt)
+        {
+            if(movementComponent.footstepTimer < movementComponent.footstepInterval)
+            {
+                movementComponent.footstepTimer += deltaTime;
+            } else
+            {
+                movementComponent.footstepTimer = 0.0f;
+
+                auto & stepSounds = getBufferSeries(fromMaterial(static_cast<MaterialName>(lastBlockStandingOn & BLOCK_ID_BITS)));
+                if(!stepSounds.empty())
+                {
+                    if(movementComponent.soundSeriesIndexer < stepSounds.size() && movementComponent.soundSeriesIndexer >= 0)
+                    {
+                        alSourceStop(movementComponent.footstepSource);
+                        playBufferFromSource(sounds.at((int)stepSounds[movementComponent.soundSeriesIndexer]), movementComponent.footstepSource);
+                    }
+                    movementComponent.soundSeriesIndexer  = (movementComponent.soundSeriesIndexer + 1) % sounds.size();
+                }
+
+
+            }
+        }
     }
 
     glm::vec3 displacement(0.0f, 0.0f, 0.0f);
@@ -508,7 +547,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
     // Only process normal movement if not ledge grabbing or climbing
     if (!isLedgeGrabbing && !isClimbingUp)
     {
-        // Rest of your code for jetpack, sound, etc.
+
         ALint jpSourceState;
         alGetSourcei(jetpackSource, AL_SOURCE_STATE, &jpSourceState);
 

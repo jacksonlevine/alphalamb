@@ -131,12 +131,96 @@ inline void playBufferFromSource(ALuint buffer, ALuint source)
 
 enum class SoundBuffers
 {
-    JETPACK
+    DIRTSTEP1,
+    DIRTSTEP2,
+    DIRTSTEP3,
+    DIRTSTEP4,
+    GRASSSTEP1,
+    GRASSSTEP2,
+    GRASSSTEP3,
+    GRASSSTEP4,
+    GRASSSTEP5,
+    GRASSSTEP6,
+    JETPACK,
+    MULCHSTEP1,
+    MULCHSTEP2,
+    MULCHSTEP3,
+    MULCHSTEP4,
+    SANDSTEP1,
+    SANDSTEP2,
+    SANDSTEP3,
+    SANDSTEP4,
+    SANDSTEP5,
+    STONESTEP1,
+    STONESTEP2,
+    STONESTEP3,
+    STONESTEP4,
+    UNDERWATER,
+    WATER1,
+    WATER2,
+    WATER3,
+    WATER4,
+    WATER5,
+    WATERMOVE,
+    WOODSTEP1,
+    WOODSTEP2,
+    WOODSTEP3,
+    WOODSTEP4,
+    WOODSTEP5
 };
+
+enum class SoundBufferSeries
+{
+    DIRTSTEP,
+    GRASSSTEP,
+    STONESTEP,
+    SANDSTEP,
+    WOODSTEP,
+    WATERSTEP,
+};
+
+std::vector<SoundBuffers>& getBufferSeries(SoundBufferSeries s);
+
+SoundBufferSeries fromMaterial(MaterialName m);
 
 inline void loadSounds()
 {
+sounds.push_back(bufferFromFile("resources/sfx/dirtstep1.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/dirtstep2.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/dirtstep3.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/dirtstep4.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/grassstep1.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/grassstep2.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/grassstep3.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/grassstep4.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/grassstep5.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/grassstep6.mp3"));
     sounds.push_back(bufferFromFile("resources/sfx/jetpack.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/mulchstep1.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/mulchstep2.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/mulchstep3.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/mulchstep4.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/sandstep1.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/sandstep2.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/sandstep3.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/sandstep4.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/sandstep5.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/stonestep1.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/stonestep2.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/stonestep3.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/stonestep4.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/underwater.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/water1.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/water2.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/water3.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/water4.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/water5.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/watermove.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/woodstep1.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/woodstep2.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/woodstep3.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/woodstep4.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/woodstep5.mp3"));
 }
 
 #endif //OPENALSTUFF_H

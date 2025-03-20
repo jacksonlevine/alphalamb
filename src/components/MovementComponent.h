@@ -13,6 +13,8 @@ struct MovementComponent {
     bool hoverMode = false;
     ALuint jetpackSource = 0;
 
+    ALuint footstepSource = 0;
+
     // Dash related
     int stamCount = 3;
     bool dashing = false;
@@ -34,6 +36,10 @@ struct MovementComponent {
     bool isClimbingUp = false;
     float climbUpTimer = 0.0f;
     float ledgeGrabCooldown = 0.0f;
+    float footstepTimer = 0.0f;
+    float footstepInterval = 0.5f;
+
+    int soundSeriesIndexer = 0;
 
     template<class Archive>
     void serialize(Archive& archive)
