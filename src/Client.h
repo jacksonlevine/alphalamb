@@ -98,10 +98,14 @@ inline void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun) 
                         //theScene.myPlayerIndex = theScene.addPlayerWithIndex(m.yourPlayerIndex, theScene.settings.clientUID);
                         auto pos = theScene.REG.get<jl::Camera>(theScene.myPlayerIndex).transform.position;
                         auto width = 0, height = 0;
+                        //Get our cam ready before the first player update becasue of the "intro screen thing"
                         glfwGetWindowSize(theScene.window, &width, &height);
                         theScene.REG.get<jl::Camera>(theScene.myPlayerIndex).updateProjection(width, height, 90.0f);
+
+                        //We could restore the cameras real stored rotatoin here by calling with the camera pitch & yaw but then the planet visual won't be facing us
+                        //Who knows, just to keep in mind who cares etc
                         theScene.REG.get<jl::Camera>(theScene.myPlayerIndex).updateWithYawPitch(0.0f, 0.0f);
-                        
+
                         std::cout << "My starting position: " << pos.x << " " << pos.y << " " << pos.z << std::endl;
                         theScene.worldReceived.store(true);
                         //Dont do this yet, receive the file first
