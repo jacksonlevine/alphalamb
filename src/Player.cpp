@@ -77,6 +77,14 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
     if(controls.anyMovement())
     {
+
+        if(controls.sprint)
+        {
+            movementComponent.footstepInterval = 0.35f;
+        } else
+        {
+            movementComponent.footstepInterval = 0.5f;
+        }
         if(auto b =  getFootstepSound(lastBlockStandingOn); b != std::nullopt)
         {
             if(movementComponent.footstepTimer < movementComponent.footstepInterval)
@@ -94,7 +102,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
                         alSourceStop(movementComponent.footstepSource);
                         playBufferFromSource(sounds.at((int)stepSounds[movementComponent.soundSeriesIndexer]), movementComponent.footstepSource);
                     }
-                    movementComponent.soundSeriesIndexer  = (movementComponent.soundSeriesIndexer + 1) % sounds.size();
+                    movementComponent.soundSeriesIndexer  = (movementComponent.soundSeriesIndexer + 1) % stepSounds.size();
                 }
 
 
