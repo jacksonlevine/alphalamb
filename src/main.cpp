@@ -1267,11 +1267,22 @@ int main()
                 auto theintspot = IntTup(thespot.x, thespot.y, thespot.z);
                 theScene.bulkPlaceGizmo->corner2 = theintspot;
             }
+            auto ourCam = theScene.our<jl::Camera>().transform.position;
+            IntTup itspot(
+                ourCam.x,
+                ourCam.y,
+                ourCam.z
+            );
+
+            float temperature_noise = world.worldGenMethod->getTemperatureNoise(itspot);
+            float humidity_noise = world.worldGenMethod->getHumidityNoise(itspot);
+            float dewyFogFactorAtCam = theScene.worldRenderer->getDewyFogFactor(temperature_noise, humidity_noise);
             if (theScene.worldIntroTimer > INTROFLYTIME)
             {
                 drawSky(glm::vec4(currAtmos.skyTop, 1.0),
-                    glm::vec4(currAtmos.skyBottom, 1.0),
-                    ambBrightFromTimeOfDay(theScene.timeOfDay, theScene.dayLength), &theScene.our<jl::Camera>(), lutTexture);
+                        glm::vec4(currAtmos.skyBottom, 1.0),
+                        ambBrightFromTimeOfDay(theScene.timeOfDay, theScene.dayLength), &theScene.our<jl::Camera>(),
+                        lutTexture, currAtmos.fogColor, dewyFogFactorAtCam);
 
             }
 
@@ -1290,6 +1301,7 @@ int main()
             static GLuint offsetLoc = glGetUniformLocation(mainShader.shaderID, "offs");
             static GLuint abLoc = glGetUniformLocation(mainShader.shaderID, "ambientBrightness");
             static GLuint fogColLoc = glGetUniformLocation(mainShader.shaderID, "fogCol");
+            static GLuint odffLoc = glGetUniformLocation(mainShader.shaderID, "overridingDewyFogFactor");
 
             glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera.mvp));
             glActiveTexture(GL_TEXTURE0);
@@ -1301,6 +1313,7 @@ int main()
             glUniform1f(rotLoc, 0.0f);
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
             glUniform1f(scaleLoc, 1.0f);
+            glUniform1f(odffLoc, dewyFogFactorAtCam);
 
             glUniform3f(fogColLoc, currAtmos.fogColor.x, currAtmos.fogColor.y, currAtmos.fogColor.z);
             glActiveTexture(GL_TEXTURE1);

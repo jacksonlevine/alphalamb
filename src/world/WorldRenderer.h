@@ -269,7 +269,7 @@ public:
     boost::lockfree::spsc_queue<BlockArea, boost::lockfree::capacity<256>> rebuildToMainAreaNotifications = {};
 
 
-
+    double getDewyFogFactor(float temperature_noise, float humidity_noise);
     void mainThreadDraw(const jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod, float deltaTime, bool actuallyDraw);
     void meshBuildCoroutine(jl::Camera* playerCamera, World* world);
 

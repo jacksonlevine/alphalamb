@@ -256,6 +256,13 @@ bool isChunkInFrustum(const TwoIntTup& chunkSpot, const glm::vec3& cameraPositio
     return angle1 <= FOV_ANGLE;
 }
 
+double WorldRenderer::getDewyFogFactor(float temperature_noise, float humidity_noise)
+{
+    return glm::min(1.0, glm::max(0.0f, humidity_noise * 2.0f)
+                    + /*Additional as it becomes chilly (negative temp)*/
+                    (-2.0 * (glm::min(0.0f, temperature_noise))));
+}
+
 //MAIN THREAD COROUTINE
 void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod, float deltaTime, bool actuallyDraw)
 {
@@ -315,6 +322,9 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
 
     static GLint grassRedChangeLoc = glGetUniformLocation(shader, "grassRedChange");
     static GLint timeRenderedLoc = glGetUniformLocation(shader, "timeRendered");
+
+    static GLuint dewyFogFactorLoc = glGetUniformLocation(shader, "dewyFogFactor");
+
     static GLint rdistLoc = glGetUniformLocation(shader, "renderDistance");
     glUniform1f(rdistLoc, static_cast<float>(currentRenderDistance));
     for (auto& [spot, chunkinfo] : activeChunks) {
@@ -325,7 +335,11 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
             if (dist <= currentMinDistance()) {
                 auto & glInfo = chunkPool[chunkinfo.chunkIndex];
                 IntTup chunkRealSpot = IntTup(spot.x * chunkSize, spot.z * chunkSize);
-                float grassRedChange = (worldGenMethod->getTemperatureNoise(chunkRealSpot) - worldGenMethod->getHumidityNoise(chunkRealSpot));
+                float temperature_noise = worldGenMethod->getTemperatureNoise(chunkRealSpot);
+                float humidity_noise = worldGenMethod->getHumidityNoise(chunkRealSpot);
+                float grassRedChange = (temperature_noise - humidity_noise);
+                float dewyFogFactor = getDewyFogFactor(temperature_noise, humidity_noise);
+                glUniform1f(dewyFogFactorLoc, dewyFogFactor);
                 glUniform1f(grassRedChangeLoc, grassRedChange);
                 glUniform1f(timeRenderedLoc, chunkinfo.timeBeenRendered);
                 if (actuallyDraw)
@@ -351,7 +365,11 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
             if (dist <= currentMinDistance()) {
                 auto glInfo = chunkPool[chunkinfo.chunkIndex];
                 IntTup chunkRealSpot = IntTup(spot.x * chunkSize, spot.z * chunkSize);
-                float grassRedChange = (worldGenMethod->getTemperatureNoise(chunkRealSpot) - worldGenMethod->getHumidityNoise(chunkRealSpot));
+                float temperature_noise = worldGenMethod->getTemperatureNoise(chunkRealSpot);
+                float humidity_noise = worldGenMethod->getHumidityNoise(chunkRealSpot);
+                float grassRedChange = (temperature_noise - humidity_noise);
+                float dewyFogFactor = getDewyFogFactor(temperature_noise, humidity_noise);
+                glUniform1f(dewyFogFactorLoc, dewyFogFactor);
                 glUniform1f(grassRedChangeLoc, grassRedChange);
                 glUniform1f(timeRenderedLoc, chunkinfo.timeBeenRendered);
                 if (actuallyDraw)

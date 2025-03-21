@@ -98,6 +98,8 @@ uniform float scale;
             uniform float renderDistance;
             uniform float ambientBrightness;
             uniform vec3 fogCol;
+            uniform float overridingDewyFogFactor;
+            uniform float dewyFogFactor;
 
             in vec3 ppos;
             in vec3 grassColor;
@@ -107,8 +109,7 @@ uniform float scale;
 
             void main()
             {
-
-float clearRadius = 10.0;     // Fog-free radius around the player
+float clearRadius = 55.0;     // Fog-free radius around the player
 float maxFogHeight = 120.0;   // Fog starts at y=120
 float minFogHeight = 20.0;    // Fog reaches max at y=20
 float fogMaxDistance = renderDistance * 16.0; // Fog fades in near render distance
@@ -123,20 +124,29 @@ float heightFactor = smoothstep(maxFogHeight, minFogHeight, ppos.y);
 float distanceFactor = smoothstep(fogMaxDistance * 0.7, fogMaxDistance, horizDist);
 
 // Fog-free radius around the player
-float clearFactor = smoothstep(clearRadius, clearRadius + 8.0, horizDist);
+float clearFactor = smoothstep(clearRadius - 50.0, clearRadius, horizDist);
+
+// Calculate fog intensity at camera height
+float camHeightFog = smoothstep(maxFogHeight, minFogHeight, camPos.y) * overridingDewyFogFactor;
 
 // Combine fog factors
-float fogFactor = max(heightFactor, distanceFactor) * clearFactor;
+float fogFactor = max(heightFactor, distanceFactor);
 
-// Slight fog tinge when camera is at fog height
-float camHeightFog = smoothstep(maxFogHeight - 10.0, maxFogHeight, camPos.y);
-fogFactor = max(fogFactor, camHeightFog * 0.2); // 20% fog tinge
+// Apply camera height fog to everything
+fogFactor = max(fogFactor, camHeightFog);
+
+// Override fog with clearFactor (fog-free radius)
+fogFactor *= clearFactor;
+
+
+float dff = max(overridingDewyFogFactor, dewyFogFactor);
+
+fogFactor *= dff;
 
 // Apply fog to the final color
 vec4 fogColor = vec4(fogCol.xyz, 1.0);
 vec4 tex = texture(texture1, TexCoord) + vec4(grassColor * 0.3, 0.0);
-FragColor = mix(tex, fogColor, fogFactor);
-
+FragColor = mix(vec4((tex * brightness).xyz, tex.a), fogColor, fogFactor);
                 vec3 lutCoords = clamp(FragColor.xyz, 0.0, 1.0);
                 lutCoords = lutCoords * (63.0/64.0) + (0.5/64.0);
                 vec4 lutTex = texture(lut, lutCoords);
