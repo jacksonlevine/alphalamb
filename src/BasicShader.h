@@ -108,12 +108,34 @@ uniform float scale;
             void main()
             {
 
-                float distance = pow((mDist(ppos.x, ppos.z, camPos.x, camPos.z)/(renderDistance*5.0f))/4.0f, 2);
-                vec4 fogColor = vec4(fogCol.xyz, 1.0);
-                vec4 tex = texture(texture1, TexCoord) + vec4(grassColor * 0.3, 0.0);
-                FragColor = vec4(tex.xyz * brightness, tex.w);
-                float normDist = min(1.0f, max(distance, 0.0f));
-                FragColor = mix(FragColor, fogColor, normDist);
+float clearRadius = 10.0;     // Fog-free radius around the player
+float maxFogHeight = 120.0;   // Fog starts at y=120
+float minFogHeight = 20.0;    // Fog reaches max at y=20
+float fogMaxDistance = renderDistance * 16.0; // Fog fades in near render distance
+
+// Calculate horizontal (XZ) distance from camera
+float horizDist = length(ppos.xz - camPos.xz);
+
+// Calculate vertical distance (height fog)
+float heightFactor = smoothstep(maxFogHeight, minFogHeight, ppos.y);
+
+// Distance fog (fades in near render distance)
+float distanceFactor = smoothstep(fogMaxDistance * 0.7, fogMaxDistance, horizDist);
+
+// Fog-free radius around the player
+float clearFactor = smoothstep(clearRadius, clearRadius + 8.0, horizDist);
+
+// Combine fog factors
+float fogFactor = max(heightFactor, distanceFactor) * clearFactor;
+
+// Slight fog tinge when camera is at fog height
+float camHeightFog = smoothstep(maxFogHeight - 10.0, maxFogHeight, camPos.y);
+fogFactor = max(fogFactor, camHeightFog * 0.2); // 20% fog tinge
+
+// Apply fog to the final color
+vec4 fogColor = vec4(fogCol.xyz, 1.0);
+vec4 tex = texture(texture1, TexCoord) + vec4(grassColor * 0.3, 0.0);
+FragColor = mix(tex, fogColor, fogFactor);
 
                 vec3 lutCoords = clamp(FragColor.xyz, 0.0, 1.0);
                 lutCoords = lutCoords * (63.0/64.0) + (0.5/64.0);
@@ -124,10 +146,10 @@ uniform float scale;
                 if(FragColor.a < 0.1f) {
                     discard;
                 }
-                //Fresnel effect on semi-transparent stuff right here, I was wondering wtf this was I just remembered though
-                if(FragColor.a < 1.0) {
-                    FragColor.a += distance*100.5f;
-                }
+                ////Fresnel effect on semi-transparent stuff right here
+                //if(FragColor.a < 1.0) {
+                //    FragColor.a += distance*100.5f;
+                //}
 
             }
         )glsl",

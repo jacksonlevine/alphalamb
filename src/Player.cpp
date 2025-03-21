@@ -75,9 +75,10 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         alSourcei(jetpackSource, AL_LOOPING, AL_FALSE);
     }
 
+
+
     if(controls.anyMovement())
     {
-
         if(controls.sprint)
         {
             movementComponent.footstepInterval = 0.35f;
