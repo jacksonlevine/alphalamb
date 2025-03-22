@@ -11,6 +11,7 @@
 #include "world/WorldGizmo.h"
 #include "world/gizmos/BlockSelectGizmo.h"
 #include "Hud.h"
+#include "OpenALStuff.h"
 #include "Planets.h"
 #include "components/PlayerEmplacer.h"
 #include "world/gizmos/BulkPlaceGizmo.h"
@@ -35,6 +36,12 @@ struct Scene
     Type& our()
     {
         return REG.get<Type>(myPlayerIndex);
+    }
+
+    void playSong(SoundBuffers song, bool loop)
+    {
+        alSourcei(musicSource, AL_LOOPING, loop ? AL_TRUE : AL_FALSE);
+        playBufferFromSource((ALuint)song, musicSource);
     }
 
 
@@ -77,7 +84,7 @@ struct Scene
     PlanetType currentPlanetType = PlanetType::Home;
     std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>> existingInvs = {};
     float worldIntroTimer = 0.0f;
-
+    ALuint musicSource = 0;
 
 
 

@@ -635,6 +635,8 @@ int main()
 
     initOpenAL();
 
+    theScene.musicSource = makeSource(glm::vec3{});
+
     WorldRenderer* renderer = new WorldRenderer();
     theScene.loadSettings();
 
