@@ -639,7 +639,7 @@ int main()
 
     WorldRenderer* renderer = new WorldRenderer();
     theScene.loadSettings();
-
+    
     renderer->currentRenderDistance = theScene.rendDistSelection;
     renderer->MIN_DISTANCE = renderer->currentRenderDistance + 1;
 

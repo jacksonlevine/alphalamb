@@ -23,6 +23,7 @@ struct Settings
     float mouseSensitivity = 1.0f;
     ClientUID clientUID;
     bool ambientOccl = false;
+    float musicVol = 1.0f;
 };
 struct Scene
 {
@@ -98,6 +99,7 @@ struct Scene
             settingsFile << rendDistSelection << "\n";
             settingsFile << settings.clientUID << "\n";
             settingsFile << ambOccl << "\n";
+            settingsFile << settings.musicVol << "\n";
             settingsFile.close();
         }
     }
@@ -119,6 +121,10 @@ struct Scene
                     settingsFile >> settings.clientUID;
 
                     settingsFile >> ambOccl;
+                
+                    settingsFile >> settings.musicVol;
+                    alSourcei(musicSource, AL_GAIN, settings.musicVol);
+                
                     std::cout << "Loaded UID: " << settings.clientUID << std::endl;
             }
         } else

@@ -437,6 +437,14 @@ inline void renderImGui() {
             break;
         case GuiScreen::MainMenu:
             drawFullscreenKaleidoscope();
+
+            ALint musicSourceState;
+            alGetSourcei(theScene.musicSource, AL_SOURCE_STATE, &musicSourceState);
+            if (musicSourceState != AL_PLAYING)
+            {
+                theScene.playSong(SoundBuffers::SONG1, true);
+            }
+            
             if (                ImGui::InputText("Server address", theScene.serverAddress.data(), theScene.serverAddress.capacity(), ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &theScene.serverAddress)
 )
             {
@@ -512,6 +520,12 @@ inline void renderImGui() {
                     toggleFullscreen(theScene.window);
                 }
 
+                if (ImGui::SliderFloat("Music Volume", &theScene.settings.mouseSensitivity, 0.0f, 2.0f))
+                {
+                    theScene.saveSettings();
+                    alSourcei(theScene.musicSource, AL_GAIN, theScene.settings.musicVol);
+                }
+    
 
 
 
