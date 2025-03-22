@@ -442,7 +442,7 @@ inline void renderImGui() {
             alGetSourcei(theScene.musicSource, AL_SOURCE_STATE, &musicSourceState);
             if (musicSourceState != AL_PLAYING)
             {
-                theScene.playSong(SoundBuffers::SONG1, true);
+                theScene.playSong(sounds.at((int)SoundBuffers::SONG1), true);
             }
             
             if (                ImGui::InputText("Server address", theScene.serverAddress.data(), theScene.serverAddress.capacity(), ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &theScene.serverAddress)
