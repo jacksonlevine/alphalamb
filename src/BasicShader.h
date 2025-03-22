@@ -109,7 +109,7 @@ uniform float scale;
 
             void main()
             {
-float clearRadius = 55.0;     // Fog-free radius around the player
+float clearRadius = 25.0;     // Fog-free radius around the player
 float maxFogHeight = 120.0;   // Fog starts at y=120
 float minFogHeight = 20.0;    // Fog reaches max at y=20
 float fogMaxDistance = renderDistance * 16.0; // Fog fades in near render distance
@@ -124,7 +124,7 @@ float heightFactor = smoothstep(maxFogHeight, minFogHeight, ppos.y);
 float distanceFactor = smoothstep(fogMaxDistance * 0.7, fogMaxDistance, horizDist);
 
 // Fog-free radius around the player
-float clearFactor = smoothstep(clearRadius - 50.0, clearRadius, horizDist);
+float clearFactor = smoothstep(clearRadius - 23.0, clearRadius, horizDist);
 
 // Calculate fog intensity at camera height
 float camHeightFog = smoothstep(maxFogHeight, minFogHeight, camPos.y) * overridingDewyFogFactor;

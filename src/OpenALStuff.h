@@ -166,7 +166,8 @@ enum class SoundBuffers
     WOODSTEP2,
     WOODSTEP3,
     WOODSTEP4,
-    WOODSTEP5
+    WOODSTEP5,
+    SONG1
 };
 
 enum class SoundBufferSeries
@@ -221,6 +222,7 @@ sounds.push_back(bufferFromFile("resources/sfx/dirtstep1.mp3"));
     sounds.push_back(bufferFromFile("resources/sfx/woodstep3.mp3"));
     sounds.push_back(bufferFromFile("resources/sfx/woodstep4.mp3"));
     sounds.push_back(bufferFromFile("resources/sfx/woodstep5.mp3"));
+    sounds.push_back(bufferFromFile("resources/song1.mp3"));
 }
 
 #endif //OPENALSTUFF_H

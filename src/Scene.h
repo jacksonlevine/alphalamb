@@ -11,6 +11,7 @@
 #include "world/WorldGizmo.h"
 #include "world/gizmos/BlockSelectGizmo.h"
 #include "Hud.h"
+#include "OpenALStuff.h"
 #include "Planets.h"
 #include "components/PlayerEmplacer.h"
 #include "world/gizmos/BulkPlaceGizmo.h"
@@ -22,6 +23,7 @@ struct Settings
     float mouseSensitivity = 1.0f;
     ClientUID clientUID;
     bool ambientOccl = false;
+    float musicVol = 1.0f;
 };
 struct Scene
 {
@@ -35,6 +37,12 @@ struct Scene
     Type& our()
     {
         return REG.get<Type>(myPlayerIndex);
+    }
+
+    void playSong(SoundBuffers song, bool loop)
+    {
+        alSourcei(musicSource, AL_LOOPING, loop ? AL_TRUE : AL_FALSE);
+        playBufferFromSource((ALuint)song, musicSource);
     }
 
 
@@ -77,7 +85,7 @@ struct Scene
     PlanetType currentPlanetType = PlanetType::Home;
     std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>> existingInvs = {};
     float worldIntroTimer = 0.0f;
-
+    ALuint musicSource = 0;
 
 
 
@@ -91,6 +99,7 @@ struct Scene
             settingsFile << rendDistSelection << "\n";
             settingsFile << settings.clientUID << "\n";
             settingsFile << ambOccl << "\n";
+            settingsFile << settings.musicVol << "\n";
             settingsFile.close();
         }
     }
@@ -112,6 +121,10 @@ struct Scene
                     settingsFile >> settings.clientUID;
 
                     settingsFile >> ambOccl;
+                
+                    settingsFile >> settings.musicVol;
+                    alSourcei(musicSource, AL_GAIN, settings.musicVol);
+                
                     std::cout << "Loaded UID: " << settings.clientUID << std::endl;
             }
         } else
