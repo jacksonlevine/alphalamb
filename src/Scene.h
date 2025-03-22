@@ -39,10 +39,10 @@ struct Scene
         return REG.get<Type>(myPlayerIndex);
     }
 
-    void playSong(SoundBuffers song, bool loop)
+    void playSong(ALuint song, bool loop)
     {
         alSourcei(musicSource, AL_LOOPING, loop ? AL_TRUE : AL_FALSE);
-        playBufferFromSource((ALuint)song, musicSource);
+        playBufferFromSource(song, musicSource);
     }
 
 
