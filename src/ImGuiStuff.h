@@ -445,8 +445,7 @@ inline void renderImGui() {
                 theScene.playSong(sounds.at((int)SoundBuffers::SONG1), true);
             }
             
-            if (                ImGui::InputText("Server address", theScene.serverAddress.data(), theScene.serverAddress.capacity(), ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &theScene.serverAddress)
-)
+            if (                ImGui::InputText("Server address", theScene.serverAddress.data(), theScene.serverAddress.capacity(), ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &theScene.serverAddress))
             {
                 theScene.saveSettings();
             }
@@ -520,10 +519,10 @@ inline void renderImGui() {
                     toggleFullscreen(theScene.window);
                 }
 
-                if (ImGui::SliderFloat("Music Volume", &theScene.settings.mouseSensitivity, 0.0f, 2.0f))
+                if (ImGui::SliderFloat("Music Volume", &theScene.settings.musicVol, 0.0f, 1.0f))
                 {
                     theScene.saveSettings();
-                    alSourcei(theScene.musicSource, AL_GAIN, theScene.settings.musicVol);
+                    alSourcef(theScene.musicSource, AL_GAIN, theScene.settings.musicVol);
                 }
     
 
