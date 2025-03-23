@@ -7,7 +7,7 @@
 
 #include "../WorldGizmo.h"
 
-constexpr float BLOCK_BREAK_TIME = 3.0f;
+constexpr float BLOCK_BREAK_TIME = 0.01f;
 
 class BlockSelectGizmo : public WorldGizmo {
 public:

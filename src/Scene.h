@@ -42,6 +42,7 @@ struct Scene
     void playSong(ALuint song, bool loop)
     {
         alSourcei(musicSource, AL_LOOPING, loop ? AL_TRUE : AL_FALSE);
+        alSourcef(musicSource, AL_PITCH, 1.0f + ((float)rand() / (float) RAND_MAX) * 0.08f );
         playBufferFromSource(song, musicSource);
     }
 
@@ -123,7 +124,8 @@ struct Scene
                     settingsFile >> ambOccl;
                 
                     settingsFile >> settings.musicVol;
-                    alSourcei(musicSource, AL_GAIN, settings.musicVol);
+                std::cout << "Setting volume: " << settings.musicVol << std::endl;
+                    alSourcef(musicSource, AL_GAIN, settings.musicVol);
                 
                     std::cout << "Loaded UID: " << settings.clientUID << std::endl;
             }
