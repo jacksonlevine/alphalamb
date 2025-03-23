@@ -30,7 +30,7 @@ inline jl::Shader getBasicGLTFShader()
 
             uniform mat4 mvp; // Model-View-Projection matrix
             uniform vec3 pos;  // Translation in world space
-
+            out vec3 vertPos;
             void main()
             {
                 // Apply yaw rotation to the local coordinates
@@ -45,19 +45,36 @@ inline jl::Shader getBasicGLTFShader()
 
                 // Pass texture coordinates to the fragment shader
                 TexCoord = inTexCoord;
+                vertPos = worldPosition.xyz;
             }
         )glsl",
         R"glsl(
             #version 330 core
             out vec4 FragColor;
 
+            uniform float hideClose;
+
             in vec2 TexCoord;
+            in vec3 vertPos;
 
             uniform sampler2D texture1;
+            uniform vec3 camPos;
 
             void main()
             {
                 FragColor = texture(texture1, TexCoord);
+                if (hideClose > 0.4) {
+        float radius = 200.0;
+        float fadeStart = 190.0;  // Start fading at 40 units
+        float dist = distance(vertPos, camPos);
+
+        // Ensure alpha is 1.0 if beyond radius, and smoothly fades inside
+        float alphaFactor = clamp((dist - fadeStart) / (radius - fadeStart), 0.0, 1.0);
+        FragColor.a *= alphaFactor;
+        if(FragColor.a < 0.1) {
+            discard;
+        }
+    }
             }
         )glsl",
         "basicGLTFShader"

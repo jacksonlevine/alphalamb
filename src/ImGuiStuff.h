@@ -24,7 +24,8 @@ enum class GuiScreen
     InGame,
     HostPort,
     Inventory,
-    Orbit
+    Orbit,
+    SettingsMenu
 };
 
 extern GuiScreen currentGuiScreen;
@@ -387,6 +388,54 @@ inline void renderImGui() {
                 imguiInventory(theScene.our<InventoryComponent>().inventory);
                 break;
             }
+        case GuiScreen::SettingsMenu:
+            {
+                if(DGCustomButton("Back", DGButtonType::Good2))
+                {
+                    theScene.saveSettings();
+                    if(theScene.worldReceived.load()) //if we're in-game, refresh rend dist and amb occl (rebuild all chunks)
+                    {
+                        theScene.worldRenderer->setRenderDistance(theScene.rendDistSelection, &theScene.our<jl::Camera>(), theScene.world);
+                        currentGuiScreen = GuiScreen::EscapeMenu;
+                    } else
+                    {
+                        currentGuiScreen = GuiScreen::MainMenu;
+                    }
+                }
+                if (ImGui::SliderFloat("Mouse Sensitivity", &theScene.settings.mouseSensitivity, 0.0f, 2.0f))
+                {
+                    theScene.saveSettings();
+                }
+
+                if(ImGui::SliderInt("Render Distance", &theScene.rendDistSelection, 2, 128))
+                {
+
+                    theScene.saveSettings();
+
+                    // if(theScene.worldReceived.load()) //if we're in-game, refresh rend dist and amb occl (rebuild all chunks)
+                    // {
+                    //     theScene.worldRenderer->setRenderDistance(theScene.rendDistSelection, &theScene.our<jl::Camera>(), theScene.world);
+                    // }
+                }
+
+                if (ImGui::Checkbox("Ambient Occlusion", &ambOccl))
+                {
+                    theScene.saveSettings();
+                }
+
+                if(DGCustomButton("Toggle Fullscreen", DGButtonType::Good1))
+                {
+                    toggleFullscreen(theScene.window);
+                }
+
+                if (ImGui::SliderFloat("Music Volume", &theScene.settings.musicVol, 0.0f, 1.0f))
+                {
+                    theScene.saveSettings();
+                    alSourcef(theScene.musicSource, AL_GAIN, theScene.settings.musicVol);
+                }
+
+                break;
+            }
         case GuiScreen::HostPort:
             drawFullscreenKaleidoscope();
                 if (DGCustomButton("Back to main menu", DGButtonType::Bad1))
@@ -488,42 +537,20 @@ inline void renderImGui() {
                     currentGuiScreen = GuiScreen::HostPort;
 
                 }
+                if (DGCustomButton("Settings", DGButtonType::Good1))
+                {
+                    currentGuiScreen = GuiScreen::SettingsMenu;
+                }
                 if (DGCustomButton("Exit game", DGButtonType::Bad2))
                 {
                     glfwSetWindowShouldClose(theScene.window, true);
                 }
+
+
                 break;
         case GuiScreen::EscapeMenu:
             {
-                if (ImGui::SliderFloat("Mouse Sensitivity", &theScene.settings.mouseSensitivity, 0.0f, 2.0f))
-                {
-                    theScene.saveSettings();
-                }
 
-                if(ImGui::SliderInt("Render Distance", &theScene.rendDistSelection, 2, 128))
-                {
-                    theScene.saveSettings();
-                }
-                if (DGCustomButton("Apply Render Distance"))
-                {
-                    theScene.worldRenderer->setRenderDistance(theScene.rendDistSelection, &theScene.our<jl::Camera>(), theScene.world);
-                }
-                if (ImGui::Checkbox("Ambient Occlusion", &ambOccl))
-                {
-                    theScene.saveSettings();
-                    theScene.worldRenderer->setRenderDistance(theScene.rendDistSelection, &theScene.our<jl::Camera>(), theScene.world);
-                }
-
-                if(DGCustomButton("Toggle Fullscreen", DGButtonType::Good1))
-                {
-                    toggleFullscreen(theScene.window);
-                }
-
-                if (ImGui::SliderFloat("Music Volume", &theScene.settings.musicVol, 0.0f, 1.0f))
-                {
-                    theScene.saveSettings();
-                    alSourcef(theScene.musicSource, AL_GAIN, theScene.settings.musicVol);
-                }
     
 
 
@@ -531,6 +558,10 @@ inline void renderImGui() {
                 if (DGCustomButton("Back to game", DGButtonType::Good2))
                 {
                     currentGuiScreen = GuiScreen::InGame;
+                }
+                if (DGCustomButton("Settings", DGButtonType::Good1))
+                {
+                    currentGuiScreen = GuiScreen::SettingsMenu;
                 }
                 std::string leavelabel;
                 if (localserver_running.load())

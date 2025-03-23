@@ -64,7 +64,7 @@ Scene theScene = {};
 
 constexpr double J_PI = 3.1415926535897932384626433832;
 constexpr double DEG_TO_RAD = J_PI / 180.0;
-constexpr float INTROFLYTIME = 2.5f;
+constexpr float INTROFLYTIME = 7.0f;
 
 __inline float gaussian(float x, float peak, float radius) {
     float stdDev = radius / 3.0;
@@ -961,6 +961,23 @@ int main()
 
                     PlayerUpdate(deltaTime, &world, particles, renderComponent, physicsComponent, movementComponent, controls, camera, particleComponent, inventory);
                 }
+            } else
+            {
+                //camera intro part
+
+                auto & cam = theScene.our<jl::Camera>();
+                cam.updateWithYawPitch(0.0f, -89.9f);
+
+                static bool thingset = false;
+                static glm::vec3 origspot = {};
+                if(!thingset)
+                {
+                    thingset = true;
+                    origspot = cam.transform.position;
+                }
+
+
+                cam.transform.position.y = origspot.y  + (1800.0f - 1800.0f *(theScene.worldIntroTimer / (INTROFLYTIME )));
             }
 
 
@@ -1288,6 +1305,42 @@ int main()
 
             }
 
+            if (theScene.worldIntroTimer < INTROFLYTIME)
+            {
+
+                drawFullscreenKaleidoscope();
+                glClear(GL_DEPTH_BUFFER_BIT);
+                {
+                    glUseProgram(gltfShader.shaderID);
+
+                    glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
+                    glActiveTexture(GL_TEXTURE0);
+
+                    glBindTexture(GL_TEXTURE_2D, planet.texids.at(0));
+
+
+                    glUniform1i(glGetUniformLocation(gltfShader.shaderID, "texture1"), 0);
+
+                    auto camdir = camera.transform.direction;
+
+                    glm::vec3 posToRenderAt = camera.transform.position + (camdir * 1950.0f) + (camdir * (1800.0f - 1800.0f *(theScene.worldIntroTimer / (INTROFLYTIME ))));
+
+                    glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
+                    glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), theScene.worldIntroTimer * 5.0f);
+                    glUniform1f(glGetUniformLocation(gltfShader.shaderID, "hideClose"), 1.0f);
+                    glUniform3f(glGetUniformLocation(gltfShader.shaderID, "camPos"), camera.transform.position.x, camera.transform.position.y, camera.transform.position.z);
+
+                    for(jl::ModelGLObjects &mglo : planet.modelGLObjects)
+                    {
+                        glBindVertexArray(mglo.vao);
+                        //Indent operations on this vertex array object
+                        glDrawElements(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr);
+
+                        glBindVertexArray(0);
+                    }
+                }
+            }
+
 
             glUseProgram(mainShader.shaderID);
 
@@ -1327,7 +1380,7 @@ int main()
 
 
             //std::cout << "World intro time" << theScene.worldIntroTimer << std::endl;
-            renderer->mainThreadDraw(&theScene.our<jl::Camera>(), mainShader.shaderID, world.worldGenMethod, deltaTime, theScene.worldIntroTimer > INTROFLYTIME);
+            renderer->mainThreadDraw(&theScene.our<jl::Camera>(), mainShader.shaderID, world.worldGenMethod, deltaTime, true);
             vms->draw(&world, theScene.myPlayerIndex, theScene.REG);
 
             glUniform1f(timeRenderedLoc, 10.0f);
@@ -1405,6 +1458,8 @@ int main()
                         posToRenderAt.y = camera.transform.position.y - 0.5f;
                         glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
                         glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), camera.transform.yaw);
+                        glUniform1f(glGetUniformLocation(gltfShader.shaderID, "hideClose"), 0.0f);
+                        glUniform3f(glGetUniformLocation(gltfShader.shaderID, "camPos"),0.f, 0.f, 0.f);
 
                         for(jl::ModelGLObjects &mglo : jp.modelGLObjects)
                         {
@@ -1515,39 +1570,7 @@ int main()
                 glEnable(GL_CULL_FACE);
             }
 
-            if (theScene.worldIntroTimer < INTROFLYTIME)
-            {
 
-                drawFullscreenKaleidoscope();
-                glClear(GL_DEPTH_BUFFER_BIT);
-                {
-                    glUseProgram(gltfShader.shaderID);
-
-                    glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
-                    glActiveTexture(GL_TEXTURE0);
-
-                        glBindTexture(GL_TEXTURE_2D, planet.texids.at(0));
-
-
-                    glUniform1i(glGetUniformLocation(gltfShader.shaderID, "texture1"), 0);
-
-                    auto camdir = camera.transform.direction;
-
-                    glm::vec3 posToRenderAt = camera.transform.position + (camdir * (100.0f - 100.0f *(theScene.worldIntroTimer / (INTROFLYTIME + 1.3f))));
-
-                    glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
-                    glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), theScene.worldIntroTimer * 5.0f);
-
-                    for(jl::ModelGLObjects &mglo : planet.modelGLObjects)
-                    {
-                        glBindVertexArray(mglo.vao);
-                        //Indent operations on this vertex array object
-                        glDrawElements(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr);
-
-                        glBindVertexArray(0);
-                    }
-                }
-            }
 
 
             drawSunAndMoon(&camera, &theScene);
