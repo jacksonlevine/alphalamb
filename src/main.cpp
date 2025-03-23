@@ -47,6 +47,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <tiny_gltf.h>
 
+#include "DrawSky.h"
 #include "FileArchives.h"
 #include "Planets.h"
 #include "SaveRegistry.h"
@@ -504,6 +505,7 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
         auto & camera = scene->our<jl::Camera>();
         camera.updateProjection(width, height, 90.0f);
         scene->guiCamera->updateProjection(width, height, 60.0f);
+        scene->menuCamera->updateProjection(width, height, 60.0f);
     }
 
     if(scene->hud)
@@ -740,9 +742,14 @@ int main()
     static jl::Shader billboardInstShader = getBillboardInstanceShader();
 
     theScene.guiCamera = new jl::Camera();
-    std::cout << "width:" << width << " height:" << height << std::endl;
+    //std::cout << "width:" << width << " height:" << height << std::endl;
     theScene.guiCamera->updateProjection(width, height, 60.0f);
     theScene.guiCamera->updateWithYawPitch(0.0,0.0);
+
+    theScene.menuCamera = new jl::Camera();
+    theScene.menuCamera->transform.position = glm::vec3(0.0, 1700.0f, 0.0f);
+    theScene.menuCamera->updateProjection(width, height, 60.0f);
+    theScene.menuCamera->updateWithYawPitch(0.0,-89.9);
 
     //
     // static jl::ModelAndTextures clouds = jl::ModelLoader::loadModel("resources/models/clouds.glb", false);
@@ -1295,29 +1302,16 @@ int main()
                 auto theintspot = IntTup(thespot.x, thespot.y, thespot.z);
                 theScene.bulkPlaceGizmo->corner2 = theintspot;
             }
-            auto ourCam = theScene.our<jl::Camera>().transform.position;
-            IntTup itspot(
-                ourCam.x,
-                ourCam.y,
-                ourCam.z
-            );
 
-            float temperature_noise = world.worldGenMethod->getTemperatureNoise(itspot);
-            float humidity_noise = world.worldGenMethod->getHumidityNoise(itspot);
-            float dewyFogFactorAtCam = theScene.worldRenderer->getDewyFogFactor(temperature_noise, humidity_noise);
-            if (theScene.worldIntroTimer > INTROFLYTIME)
-            {
-                drawSky(glm::vec4(currAtmos.skyTop, 1.0),
-                        glm::vec4(currAtmos.skyBottom, 1.0),
-                        ambBrightFromTimeOfDay(theScene.timeOfDay, theScene.dayLength), &theScene.our<jl::Camera>(),
-                        lutTexture, currAtmos.fogColor, dewyFogFactorAtCam);
-
-            }
+            dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, theScene.timeOfDay);
+            
 
             if (theScene.worldIntroTimer < INTROFLYTIME)
             {
 
-                drawFullscreenKaleidoscope();
+                dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, 900.0f);
+                
+                //drawFullscreenKaleidoscope();
                 glClear(GL_DEPTH_BUFFER_BIT);
                 {
                     glUseProgram(gltfShader.shaderID);
@@ -1377,6 +1371,19 @@ int main()
             glUniform1f(rotLoc, 0.0f);
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
             glUniform1f(scaleLoc, 1.0f);
+
+            auto ourCam = theScene.our<jl::Camera>().transform.position;
+            IntTup itspot(
+                ourCam.x,
+                ourCam.y,
+                ourCam.z
+            );
+
+            float temperature_noise = world.worldGenMethod->getTemperatureNoise(itspot);
+            float humidity_noise = world.worldGenMethod->getHumidityNoise(itspot);
+            float dewyFogFactorAtCam = theScene.worldRenderer->getDewyFogFactor(temperature_noise, humidity_noise);
+
+
             glUniform1f(odffLoc, dewyFogFactorAtCam);
 
             glUniform3f(fogColLoc, currAtmos.fogColor.x, currAtmos.fogColor.y, currAtmos.fogColor.z);
@@ -1582,7 +1589,7 @@ int main()
 
 
 
-            drawSunAndMoon(&camera, &theScene);
+            drawSunAndMoon(&camera, theScene.timeOfDay, theScene.dayLength);
 
 
 

@@ -91,8 +91,8 @@ add_executable(DistantGarden
         src/world/SWCLoader.cpp
         src/world/SWCLoader.h
         src/LUTLoader.h
-        src/ImGuiStuff.cpp
         src/ImGuiStuff.h
+        src/ImGuiStuff.cpp
         src/world/RebuildQueue.h
         src/Image.cpp
         src/Image.h
@@ -162,6 +162,12 @@ add_executable(DistantGarden
         src/SaveRegistry.cpp
         src/world/FootstepSounds.cpp
         src/world/FootstepSounds.h
+        src/DrawSky.cpp
+        src/DrawSky.h
+        src/LUTLoader.cpp
+        src/SunAndMoon.cpp
+        src/BasicShader.cpp
+        src/BasicGLTFShader.cpp
 )
 
 add_executable(DGServer

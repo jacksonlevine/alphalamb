@@ -79,6 +79,7 @@ struct Scene
     std::atomic<bool> clientShouldRun = {false};
     Settings settings = {};
     jl::Camera* guiCamera = nullptr;
+    jl::Camera* menuCamera = nullptr;
     bool showingControls = false;
     std::string localServerPort = "";
     float timeOfDay = 450.0f;

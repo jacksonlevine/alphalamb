@@ -6,7 +6,7 @@
 #define TIMEOFDAY_H
 #include "PrecompHeader.h"
 
-constexpr float gaussian(float x, float peak, float radius) {
+inline float gaussian(float x, float peak, float radius) {
     float stdDev = radius / 3.0;
     float variance = stdDev * stdDev;
 
@@ -16,7 +16,7 @@ constexpr float gaussian(float x, float peak, float radius) {
     return b / peakHeight;
 };
 
-constexpr float ambBrightFromTimeOfDay(float timeOfDay, float dayLength)
+inline float ambBrightFromTimeOfDay(float timeOfDay, float dayLength)
 {
     return std::max(0.05f, std::min(1.0f, gaussian(timeOfDay, dayLength/1.75f, dayLength/2.0f) * 1.3f));
 }

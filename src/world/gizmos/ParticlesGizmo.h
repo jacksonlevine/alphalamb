@@ -209,19 +209,7 @@ private:
 
 
 
-inline void sendBlockSideTexturesToShader(GLuint shaderProgram) {
-    std::vector<glm::vec2> sideTextures;
-    sideTextures.reserve(TEXS.size());
-
-    for (const auto& block : TEXS) {
-        sideTextures.push_back(glm::vec2(block[0].first, block[0].second));
-    }
-
-    GLint uniformLoc = glGetUniformLocation(shaderProgram, "blockSideTextures");
-
-    glUseProgram(shaderProgram);
-    glUniform2fv(uniformLoc, sideTextures.size(), glm::value_ptr(sideTextures[0]));
-}
+void sendBlockSideTexturesToShader(GLuint shaderProgram);
 
 
 #endif //PARTICLESGIZMO_H

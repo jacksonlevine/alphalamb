@@ -138,3 +138,18 @@ vec2 baseUV = vec2(texSpot.x * 0.03308823529411764705882352941176f, 1.0f - ((tex
 
 
 }
+
+void sendBlockSideTexturesToShader(GLuint shaderProgram)
+{
+    std::vector<glm::vec2> sideTextures;
+    sideTextures.reserve(TEXS.size());
+
+    for (const auto& block : TEXS) {
+        sideTextures.push_back(glm::vec2(block[0].first, block[0].second));
+    }
+
+    GLint uniformLoc = glGetUniformLocation(shaderProgram, "blockSideTextures");
+
+    glUseProgram(shaderProgram);
+    glUniform2fv(uniformLoc, sideTextures.size(), glm::value_ptr(sideTextures[0]));
+}

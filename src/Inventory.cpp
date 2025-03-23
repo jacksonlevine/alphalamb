@@ -6,6 +6,7 @@
 
 #include "Client.h"
 #include "ImGuiStuff.h"
+#include "Texture.h"
 
 void imguiInventory(Inventory& inv)
 {
