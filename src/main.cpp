@@ -674,6 +674,8 @@ int main()
 
     ImFont* font_body = imguiio->Fonts->AddFontFromFileTTF("font.ttf", 20.0f, NULL, imguiio->Fonts->GetGlyphRangesDefault());
 
+
+
     static jl::Shader mainShader = getBasicShader();
     static jl::Shader gltfShader = getBasicGLTFShader();
     static jl::Texture worldTex("resources/world.png");
@@ -689,7 +691,7 @@ int main()
     theScene.blockSelectGizmo = bsg;
     theScene.gizmos.push_back(bsg);
 
-
+    theScene.font_title = imguiio->Fonts->AddFontFromFileTTF("font.ttf", 40.0f, NULL, imguiio->Fonts->GetGlyphRangesDefault());
 
 
     BulkPlaceGizmo* bpg = new BulkPlaceGizmo();
@@ -1589,7 +1591,7 @@ int main()
 
 
 
-            drawSunAndMoon(&camera, theScene.timeOfDay, theScene.dayLength);
+            drawSunAndMoon(&camera, theScene.timeOfDay, theScene.dayLength, camera.transform.position);
 
 
 

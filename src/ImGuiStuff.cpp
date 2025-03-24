@@ -465,22 +465,27 @@ void renderImGui()
             break;
         case GuiScreen::MainMenu:
             //drawFullscreenKaleidoscope();
+
             dgDrawSky(glm::vec3(0.0), luttexture, *theScene.world, 700.0f);
+            drawSunAndMoon(theScene.menuCamera, 340.0f, 900.0f, glm::vec3(0.0f));
+
             {
-                static float menuTOD = 0.0f;
-                menuTOD = std::fmod(menuTOD + 0.01, 900.0 );
-                drawSunAndMoon(theScene.menuCamera, menuTOD, 900.0f);
+
+            ImGui::PushFont(theScene.font_title);
+                ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Distant Garden");
+                ImGui::PopFont();
             }
 
-
-            ALint musicSourceState;
-            alGetSourcei(theScene.musicSource, AL_SOURCE_STATE, &musicSourceState);
-            if (musicSourceState != AL_PLAYING)
             {
-                theScene.playSong(sounds.at((int)SoundBuffers::SONG1), true);
+                ALint musicSourceState;
+                alGetSourcei(theScene.musicSource, AL_SOURCE_STATE, &musicSourceState);
+                if (musicSourceState != AL_PLAYING)
+                {
+                    theScene.playSong(sounds.at((int)SoundBuffers::SONG1), true);
+                }
             }
 
-            if (                ImGui::InputText("Server address", theScene.serverAddress.data(), theScene.serverAddress.capacity(), ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &theScene.serverAddress))
+            if (ImGui::InputText("Server address", theScene.serverAddress.data(), theScene.serverAddress.capacity(), ImGuiInputTextFlags_CallbackResize, ResizeStringCallback, &theScene.serverAddress))
             {
                 theScene.saveSettings();
             }

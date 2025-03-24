@@ -88,6 +88,7 @@ struct Scene
     std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>> existingInvs = {};
     float worldIntroTimer = 0.0f;
     ALuint musicSource = 0;
+    ImFont* font_title = nullptr;
 
 
 

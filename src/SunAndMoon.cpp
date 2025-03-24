@@ -6,7 +6,7 @@
 #include "Scene.h"
 #include "Texture.h"
 
-void drawSunAndMoon(jl::Camera* camera, float timeOfDay, float dayLength)
+void drawSunAndMoon(jl::Camera* camera, float timeOfDay, float dayLength, const glm::vec3& postr)
 {
 
     static jl::Texture sunAndMoonTex("resources/bodies.png");
@@ -15,77 +15,84 @@ void drawSunAndMoon(jl::Camera* camera, float timeOfDay, float dayLength)
 
     static jl::Shader shader(
       R"glsl(
-            #version 330 core
+#version 330 core
 
-            //base geo
-            layout(location = 0) in vec3 vertexPosition;
-            layout(location = 1) in float cornerID;
+//base geo
+layout(location = 0) in vec3 vertexPosition;
+layout(location = 1) in float cornerID;
 
-            //instance
-            layout(location = 2) in vec3 instancePosition;
-            layout(location = 3) in vec3 instanceRotation;
-            layout(location = 4) in float pIndex;
-            layout(location = 5) in float scale;
+//instance
+layout(location = 2) in vec3 instancePosition;
+layout(location = 3) in vec3 instanceRotation;
+layout(location = 4) in float pIndex;
+layout(location = 5) in float scale;
 
-            out vec2 tcoord;
+out vec2 tcoord;
 
-            uniform mat4 mvp;
-            uniform vec3 camPos;
-            uniform float time;
+uniform mat4 mvp;
+uniform vec3 camPos;
+uniform float time;
+uniform float rot;
+uniform vec3 pospos;
 
-            uniform float rot;
+mat4 getRotationMatrix(float xrot, float yrot, float zrot) {
+    mat4 Rx = mat4(1.0, 0.0, 0.0, 0.0,
+                   0.0, cos(xrot), -sin(xrot), 0.0,
+                   0.0, sin(xrot), cos(xrot), 0.0,
+                   0.0, 0.0, 0.0, 1.0);
 
-            mat4 getRotationMatrix(float xrot, float yrot, float zrot) {
-                mat4 Rx = mat4(1.0, 0.0, 0.0, 0.0,
-                               0.0, cos(xrot), -sin(xrot), 0.0,
-                               0.0, sin(xrot), cos(xrot), 0.0,
-                               0.0, 0.0, 0.0, 1.0);
+    mat4 Ry = mat4(cos(yrot), 0.0, sin(yrot), 0.0,
+                   0.0, 1.0, 0.0, 0.0,
+                   -sin(yrot), 0.0, cos(yrot), 0.0,
+                   0.0, 0.0, 0.0, 1.0);
 
-                mat4 Ry = mat4(cos(yrot), 0.0, sin(yrot), 0.0,
-                               0.0, 1.0, 0.0, 0.0,
-                               -sin(yrot), 0.0, cos(yrot), 0.0,
-                               0.0, 0.0, 0.0, 1.0);
+    mat4 Rz = mat4(cos(zrot), -sin(zrot), 0.0, 0.0,
+                   sin(zrot), cos(zrot), 0.0, 0.0,
+                   0.0, 0.0, 1.0, 0.0,
+                   0.0, 0.0, 0.0, 1.0);
+    return Rz * Ry * Rx;
+}
 
-                mat4 Rz = mat4(cos(zrot), -sin(zrot), 0.0, 0.0,
-                               sin(zrot), cos(zrot), 0.0, 0.0,
-                               0.0, 0.0, 1.0, 0.0,
-                               0.0, 0.0, 0.0, 1.0);
-                return Rz * Ry * Rx;
-            }
+void main() {
+    // Apply instance rotation to position the body in its orbit
+    mat4 instanceRot = getRotationMatrix(instanceRotation.x, instanceRotation.y, instanceRotation.z);
+    mat4 globalRotation = getRotationMatrix(rot, 0.0, 0.0);
 
-            void main() {
-                mat4 instanceRot = getRotationMatrix(instanceRotation.x, instanceRotation.y, instanceRotation.z);
-                mat4 globalRotation = getRotationMatrix(rot, 0.0, 0.0);
+    vec3 instPosAdj = instancePosition * vec3(1.0, 0.5, 1.0);
 
-                vec3 instanceRotatedPosition = (instanceRot * vec4(instancePosition, 1.0)).xyz;
+    // Position the instance in space using the rotations
+    vec3 instanceRotatedPosition = (instanceRot * vec4(instPosAdj, 1.0)).xyz;
+    vec3 rotatedInstancePosition = (globalRotation * vec4(instanceRotatedPosition, 1.0)).xyz;
 
-                vec3 rotatedInstancePosition = (globalRotation * vec4(instanceRotatedPosition, 1.0)).xyz;
+    // Calculate billboard vectors - always face camera
+    vec3 toCamera = normalize(camPos - rotatedInstancePosition);
+    vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), toCamera));
+    vec3 up = cross(toCamera, right);
 
-                vec3 rotatedVertexPosition = (globalRotation * vec4(vertexPosition * scale, 1.0)).xyz;
+    // Create billboarded vertex positions
+    vec3 offset;
+    if (cornerID == 0.0) {
+        offset = -right - up;
+        tcoord = vec2(0.0 + (pIndex * 0.5), 0.0);
+    } else if (cornerID == 1.0) {
+        offset = right - up;
+        tcoord = vec2(0.5 + (pIndex * 0.5), 0.0);
+    } else if (cornerID == 2.0) {
+        offset = right + up;
+        tcoord = vec2(0.5 + (pIndex * 0.5), 0.5);
+    } else {
+        offset = -right + up;
+        tcoord = vec2(0.0 + (pIndex * 0.5), 0.5);
+    }
 
+    // Scale the billboard
+    offset *= scale;
 
-                vec3 look = normalize(rotatedInstancePosition - camPos);
-                vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), look));
-                vec3 up = cross(look, right);
+    // Final position - this still allows rotation around origin while facing camera
+    vec3 finalPosition = rotatedInstancePosition + offset;
 
-                vec3 billboardedPosition = rotatedInstancePosition + rotatedVertexPosition + camPos;
-
-                float distance = pow(distance(instancePosition, camPos)/(5), 2)/5.0f;
-
-                gl_Position = mvp * vec4(billboardedPosition, 1.0);
-
-                vec2 baseUV = vec2(0.0 + (pIndex * 0.5), 0.0);
-
-                if (cornerID == 0.0) {
-                    tcoord = baseUV;
-                } else if (cornerID == 1.0) {
-                    tcoord = vec2(baseUV.x + 0.5f, baseUV.y);
-                } else if (cornerID == 2.0) {
-                    tcoord = vec2(baseUV.x + 0.5f, baseUV.y + 0.5);
-                } else if (cornerID == 3.0) {
-                    tcoord = vec2(baseUV.x, baseUV.y + 0.5);
-                }
-            }
+    gl_Position = mvp * vec4(finalPosition, 1.0);
+}
         )glsl",
         R"glsl(
             #version 330 core
@@ -112,11 +119,10 @@ void drawSunAndMoon(jl::Camera* camera, float timeOfDay, float dayLength)
         float index;
         float scale;
     };
-    // Assuming you have a vector or array of celestial bodies
-    static std::vector<CelestialBody> positions = {
-        CelestialBody{glm::vec3(0.0f, 2000.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 40.0f},
-        CelestialBody{glm::vec3(0.0f, 2000.0f, 0.0f), glm::vec3(3.14159265358979323846264338327f, 0.0f, 0.0f), 1.0f, 20.0f},
 
+    static std::vector<CelestialBody> positions = {
+        CelestialBody{glm::vec3(0.0f, 1000.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 40.0f},
+        CelestialBody{glm::vec3(0.0f, 1000.0f, 0.0f), glm::vec3(3.14159265358979323846264338327f, 0.0f, 0.0f), 1.0f, 20.0f},
 
 
 
@@ -136,7 +142,7 @@ void drawSunAndMoon(jl::Camera* camera, float timeOfDay, float dayLength)
             float z = posit.y * 4000.0f - 2000.0f;
             float distanceFromCenter = sqrt(x * x + z * z);
             float maxDistance = sqrt(2000.0f * 2000.0f + 2000.0f * 2000.0f); // Maximum possible distance from (0, 0)
-            float y = 4000.0f * (1.0f - 1.0f * (distanceFromCenter / maxDistance)) * 0.4; // Y decreases as distance increases
+            float y = 3000.0f * (1.0f - 1.0f * (distanceFromCenter / maxDistance)) * 0.4; // Y decreases as distance increases
 
             if (500.0f * ((float)rand() / (float)RAND_MAX) * distanceFromCenter < 20000)
             {
@@ -203,6 +209,7 @@ void drawSunAndMoon(jl::Camera* camera, float timeOfDay, float dayLength)
     glBindVertexArray(vao);
 
     static GLint camPosLoc = glGetUniformLocation(shader.shaderID, "camPos");
+    static GLint posLoc = glGetUniformLocation(shader.shaderID, "pospos");
     static GLint mvpLoc = glGetUniformLocation(shader.shaderID, "mvp");
     static GLint timeLoc = glGetUniformLocation(shader.shaderID, "time");
     static GLint rotLoc = glGetUniformLocation(shader.shaderID, "rot");
