@@ -384,7 +384,7 @@ void renderImGui()
 
                 auto cpos = editor.GetCursorPosition();
 
-                ImGui::Begin("Text Editor Demo", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar);
+                ImGui::Begin("Computer", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar);
                 ImGui::SetWindowSize(ImVec2(800, 600), ImGuiCond_Always);
                 ImGui::SetWindowPos(ImVec2((ImGui::GetIO().DisplaySize.x - 800) * 0.5f, (ImGui::GetIO().DisplaySize.y - 600) * 0.5f), ImGuiCond_Always);
 		        if (ImGui::BeginMenuBar())
