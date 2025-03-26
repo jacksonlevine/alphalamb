@@ -339,7 +339,16 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         {
             if ((scene->lastBlockAtCursor & BLOCK_ID_BITS) == COMPUTER)
             {
-                currentGuiScreen = GuiScreen::Computer;
+
+                if (currentGuiScreen == GuiScreen::InGame)
+                {
+                    currentGuiScreen = GuiScreen::Computer;
+                    uncaptureMouse(scene);
+                } else if (currentGuiScreen == GuiScreen::Computer)
+                {
+                    currentGuiScreen = GuiScreen::InGame;
+                    captureMouse(scene);
+                }
             }
         }
 
