@@ -9,8 +9,8 @@
         },
         "physx",
         "openal-soft",
-        "boost-fiber",
         "entt",
-        "cereal"
+        "cereal",
+        "pocketpy"
     ]
 }

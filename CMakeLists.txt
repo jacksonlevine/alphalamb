@@ -31,13 +31,13 @@ find_package(OpenAL CONFIG REQUIRED)
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 find_package(EnTT CONFIG REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container variant2 fiber)
+find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container variant2)
 message(STATUS "Boost version: ${Boost_VERSION}")
 find_package(imgui CONFIG REQUIRED)
 
 find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
 find_package(cereal CONFIG REQUIRED)
-
+find_package(pocketpy CONFIG REQUIRED)
 
 # Print all available targets
 message(STATUS "Available targets in CMake:")
@@ -168,6 +168,10 @@ add_executable(DistantGarden
         src/SunAndMoon.cpp
         src/BasicShader.cpp
         src/BasicGLTFShader.cpp
+        src/PythonContext.cpp
+        src/PythonContext.h
+        src/TextEditor.cpp
+        src/TextEditor.h
 )
 
 add_executable(DGServer
@@ -197,6 +201,8 @@ add_executable(DGServer
         src/SaveRegistry.h
         src/components/UUIDComponent.h
         src/SaveRegistry.cpp
+        src/PythonContext.cpp
+        src/PythonContext.h
 )
 
 target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)
@@ -207,6 +213,7 @@ function(add_common_libraries target)
 
     target_link_libraries(${target} PRIVATE EnTT::EnTT)
 
+    target_link_libraries(${target} PRIVATE pocketpy)
     target_link_libraries(${target} PRIVATE cereal::cereal)
     # Include directories
     target_include_directories(${target} PUBLIC ${CMAKE_SOURCE_DIR}/include)
@@ -214,7 +221,7 @@ function(add_common_libraries target)
     target_link_directories(${target} PUBLIC ${CMAKE_SOURCE_DIR}/lib)
     target_include_directories(${target} PRIVATE ${TINYGLTF_INCLUDE_DIRS})
     target_link_libraries(${target} PRIVATE imgui::imgui)
-    target_link_libraries(${target} PRIVATE Boost::asio Boost::uuid Boost::fiber)
+    target_link_libraries(${target} PRIVATE Boost::asio Boost::uuid)
     target_link_libraries(${target} PRIVATE Boost::lockfree)
     
     

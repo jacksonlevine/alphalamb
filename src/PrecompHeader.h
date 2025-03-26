@@ -37,6 +37,8 @@
 #include <sndfile.h>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <boost/unordered/unordered_flat_set.hpp>
+
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -51,4 +53,5 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/array.hpp>
 #include "CerealHelpers.h"
+#include <regex>
 #endif //PRECOMPHEADER_H

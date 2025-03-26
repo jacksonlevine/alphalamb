@@ -104,7 +104,7 @@ DEFINE_ENUM_WITH_STRING_CONVERSIONS(MaterialName, BlockType,
     (EUCALYPTUS_PLANKS)
     (ILLUMINITE_ORE)
     (JETPACK_PARTICLE_BLOCK)
-    (CLOUD_BLOCK)
+    (COMPUTER)
 )
 
 constexpr auto noAmbOccl = std::to_array({
@@ -264,7 +264,7 @@ constexpr std::array<BlockTextures, BLOCK_COUNT> TEXS = {{
     {{ {13, 12}, {13, 12}, {13, 12} }}, // 89 Eucalyptus Planks
     {{ {12, 4}, {12, 4}, {12, 4} }}, // 90 Illuminite Ore
     {{ {14, 14}, {14, 14}, {14, 14} }}, // 91 Jetback Particle Block
-        {{ {8,9}, {8,9}, {8,9} }} // 91 Cloud Block
+        {{ {14,3}, {14,4}, {14,4} }} // 92 Computer
 }};
 
 

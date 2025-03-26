@@ -89,6 +89,7 @@ struct Scene
     float worldIntroTimer = 0.0f;
     ALuint musicSource = 0;
     ImFont* font_title = nullptr;
+    BlockType lastBlockAtCursor = 0;
 
 
 

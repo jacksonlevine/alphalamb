@@ -10,6 +10,7 @@
 #include "LocalServerIOContext.h"
 #include "LUTLoader.h"
 #include "SunAndMoon.h"
+#include "TextEditor.h"
 #include "Texture.h"
 
 ImGuiIO* imguiio = nullptr;
@@ -365,6 +366,27 @@ void renderImGui()
         case GuiScreen::Inventory:
             {
                 imguiInventory(theScene.our<InventoryComponent>().inventory);
+                break;
+            }
+        case GuiScreen::Computer:
+            {
+
+                static TextEditor editor;
+                static bool set = false;
+                auto lang = TextEditor::LanguageDefinition::Python();
+
+                if (!set)
+                {
+                    editor.SetLanguageDefinition(lang);
+                    set = true;
+                }
+
+                auto cpos = editor.GetCursorPosition();
+
+                ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1, cpos.mColumn + 1, editor.GetTotalLines(),
+                editor.IsOverwrite() ? "Ovr" : "Ins",
+                editor.CanUndo() ? "*" : " ",
+                editor.GetLanguageDefinition().mName.c_str(), "test.py");
                 break;
             }
         case GuiScreen::SettingsMenu:

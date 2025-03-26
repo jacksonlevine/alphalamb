@@ -23,7 +23,8 @@ enum class GuiScreen
     HostPort,
     Inventory,
     Orbit,
-    SettingsMenu
+    SettingsMenu,
+    Computer
 };
 
 extern GuiScreen currentGuiScreen;

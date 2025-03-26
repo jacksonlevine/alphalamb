@@ -65,7 +65,7 @@ Scene theScene = {};
 
 constexpr double J_PI = 3.1415926535897932384626433832;
 constexpr double DEG_TO_RAD = J_PI / 180.0;
-constexpr float INTROFLYTIME = 7.0f;
+constexpr float INTROFLYTIME = 0.0f;
 
 __inline float gaussian(float x, float peak, float radius) {
     float stdDev = radius / 3.0;
@@ -187,13 +187,11 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
             auto & cam = theScene.our<jl::Camera>();
 
 
-            if (scene->multiplayer)
-            {
-
                 if (!scene->bulkPlaceGizmo->active && !scene->vmStampGizmo->active)
                 {
                     if (scene->blockSelectGizmo->isDrawing)
                     {
+
                         auto & spot = scene->blockSelectGizmo->selectedSpot;
                         IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
 
@@ -270,27 +268,6 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
 
 
 
-            } else
-            {
-                if (scene->world && scene->blockSelectGizmo && scene->worldRenderer)
-                {
-                    //std::cout << "Setting" << std::endl;
-                    auto & spot = scene->blockSelectGizmo->selectedSpot;
-                    //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
-                    //uint32_t blockThere = scene->world->get(spot);
-                    IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
-
-                    //scene->world->set(spot, AIR);
-                    //std::cout << "Set the block "  << std::endl;;
-                    scene->worldRenderer->requestChunkRebuildFromMainThread(
-                        placeSpot, scene->our<InventoryComponent>().currentHeldBlock
-                        );
-
-
-                    //std::cout << "Request filed " << std::endl;
-                }
-            }
-
 
         } else if (button == GLFW_MOUSE_BUTTON_MIDDLE)
         {
@@ -351,6 +328,14 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             {
                 currentGuiScreen = GuiScreen::InGame;
                 captureMouse(scene);
+            }
+        }
+
+        if (key == GLFW_KEY_G && action == GLFW_PRESS)
+        {
+            if ((scene->lastBlockAtCursor & BLOCK_ID_BITS) == COMPUTER)
+            {
+                currentGuiScreen = GuiScreen::Computer;
             }
         }
 
@@ -785,6 +770,12 @@ int main()
 
         if (theScene.myPlayerIndex != entt::null)
         {
+
+            if (auto t = theScene.world->tryToGetReadLockOnDMs(); t != std::nullopt)
+            {
+                theScene.lastBlockAtCursor = theScene.world->getRawLocked(theScene.blockSelectGizmo->selectedSpot);
+            }
+
             // auto pos = theScene.getOur<jl::Camera>().transform.position;
             // std::cout << "Position: " << pos.x << " " << pos.y << " " << pos.z << std::endl;
             //std::cout << "world received and stuff" << std::endl;
