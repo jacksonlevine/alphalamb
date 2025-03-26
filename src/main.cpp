@@ -65,7 +65,7 @@ Scene theScene = {};
 
 constexpr double J_PI = 3.1415926535897932384626433832;
 constexpr double DEG_TO_RAD = J_PI / 180.0;
-constexpr float INTROFLYTIME = 0.0f;
+constexpr float INTROFLYTIME = 1.0f;
 
 __inline float gaussian(float x, float peak, float radius) {
     float stdDev = radius / 3.0;
@@ -186,84 +186,88 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
         {
             auto & cam = theScene.our<jl::Camera>();
 
-
-                if (!scene->bulkPlaceGizmo->active && !scene->vmStampGizmo->active)
+                if (scene->multiplayer)
                 {
-                    if (scene->blockSelectGizmo->isDrawing)
+
+                    if (!scene->bulkPlaceGizmo->active && !scene->vmStampGizmo->active)
+                    {
+                        if (scene->blockSelectGizmo->isDrawing)
+                        {
+
+                            auto & spot = scene->blockSelectGizmo->selectedSpot;
+                            IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
+
+                            using namespace std;
+
+                            IntTup playerBlockSpot1 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y), floor(cam.transform.position.z));
+                            IntTup playerBlockSpot2 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y-1), floor(cam.transform.position.z));
+
+                            if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
+                            {
+                                //std::cout << "Senfing blokc place \n";
+                                std::cout << "Place at: " << placeSpot.x << " " << placeSpot.y << " " << placeSpot.z << " " << scene->our<InventoryComponent>().currentHeldBlock << std::endl;
+                                pushToMainToNetworkQueue(BlockSet{
+                                    placeSpot, scene->our<InventoryComponent>().currentHeldBlock
+                                });
+                            }
+                        }
+                    } else if (scene->bulkPlaceGizmo->active)
                     {
 
-                        auto & spot = scene->blockSelectGizmo->selectedSpot;
-                        IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
+                            auto playerpos = scene->our<jl::Camera>().transform.position;
 
-                        using namespace std;
+                            bool isInside =
+                            playerpos.x >= std::min(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x) &&
+                            playerpos.x <= std::max(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x) &&
+                            playerpos.y >= std::min(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y) &&
+                            playerpos.y <= std::max(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y) &&
+                            playerpos.z >= std::min(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z) &&
+                            playerpos.z <= std::max(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z);
 
-                        IntTup playerBlockSpot1 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y), floor(cam.transform.position.z));
-                        IntTup playerBlockSpot2 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y-1), floor(cam.transform.position.z));
-
-                        if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
-                        {
-                            //std::cout << "Senfing blokc place \n";
-                            std::cout << "Place at: " << placeSpot.x << " " << placeSpot.y << " " << placeSpot.z << " " << scene->our<InventoryComponent>().currentHeldBlock << std::endl;
-                            pushToMainToNetworkQueue(BlockSet{
-                                placeSpot, scene->our<InventoryComponent>().currentHeldBlock
-                            });
-                        }
-                    }
-                } else if (scene->bulkPlaceGizmo->active)
-                {
-
-                        auto playerpos = scene->our<jl::Camera>().transform.position;
-
-                        bool isInside =
-                        playerpos.x >= std::min(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x) &&
-                        playerpos.x <= std::max(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x) &&
-                        playerpos.y >= std::min(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y) &&
-                        playerpos.y <= std::max(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y) &&
-                        playerpos.z >= std::min(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z) &&
-                        playerpos.z <= std::max(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z);
-
-                        if(!isInside)
-                        {
-                            if (scene->bulkPlaceGizmo->placeMode == BulkPlaceGizmo::Solid)
+                            if(!isInside)
                             {
-                                DGMessage bulkPlace = BulkBlockSet{
-                                    .corner1 = scene->bulkPlaceGizmo->corner1, .corner2 = scene->bulkPlaceGizmo->corner2, .block = scene->our<InventoryComponent>().currentHeldBlock, .hollow = false};
-                                pushToMainToNetworkQueue(bulkPlace);
-                                scene->bulkPlaceGizmo->active = false;
-                            } else
-                            {
-                                IntTup minCorner = {
-                                    std::min(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x),
-                                    std::min(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y),
-                                    std::min(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z)
-                                };
+                                if (scene->bulkPlaceGizmo->placeMode == BulkPlaceGizmo::Solid)
+                                {
+                                    DGMessage bulkPlace = BulkBlockSet{
+                                        .corner1 = scene->bulkPlaceGizmo->corner1, .corner2 = scene->bulkPlaceGizmo->corner2, .block = scene->our<InventoryComponent>().currentHeldBlock, .hollow = false};
+                                    pushToMainToNetworkQueue(bulkPlace);
+                                    scene->bulkPlaceGizmo->active = false;
+                                } else
+                                {
+                                    IntTup minCorner = {
+                                        std::min(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x),
+                                        std::min(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y),
+                                        std::min(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z)
+                                    };
 
-                                IntTup maxCorner = {
-                                    std::max(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x),
-                                    std::max(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y),
-                                    std::max(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z)
-                                };
+                                    IntTup maxCorner = {
+                                        std::max(scene->bulkPlaceGizmo->corner1.x, scene->bulkPlaceGizmo->corner2.x),
+                                        std::max(scene->bulkPlaceGizmo->corner1.y, scene->bulkPlaceGizmo->corner2.y),
+                                        std::max(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z)
+                                    };
 
-                                DGMessage bulkPlace = BulkBlockSet{
-                                    .corner1 = minCorner, .corner2 = maxCorner, .block = scene->our<InventoryComponent>().currentHeldBlock, .hollow = true};
-                                pushToMainToNetworkQueue(bulkPlace);
-                                // DGMessage bulkCutout = BulkBlockSet{
-                                //     minCorner + IntTup(1,1,1), maxCorner + IntTup(-1,-1,-1), AIR};
-                                // pushToMainToNetworkQueue(bulkCutout);
-                                scene->bulkPlaceGizmo->active = false;
+                                    DGMessage bulkPlace = BulkBlockSet{
+                                        .corner1 = minCorner, .corner2 = maxCorner, .block = scene->our<InventoryComponent>().currentHeldBlock, .hollow = true};
+                                    pushToMainToNetworkQueue(bulkPlace);
+                                    // DGMessage bulkCutout = BulkBlockSet{
+                                    //     minCorner + IntTup(1,1,1), maxCorner + IntTup(-1,-1,-1), AIR};
+                                    // pushToMainToNetworkQueue(bulkCutout);
+                                    scene->bulkPlaceGizmo->active = false;
+                                }
+
                             }
 
-                        }
 
 
+                    } else if (scene->vmStampGizmo->active)
+                    {
+                        DGMessage vmplace = VoxModelStamp{
+                            .name = (VoxelModelName)scene->vmStampGizmo->modelIndex,
+                            .spot = scene->vmStampGizmo->spot
+                           };
+                        pushToMainToNetworkQueue(vmplace);
+                    }
 
-                } else if (scene->vmStampGizmo->active)
-                {
-                    DGMessage vmplace = VoxModelStamp{
-                        .name = (VoxelModelName)scene->vmStampGizmo->modelIndex,
-                        .spot = scene->vmStampGizmo->spot
-                       };
-                    pushToMainToNetworkQueue(vmplace);
                 }
 
 
@@ -735,7 +739,7 @@ int main()
 
     theScene.menuCamera = new jl::Camera();
     theScene.menuCamera->transform.position = glm::vec3(0.0, 1700.0f, 0.0f);
-    theScene.menuCamera->updateProjection(width, height, 60.0f);
+    theScene.menuCamera->updateProjection(width, height, 120.0f);
     theScene.menuCamera->updateWithYawPitch(0.0,-89.9);
 
     //
@@ -1455,6 +1459,10 @@ int main()
                 pos.y -= 0.5f;
 
                 glUseProgram(mainShader.shaderID);
+
+                glUniform1f(odffLoc, dewyFogFactorAtCam);
+
+                glUniform3f(fogColLoc, currAtmos.fogColor.x, currAtmos.fogColor.y, currAtmos.fogColor.z);
 
                 glUniform3f(offsetLoc, -0.5f, -0.5f, -0.5f);
                 bool isme = id == theScene.myPlayerIndex;

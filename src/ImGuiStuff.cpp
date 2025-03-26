@@ -10,6 +10,7 @@
 #include "LocalServerIOContext.h"
 #include "LUTLoader.h"
 #include "SunAndMoon.h"
+//#include "TextEditor.h"
 #include "TextEditor.h"
 #include "Texture.h"
 
