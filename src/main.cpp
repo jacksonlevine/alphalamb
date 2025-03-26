@@ -789,8 +789,11 @@ int main()
             // std::cout << "Position: " << pos.x << " " << pos.y << " " << pos.z << std::endl;
             //std::cout << "world received and stuff" << std::endl;
 
+            if (theScene.worldIntroTimer < INTROFLYTIME)
+            {
+                theScene.worldIntroTimer += deltaTime;
+            }
 
-            theScene.worldIntroTimer += deltaTime;
             updateFPS();
             theScene.timeOfDay = std::fmod(theScene.timeOfDay + deltaTime, theScene.dayLength);
 
@@ -1306,45 +1309,79 @@ int main()
             }
 
             dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, theScene.timeOfDay);
-            
 
-            if (theScene.worldIntroTimer < INTROFLYTIME)
+            if (theScene.our<jl::Camera>().transform.position.y > 300.0f)
             {
-
                 dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, 900.0f);
-                
-                //drawFullscreenKaleidoscope();
-                glClear(GL_DEPTH_BUFFER_BIT);
+
+            }
+            {
+                glUseProgram(gltfShader.shaderID);
+
+                glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
+                glActiveTexture(GL_TEXTURE0);
+
+                glBindTexture(GL_TEXTURE_2D, planet.texids.at(0));
+
+
+                glUniform1i(glGetUniformLocation(gltfShader.shaderID, "texture1"), 0);
+
+                auto down = glm::vec3(0.f, -1.f, 0.f);
+
+                glm::vec3 posToRenderAt = camera.transform.position + (down * 1500.0f) + (down * camera.transform.position.y );
+
+                glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
+                glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), theScene.worldIntroTimer * 5.0f);
+                glUniform1f(glGetUniformLocation(gltfShader.shaderID, "hideClose"), 1.0f);
+                glUniform3f(glGetUniformLocation(gltfShader.shaderID, "camPos"), camera.transform.position.x, camera.transform.position.y, camera.transform.position.z);
+
+                for(jl::ModelGLObjects &mglo : planet.modelGLObjects)
                 {
-                    glUseProgram(gltfShader.shaderID);
+                    glBindVertexArray(mglo.vao);
+                    //Indent operations on this vertex array object
+                    glDrawElements(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr);
 
-                    glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
-                    glActiveTexture(GL_TEXTURE0);
-
-                    glBindTexture(GL_TEXTURE_2D, planet.texids.at(0));
-
-
-                    glUniform1i(glGetUniformLocation(gltfShader.shaderID, "texture1"), 0);
-
-                    auto camdir = camera.transform.direction;
-
-                    glm::vec3 posToRenderAt = camera.transform.position + (camdir * 1950.0f) + (camdir * (1800.0f - 1800.0f *(theScene.worldIntroTimer / (INTROFLYTIME ))));
-
-                    glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
-                    glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), theScene.worldIntroTimer * 5.0f);
-                    glUniform1f(glGetUniformLocation(gltfShader.shaderID, "hideClose"), 1.0f);
-                    glUniform3f(glGetUniformLocation(gltfShader.shaderID, "camPos"), camera.transform.position.x, camera.transform.position.y, camera.transform.position.z);
-
-                    for(jl::ModelGLObjects &mglo : planet.modelGLObjects)
-                    {
-                        glBindVertexArray(mglo.vao);
-                        //Indent operations on this vertex array object
-                        glDrawElements(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr);
-
-                        glBindVertexArray(0);
-                    }
+                    glBindVertexArray(0);
                 }
             }
+
+            // if (theScene.worldIntroTimer < INTROFLYTIME)
+            // {
+            //
+            //     dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, 900.0f);
+            //
+            //     //drawFullscreenKaleidoscope();
+            //     //glClear(GL_DEPTH_BUFFER_BIT);
+            //     {
+            //         glUseProgram(gltfShader.shaderID);
+            //
+            //         glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
+            //         glActiveTexture(GL_TEXTURE0);
+            //
+            //         glBindTexture(GL_TEXTURE_2D, planet.texids.at(0));
+            //
+            //
+            //         glUniform1i(glGetUniformLocation(gltfShader.shaderID, "texture1"), 0);
+            //
+            //         auto camdir = camera.transform.direction;
+            //
+            //         glm::vec3 posToRenderAt = camera.transform.position + (camdir * 1950.0f) + (camdir * (1800.0f - 1800.0f *(theScene.worldIntroTimer / (INTROFLYTIME ))));
+            //
+            //         glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
+            //         glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), theScene.worldIntroTimer * 5.0f);
+            //         glUniform1f(glGetUniformLocation(gltfShader.shaderID, "hideClose"), 1.0f);
+            //         glUniform3f(glGetUniformLocation(gltfShader.shaderID, "camPos"), camera.transform.position.x, camera.transform.position.y, camera.transform.position.z);
+            //
+            //         for(jl::ModelGLObjects &mglo : planet.modelGLObjects)
+            //         {
+            //             glBindVertexArray(mglo.vao);
+            //             //Indent operations on this vertex array object
+            //             glDrawElements(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr);
+            //
+            //             glBindVertexArray(0);
+            //         }
+            //     }
+            // }
 
 
             glUseProgram(mainShader.shaderID);

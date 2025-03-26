@@ -49,6 +49,7 @@ uniform float scale;
             out vec3 ppos;
             out vec3 grassColor;
             out float timeRended;
+            uniform vec3 camPos;
 
             void main()
             {
@@ -66,7 +67,12 @@ uniform float scale;
                 vec3 scaledPos = vec3(rotpos.x * scale, rotpos.y * scale, rotpos.z * scale);
                 vec3 pos2 = (scaledPos.xyz + pos + vec3(0.0, 0.0, 0.0));
 
+
+
                 ppos = pos2;
+
+                float distFromCP = distance(camPos.xz, pos2.xz);
+                pos2.y -= pow(distFromCP* 0.025, 2);
                 gl_Position = mvp * vec4(pos2, 1.0);
                 if(isGrass == 1.0) {
 
