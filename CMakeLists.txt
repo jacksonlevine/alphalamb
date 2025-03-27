@@ -173,6 +173,10 @@ add_executable(DistantGarden
         src/TextEditor.cpp
         src/TextEditor.h
         src/specialblocks/Computer.h
+        src/components/ComputerComponent.cpp
+        src/components/ComputerComponent.h
+        src/components/NPPositionComponent.cpp
+        src/components/NPPositionComponent.h
 )
 
 add_executable(DGServer
@@ -204,6 +208,10 @@ add_executable(DGServer
         src/SaveRegistry.cpp
         src/PythonContext.cpp
         src/PythonContext.h
+        src/components/ComputerComponent.cpp
+        src/components/ComputerComponent.h
+        src/components/NPPositionComponent.cpp
+        src/components/NPPositionComponent.h
 )
 
 target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)
