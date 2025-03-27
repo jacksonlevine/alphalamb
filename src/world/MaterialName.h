@@ -104,11 +104,11 @@ DEFINE_ENUM_WITH_STRING_CONVERSIONS(MaterialName, BlockType,
     (EUCALYPTUS_PLANKS)
     (ILLUMINITE_ORE)
     (JETPACK_PARTICLE_BLOCK)
-    (COMPUTER)
+    (DG_COMPUTERBLOCK)
 )
 
 constexpr auto noAmbOccl = std::to_array({
-    FENCE, GLASS});
+    FENCE, GLASS,DG_COMPUTERBLOCK});
 
 
 constexpr auto transparents = std::to_array({

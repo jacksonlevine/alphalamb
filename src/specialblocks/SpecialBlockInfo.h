@@ -9,9 +9,9 @@
 
 using addBlockFunc = std::function<void(UsableMesh&, uint32_t, IntTup, PxU32 &, PxU32 &)>;
 
-using setBitsFunc = std::function<void(World*, IntTup)>;
+using setBitsFunc = std::function<void(World*, IntTup, const glm::vec3& /*player pos in case we wanna face block toward player on place*/)>;
 
-inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, MaterialName block, UsableMesh& outmesh, IntTup position, PxU32& index, PxU32& tindex)
+inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<float> &brightnesses, MaterialName block, UsableMesh& outmesh, IntTup position, PxU32& index, PxU32& tindex)
 {
 
     auto & tex = TEXS[(int)block];
@@ -61,7 +61,7 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, MaterialName 
 
         for (int i = 0; i < cwtriangles.size()/4; i++)
         {
-            outmesh.tbrightness.insert(outmesh.tbrightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass});
+            outmesh.tbrightness.insert(outmesh.tbrightness.end(), {brightnesses[i], isGrass, brightnesses[i], isGrass, brightnesses[i], isGrass, brightnesses[i], isGrass});
         }
 
 
@@ -97,7 +97,7 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, MaterialName 
 
         for (int i = 0; i < cwtriangles.size()/4; i++)
         {
-            outmesh.brightness.insert(outmesh.brightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass});
+            outmesh.brightness.insert(outmesh.brightness.end(), {brightnesses[i], isGrass, brightnesses[i], isGrass, brightnesses[i], isGrass, brightnesses[i], isGrass});
         }
 
     }

@@ -9,6 +9,7 @@
 #include "SpecialBlockInfo.h"
 #include "Stairs.h"
 #include "../PrecompHeader.h"
+#include "Computer.h"
 
 constexpr std::optional<addBlockFunc> findSpecialBlockMeshFunc(MaterialName bt)
 {
@@ -20,6 +21,8 @@ constexpr std::optional<addBlockFunc> findSpecialBlockMeshFunc(MaterialName bt)
         return addStairs<STONE>;
     case WOOD_STAIRS:
         return addStairs<WOOD_PLANKS>;
+    case DG_COMPUTERBLOCK:
+        return addComputer;
     default:
         return std::nullopt;
     }
@@ -35,6 +38,8 @@ constexpr std::optional<setBitsFunc> findSpecialSetBits(MaterialName bt)
             return setStairBits<STONE_STAIRS>;
         case WOOD_STAIRS:
             return setStairBits<WOOD_STAIRS>;
+        case DG_COMPUTERBLOCK:
+            return setComputerBits;
         default:
             return std::nullopt;
     }

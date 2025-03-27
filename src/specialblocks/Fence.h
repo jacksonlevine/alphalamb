@@ -7,7 +7,7 @@
 
 #include "SpecialBlockInfo.h"
 
-inline void setFenceBits(World* world, IntTup spot)
+inline void setFenceBits(World* world, IntTup spot, const glm::vec3& pp )
 {
     static std::vector<IntTup> neighbs = {
         IntTup(1, 0, 0),
@@ -90,6 +90,21 @@ inline void addFence(UsableMesh& mesh, BlockType block, IntTup position, PxU32& 
         PxVec3(postDistFromEdge, 0.0f, 1.0f - postDistFromEdge),
 
     };
+    static std::vector<float> basePostBrightnesses = {
+        0.9f,
+        0.8f,
+        0.7f,
+        0.5f,
+        1.0f,
+        0.4f
+    };
+
+    static std::vector<float> baseConnectyBitBrightnesses = {
+        0.6f,
+        1.0f,
+        0.7f,
+        0.4f
+    };
 
     static std::vector<PxVec3> baseConnectyBit = { // Corrected clockwise ordering for each face
         // Front (clockwise, viewed from outside)
@@ -135,12 +150,12 @@ inline void addFence(UsableMesh& mesh, BlockType block, IntTup position, PxU32& 
     {
         if ((block & bits[i]))
         {
-            addShapeWithMaterial(connectyBits[i], WOOD_PLANKS, mesh, position, index, tindex);
+            addShapeWithMaterial(connectyBits[i], baseConnectyBitBrightnesses, WOOD_PLANKS, mesh, position, index, tindex);
         }
     }
 
 
-    addShapeWithMaterial(basePost, WOOD_PLANKS, mesh, position, index, tindex);
+    addShapeWithMaterial(basePost, basePostBrightnesses, WOOD_PLANKS, mesh, position, index, tindex);
 
 
 

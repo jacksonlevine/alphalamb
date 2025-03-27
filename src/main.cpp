@@ -207,7 +207,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                                 //std::cout << "Senfing blokc place \n";
                                 std::cout << "Place at: " << placeSpot.x << " " << placeSpot.y << " " << placeSpot.z << " " << scene->our<InventoryComponent>().currentHeldBlock << std::endl;
                                 pushToMainToNetworkQueue(BlockSet{
-                                    placeSpot, scene->our<InventoryComponent>().currentHeldBlock
+                                    .spot = placeSpot, .block =  scene->our<InventoryComponent>().currentHeldBlock, .pp = cam.transform.position
                                 });
                             }
                         }
@@ -337,7 +337,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
         if (key == GLFW_KEY_G && action == GLFW_PRESS)
         {
-            if ((scene->lastBlockAtCursor & BLOCK_ID_BITS) == COMPUTER)
+            if ((scene->lastBlockAtCursor & BLOCK_ID_BITS) == DG_COMPUTERBLOCK)
             {
 
                 if (currentGuiScreen == GuiScreen::InGame)
@@ -801,8 +801,10 @@ int main()
             updateFPS();
             theScene.timeOfDay = std::fmod(theScene.timeOfDay + deltaTime, theScene.dayLength);
 
+
             if (theScene.blockSelectGizmo->hitting)
             {
+                auto ourpp = theScene.our<jl::Camera>().transform.position;
                 if (theScene.blockSelectGizmo->hitProgress < BLOCK_BREAK_TIME)
                 {
                     theScene.blockSelectGizmo->hitProgress += deltaTime;
@@ -823,7 +825,7 @@ int main()
                                 auto & spot = theScene.blockSelectGizmo->selectedSpot;
                                 //std::cout << "Senfing blokc chagne \n";
                                 pushToMainToNetworkQueue(BlockSet{
-                                    spot, AIR
+                                   .spot = spot, .block = AIR, .pp = glm::vec3(0.f)
                                 });
 
                             } else
@@ -852,7 +854,7 @@ int main()
                                     auto zmod = properMod(spot.z, cs);
                                     //std::cout << "Xmod: " << xmod << " Zmod: " << zmod << std::endl;
                                     theScene.worldRenderer->requestChunkRebuildFromMainThread(
-                                        spot, AIR, false
+                                        spot, AIR, false, ourpp
                                         );
 
                                     if(xmod == WorldRenderer::chunkSize - 1)
@@ -1182,7 +1184,7 @@ int main()
                                 auto zmod = properMod(spot.z, cs);
 
                                 scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                    spot, m.block, false
+                                    spot, m.block, false, m.pp
                                     );
 
 

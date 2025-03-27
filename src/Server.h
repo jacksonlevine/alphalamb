@@ -368,7 +368,8 @@ private:
                         if(auto func = findSpecialSetBits((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
                         {
                             std::cout << "Calling custom func on server \n";
-                            func.value()(&serverWorld, m.spot);
+                            auto campos = m.pp;
+                            func.value()(&serverWorld, m.spot, campos);
 
                         } else
                         {

@@ -765,7 +765,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         //std::cout <<"Doing the fucking write to " << request.changeSpot.x << " " << request.changeSpot.y << " " << request.changeSpot.z << " \n";
                         if (auto sbf = findSpecialSetBits((MaterialName)request.changeTo.value()); sbf != std::nullopt)
                         {
-                            sbf.value()(world, request.changeSpot);
+                            sbf.value()(world, request.changeSpot, request.playerPosAtPlaceTime);
                         } else
                         {
                             world->set(request.changeSpot, request.changeTo.value());

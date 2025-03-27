@@ -3,7 +3,7 @@
 
 #include "SpecialBlockInfo.h"
 template <MaterialName stairID>
-inline void setStairBits(World* world, IntTup spot)
+inline void setStairBits(World* world, IntTup spot, const glm::vec3& pp)
 {
     static std::vector<IntTup> neighbs = {
         IntTup(1, 0, 0),
@@ -43,6 +43,14 @@ template <MaterialName stairMaterial>
 inline void addStairs(UsableMesh& mesh, BlockType block, IntTup position, PxU32& index, PxU32& tindex)
 {
     // Base half-slab vertices
+    static std::vector<float> baseHalfSlabBrightnesses = {
+        0.6f,
+        0.5f,
+        0.7f,
+        0.8f,
+        1.0f,
+        0.5f
+    };
     static std::vector<PxVec3> baseHalfSlab = {
         // Front
         PxVec3(0.0f, 0.0f, 0.0f),
@@ -80,7 +88,13 @@ inline void addStairs(UsableMesh& mesh, BlockType block, IntTup position, PxU32&
         PxVec3(1.0f, 0.0f, 1.0f),
         PxVec3(0.0f, 0.0f, 1.0f),
     };
-
+    static std::vector<float> topBackXBrightnesses = {
+        0.6f,
+        0.7f,
+        0.6f,
+        0.8f,
+        1.0f
+    };
     // Top back section for +X connection (faces east)
     static std::vector<PxVec3> topBackX = {
         // Front
@@ -132,14 +146,14 @@ inline void addStairs(UsableMesh& mesh, BlockType block, IntTup position, PxU32&
     };
 
     // First add the base half-slab
-    addShapeWithMaterial(baseHalfSlab, stairMaterial, mesh, position, index, tindex);
+    addShapeWithMaterial(baseHalfSlab, baseHalfSlabBrightnesses, stairMaterial, mesh, position, index, tindex);
 
     // Then add the top back sections for each set connection bit
     for (int i = 0; i < 4; i++)
     {
         if (block & bits[i])
         {
-            addShapeWithMaterial(topBackSections[i], stairMaterial, mesh, position, index, tindex);
+            addShapeWithMaterial(topBackSections[i], topBackXBrightnesses, stairMaterial, mesh, position, index, tindex);
         }
     }
 }

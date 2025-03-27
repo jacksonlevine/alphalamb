@@ -23,22 +23,24 @@ struct ChunkRebuildRequest {
     bool isVoxelModel = false;
     PlacedVoxModel vm = {};
 
+    glm::vec3 playerPosAtPlaceTime = glm::vec3(0.f);
+
     std::optional<BlockType> changeTo = std::nullopt;
     std::chrono::steady_clock::time_point timestamp;
     ChunkRebuildRequest(TwoIntTup pos, size_t index, bool priority)
         : chunkPos(pos), chunkIndex(index), isHighPriority(priority),
           timestamp(std::chrono::steady_clock::now()) {}
     ChunkRebuildRequest(BlockArea area)
-        : chunkPos(TwoIntTup(0,0)), chunkIndex(0), isHighPriority(true), isArea(true), area(area),
+        : chunkPos(TwoIntTup(0,0)), isHighPriority(true), isArea(true), area(area),
           timestamp(std::chrono::steady_clock::now()) {}
     ChunkRebuildRequest(PlacedVoxModel vm)
-        : chunkPos(TwoIntTup(0,0)), chunkIndex(0), isHighPriority(true), isVoxelModel(true), vm(vm),
+        : chunkPos(TwoIntTup(0,0)), isHighPriority(true), isVoxelModel(true), vm(vm),
           timestamp(std::chrono::steady_clock::now()) {}
-    ChunkRebuildRequest(TwoIntTup pos, size_t index, bool priority, IntTup changeSpot, BlockType changeTo)
-        : chunkPos(pos), chunkIndex(index), isHighPriority(priority), changeSpot(changeSpot), changeTo(changeTo),
+    ChunkRebuildRequest(TwoIntTup pos, size_t index, bool priority, IntTup changeSpot, BlockType changeTo, const glm::vec3& playerPosAtPlaceTime)
+        : chunkPos(pos), chunkIndex(index), isHighPriority(priority), changeSpot(changeSpot), changeTo(changeTo), playerPosAtPlaceTime(playerPosAtPlaceTime),
           timestamp(std::chrono::steady_clock::now()) {}
-    ChunkRebuildRequest(TwoIntTup pos, size_t index, bool priority, IntTup changeSpot, BlockType changeTo, bool rebuild)
-        : chunkPos(pos), chunkIndex(index), isHighPriority(priority), changeSpot(changeSpot), changeTo(changeTo), rebuild(rebuild),
+    ChunkRebuildRequest(TwoIntTup pos, size_t index, bool priority, IntTup changeSpot, BlockType changeTo, bool rebuild, const glm::vec3& playerPosAtPlaceTime)
+        : chunkPos(pos), chunkIndex(index), isHighPriority(priority), changeSpot(changeSpot), changeTo(changeTo), rebuild(rebuild), playerPosAtPlaceTime(playerPosAtPlaceTime),
           timestamp(std::chrono::steady_clock::now()) {}
     ChunkRebuildRequest()
         : chunkPos(0, 0), chunkIndex(0), isHighPriority(false), timestamp(std::chrono::steady_clock::now()) {}

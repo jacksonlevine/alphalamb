@@ -172,6 +172,7 @@ add_executable(DistantGarden
         src/PythonContext.h
         src/TextEditor.cpp
         src/TextEditor.h
+        src/specialblocks/Computer.h
 )
 
 add_executable(DGServer

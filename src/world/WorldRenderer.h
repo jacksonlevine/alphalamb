@@ -321,7 +321,7 @@ public:
         rebuildQueue.push(ChunkRebuildRequest(vox));
     }
 
-    void requestChunkRebuildFromMainThread(const IntTup& spot, std::optional<BlockType> changeTo = std::nullopt, bool rebuild = true)
+    void requestChunkRebuildFromMainThread(const IntTup& spot, std::optional<BlockType> changeTo = std::nullopt, bool rebuild = true, const glm::vec3& pp = glm::vec3(0.f))
     {
         //TwoIntTup version of spot
         auto titspot = TwoIntTup(spot.x, spot.z);
@@ -337,7 +337,8 @@ public:
                     true,
                     spot,
                     changeTo.value(),
-                    rebuild
+                    rebuild,
+                    pp
                 ));
             } else
             {

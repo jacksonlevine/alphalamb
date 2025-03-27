@@ -51,6 +51,7 @@ struct BlockSet
 {
     IntTup spot;
     BlockType block;
+    glm::vec3 pp;
 };
 
 
