@@ -391,12 +391,13 @@ void renderImGui()
 		        {
 			        if (ImGui::BeginMenu("File"))
 			        {
-				        if (ImGui::MenuItem("Save"))
-				        {
-					        auto textToSave = editor.GetText();
-					        /// save text....
-				        }
+				        // if (ImGui::MenuItem("Save"))
+				        // {
+					       //  auto textToSave = editor.GetText();
+					       //  /// save text....
+				        // }
 				        if (ImGui::MenuItem("Quit", "Alt-F4"))
+				            currentGuiScreen = GuiScreen::InGame;
 					        break;
 				        ImGui::EndMenu();
 			        }
