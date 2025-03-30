@@ -177,6 +177,8 @@ add_executable(DistantGarden
         src/components/ComputerComponent.h
         src/components/NPPositionComponent.cpp
         src/components/NPPositionComponent.h
+        src/ComputerScreenRenderer.cpp
+        src/ComputerScreenRenderer.h
 )
 
 add_executable(DGServer
