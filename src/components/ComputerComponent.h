@@ -4,6 +4,7 @@
 
 #ifndef COMPUTERCOMPONENT_H
 #define COMPUTERCOMPONENT_H
+#include "NPPositionComponent.h"
 #include "../Camera.h"
 #include "../Shader.h"
 #include "../TextEditor.h"
@@ -21,6 +22,7 @@ public:
         editor.SetLanguageDefinition(TextEditor::LanguageDefinition::Python());
     }
 
+    ///This initializes the gl objects lazily when called, so that the server wont have any gl objects
     void renderEditorToFBO(TextEditor& editor) {
         if(fbo == 0)
         {
@@ -44,6 +46,10 @@ public:
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        int width = entt::monostate<entt::hashed_string("swidth")>{};
+        int height = entt::monostate<entt::hashed_string("sheight")>{};
+        
+        glViewport(0, 0, width, height);
     }
 
     ComputerComponent& operator=(const ComputerComponent& other) = delete;
@@ -71,19 +77,32 @@ public:
     {
         using namespace glm;
 
+        renderEditorToFBO(editor);
 
-
-        auto shad = jl::Shader(R"glsl(
+        static jl::Shader shad = jl::Shader(R"glsl(
                 #version 330 core
-            layout(location = 0) in vec3 inPosition;
-            layout(location = 1) in vec2 inTexCoord;
-            void main()
-            {
-            }
+                layout(location = 0) in vec3 inPosition;
+                layout(location = 1) in vec2 inTexCoord;
+                out vec2 texCoord;
 
+                uniform mat4 mvp;
+                uniform vec3 pos;
+
+                void main()
+                {
+                    texCoord = inTexCoord;
+                    gl_Position = mvp * vec4(inPosition + pos, 1.0);
+                }
             )glsl",
-            R"glsl(
-
+                    R"glsl(
+                #version 330 core
+                out vec4 FragColor;
+                uniform sampler2D ourTexture;
+                in vec2 texCoord;
+                void main()
+                {
+                    FragColor = texture(ourTexture, texCoord);
+                }
             )glsl",
             "compScreenShad");
 
@@ -106,9 +125,9 @@ public:
             vec2(0.f, 0.f),
         };
 
-        GLuint vao = 0;
-        GLuint vbo = 0;
-        GLuint uvvbo = 0;
+        static GLuint vao = 0;
+        static GLuint vbo = 0;
+        static GLuint uvvbo = 0;
 
         if(vao == 0)
         {
@@ -129,9 +148,34 @@ public:
             glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vec2), (void*)0);
         }
 
+        glBindVertexArray(vao);
+        glUseProgram(shad.shaderID);
+        glUniformMatrix4fv(glGetUniformLocation(shad.shaderID, "mvp"), 1, GL_FALSE,
+            glm::value_ptr(camera.mvp));
+        glUniform3f(glGetUniformLocation(shad.shaderID, "pos"), pos.x, pos.y, pos.z);
+        glActiveTexture(GL_TEXTURE0);
+
+        glBindTexture(GL_TEXTURE_2D, scrnTex);
+        glUniform1i(glGetUniformLocation(shad.shaderID, "ourTexture"), 0);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
 
     }
 };
+
+
+
+inline void drawComputerScreensInReg(entt::registry& reg, jl::Camera& camera)
+{
+    auto view = reg.view<ComputerComponent, NPPositionComponent>();
+    for (auto entity : view)
+    {
+        auto& pos = view.get<NPPositionComponent>(entity);
+        auto& comp = view.get<ComputerComponent>(entity);
+
+        comp.drawAtPos(pos.position, camera);
+    }
+}
 
 
 

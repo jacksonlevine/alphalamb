@@ -65,7 +65,6 @@ Scene theScene = {};
 
 constexpr double J_PI = 3.1415926535897932384626433832;
 constexpr double DEG_TO_RAD = J_PI / 180.0;
-constexpr float INTROFLYTIME = 1.0f;
 
 __inline float gaussian(float x, float peak, float radius) {
     float stdDev = radius / 3.0;
@@ -464,7 +463,7 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
     static double lastx = 0.0;
     static double lasty = 0.0;
     Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
-    if(scene->mouseCaptured && scene->worldIntroTimer > INTROFLYTIME)
+    if(scene->mouseCaptured)
     {
 
         if(scene->firstMouse)
@@ -505,6 +504,9 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
         scene->guiCamera->updateProjection(width, height, 60.0f);
         scene->menuCamera->updateProjection(width, height, 60.0f);
     }
+
+    entt::monostate<entt::hashed_string{"swidth"}>{} = width;
+    entt::monostate<entt::hashed_string{"sheight"}>{} = height;
 
     if(scene->hud)
     {
@@ -622,8 +624,9 @@ int main()
     };
 
 
-    // Connect using the function pointer
     theScene.REG.on_construct<PhysicsComponent>().connect<&onPhysicsComponentAdded>();
+    entt::monostate<entt::hashed_string{"swidth"}>{} = 800;
+    entt::monostate<entt::hashed_string{"sheight"}>{} = 800;
 
     glfwSetKeyCallback(window, keyCallback);
     glfwSetCursorPosCallback(window, cursorPosCallback);
@@ -793,10 +796,7 @@ int main()
             // std::cout << "Position: " << pos.x << " " << pos.y << " " << pos.z << std::endl;
             //std::cout << "world received and stuff" << std::endl;
 
-            if (theScene.worldIntroTimer < INTROFLYTIME)
-            {
-                theScene.worldIntroTimer += deltaTime;
-            }
+
 
             updateFPS();
             theScene.timeOfDay = std::fmod(theScene.timeOfDay + deltaTime, theScene.dayLength);
@@ -895,7 +895,7 @@ int main()
             std::vector<AnimationState> animStates;
             // billboards.reserve(10);
             // animStates.reserve(10);
-            auto simscene = (theScene.worldIntroTimer > INTROFLYTIME);
+            auto simscene = theScene.worldReceived.load();
 
             auto playerView = theScene.REG.view<RenderComponent, PhysicsComponent, Controls, jl::Camera, MovementComponent, InventoryComponent, ParticleEffectComponent>();
 
@@ -988,24 +988,25 @@ int main()
 
                     PlayerUpdate(deltaTime, &world, particles, renderComponent, physicsComponent, movementComponent, controls, camera, particleComponent, inventory);
                 }
-            } else
-            {
-                //camera intro part
-
-                auto & cam = theScene.our<jl::Camera>();
-                cam.updateWithYawPitch(0.0f, -89.9f);
-
-                static bool thingset = false;
-                static glm::vec3 origspot = {};
-                if(!thingset)
-                {
-                    thingset = true;
-                    origspot = cam.transform.position;
-                }
-
-
-                cam.transform.position.y = origspot.y  + (1800.0f - 1800.0f *(theScene.worldIntroTimer / (INTROFLYTIME )));
             }
+            // else
+            // {
+            //     //camera intro part
+            //
+            //     // auto & cam = theScene.our<jl::Camera>();
+            //     // cam.updateWithYawPitch(0.0f, -89.9f);
+            //     //
+            //     // static bool thingset = false;
+            //     // static glm::vec3 origspot = {};
+            //     // if(!thingset)
+            //     // {
+            //     //     thingset = true;
+            //     //     origspot = cam.transform.position;
+            //     // }
+            //
+            //
+            //     //cam.transform.position.y = origspot.y  + (1800.0f - 1800.0f *(theScene.worldIntroTimer / (INTROFLYTIME )));
+            // }
 
 
         //     for (auto & [id, player] : theScene.players)
@@ -1180,7 +1181,7 @@ int main()
                         //If adding block entity
                             if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
                             {
-                                std::cout << "Calling custom entity create on server \n";
+                                std::cout << "Calling custom entity create on client \n";
                                 func.value()(theScene.REG, m.spot);
                             }
                         //If removing block entity
@@ -1188,6 +1189,7 @@ int main()
                             {
                                 if(auto f = findEntityRemoveFunc((MaterialName)blockThere); f != std::nullopt)
                                 {
+                                    std::cout << "Calling custom entity destroy on client \n";
                                     f.value()(theScene.REG, m.spot);
                                 }
                             }
@@ -1655,7 +1657,7 @@ int main()
 
             drawSunAndMoon(&camera, theScene.timeOfDay, theScene.dayLength, camera.transform.position);
 
-
+            drawComputerScreensInReg(theScene.REG, camera);
 
 
 
