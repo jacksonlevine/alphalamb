@@ -8,6 +8,7 @@
 
 
 class NPPositionComponent {
+public:
     glm::vec3 position;
 };
 

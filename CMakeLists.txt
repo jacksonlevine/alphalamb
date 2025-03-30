@@ -179,6 +179,7 @@ add_executable(DistantGarden
         src/components/NPPositionComponent.h
         src/ComputerScreenRenderer.cpp
         src/ComputerScreenRenderer.h
+        src/specialblocks/FindEntityCreateFunc.h
 )
 
 add_executable(DGServer
@@ -214,6 +215,7 @@ add_executable(DGServer
         src/components/ComputerComponent.h
         src/components/NPPositionComponent.cpp
         src/components/NPPositionComponent.h
+        src/specialblocks/FindEntityCreateFunc.h
 )
 
 target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)

@@ -6,6 +6,36 @@
 #define DGCOMPUTER_H
 
 #include "SpecialBlockInfo.h"
+#include "../components/ComputerComponent.h"
+#include "../components/NPPositionComponent.h"
+
+inline void addComputerEntity(entt::registry& reg, IntTup spot)
+{
+    auto id = reg.create();
+    reg.emplace<ComputerComponent>(id);
+    reg.emplace<NPPositionComponent>(id, glm::vec3(spot.x, spot.y, spot.z));
+}
+
+inline void removeComputerEntity(entt::registry& reg, IntTup spot)
+{
+    auto view = reg.view<ComputerComponent, NPPositionComponent>();
+
+    entt::entity matched = entt::null;
+    for(auto entity : view)
+    {
+        auto & comp = view.get<ComputerComponent>(entity);
+        auto & nppos = view.get<NPPositionComponent>(entity);
+        if(nppos.position == glm::vec3(spot.x, spot.y, spot.z))
+        {
+            matched = entity;
+            break;
+        }
+    }
+    if(matched != entt::null)
+    {
+        reg.destroy(matched);
+    }
+}
 
 inline void setComputerBits(World* world, IntTup spot, const glm::vec3& pp )
 {

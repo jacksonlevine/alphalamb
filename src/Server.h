@@ -12,6 +12,7 @@
 #include "PlayerInfoMapKeyedByUID.h"
 #include "components/PlayerEmplacer.h"
 #include "components/UUIDComponent.h"
+#include "specialblocks/FindEntityCreateFunc.h"
 #include "specialblocks/FindSpecialBlock.h"
 #include "world/DataMap.h"
 #include "world/World.h"
@@ -365,6 +366,9 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
                         std::cout << "Got block set" << m.block << "\n";
+
+                        auto blockThere = serverWorld.get(m.spot);
+
                         if(auto func = findSpecialSetBits((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
                         {
                             std::cout << "Calling custom func on server \n";
@@ -374,6 +378,21 @@ private:
                         } else
                         {
                             serverWorld.userDataMap->set(m.spot, m.block);
+                        }
+                        //Adding block entity
+                        if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
+                        {
+                            std::cout << "Calling custom entity create on server " << std::endl;
+                            func.value()(serverReg, m.spot);
+                        }
+                        //Removing block entity
+                        if(m.block == AIR)
+                        {
+                            if(auto f = findEntityRemoveFunc((MaterialName)(blockThere)); f != std::nullopt)
+                            {
+                                std::cout << "Calling entity remove on spot " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
+                                f.value()(serverReg, m.spot);
+                            }
                         }
 
                         redistrib = true;

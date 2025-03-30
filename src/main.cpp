@@ -1177,6 +1177,21 @@ int main()
                                                              12, (MaterialName)blockThere, 0.8, 0.0f);
                             }
 
+                        //If adding block entity
+                            if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
+                            {
+                                std::cout << "Calling custom entity create on server \n";
+                                func.value()(theScene.REG, m.spot);
+                            }
+                        //If removing block entity
+                            if(m.block == AIR)
+                            {
+                                if(auto f = findEntityRemoveFunc((MaterialName)blockThere); f != std::nullopt)
+                                {
+                                    f.value()(theScene.REG, m.spot);
+                                }
+                            }
+
                             if (m.block == AIR || findSpecialBlockMeshFunc((MaterialName)(m.block & BLOCK_ID_BITS)) != std::nullopt)
                             {
                                 auto cs = scene->worldRenderer->chunkSize;
@@ -1319,36 +1334,34 @@ int main()
             if (theScene.our<jl::Camera>().transform.position.y > 300.0f)
             {
                 dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, 900.0f);
-
-            }
-            {
-                glUseProgram(gltfShader.shaderID);
-
-                glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
-                glActiveTexture(GL_TEXTURE0);
-
-                glBindTexture(GL_TEXTURE_2D, planet.texids.at(0));
-
-
-                glUniform1i(glGetUniformLocation(gltfShader.shaderID, "texture1"), 0);
-
-                auto down = glm::vec3(0.f, -1.f, 0.f);
-
-                glm::vec3 posToRenderAt = camera.transform.position + (down * 1500.0f) + (down * camera.transform.position.y );
-
-                glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
-                glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), theScene.worldIntroTimer * 5.0f);
-                glUniform1f(glGetUniformLocation(gltfShader.shaderID, "hideClose"), 1.0f);
-                glUniform3f(glGetUniformLocation(gltfShader.shaderID, "camPos"), camera.transform.position.x, camera.transform.position.y, camera.transform.position.z);
-
-                for(jl::ModelGLObjects &mglo : planet.modelGLObjects)
-                {
-                    glBindVertexArray(mglo.vao);
-                    //Indent operations on this vertex array object
-                    glDrawElements(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr);
-
-                    glBindVertexArray(0);
-                }
+                //
+                // glUseProgram(gltfShader.shaderID);
+                //
+                // glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
+                // glActiveTexture(GL_TEXTURE0);
+                //
+                // glBindTexture(GL_TEXTURE_2D, planet.texids.at(0));
+                //
+                //
+                // glUniform1i(glGetUniformLocation(gltfShader.shaderID, "texture1"), 0);
+                //
+                // auto down = glm::vec3(0.f, -1.f, 0.f);
+                //
+                // glm::vec3 posToRenderAt = camera.transform.position + (down * 1700.0f) + (down * camera.transform.position.y );
+                //
+                // glUniform3f(glGetUniformLocation(gltfShader.shaderID, "pos"), posToRenderAt.x, posToRenderAt.y, posToRenderAt.z);
+                // glUniform1f(glGetUniformLocation(gltfShader.shaderID, "rot"), theScene.worldIntroTimer * 5.0f);
+                // glUniform1f(glGetUniformLocation(gltfShader.shaderID, "hideClose"), 1.0f);
+                // glUniform3f(glGetUniformLocation(gltfShader.shaderID, "camPos"), camera.transform.position.x, camera.transform.position.y, camera.transform.position.z);
+                //
+                // for(jl::ModelGLObjects &mglo : planet.modelGLObjects)
+                // {
+                //     glBindVertexArray(mglo.vao);
+                //     //Indent operations on this vertex array object
+                //     glDrawElements(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr);
+                //
+                //     glBindVertexArray(0);
+                // }
             }
 
             // if (theScene.worldIntroTimer < INTROFLYTIME)
@@ -1405,6 +1418,7 @@ int main()
             static GLuint abLoc = glGetUniformLocation(mainShader.shaderID, "ambientBrightness");
             static GLuint fogColLoc = glGetUniformLocation(mainShader.shaderID, "fogCol");
             static GLuint odffLoc = glGetUniformLocation(mainShader.shaderID, "overridingDewyFogFactor");
+            static GLuint wcaLoc = glGetUniformLocation(mainShader.shaderID, "worldCurveAmount");
 
             glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera.mvp));
             glActiveTexture(GL_TEXTURE0);
@@ -1416,6 +1430,7 @@ int main()
             glUniform1f(rotLoc, 0.0f);
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
             glUniform1f(scaleLoc, 1.0f);
+            glUniform1f( wcaLoc, campos.y > 230.f ? glm::max(0.f, std::min(50.f, campos.y - 230.f)) / 50.f : 0.f );
 
             auto ourCam = theScene.our<jl::Camera>().transform.position;
             IntTup itspot(

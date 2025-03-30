@@ -8,6 +8,7 @@
 #include "../AmbOcclSetting.h"
 #include "worldgenmethods/OverworldWorldGenMethod.h"
 #include "../IndexOptimization.h"
+#include "../specialblocks/FindEntityCreateFunc.h"
 #include "../specialblocks/FindSpecialBlock.h"
 std::atomic<int> NUM_THREADS_RUNNING = 0;
 
@@ -770,6 +771,8 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         {
                             world->set(request.changeSpot, request.changeTo.value());
                         }
+
+
 
                     }
                     if(request.rebuild)

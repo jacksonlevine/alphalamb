@@ -12,6 +12,9 @@ class ComputerComponent {
 public:
     TextEditor editor = {};
 
+    ///Whether this computer component-ed entity has got a renderer assigned to it yet
+    bool gotRenderer = false;
+
     ComputerComponent() {
         editor.SetLanguageDefinition(TextEditor::LanguageDefinition::Python());
     }
