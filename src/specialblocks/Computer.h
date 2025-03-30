@@ -57,6 +57,9 @@ inline void setComputerBits(World* world, IntTup spot, const glm::vec3& pp )
     setDirectionBits(myBits, direction);
 
     world->set(spot, myBits);
+
+
+
 }
 
 inline void addComputer(UsableMesh& mesh, BlockType block, IntTup position, PxU32& index, PxU32& tindex)
@@ -160,11 +163,11 @@ inline void addComputer(UsableMesh& mesh, BlockType block, IntTup position, PxU3
 
         //Head part
 
-        // Front
-        PxVec3(0.0f, postHeight, 0.0f),
-        PxVec3(0.0f, headHeight, 0.0f),
-        PxVec3(1.0f, headHeight, 0.0f),
-        PxVec3(1.0f, postHeight, 0.0f),
+        // // Front
+        // PxVec3(0.0f, postHeight, 0.0f),
+        // PxVec3(0.0f, headHeight, 0.0f),
+        // PxVec3(1.0f, headHeight, 0.0f),
+        // PxVec3(1.0f, postHeight, 0.0f),
 
         // Right
         PxVec3(1.0f, postHeight, 0.0f),

@@ -386,14 +386,13 @@ private:
                             func.value()(serverReg, m.spot);
                         }
                         //Removing block entity
-                        if(m.block == AIR)
+
+                        if(auto f = findEntityRemoveFunc((MaterialName)(blockThere)); f != std::nullopt)
                         {
-                            if(auto f = findEntityRemoveFunc((MaterialName)(blockThere)); f != std::nullopt)
-                            {
-                                std::cout << "Calling entity remove on spot " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
-                                f.value()(serverReg, m.spot);
-                            }
+                            std::cout << "Calling entity remove on spot " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
+                            f.value()(serverReg, m.spot);
                         }
+
 
                         redistrib = true;
                     }

@@ -128,4 +128,33 @@ inline std::vector<physx::PxVec3> rotateCoordinatesAroundYNegative90(const std::
     return rotatedCoords;
 }
 
+
+
+
+template<typename T>
+inline std::vector<T> rotCoordsAroundYNeg90(const std::vector<T>& coords, int32_t numRotations) {
+    std::vector<T> rotatedCoords = coords;
+
+    const T center(0.5f, 0.5f, 0.5f);
+
+    for (int32_t rotation = 0; rotation < numRotations; ++rotation) {
+        for (auto& vec : rotatedCoords) {
+            // Translate to origin
+            T translated = vec - center;
+
+            // Perform 90-degree clockwise rotation around Y axis
+            // x' = -z, z' = x
+            T rotated;
+            rotated.x = -translated.z;
+            rotated.y = translated.y;
+            rotated.z = translated.x;
+
+            // Translate back
+            vec = rotated + center;
+        }
+    }
+
+    return rotatedCoords;
+}
+
 #endif //SPECIALBLOCKINFO_H

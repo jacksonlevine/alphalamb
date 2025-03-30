@@ -341,10 +341,26 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
                 if (currentGuiScreen == GuiScreen::InGame)
                 {
+                    auto spot = scene->blockSelectGizmo->selectedSpot;
+                    auto view = scene->REG.view<ComputerComponent, NPPositionComponent>();
+                    for (auto entity : view)
+                    {
+                        auto & comp = view.get<ComputerComponent>(entity);
+                        auto & np = view.get<NPPositionComponent>(entity);
+
+                        auto pos = np.position;
+                        if (pos == glm::vec3(spot.x, spot.y, spot.z))
+                        {
+                            scene->currentEditor = &comp.editor;
+                            break;
+                        }
+                    }
+
                     currentGuiScreen = GuiScreen::Computer;
                     uncaptureMouse(scene);
                 } else if (currentGuiScreen == GuiScreen::Computer)
                 {
+                    scene->currentEditor = nullptr;
                     currentGuiScreen = GuiScreen::InGame;
                     captureMouse(scene);
                 }
@@ -1185,14 +1201,13 @@ int main()
                                 func.value()(theScene.REG, m.spot);
                             }
                         //If removing block entity
-                            if(m.block == AIR)
-                            {
+
                                 if(auto f = findEntityRemoveFunc((MaterialName)blockThere); f != std::nullopt)
                                 {
                                     std::cout << "Calling custom entity destroy on client \n";
                                     f.value()(theScene.REG, m.spot);
                                 }
-                            }
+
 
                             if (m.block == AIR || findSpecialBlockMeshFunc((MaterialName)(m.block & BLOCK_ID_BITS)) != std::nullopt)
                             {
@@ -1493,14 +1508,14 @@ int main()
                 glUniform3f(fogColLoc, currAtmos.fogColor.x, currAtmos.fogColor.y, currAtmos.fogColor.z);
 
                 glUniform3f(offsetLoc, -0.5f, -0.5f, -0.5f);
-                bool isme = id == theScene.myPlayerIndex;
-                if (isme)
-                {
-                    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.guiCamera->mvp));
-                    glUniform3f(posLoc, 3.0, -1.2, std::min((float)wwi / 600.0f, 2.0f));
-                    glDisable(GL_DEPTH_TEST);
-                    glUniform3f(camPosLoc, 0, 0, 0);
-                } else
+                // bool isme = id == theScene.myPlayerIndex;
+                // if (isme)
+                // {
+                //     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.guiCamera->mvp));
+                //     glUniform3f(posLoc, 3.0, -1.2, std::min((float)wwi / 600.0f, 2.0f));
+                //     glDisable(GL_DEPTH_TEST);
+                //     glUniform3f(camPosLoc, 0, 0, 0);
+                // } else
                 {
                     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.our<jl::Camera>().mvp));
                     glUniform3f(posLoc, pos.x, pos.y, pos.z);
@@ -1657,7 +1672,11 @@ int main()
 
             drawSunAndMoon(&camera, theScene.timeOfDay, theScene.dayLength, camera.transform.position);
 
-            drawComputerScreensInReg(theScene.REG, camera);
+
+            renderImGui();
+
+
+            drawComputerScreensInReg(&world, theScene.REG, camera);
 
 
 
@@ -1670,9 +1689,12 @@ int main()
             theScene.hud->draw();
 
 
+        } else
+        {
+            renderImGui();
         }
 
-        renderImGui();
+
 
         glfwPollEvents();
         glfwSwapBuffers(window);

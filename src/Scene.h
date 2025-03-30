@@ -13,6 +13,7 @@
 #include "Hud.h"
 #include "OpenALStuff.h"
 #include "Planets.h"
+#include "TextEditor.h"
 #include "components/PlayerEmplacer.h"
 #include "world/gizmos/BulkPlaceGizmo.h"
 #include "world/gizmos/VoxModelStampGizmo.h"
@@ -90,7 +91,7 @@ struct Scene
     ALuint musicSource = 0;
     ImFont* font_title = nullptr;
     BlockType lastBlockAtCursor = 0;
-
+    TextEditor* currentEditor = nullptr;
 
 
     void saveSettings()

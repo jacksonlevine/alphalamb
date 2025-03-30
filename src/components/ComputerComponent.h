@@ -8,6 +8,7 @@
 #include "../Camera.h"
 #include "../Shader.h"
 #include "../TextEditor.h"
+#include "../specialblocks/SpecialBlockInfo.h"
 
 void drawTextEditor(TextEditor& editor);
 
@@ -16,41 +17,75 @@ public:
     TextEditor editor = {};
 
     GLuint fbo = 0, scrnTex = 0;
-    int cwidth = 800, cheight = 600;
+    int cwidth = 800, cheight = 560;
+    int direction = 0;
+    bool directionset = false;
 
     ComputerComponent() {
         editor.SetLanguageDefinition(TextEditor::LanguageDefinition::Python());
     }
 
     ///This initializes the gl objects lazily when called, so that the server wont have any gl objects
-    void renderEditorToFBO(TextEditor& editor) {
-        if(fbo == 0)
-        {
-            glGenFramebuffers(1, &fbo);
-            glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-            glGenTextures(1, &scrnTex);
-            glBindTexture(GL_TEXTURE_2D, scrnTex);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, cwidth, cheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            //attach screen texture to fbo:
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scrnTex, 0);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+void renderEditorToFBO(TextEditor& editor, bool isRenderingOnly)
+{
+    // if (!ImGui::GetCurrentContext()) {
+    //     throw std::runtime_error("No ImGui context active - initialize ImGui first");
+    // }
+
+    if (fbo == 0) {
+        glGenFramebuffers(1, &fbo);
+        if (fbo == 0) {
+            throw std::runtime_error("Failed to generate framebuffer");
         }
+
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glViewport(0, 0, cwidth, cheight);
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        ImGui::NewFrame();
-        drawTextEditor(editor);
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        glGenTextures(1, &scrnTex);
+        if (scrnTex == 0) {
+            throw std::runtime_error("Failed to generate texture");
+        }
+
+        glBindTexture(GL_TEXTURE_2D, scrnTex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, cwidth, cheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scrnTex, 0);
+
+        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (status != GL_FRAMEBUFFER_COMPLETE) {
+            throw std::runtime_error("Framebuffer is not complete");
+        }
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        int width = entt::monostate<entt::hashed_string("swidth")>{};
-        int height = entt::monostate<entt::hashed_string("sheight")>{};
-        
-        glViewport(0, 0, width, height);
     }
+
+    // Save viewport and display size
+    GLint originalViewport[4];
+    glGetIntegerv(GL_VIEWPORT, originalViewport);
+    // auto& io = ImGui::GetIO();
+    // ImVec2 originalDisplaySize = io.DisplaySize;
+
+    // // Set FBO state
+    // io.DisplaySize = ImVec2((float)cwidth, (float)cheight);
+    // io.WantCaptureMouse = false;
+    // io.WantCaptureKeyboard = false;
+    // io.WantTextInput = false;
+    // io.MouseDrawCursor = false;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glViewport(0, 0, cwidth, cheight);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // ImGui::NewFrame();
+    // drawTextEditor(editor);
+    // ImGui::Render();
+    // ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    // ImGui::EndFrame(); // Reset ImGui state
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(originalViewport[0], originalViewport[1], originalViewport[2], originalViewport[3]);
+    //io.DisplaySize = originalDisplaySize;
+}
 
     ComputerComponent& operator=(const ComputerComponent& other) = delete;
     ComputerComponent(ComputerComponent& other) = delete;
@@ -68,7 +103,10 @@ public:
         scrnTex = other.scrnTex;
     }
     template<class Archive>
-    void serialize(Archive& archive) {}
+    void serialize(Archive& archive)
+    {
+        archive(direction);
+    }
 	~ComputerComponent()
     {
     }
@@ -77,7 +115,7 @@ public:
     {
         using namespace glm;
 
-        renderEditorToFBO(editor);
+        renderEditorToFBO(editor, true);
 
         static jl::Shader shad = jl::Shader(R"glsl(
                 #version 330 core
@@ -106,23 +144,63 @@ public:
             )glsl",
             "compScreenShad");
 
-        static std::vector<vec3> vertices = {
-            vec3(0.f, 0.f, 0.f),
+        static std::vector<vec3> basevertices = {
+            vec3(0.f, 0.3f, 0.f),
             vec3(0.f, 1.f, 0.f),
             vec3(1.f, 1.f, 0.f),
 
             vec3(1.f, 1.f, 0.f),
-            vec3(1.f, 0.f, 0.f),
-            vec3(0.f, 0.f, 0.f),
+            vec3(1.f, 0.3f, 0.f),
+            vec3(0.f, 0.3f, 0.f),
         };
-        static std::vector<vec2> texs = {
-            vec2(0.f, 0.f),
-            vec2(0.f, 1.f),
-            vec2(1.f, 1.f),
 
-            vec2(1.f, 1.f),
+        static std::vector<vec3> vertices;
+
+        static bool verticesmade = false;
+        if(!verticesmade)
+        {
+            vertices.insert(vertices.end(), basevertices.begin(), basevertices.end());
+            auto rot1 = rotCoordsAroundYNeg90<glm::vec3>(vertices, 1);
+            auto rot2 = rotCoordsAroundYNeg90<glm::vec3>(vertices, 2);
+            auto rot3 = rotCoordsAroundYNeg90<glm::vec3>(vertices, 3);
+            vertices.insert(vertices.end(), rot1.begin(), rot1.end());
+            vertices.insert(vertices.end(), rot2.begin(), rot2.end());
+            vertices.insert(vertices.end(), rot3.begin(), rot3.end());
+            verticesmade = true;
+        }
+        static std::vector<vec2> texs = {
             vec2(1.f, 0.f),
+            vec2(1.f, 1.f),
+            vec2(0.f, 1.f),
+
+            vec2(0.f, 1.f),
             vec2(0.f, 0.f),
+            vec2(1.f, 0.f),
+
+            vec2(1.f, 0.f),
+            vec2(1.f, 1.f),
+            vec2(0.f, 1.f),
+
+            vec2(0.f, 1.f),
+            vec2(0.f, 0.f),
+            vec2(1.f, 0.f),
+
+            vec2(1.f, 0.f),
+            vec2(1.f, 1.f),
+            vec2(0.f, 1.f),
+
+            vec2(0.f, 1.f),
+            vec2(0.f, 0.f),
+            vec2(1.f, 0.f),
+
+            vec2(1.f, 0.f),
+            vec2(1.f, 1.f),
+            vec2(0.f, 1.f),
+
+            vec2(0.f, 1.f),
+            vec2(0.f, 0.f),
+            vec2(1.f, 0.f),
+
         };
 
         static GLuint vao = 0;
@@ -132,19 +210,21 @@ public:
         if(vao == 0)
         {
             glGenVertexArrays(1, &vao);
+            glBindVertexArray(vao);
             glGenBuffers(1, &vbo);
             glGenBuffers(1, &uvvbo);
 
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
             glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vec3), vertices.data(), GL_STATIC_DRAW);
 
-            glEnableVertexAttribArray(0);
+
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void*)0);
+            glEnableVertexAttribArray(0);
 
             glBindBuffer(GL_ARRAY_BUFFER, uvvbo);
             glBufferData(GL_ARRAY_BUFFER, texs.size() * sizeof(vec2), texs.data(), GL_STATIC_DRAW);
-
             glEnableVertexAttribArray(1);
+
             glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vec2), (void*)0);
         }
 
@@ -157,7 +237,7 @@ public:
 
         glBindTexture(GL_TEXTURE_2D, scrnTex);
         glUniform1i(glGetUniformLocation(shad.shaderID, "ourTexture"), 0);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawArrays(GL_TRIANGLES, direction*6, 6);
         glBindVertexArray(0);
 
     }
@@ -165,15 +245,34 @@ public:
 
 
 
-inline void drawComputerScreensInReg(entt::registry& reg, jl::Camera& camera)
+inline void drawComputerScreensInReg(World* world, entt::registry& reg, jl::Camera& camera)
 {
     auto view = reg.view<ComputerComponent, NPPositionComponent>();
     for (auto entity : view)
     {
+
         auto& pos = view.get<NPPositionComponent>(entity);
         auto& comp = view.get<ComputerComponent>(entity);
 
+        //std::cout << "Should be drawing: " << pos.position.x << " " << pos.position.y << " " << pos.position.z << std::endl;
+        if (!comp.directionset)
+        {
+            if (auto l = world->tryToGetReadLockOnDMs(); l != std::nullopt)
+            {
+                auto rawthere = world->getRawLocked(IntTup(pos.position.x, pos.position.y, pos.position.z));
+
+                if ((rawthere & BLOCK_ID_BITS) == DG_COMPUTERBLOCK)
+                {
+                    auto bits = getDirectionBits(rawthere);
+                    comp.directionset = true;
+                    comp.direction = bits;
+                }
+
+            }
+        }
+
         comp.drawAtPos(pos.position, camera);
+
     }
 }
 

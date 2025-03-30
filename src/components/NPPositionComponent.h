@@ -9,6 +9,7 @@
 
 class NPPositionComponent {
 public:
+    NPPositionComponent(glm::vec3 pos) : position(pos) {};
     glm::vec3 position;
 };
 
