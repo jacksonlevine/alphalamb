@@ -14,7 +14,7 @@ void drawTextEditor(TextEditor& editor);
 class ComputerScreenRenderer {
 public:
     GLuint fbo = 0, scrnTex = 0;
-    constexpr int cwidth = 800, cheight = 600;
+    int cwidth = 800, cheight = 600;
     ComputerScreenRenderer()
     {
         glGenFramebuffers(1, &fbo);
@@ -28,7 +28,7 @@ public:
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scrnTex, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
-    void renderEditorToFBO(TextEditor& editor, ) {
+    void renderEditorToFBO(TextEditor& editor) {
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
         glViewport(0, 0, cwidth, cheight);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
