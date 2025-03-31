@@ -5,6 +5,7 @@
 #ifndef PRECOMPHEADER_H
 #define PRECOMPHEADER_H
 
+#include <stdio.h>
 #include "GLHeaders.h"
 #include <iostream>
 #include <vector>
@@ -37,7 +38,7 @@
 #include <sndfile.h>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <boost/unordered/unordered_flat_set.hpp>
-#include "pocketpy.h"
+
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -54,4 +55,5 @@
 #include <cereal/types/array.hpp>
 #include "CerealHelpers.h"
 #include <regex>
+
 #endif //PRECOMPHEADER_H

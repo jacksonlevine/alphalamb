@@ -50,6 +50,7 @@
 #include "DrawSky.h"
 #include "FileArchives.h"
 #include "Planets.h"
+#include "PythonContext.h"
 #include "SaveRegistry.h"
 #include "specialblocks/FindSpecialBlock.h"
 //Tinygltf includes stb image
@@ -776,6 +777,9 @@ int main()
     static jl::ModelAndTextures jplit = jl::ModelLoader::loadModel("resources/models/jetpack2.glb", false);
     static jl::ModelAndTextures planet = jl::ModelLoader::loadModel("resources/models/planet.glb", false);
 
+
+
+    static PythonContext pyContext = {};
 
     while (!glfwWindowShouldClose(window))
     {

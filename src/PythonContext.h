@@ -5,14 +5,12 @@
 #ifndef PYTHONCONTEXT_H
 #define PYTHONCONTEXT_H
 
-#include "PrecompHeader.h"
-
-
 class PythonContext {
     PythonContext()
     {
-        static void* _ = &py_initialize();
+        py_initialize();
     }
+
 };
 
 
