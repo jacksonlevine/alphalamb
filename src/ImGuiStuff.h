@@ -38,6 +38,8 @@ enum class DGButtonType
     Stam1
 };
 
+
+
 float GetDPIScaling(GLFWwindow* window);
 
 void SetImGuiScaling(GLFWwindow* window);

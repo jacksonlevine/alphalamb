@@ -225,6 +225,7 @@ function(add_common_libraries target)
     target_link_libraries(${target} PRIVATE EnTT::EnTT)
 
     target_link_libraries(${target} PRIVATE pocketpy)
+
     target_link_libraries(${target} PRIVATE cereal::cereal)
     # Include directories
     target_include_directories(${target} PUBLIC ${CMAKE_SOURCE_DIR}/include)

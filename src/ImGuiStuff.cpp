@@ -341,6 +341,42 @@ void renderImGui()
 
     if(guiShowing)
     {
+
+        if(currentGuiScreen == GuiScreen::Computer || currentGuiScreen == GuiScreen::InGame)
+        {
+            auto now = std::chrono::steady_clock::now();
+            auto & messages = theScene.messages;
+            // Remove expired messages
+            messages.erase(std::remove_if(messages.begin(), messages.end(),
+                          [now](const ChatMessage& msg) {
+                              return std::chrono::duration_cast<std::chrono::seconds>(now - msg.timestamp).count() > 10;
+                          }),
+                          messages.end());
+
+            // Set the chat window position and size
+            ImVec2 window_pos = ImVec2(50, ImGui::GetIO().DisplaySize.y - 100);  // Bottom-left corner
+            ImVec2 window_size = ImVec2(400, 150);  // Width and height
+
+            ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+            ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
+
+            // Transparent window background
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0, 0, 0, 0.3f));
+
+            if (ImGui::Begin("ChatWindow", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar)) {
+                ImGui::SetWindowFontScale(1.2f);  // Adjust text size
+
+                // Render messages from newest to oldest
+                for (int i = static_cast<int>(messages.size()) - 1; i >= 0; --i) {
+                    ImGui::TextWrapped("%s", messages[i].text.c_str());
+                }
+            }
+            ImGui::End();
+
+            ImGui::PopStyleColor();
+        }
+
+
         // Get the viewport size (entire screen size)
         ImVec2 viewportSize = ImGui::GetMainViewport()->Size;
 
@@ -359,7 +395,11 @@ void renderImGui()
             ImGuiWindowFlags_NoBringToFrontOnFocus |
             ImGuiWindowFlags_NoNavFocus;
 
+
+
         ImGui::Begin("Invisible Window", nullptr, windowFlags);
+
+
 
 
         switch (currentGuiScreen)
@@ -374,6 +414,10 @@ void renderImGui()
                 if (theScene.currentEditor)
                 {
                     drawTextEditor(*theScene.currentEditor);
+                    if(DGCustomButton("Execute", DGButtonType::Good1))
+                    {
+                        theScene.pythonContext.vm->exec(theScene.currentEditor->GetText());
+                    }
                 }
 
                 break;

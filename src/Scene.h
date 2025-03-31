@@ -13,6 +13,7 @@
 #include "Hud.h"
 #include "OpenALStuff.h"
 #include "Planets.h"
+#include "PythonContext.h"
 #include "TextEditor.h"
 #include "components/PlayerEmplacer.h"
 #include "world/gizmos/BulkPlaceGizmo.h"
@@ -26,13 +27,21 @@ struct Settings
     bool ambientOccl = false;
     float musicVol = 1.0f;
 };
+
+
+struct ChatMessage {
+    std::string text;
+    std::chrono::steady_clock::time_point timestamp;
+};
+
+
 struct Scene
 {
     //std::unordered_map<int, Player*> players = {};
     entt::registry REG = {};
 
     entt::entity myPlayerIndex = entt::null;
-
+    std::vector<ChatMessage> messages;
 
     template <typename Type>
     Type& our()
@@ -92,7 +101,7 @@ struct Scene
     ImFont* font_title = nullptr;
     BlockType lastBlockAtCursor = 0;
     TextEditor* currentEditor = nullptr;
-
+    PythonContext pythonContext = {};
 
     void saveSettings()
     {

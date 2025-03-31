@@ -50,7 +50,6 @@
 #include "DrawSky.h"
 #include "FileArchives.h"
 #include "Planets.h"
-#include "PythonContext.h"
 #include "SaveRegistry.h"
 #include "specialblocks/FindSpecialBlock.h"
 //Tinygltf includes stb image
@@ -779,10 +778,18 @@ int main()
 
 
 
-    static PythonContext pyContext = {};
+    while (!glfwWindowShouldClose(window)) {
 
-    while (!glfwWindowShouldClose(window))
-    {
+        ///Flow python vm output into your "chat"
+        {
+            std::string temp;
+            std::istringstream stream(theScene.pythonContext.vm->mstdout.str());
+            while(std::getline(stream, temp)) {
+                theScene.messages.push_back(ChatMessage{.text = temp, .timestamp = std::chrono::steady_clock::now()});
+            }
+        }
+
+
         static float lastTime = glfwGetTime();
         float currentTime = glfwGetTime();
         deltaTime = currentTime - lastTime;
