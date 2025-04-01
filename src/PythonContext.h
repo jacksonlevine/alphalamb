@@ -18,13 +18,7 @@ public:
 
     void exec(const std::string& code)
     {
-        std::string wrapped_code =
-            "try:\n"
-            "    exec(\"\"\"" + code + "\"\"\")\n"
-            "except Exception as e:\n"
-            "    print('[ERROR]', type(e).__name__ + ':', e)";
-
-        py_exec(wrapped_code.c_str(), "Puter", EXEC_MODE, NULL);
+        py_exec(code.c_str(), "Puter", EXEC_MODE, NULL);
     }
 
     static bool custom_print(int argc, py_Ref argv) {
@@ -54,16 +48,6 @@ public:
         py_newnativefunc(r0, custom_print);
         py_setglobal(py_name("print"), r0);
 
-        // Redirect sys.stderr
-        exec("import sys\n"
-             "class CustomStderr:\n"
-             "    def write(self, msg):\n"
-             "        print(msg, end='')\n"
-             "sys.stderr = CustomStderr()");
-        exec("import sys\n"
-         "def custom_excepthook(exc_type, exc_value, traceback):\n"
-         "    print(f'Error: {exc_value}', end='')\n"
-         "sys.excepthook = custom_excepthook");
     }
 
 };
