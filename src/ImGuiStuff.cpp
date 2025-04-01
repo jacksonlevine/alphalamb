@@ -363,7 +363,8 @@ void renderImGui()
             // Transparent window background
             ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0, 0, 0, 0.3f));
 
-            if (ImGui::Begin("ChatWindow", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar)) {
+            if (ImGui::Begin("ChatWindow", nullptr, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+                ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNavFocus)) {
                 ImGui::SetWindowFontScale(1.2f);  // Adjust text size
 
                 // Render messages from newest to oldest
