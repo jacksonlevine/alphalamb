@@ -3,3 +3,4 @@
 //
 
 #include "PythonContext.h"
+std::ostringstream PythonContext::g_output = {};

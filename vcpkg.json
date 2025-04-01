@@ -10,7 +10,6 @@
         "physx",
         "openal-soft",
         "entt",
-        "cereal",
-        "pocketpy"
+        "cereal"
     ]
 }

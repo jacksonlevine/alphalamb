@@ -776,19 +776,26 @@ int main()
     static jl::ModelAndTextures jplit = jl::ModelLoader::loadModel("resources/models/jetpack2.glb", false);
     static jl::ModelAndTextures planet = jl::ModelLoader::loadModel("resources/models/planet.glb", false);
 
-
+    //SetImGuiScaling(window);
 
     while (!glfwWindowShouldClose(window)) {
 
-        ///Flow python vm output into your "chat"
         {
             std::string temp;
-            std::istringstream stream(theScene.pythonContext.vm->mstdout.str());
+            std::string output_str = theScene.pythonContext.g_output.str();
+            std::istringstream stream(output_str);
+
+            // Reset the ostringstream completely
+            theScene.pythonContext.g_output.str("");
+            theScene.pythonContext.g_output.clear();
+
             while(std::getline(stream, temp)) {
-                theScene.messages.push_back(ChatMessage{.text = temp, .timestamp = std::chrono::steady_clock::now()});
+                theScene.messages.push_back(ChatMessage{
+                    .text = temp,
+                    .timestamp = std::chrono::steady_clock::now()
+                });
             }
         }
-
 
         static float lastTime = glfwGetTime();
         float currentTime = glfwGetTime();

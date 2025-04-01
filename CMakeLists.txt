@@ -37,7 +37,6 @@ find_package(imgui CONFIG REQUIRED)
 
 find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
 find_package(cereal CONFIG REQUIRED)
-find_package(pocketpy CONFIG REQUIRED)
 
 # Print all available targets
 message(STATUS "Available targets in CMake:")
@@ -45,6 +44,21 @@ get_property(TARGETS_LIST GLOBAL PROPERTY TARGETS)
 foreach(TARGET ${TARGETS_LIST})
     message(STATUS "Target: ${TARGET}")
 endforeach()
+
+
+
+add_library(pocketpy STATIC
+        thirdparty/pocketpy/pocketpy.c
+)
+target_include_directories(pocketpy PUBLIC
+        thirdparty/pocketpy
+)
+set_target_properties(pocketpy PROPERTIES
+        C_STANDARD 11
+        C_STANDARD_REQUIRED ON
+)
+
+
 
 add_executable(DistantGarden
         src/main.cpp
@@ -178,7 +192,10 @@ add_executable(DistantGarden
         src/components/NPPositionComponent.cpp
         src/components/NPPositionComponent.h
         src/specialblocks/FindEntityCreateFunc.h
+
 )
+
+
 
 add_executable(DGServer
         src/servermain.cpp
@@ -214,17 +231,17 @@ add_executable(DGServer
         src/components/NPPositionComponent.cpp
         src/components/NPPositionComponent.h
         src/specialblocks/FindEntityCreateFunc.h
+
 )
 
 target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)
+target_link_libraries(DistantGarden PRIVATE pocketpy)
 function(add_common_libraries target)
     
     target_precompile_headers( ${target}
             PRIVATE ${CMAKE_SOURCE_DIR}/src/PrecompHeader.h )
 
     target_link_libraries(${target} PRIVATE EnTT::EnTT)
-
-    target_link_libraries(${target} PRIVATE pocketpy)
 
     target_link_libraries(${target} PRIVATE cereal::cereal)
     # Include directories

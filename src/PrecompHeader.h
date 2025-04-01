@@ -55,6 +55,6 @@
 #include <cereal/types/array.hpp>
 #include "CerealHelpers.h"
 #include <regex>
-#include <pocketpy.h>
+
 
 #endif //PRECOMPHEADER_H

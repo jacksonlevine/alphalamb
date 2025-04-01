@@ -315,7 +315,7 @@ void initializeImGui(GLFWwindow* window)
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
-    SetImGuiScaling(window);
+
 }
 
 int ResizeStringCallback(ImGuiInputTextCallbackData* data)
@@ -414,9 +414,10 @@ void renderImGui()
                 if (theScene.currentEditor)
                 {
                     drawTextEditor(*theScene.currentEditor);
+                    ImGui::SetCursorPosY(700.0f);
                     if(DGCustomButton("Execute", DGButtonType::Good1))
                     {
-                        theScene.pythonContext.vm->exec(theScene.currentEditor->GetText());
+                        theScene.pythonContext.exec(theScene.currentEditor->GetText());
                     }
                 }
 
