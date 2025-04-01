@@ -155,35 +155,41 @@ void bindMenuGeometryNoUpload(GLuint vbo, GLuint menushad) {
 
 void Hud::draw()
 {
-    if(hudVAO == 0)
+    if(entt::monostate<entt::hashed_string{"activeHand"}>{})
     {
-        glGenVertexArrays(1, &hudVAO);
+        if(hudVAO == 0)
+        {
+            glGenVertexArrays(1, &hudVAO);
 
+        }
+
+        static jl::Shader menuShad = getMenuShader();
+
+        static jl::Texture cht("resources/crosshair.png");
+        glDisable(GL_CULL_FACE);
+        glBindVertexArray(hudVAO);
+        glUseProgram(menuShad.shaderID);
+        glActiveTexture(GL_TEXTURE6);
+        cht.bind_to_unit(6);
+        glBindTexture(GL_TEXTURE_2D, cht.id);
+        glUniform1i(glGetUniformLocation(menuShad.shaderID, "ourTexture"), 6);
+
+        glUniform1f(glGetUniformLocation(menuShad.shaderID, "mousedOverElement"), 0.0f);
+
+        glUniform1f(glGetUniformLocation(menuShad.shaderID, "clickedOnElement"), 0.0f);
+        if(this->uploaded) {
+            bindMenuGeometryNoUpload(this->vbo, menuShad.shaderID);
+        } else {
+            bindMenuGeometry(this->vbo,
+            this->displayData.data(),
+            this->displayData.size(), menuShad.shaderID);
+        }
+
+            glDrawArrays(GL_TRIANGLES, 0, this->displayData.size()/5);
+
+
+        glEnable(GL_CULL_FACE);
     }
-
-    static jl::Shader menuShad = getMenuShader();
-
-    static jl::Texture cht("resources/crosshair.png");
-    glDisable(GL_CULL_FACE);
-    glBindVertexArray(hudVAO);
-    glUseProgram(menuShad.shaderID);
-    glActiveTexture(GL_TEXTURE6);
-    cht.bind_to_unit(6);
-    glBindTexture(GL_TEXTURE_2D, cht.id);
-    glUniform1i(glGetUniformLocation(menuShad.shaderID, "ourTexture"), 6);
-
-    glUniform1f(glGetUniformLocation(menuShad.shaderID, "mousedOverElement"), 0.0f);
-
-    glUniform1f(glGetUniformLocation(menuShad.shaderID, "clickedOnElement"), 0.0f);
-    if(this->uploaded) {
-        bindMenuGeometryNoUpload(this->vbo, menuShad.shaderID);
-    } else {
-        bindMenuGeometry(this->vbo,
-        this->displayData.data(),
-        this->displayData.size(), menuShad.shaderID);
-    }
-    glDrawArrays(GL_TRIANGLES, 0, this->displayData.size()/5);
-    glEnable(GL_CULL_FACE);
 }
 
 

@@ -8,6 +8,7 @@
 #include "../Camera.h"
 #include "../Shader.h"
 #include "../TextEditor.h"
+#include "../menupage/FullscreenKaleidoscope.h"
 #include "../specialblocks/SpecialBlockInfo.h"
 
 void drawTextEditor(TextEditor& editor);
@@ -17,7 +18,7 @@ public:
     TextEditor editor = {};
 
     GLuint fbo = 0, scrnTex = 0;
-    int cwidth = 800, cheight = 560;
+    int cwidth = 32, cheight = 22;
     int direction = 0;
     bool directionset = false;
 
@@ -46,8 +47,8 @@ void renderEditorToFBO(TextEditor& editor, bool isRenderingOnly)
 
         glBindTexture(GL_TEXTURE_2D, scrnTex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, cwidth, cheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scrnTex, 0);
 
         GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -81,6 +82,7 @@ void renderEditorToFBO(TextEditor& editor, bool isRenderingOnly)
     // ImGui::Render();
     // ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     // ImGui::EndFrame(); // Reset ImGui state
+        drawFullscreenKaleidoscope();
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(originalViewport[0], originalViewport[1], originalViewport[2], originalViewport[3]);

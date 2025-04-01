@@ -435,6 +435,18 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
             return distfroma < distfromb;
         });
 
+        for (auto & spotHere : checkspots)
+        {
+            int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
+            if(dist <= currentMinDistance())
+            {
+                if(!generatedChunks.contains(spotHere))
+                {
+                    generateChunk(world, spotHere, implicatedChunks);
+                }
+            }
+        }
+
 
         for (auto & spotHere : checkspots)
         {
@@ -494,10 +506,10 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                     {
                         if (!mbtActiveChunks.contains(spotHere))
                     {
-                            if(!generatedChunks.contains(spotHere))
-                            {
-                                generateChunk(world, spotHere, implicatedChunks);
-                            }
+                            // if(!generatedChunks.contains(spotHere))
+                            // {
+                            //     generateChunk(world, spotHere, implicatedChunks);
+                            // }
                         //std::cout << "Spot " << i << " " << j << std::endl;
 
                         //IF we havent reached the max chunks yet, we can just make a new one for this spot.

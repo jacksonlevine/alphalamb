@@ -23,6 +23,30 @@ extern boost::lockfree::spsc_queue<DGMessage, boost::lockfree::capacity<512>> ma
 extern std::mutex networkMutex;
 extern std::condition_variable networkCV;
 
+
+inline void sendTextInChunks(tcp::socket* socket, const std::string& text)
+{
+    auto numChunks = (size_t)glm::ceil(text.size()/32);
+    DGMessage m = TextChunkHeader{
+        .numChunks = numChunks
+    };
+
+    boost::asio::write(*socket, boost::asio::buffer(&m, sizeof(DGMessage)));
+
+    auto const chunks = std::string_view(text) | std::views::chunk(32);
+
+    // for(auto chunk : chunks)
+    // {
+    //     DGMessage c = TextChunk{
+    //         .sequenceNumber = (size_t)i,
+    //         .data =
+    //     };
+    // }
+
+
+
+}
+
 inline void sendToServer(tcp::socket* socket, std::atomic<bool>* shouldRun)
 {
     while (shouldRun->load()) {

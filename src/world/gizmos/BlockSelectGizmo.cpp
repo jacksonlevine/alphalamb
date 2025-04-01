@@ -84,7 +84,9 @@ void BlockSelectGizmo::draw(World* world, entt::entity playerIndex, entt::regist
             }
         }
 
-        if (draw)
+        auto enableDraw = entt::monostate<entt::hashed_string{"activeHand"}>{};
+
+        if (draw && enableDraw)
         {
 
             glBindVertexArray(vao);

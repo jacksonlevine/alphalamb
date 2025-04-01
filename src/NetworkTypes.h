@@ -116,6 +116,22 @@ struct RequestInventorySwap
     bool mouseSlotD;
 };
 
+struct TextChunkHeader
+{
+    size_t numChunks;
+};
+
+struct TextChunk
+{
+    size_t sequenceNumber;
+    std::array<char, 32> data;
+};
+
+struct RequestTextChunkResend
+{
+    size_t sequenceNumber;
+};
+
 
 // struct EquippedItemsUpdate
 // {
@@ -123,7 +139,7 @@ struct RequestInventorySwap
 //     std::array<InventorySlot, INVHEIGHT> equipped;
 // };
 
-using DGMessage = std::variant<RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting>;
+using DGMessage = std::variant<TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting>;
 
 
 

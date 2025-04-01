@@ -524,6 +524,7 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
     entt::monostate<entt::hashed_string{"swidth"}>{} = width;
     entt::monostate<entt::hashed_string{"sheight"}>{} = height;
 
+    entt::monostate<entt::hashed_string{"activeHand"}>{} = true;
     if(scene->hud)
     {
         Hud::windowWidth = width;
@@ -699,7 +700,6 @@ int main()
 
 
 
-
     ParticlesGizmo* particles = new ParticlesGizmo();
     theScene.particles = particles;
     theScene.gizmos.push_back(particles);
@@ -797,16 +797,18 @@ int main()
             }
         }
 
+
         static float lastTime = glfwGetTime();
         float currentTime = glfwGetTime();
         deltaTime = currentTime - lastTime;
         lastTime = currentTime;
 
+
         int wwi, whei = 0;
         glfwGetWindowSize(window, &wwi, &whei);
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
         glBindVertexArray(billboardVAO);
@@ -1690,11 +1692,11 @@ int main()
 
             drawSunAndMoon(&camera, theScene.timeOfDay, theScene.dayLength, camera.transform.position);
 
+            drawComputerScreensInReg(&world, theScene.REG, camera);
+
+
 
             renderImGui();
-
-
-            drawComputerScreensInReg(&world, theScene.REG, camera);
 
 
 

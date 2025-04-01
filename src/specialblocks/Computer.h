@@ -84,6 +84,8 @@ inline void addComputer(UsableMesh& mesh, BlockType block, IntTup position, PxU3
         0.6f,
         0.7f,
 
+        // 0.5f,
+
         0.6f,
         0.5f,
         0.7f,
@@ -164,10 +166,10 @@ inline void addComputer(UsableMesh& mesh, BlockType block, IntTup position, PxU3
         //Head part
 
         // // Front
-        // PxVec3(0.0f, postHeight, 0.0f),
-        // PxVec3(0.0f, headHeight, 0.0f),
-        // PxVec3(1.0f, headHeight, 0.0f),
-        // PxVec3(1.0f, postHeight, 0.0f),
+        // PxVec3(0.0f, postHeight, 0.1f),
+        // PxVec3(0.0f, headHeight, 0.1f),
+        // PxVec3(1.0f, headHeight, 0.1f),
+        // PxVec3(1.0f, postHeight, 0.1f),
 
         // Right
         PxVec3(1.0f, postHeight, 0.0f),
