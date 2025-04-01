@@ -304,12 +304,17 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 
-    if(GLFW_KEY_T == key && GLFW_PRESS == action)
+    // if(GLFW_KEY_T == key && GLFW_PRESS == action)
+    // {
+    //     ALint jpSourceState;
+    //     alGetSourcei(theScene.musicSource, AL_SOURCE_STATE, &jpSourceState);
+    //     alSourcePlay(theScene.musicSource);
+    //     std::cout << "music source state: " << jpSourceState << std::endl;
+    // }
+    if(GLFW_KEY_1 == key && GLFW_PRESS == action)
     {
-        ALint jpSourceState;
-        alGetSourcei(theScene.musicSource, AL_SOURCE_STATE, &jpSourceState);
-        alSourcePlay(theScene.musicSource);
-        std::cout << "music source state: " << jpSourceState << std::endl;
+        const bool b = entt::monostate<entt::hashed_string{"activeHand"}>{};
+        entt::monostate<entt::hashed_string{"activeHand"}>{} = !b;
     }
 
     Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));
@@ -524,7 +529,7 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
     entt::monostate<entt::hashed_string{"swidth"}>{} = width;
     entt::monostate<entt::hashed_string{"sheight"}>{} = height;
 
-    entt::monostate<entt::hashed_string{"activeHand"}>{} = true;
+
     if(scene->hud)
     {
         Hud::windowWidth = width;
@@ -777,6 +782,8 @@ int main()
     static jl::ModelAndTextures planet = jl::ModelLoader::loadModel("resources/models/planet.glb", false);
 
     //SetImGuiScaling(window);
+
+    entt::monostate<entt::hashed_string{"activeHand"}>{} = true;
 
     while (!glfwWindowShouldClose(window)) {
 

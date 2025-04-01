@@ -155,7 +155,8 @@ void bindMenuGeometryNoUpload(GLuint vbo, GLuint menushad) {
 
 void Hud::draw()
 {
-    if(entt::monostate<entt::hashed_string{"activeHand"}>{})
+    const bool b = entt::monostate<entt::hashed_string{"activeHand"}>{};
+    if(b)
     {
         if(hudVAO == 0)
         {

@@ -131,7 +131,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         PxCapsuleController* capsuleController = static_cast<PxCapsuleController*>(controller);
         originalCharHeight = capsuleController->getHeight();
         capsuleController->resize(0.001f);
-    } else
+    } else if(!controls.crouch)
     {
         PxCapsuleController* capsuleController = static_cast<PxCapsuleController*>(controller);
         capsuleController->resize(originalCharHeight);

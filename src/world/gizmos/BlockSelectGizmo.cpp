@@ -84,7 +84,7 @@ void BlockSelectGizmo::draw(World* world, entt::entity playerIndex, entt::regist
             }
         }
 
-        auto enableDraw = entt::monostate<entt::hashed_string{"activeHand"}>{};
+        const bool enableDraw = entt::monostate<entt::hashed_string{"activeHand"}>{};
 
         if (draw && enableDraw)
         {
