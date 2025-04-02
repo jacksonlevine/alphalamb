@@ -3,6 +3,7 @@
 //
 #include "SaveRegistry.h"
 #include "FileArchives.h"
+#include "components/ComputerComponent.h"
 #include "components/PlayerEmplacer.h"
 
 void saveRegistry(entt::registry & reg, const char* filename)
@@ -21,7 +22,9 @@ void saveRegistry(entt::registry & reg, const char* filename)
     .get<NetworkComponent>(outputArchive)
     .get<MovementComponent>(outputArchive)
     .get<ParticleEffectComponent>(outputArchive)
-    .get<UUIDComponent>(outputArchive);
+    .get<UUIDComponent>(outputArchive)
+    .get<ComputerComponent>(outputArchive)
+    .get<NPPositionComponent>(outputArchive);
 }
 
 
@@ -46,7 +49,9 @@ void loadRegistry(entt::registry & reg, const char* filename)
         .get<NetworkComponent>(inputArchive)
         .get<MovementComponent>(inputArchive)
         .get<ParticleEffectComponent>(inputArchive)
-        .get<UUIDComponent>(inputArchive);
+        .get<UUIDComponent>(inputArchive)
+        .get<ComputerComponent>(inputArchive)
+        .get<NPPositionComponent>(inputArchive);
     }
     std::cout << "Done loading registry" << std::endl;
 }

@@ -9,8 +9,14 @@
 
 class NPPositionComponent {
 public:
+    glm::vec3 position = glm::vec3(0.f);
     NPPositionComponent(glm::vec3 pos) : position(pos) {};
-    glm::vec3 position;
+    NPPositionComponent() = default;
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+        archive(position);
+    }
 };
 
 

@@ -829,16 +829,16 @@ int main()
 
         if (theScene.myPlayerIndex != entt::null && theScene.worldReceived.load())
         {
-            static int ccounnc = 0;
-            if(ccounnc > 100)
-            {
-                ccounnc = 0;
-                auto pos = theScene.our<jl::Camera>().transform.position;
-                std::cout << "Posit " << pos.x << " " << pos.y << " " << pos.z << std::endl;
-            } else
-            {
-                ccounnc += 1;
-            }
+            // static int ccounnc = 0;
+            // if(ccounnc > 100)
+            // {
+            //     ccounnc = 0;
+            //     auto pos = theScene.our<jl::Camera>().transform.position;
+            //     std::cout << "Posit " << pos.x << " " << pos.y << " " << pos.z << std::endl;
+            // } else
+            // {
+            //     ccounnc += 1;
+            // }
 
 
 
@@ -850,14 +850,7 @@ int main()
                 theScene.lastBlockAtCursor = theScene.world->getRawLocked(theScene.blockSelectGizmo->selectedSpot);
             }
 
-            if(theScene.worldIntroTimer < 1.0f)
-            {
-                if(theScene.worldReceived.load())
-                {
-                    theScene.worldIntroTimer += deltaTime;
-                }
 
-            }
 
             // auto pos = theScene.getOur<jl::Camera>().transform.position;
             // std::cout << "Position: " << pos.x << " " << pos.y << " " << pos.z << std::endl;
@@ -962,7 +955,16 @@ int main()
             std::vector<AnimationState> animStates;
             // billboards.reserve(10);
             // animStates.reserve(10);
-            auto simscene = theScene.worldIntroTimer >= 1.0f;
+            auto simscene = theScene.worldIntroTimer >= 5.0f;
+            //std::cout << "World intro timer " << theScene.worldIntroTimer << std::endl;
+            if(theScene.worldIntroTimer < 5.0f)
+            {
+                if(theScene.worldReceived.load())
+                {
+                    theScene.worldIntroTimer += deltaTime;
+                }
+
+            }
 
             auto playerView = theScene.REG.view<RenderComponent, PhysicsComponent, Controls, jl::Camera, MovementComponent, InventoryComponent, ParticleEffectComponent>();
 
@@ -976,6 +978,7 @@ int main()
 
                 for (auto entity : playerView)
                 {
+
                     auto & renderComponent = playerView.get<RenderComponent>(entity);
                     auto & movementComponent = playerView.get<MovementComponent>(entity);
                     auto & inventory = playerView.get<InventoryComponent>(entity);
@@ -983,6 +986,11 @@ int main()
                     auto & billboard = renderComponent.billboard;
 
                     auto & camera = playerView.get<jl::Camera>(entity);
+
+                    // if(entity == theScene.myPlayerIndex)
+                    // {
+                    //     std::cout << "camera: " << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << std::endl;
+                    // }
 
                     auto & physicsComponent = playerView.get<PhysicsComponent>(entity);
                     auto & collisionCage = physicsComponent.collisionCage;
@@ -1054,6 +1062,7 @@ int main()
                     }
 
                     PlayerUpdate(deltaTime, &world, particles, renderComponent, physicsComponent, movementComponent, controls, camera, particleComponent, inventory);
+
                 }
             }
             // else
