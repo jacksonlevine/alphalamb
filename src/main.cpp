@@ -827,8 +827,23 @@ int main()
 
 
 
-        if (theScene.myPlayerIndex != entt::null)
+        if (theScene.myPlayerIndex != entt::null && theScene.worldReceived.load())
         {
+            static int ccounnc = 0;
+            if(ccounnc > 100)
+            {
+                ccounnc = 0;
+                auto pos = theScene.our<jl::Camera>().transform.position;
+                std::cout << "Posit " << pos.x << " " << pos.y << " " << pos.z << std::endl;
+            } else
+            {
+                ccounnc += 1;
+            }
+
+
+
+
+
 
             if (auto t = theScene.world->tryToGetReadLockOnDMs(); t != std::nullopt)
             {
