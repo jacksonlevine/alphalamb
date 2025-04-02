@@ -835,6 +835,15 @@ int main()
                 theScene.lastBlockAtCursor = theScene.world->getRawLocked(theScene.blockSelectGizmo->selectedSpot);
             }
 
+            if(theScene.worldIntroTimer < 1.0f)
+            {
+                if(theScene.worldReceived.load())
+                {
+                    theScene.worldIntroTimer += deltaTime;
+                }
+
+            }
+
             // auto pos = theScene.getOur<jl::Camera>().transform.position;
             // std::cout << "Position: " << pos.x << " " << pos.y << " " << pos.z << std::endl;
             //std::cout << "world received and stuff" << std::endl;
@@ -938,7 +947,7 @@ int main()
             std::vector<AnimationState> animStates;
             // billboards.reserve(10);
             // animStates.reserve(10);
-            auto simscene = theScene.worldReceived.load();
+            auto simscene = theScene.worldIntroTimer >= 1.0f;
 
             auto playerView = theScene.REG.view<RenderComponent, PhysicsComponent, Controls, jl::Camera, MovementComponent, InventoryComponent, ParticleEffectComponent>();
 

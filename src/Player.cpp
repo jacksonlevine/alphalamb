@@ -681,7 +681,9 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         } else
         {
             //Have to do this I guess, or else it won't detect if we're on the ground consistently.
-            displacement.y -= deltaTime * 3.0f;
+
+            auto amount = deltaTime * 3.0f;
+            displacement.y -= std::min(amount, 0.01f);
 
             if (!camera.transform.grounded) {
                 camera.transform.velocity.y -= GRAVITY * deltaTime;
