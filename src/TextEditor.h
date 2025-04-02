@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PrecompHeader.h"
+#include <regex>
 
 class TextEditor
 {

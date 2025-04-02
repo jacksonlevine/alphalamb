@@ -29,8 +29,6 @@
 #include <iterator>
 #include <algorithm>
 #include "FastNoiseLite.h"
-#include <boost/container/pmr/monotonic_buffer_resource.hpp>
-#include <boost/container/pmr/polymorphic_allocator.hpp>
 #include <boost/unordered_map.hpp>
 #include <variant>
 #include <AL/al.h>
@@ -54,7 +52,6 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/array.hpp>
 #include "CerealHelpers.h"
-#include <regex>
 
 
 #endif //PRECOMPHEADER_H

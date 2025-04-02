@@ -23,7 +23,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG") # Ensure NDEBUG is set in Release mode
+set(CMAKE_CXX_FLAGS_RELEASE "/MD /O2 /Ob2 /DNDEBUG /m /MP") # Ensure NDEBUG is set in Release mode
 set(CMAKE_CXX_FLAGS_DEBUG "/Zi /D_DEBUG")    # Ensure _DEBUG is set in Debug mode
 
 
