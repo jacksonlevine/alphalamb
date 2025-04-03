@@ -840,7 +840,7 @@ int main()
             //     ccounnc += 1;
             // }
 
-            
+
 
 
 
@@ -1381,14 +1381,13 @@ int main()
                 std::unordered_set<TwoIntTup, TwoIntTupHash> implicated = {};
 
                 for (int x = minX; x <= maxX; x++) {
-                        for (int z = minZ; z <= maxZ; z++) {
-                            TwoIntTup cposhere = theScene.worldRenderer->worldToChunkPos(TwoIntTup(x, z));
-                            if (theScene.worldRenderer->activeChunks.contains(cposhere))
-                            {
-                                implicated.insert(cposhere);
-
-                            }
+                    for (int z = minZ; z <= maxZ; z++) {
+                        TwoIntTup cposhere = theScene.worldRenderer->worldToChunkPos(TwoIntTup(x, z));
+                        if (theScene.worldRenderer->activeChunks.contains(cposhere))
+                        {
+                            implicated.insert(cposhere);
                         }
+                    }
                 }
                 for (auto& i : implicated)
                 {

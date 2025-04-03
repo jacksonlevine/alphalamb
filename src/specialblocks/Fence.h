@@ -7,7 +7,7 @@
 
 #include "SpecialBlockInfo.h"
 
-inline void setFenceBits(World* world, IntTup spot, const glm::vec3& pp )
+inline BlockType getFenceBits(World* world, IntTup spot, const glm::vec3& pp )
 {
     static std::vector<IntTup> neighbs = {
         IntTup(1, 0, 0),
@@ -46,7 +46,14 @@ inline void setFenceBits(World* world, IntTup spot, const glm::vec3& pp )
             world->set(here, b);
         }
     }
-    world->set(spot, myBits);
+    return myBits;
+}
+
+
+
+inline void setFenceBits(World* world, IntTup spot, const glm::vec3& pp )
+{
+    world->set(spot, getFenceBits(world, spot, pp));
 }
 
 inline void addFence(UsableMesh& mesh, BlockType block, IntTup position, PxU32& index, PxU32& tindex)
@@ -88,8 +95,8 @@ inline void addFence(UsableMesh& mesh, BlockType block, IntTup position, PxU32& 
         PxVec3(1.0f - postDistFromEdge, 0.0f, postDistFromEdge),
         PxVec3(1.0f - postDistFromEdge, 0.0f, 1.0f - postDistFromEdge),
         PxVec3(postDistFromEdge, 0.0f, 1.0f - postDistFromEdge),
-
     };
+
     static std::vector<float> basePostBrightnesses = {
         0.9f,
         0.8f,

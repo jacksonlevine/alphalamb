@@ -2,8 +2,9 @@
 #define STAIRS_H
 
 #include "SpecialBlockInfo.h"
+
 template <MaterialName stairID>
-inline void setStairBits(World* world, IntTup spot, const glm::vec3& pp)
+BlockType getStairBits(World* world, IntTup spot, const glm::vec3& pp)
 {
     static std::vector<IntTup> neighbs = {
         IntTup(1, 0, 0),
@@ -36,11 +37,18 @@ inline void setStairBits(World* world, IntTup spot, const glm::vec3& pp)
         }
     }
 
-    world->set(spot, myBits);
+    return myBits;
+}
+
+
+template <MaterialName stairID>
+void setStairBits(World* world, IntTup spot, const glm::vec3& pp)
+{
+    world->set(spot, getStairBits<stairID>(world, spot, pp));
 }
 
 template <MaterialName stairMaterial>
-inline void addStairs(UsableMesh& mesh, BlockType block, IntTup position, PxU32& index, PxU32& tindex)
+void addStairs(UsableMesh& mesh, BlockType block, IntTup position, PxU32& index, PxU32& tindex)
 {
     // Base half-slab vertices
     static std::vector<float> baseHalfSlabBrightnesses = {

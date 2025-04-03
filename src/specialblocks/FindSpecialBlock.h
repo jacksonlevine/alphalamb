@@ -45,4 +45,22 @@ constexpr std::optional<setBitsFunc> findSpecialSetBits(MaterialName bt)
     }
 }
 
+constexpr std::optional<getBitsFunc> findSpecialGetBits(MaterialName bt)
+{
+    switch (bt)
+    {
+    case FENCE:
+        return setFenceBits;
+    case STONE_STAIRS:
+        return setStairBits<STONE_STAIRS>;
+    case WOOD_STAIRS:
+        return setStairBits<WOOD_STAIRS>;
+    case DG_COMPUTERBLOCK:
+        return setComputerBits;
+    default:
+        return std::nullopt;
+    }
+}
+
+
 #endif //FINDSPECIALBLOCK_H
