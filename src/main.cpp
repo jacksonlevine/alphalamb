@@ -807,7 +807,7 @@ int main()
 
         static float lastTime = glfwGetTime();
         float currentTime = glfwGetTime();
-        deltaTime = currentTime - lastTime;
+        deltaTime = std::min(0.03f, currentTime - lastTime);
         lastTime = currentTime;
 
 
