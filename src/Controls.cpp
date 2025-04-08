@@ -6,5 +6,5 @@
 
 bool Controls::anyMovement() const
 {
-    return forward || backward || left || right || jump || secondary1 || secondary2 || crouch;
+    return forward || backward || left || right || jump || secondary1 || secondary2 || crouch || swimming;
 }

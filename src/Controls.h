@@ -18,6 +18,7 @@ struct Controls
     bool secondary1 = false;
     bool secondary2 = false;
     bool crouch = false;
+    bool swimming = false;
     [[nodiscard]] bool anyMovement() const;
     template<class Archive>
     void serialize(Archive& archive)
