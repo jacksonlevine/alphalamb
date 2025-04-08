@@ -16,11 +16,11 @@ class DataMap
 {
 public:
     virtual std::optional<BlockType> get(const IntTup& spot) const = 0;
-    virtual std::optional<BlockType> getLocked(const IntTup& spot) const = 0;
+    virtual std::optional<BlockType> getUnsafe(const IntTup& spot) const = 0;
     virtual void clear() = 0;
     virtual void set(const IntTup& spot, BlockType block) = 0;
     virtual void erase(const IntTup& spot, bool locked = true) = 0;
-    virtual void setLocked(const IntTup& spot, BlockType block) = 0;
+    virtual void setUnsafe(const IntTup& spot, BlockType block) = 0;
     virtual std::shared_mutex& mutex() = 0;
 
     virtual std::unique_lock<std::shared_mutex> getUniqueLock() = 0;

@@ -10,7 +10,9 @@
 
 //#define MEASURE_LOOKUP 1
 
-///A simple implementation of UserDataMap using an unordered_map (And with optionally enabled measuring of lookup time)
+///An unordered_map with a shared_mutex under the hood to be thread safe.
+/// Also has an Unsafe api for bypassing the mutex, but always lock the mutex yourself in these cases.
+/// Use getUniqueLock() and std::shared_lock<std::shared_mutex>(mapmutex) for writes and reads, respectively.
 class HashMapDataMap : public DataMap {
 public:
     void erase(const IntTup& spot, bool locked = true) override;
@@ -22,12 +24,12 @@ public:
     std::shared_mutex& mutex() override;
 
     std::optional<BlockType> get(const IntTup& spot) const override;
-    std::optional<BlockType> getLocked(const IntTup& spot) const override;
+    std::optional<BlockType> getUnsafe(const IntTup& spot) const override;
 
 
     void clear() override;
     void set(const IntTup& spot, BlockType block) override;
-    void setLocked(const IntTup& spot, BlockType block) override;
+    void setUnsafe(const IntTup& spot, BlockType block) override;
 
     mutable std::shared_mutex mapmutex = {};
 private:

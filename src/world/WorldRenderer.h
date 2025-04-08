@@ -199,7 +199,7 @@ public:
 
     ///Chunks that have had their terrain features generated already.
     boost::unordered_flat_set<TwoIntTup, TwoIntTupHash> generatedChunks;
-    void generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>& implicatedChunks);
+    static void generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr);
 
     WorldRenderer()
     {

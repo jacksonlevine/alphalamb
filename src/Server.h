@@ -17,6 +17,7 @@
 #include "world/DataMap.h"
 #include "world/World.h"
 using tcp = boost::asio::ip::tcp;
+using flatCposSet = boost::unordered_flat_set<TwoIntTup, TwoIntTupHash>;
 
 struct ServerPlayer
 {
@@ -85,8 +86,10 @@ inline std::vector<char> loadBinaryFile(const std::string& filename) {
 class Session : public std::enable_shared_from_this<Session>
 {
 public:
-    explicit Session(std::shared_ptr<tcp::socket> socket)
-    : m_socket(std::move(socket)), m_playerIndex(entt::null) { }
+    std::weak_ptr<flatCposSet> generatedChunks;
+
+    explicit Session(std::shared_ptr<tcp::socket> socket, std::shared_ptr<flatCposSet> generatedChunks)
+    : m_socket(std::move(socket)), m_playerIndex(entt::null), generatedChunks(generatedChunks) { }
 
 
 
@@ -275,6 +278,23 @@ private:
                         //     clients.at(m_playerIndex).camera.transform.updateWithYawPitch(m.startYawPitch.x, m.startYawPitch.y);
                         //     //std::cout << "Got clients lock \n";
                         // }
+                        if (auto g = generatedChunks.lock(); g)
+                        {
+                            auto concerningChunkPos = TwoIntTup(m.startPos.x, m.startPos.z);
+                            for (int x = -1; x < 2; x++)
+                            {
+                                for (int z = -1; z < 2; z++)
+                                {
+                                    auto resultantspot = concerningChunkPos + TwoIntTup(x, z);
+                                    if (!g->contains(resultantspot))
+                                    {
+                                        WorldRenderer::generateChunk(&serverWorld, resultantspot);
+                                        g->insert(resultantspot);
+                                    }
+
+                                }
+                            }
+                        }
 
                         {
                             std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
@@ -370,6 +390,10 @@ private:
                     else if constexpr (std::is_same_v<T, BlockSet>) {
                         std::cout << "Got block set" << m.block << "\n";
 
+
+
+
+
                         auto blockThere = serverWorld.get(m.spot);
 
                         if(auto func = findSpecialSetBits((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
@@ -433,7 +457,38 @@ private:
 
                            {
 
+                    //             std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
+                    // auto lock = world->nonUserDataMap->getUniqueLock();
+                    // std::shared_lock<std::shared_mutex> udmRL(world->userDataMap->mutex());
+                    // auto m = request.area;
+                    // int minX = std::min(m.corner1.x, m.corner2.x);
+                    // int maxX = std::max(m.corner1.x, m.corner2.x);
+                    // int minY = std::min(m.corner1.y, m.corner2.y);
+                    // int maxY = std::max(m.corner1.y, m.corner2.y);
+                    // int minZ = std::min(m.corner1.z, m.corner2.z);
+                    // int maxZ = std::max(m.corner1.z, m.corner2.z);
+                    //
+                    // for (int x = minX; x <= maxX; x++) {
+                    //     for (int y = minY; y <= maxY; y++) {
+                    //         for (int z = minZ; z <= maxZ; z++) {
+                    //             bool isBoundary = (x == minX || x == maxX ||
+                    //                 y == minY || y == maxY ||
+                    //                 z == minZ || z == maxZ);
+                    //
+                    //             if (isBoundary || !m.hollow) {
+                    //                 world->setNUDMLocked(IntTup{x, y, z}, m.block);
+                    //                 if (world->userDataMap->getUnsafe(IntTup{x, y, z}) != std::nullopt)
+                    //                 {
+                    //                     spotsToEraseInUDM.emplace_back(x, y, z);
+                    //                 }
+                    //             }
+                    //
+                    //         }
+                    //     }
+                    // }
+
                                std::shared_lock<std::shared_mutex> udmRL(serverWorld.userDataMap->mutex());
+                                auto lock = serverWorld.nonUserDataMap->getUniqueLock();
                                auto hulk = b;
                                int minX = std::min(hulk.corner1.x, hulk.corner2.x);
                                int maxX = std::max(hulk.corner1.x, hulk.corner2.x);
@@ -452,7 +507,8 @@ private:
 
                                            if (isBoundary || !b.hollow)
                                            {
-                                               if (serverWorld.userDataMap->getLocked(IntTup{x, y, z}) != std::nullopt)
+                                               serverWorld.setNUDMLocked(IntTup{x, y, z}, m.block);
+                                               if (serverWorld.userDataMap->getUnsafe(IntTup{x, y, z}) != std::nullopt)
                                                {
                                                    spotsToEraseInUDM.emplace_back(IntTup{x, y, z});
                                                }
@@ -533,6 +589,8 @@ private:
 
 class Server {
 public:
+
+    std::shared_ptr<flatCposSet> generatedChunks = std::make_shared<flatCposSet>();
     Server(boost::asio::io_context& io_context, short port) : m_acceptor(io_context, tcp::endpoint(tcp::v4(), port)) {
         serverWorld.setSeed(DGSEEDSEED);
         loadDM("serverworld.txt", &serverWorld, serverReg, serverWorld.blockAreas, serverWorld.placedVoxModels, nullptr, nullptr, "savedReg.bin");
@@ -597,7 +655,7 @@ public:
                     // }
 
                     // Pass the shared_ptr to the session
-                    auto sesh = std::make_shared<Session>(shared_socket);
+                    auto sesh = std::make_shared<Session>(shared_socket, generatedChunks);
                      sesh->run();
                 } catch (std::exception& e)
                 {

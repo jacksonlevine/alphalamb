@@ -173,7 +173,7 @@ bool loadDM(std::string filename, World* outWorld, entt::registry& reg, BlockAre
                 {
                     IntTup offset = IntTup(realvm.dimensions.x/-2, 0, realvm.dimensions.z/-2) + pvm.spot;
                     outWorld->setNUDMLocked(p.localSpot + offset, p.colorIndex);
-                    auto bh = outWorld->userDataMap->getLocked(p.localSpot + offset);
+                    auto bh = outWorld->userDataMap->getUnsafe(p.localSpot + offset);
                     if (bh != std::nullopt && bh.value() == 0)
                     {
                         spotsToEraseInUDM.push_back(p.localSpot + offset);
@@ -253,10 +253,10 @@ BlockType World::getRawLocked(IntTup spot)
     //     return mem.value();
     // }
 
-    auto id = userDataMap->getLocked(spot);
+    auto id = userDataMap->getUnsafe(spot);
     if (id == std::nullopt)
     {
-        auto nid = nonUserDataMap->getLocked(spot);
+        auto nid = nonUserDataMap->getUnsafe(spot);
         if (nid == std::nullopt)
         {
             return worldGenMethod->get(spot);
@@ -283,6 +283,6 @@ void World::setNUDM(const IntTup& spot, const BlockType val)
 }
 void World::setNUDMLocked(const IntTup& spot, const BlockType val)
 {
-    nonUserDataMap->setLocked(spot, val);
+    nonUserDataMap->setUnsafe(spot, val);
     //blockMemo->set(spot, val);
 }

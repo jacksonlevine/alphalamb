@@ -442,7 +442,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
             {
                 if(!generatedChunks.contains(spotHere))
                 {
-                    generateChunk(world, spotHere, implicatedChunks);
+                    generateChunk(world, spotHere, &implicatedChunks);
+                    generatedChunks.insert(spotHere);
                 }
             }
         }
@@ -696,7 +697,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
                                 if (isBoundary || !m.hollow) {
                                     world->setNUDMLocked(IntTup{x, y, z}, m.block);
-                                    if (world->userDataMap->getLocked(IntTup{x, y, z}) != std::nullopt)
+                                    if (world->userDataMap->getUnsafe(IntTup{x, y, z}) != std::nullopt)
                                     {
                                         spotsToEraseInUDM.emplace_back(x, y, z);
                                     }
@@ -741,7 +742,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         for ( auto & p : vm.points)
                         {
                             world->setNUDMLocked(offset+p.localSpot, p.colorIndex);
-                            if (world->userDataMap->getLocked(offset+p.localSpot) != std::nullopt)
+                            if (world->userDataMap->getUnsafe(offset+p.localSpot) != std::nullopt)
                             {
                                 spotsToEraseInUDM.emplace_back(offset+p.localSpot);
                             }
@@ -840,7 +841,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
     std::cout << "Rebuild thread finished!\n";
 }
 
-void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>& implicatedChunks)
+void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks)
 {
 
     srand(chunkSpot.x * 73856093 ^ chunkSpot.z * 19349663);
@@ -890,9 +891,9 @@ void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std:
                     {
                         auto finalspot = realSpot + point.localSpot + offset;
                         auto chunkhere = WorldRenderer::worldToChunkPos(TwoIntTup(finalspot.x, finalspot.z));
-                        if (chunkhere != chunkSpot)
+                        if (implicatedChunks && chunkhere != chunkSpot)
                         {
-                            implicatedChunks.insert(chunkhere);
+                            implicatedChunks->insert(chunkhere);
                         }
                         world->setNUDM(finalspot, point.colorIndex);
                     }
@@ -907,7 +908,7 @@ void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std:
     //
     // }
 
-    generatedChunks.insert(chunkSpot);
+
 }
 
 void WorldRenderer::clearInFlightMeshUpdates()
