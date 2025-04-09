@@ -70,7 +70,7 @@ void BlockSelectGizmo::draw(World* world, entt::entity playerIndex, entt::regist
                 PxVec3 pos = h.position;
 
                 //Always go inside the block
-                pos += (h.normal * -1.0) * 0.5;
+                pos += (h.normal * -1.0) * 0.2;
 
                 float epsilon = 0.0001f;
                 spot = glm::vec3(std::floor(pos.x + epsilon), std::floor(pos.y + epsilon), std::floor(pos.z + epsilon));

@@ -18,6 +18,8 @@ constexpr std::optional<addBlockFunc> findSpecialBlockMeshFunc(MaterialName bt)
     {
     case FENCE:
         return addFence;
+    case DOOR:
+        return addDoor;
     case STONE_STAIRS:
         return addStairs<STONE>;
     case WOOD_STAIRS:
@@ -35,6 +37,8 @@ constexpr std::optional<setBitsFunc> findSpecialSetBits(MaterialName bt)
     {
         case FENCE:
             return setFenceBits;
+        case DOOR:
+            return setDoorBits;
         case STONE_STAIRS:
             return setStairBits<STONE_STAIRS>;
         case WOOD_STAIRS:

@@ -406,19 +406,31 @@ private:
                         {
                             serverWorld.userDataMap->set(m.spot, m.block);
                         }
-                        //Adding block entity
-                        if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
+
+                        if (blockThere != AIR)
                         {
-                            std::cout << "Calling custom entity create on server " << std::endl;
-                            func.value()(serverReg, m.spot);
+                            if (auto f = findSpecialRemoveBits((MaterialName)blockThere); f != std::nullopt)
+                            {
+                                std::cout << "Calling custom remove bits func on server \n";
+                                f.value()(&serverWorld, m.spot);
+                            }
                         }
-                        //Removing block entity
+
+                        //Removing block entity if there
 
                         if(auto f = findEntityRemoveFunc((MaterialName)(blockThere)); f != std::nullopt)
                         {
                             std::cout << "Calling entity remove on spot " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
                             f.value()(serverReg, m.spot);
                         }
+
+                        //Adding block entity
+                        if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
+                        {
+                            std::cout << "Calling custom entity create on server " << std::endl;
+                            func.value()(serverReg, m.spot);
+                        }
+
 
 
                         redistrib = true;

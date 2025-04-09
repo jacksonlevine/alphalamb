@@ -1273,12 +1273,8 @@ int main()
                                                              12, (MaterialName)blockThere, 0.8, 0.0f);
                             }
 
-                        //If adding block entity
-                            if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
-                            {
-                                std::cout << "Calling custom entity create on client \n";
-                                func.value()(theScene.REG, m.spot);
-                            }
+
+
                         //If removing block entity
 
                                 if(auto f = findEntityRemoveFunc((MaterialName)blockThere); f != std::nullopt)
@@ -1286,6 +1282,14 @@ int main()
                                     std::cout << "Calling custom entity destroy on client \n";
                                     f.value()(theScene.REG, m.spot);
                                 }
+
+                        //If adding block entity
+                            if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
+                            {
+                                std::cout << "Calling custom entity create on client \n";
+                                func.value()(theScene.REG, m.spot);
+                            }
+
 
 
                             if (m.block == AIR || findSpecialBlockMeshFunc((MaterialName)(m.block & BLOCK_ID_BITS)) != std::nullopt)

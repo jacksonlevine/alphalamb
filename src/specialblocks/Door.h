@@ -101,8 +101,8 @@ inline void setDoorBits(World* world, IntTup spot, const glm::vec3& pp)
             right = spot - neighborAxes[direction];
         }
 
-        BlockType blockBitsRight = world->get(right);
-        BlockType blockBitsLeft = world->get(left);
+        BlockType blockBitsRight = world->getRaw(right);
+        BlockType blockBitsLeft = world->getRaw(left);
 
         if((blockBitsRight & BLOCK_ID_BITS) == DOOR)
         {
@@ -110,7 +110,7 @@ inline void setDoorBits(World* world, IntTup spot, const glm::vec3& pp)
             if(neighdir == direction && getDoorTopBit(blockBitsRight) == 0)
             {
                 IntTup rightUp = right + IntTup(0,1,0);
-                uint32_t neighTopBits = world->get(rightUp);
+                uint32_t neighTopBits = world->getRaw(rightUp);
 
                 setOppositeDoorBits(topBits, 1);
                 setOppositeDoorBits(bottomBits, 1);
@@ -127,7 +127,7 @@ inline void setDoorBits(World* world, IntTup spot, const glm::vec3& pp)
             uint32_t neighdir = getDirectionBits(blockBitsLeft);
             if(neighdir == direction && getDoorTopBit(blockBitsLeft) == 0) {
                 IntTup leftUp = left + IntTup(0,1,0);
-                uint32_t neighTopBits = world->get(leftUp);
+                uint32_t neighTopBits = world->getRaw(leftUp);
 
                 setOppositeDoorBits(topBits, 0);
                 setOppositeDoorBits(bottomBits, 0);
@@ -141,12 +141,14 @@ inline void setDoorBits(World* world, IntTup spot, const glm::vec3& pp)
                             
             }
         }
+        world->set(spot, bottomBits);
+        world->set(placeAbove, topBits);
     }
 }
 
 inline void removeDoorBits(World* world, IntTup spot)
 {
-    uint32_t blockBitsHere = world->get(spot);
+    uint32_t blockBitsHere = world->getRaw(spot);
     int top = getDoorTopBit(blockBitsHere);
     IntTup otherHalf;
     if(top == 1) {
@@ -161,23 +163,53 @@ inline void removeDoorBits(World* world, IntTup spot)
 inline void addDoor(UsableMesh& mesh, BlockType block, IntTup position, PxU32& index, PxU32& tindex)
 {
 
-
-
-    auto direction = getDirectionBits(block);
-    //std::cout << "direction: " << direction << std::endl;
-
-    constexpr float postDistFromEdge = 0.2f;
-
     static std::vector<float> baseDoorModelBrightnesses = {
-
+        0.7f,
+        0.7f,
+        0.6f,
+        0.5f,
+        0.3f,
+        1.0f
     };
 
-
+    constexpr float doorthick = 0.25f;
     static std::vector<PxVec3> baseDoorModel = {
+        //Front
+        PxVec3(0.f, 0.f, 0.f),
+        PxVec3(0.f, 1.f, 0.f),
+        PxVec3(1.f, 1.f, 0.f),
+        PxVec3(1.f, 0.f, 0.f),
 
+        //Back
+        PxVec3(1.f, 0.f, doorthick),
+        PxVec3(1.f, 1.f, doorthick),
+        PxVec3(0.f, 1.f, doorthick),
+        PxVec3(0.f, 0.f, doorthick),
+
+        //Right
+        PxVec3(1.f, 0.f, 0.f),
+        PxVec3(1.f, 1.f, 0.f),
+        PxVec3(1.f, 1.f, doorthick),
+        PxVec3(1.f, 0.f, doorthick),
+
+        //Left
+        PxVec3(0.f, 0.f, doorthick),
+        PxVec3(0.f, 1.f, doorthick),
+        PxVec3(0.f, 1.f, 0.f),
+        PxVec3(0.f, 0.f, 0.f),
+
+        //Bottom
+        PxVec3(0.f, 0.f, doorthick),
+        PxVec3(0.f, 0.f, 0.f),
+        PxVec3(1.f, 0.f, 0.f),
+        PxVec3(1.f, 0.f, doorthick),
+
+        //Top
+        PxVec3(1.f, 1.f, doorthick),
+        PxVec3(1.f, 1.f, 0.f),
+        PxVec3(0.f, 1.f, 0.f),
+        PxVec3(0.f, 1.f, doorthick),
     };
-
-
     static std::vector<std::vector<PxVec3>> dirModels = {
         baseDoorModel,
         rotateCoordinatesAroundYNegative90(baseDoorModel, 1),
@@ -186,7 +218,25 @@ inline void addDoor(UsableMesh& mesh, BlockType block, IntTup position, PxU32& i
     };
 
 
-    // addShapeWithMaterial(dirModels.at(direction), baseDoorModelBrightnesses, WOOD_PLANKS, mesh, position, index, tindex);
+
+    int direction = getDirectionBits(block);
+    int open = getDoorOpenBit(block);
+    int opposite = getOppositeDoorBits(block);
+
+    int modelIndex;
+    if(opposite == 1) {
+        modelIndex = (direction - open);
+        if(modelIndex < 0) {
+            modelIndex = 3;
+        }
+    } else {
+        modelIndex = (direction + open) % 4;
+    }
+
+    //int doorTop = getDoorTopBit(block);
+
+
+    addShapeWithMaterial(dirModels.at(modelIndex), baseDoorModelBrightnesses, WOOD_PLANKS, mesh, position, index, tindex);
 
 
 

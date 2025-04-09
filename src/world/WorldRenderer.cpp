@@ -777,6 +777,15 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                 {
                     if(request.changeTo != std::nullopt)
                     {
+                        auto blockThere = world->get(request.changeSpot);
+                        if (blockThere != AIR)
+                        {
+                            if (auto f = findSpecialRemoveBits((MaterialName)blockThere); f != std::nullopt)
+                            {
+                                std::cout << "Calling custom remove bits func on client \n";
+                                f.value()(world, request.changeSpot);
+                            }
+                        }
                         //std::cout <<"Doing the fucking write to " << request.changeSpot.x << " " << request.changeSpot.y << " " << request.changeSpot.z << " \n";
                         if (auto sbf = findSpecialSetBits((MaterialName)request.changeTo.value()); sbf != std::nullopt)
                         {
