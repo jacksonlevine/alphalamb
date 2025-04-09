@@ -37,7 +37,8 @@ inline void removeComputerEntity(entt::registry& reg, IntTup spot)
     }
 }
 
-inline BlockType getComputerBits(World* world, IntTup spot, const glm::vec3& pp)
+
+inline void setComputerBits(World* world, IntTup spot, const glm::vec3& pp)
 {
     IntTup playerBlockPos = IntTup(glm::floor(pp.x), glm::floor(pp.y), glm::floor(pp.z));
     auto diff = playerBlockPos - spot;
@@ -55,12 +56,7 @@ inline BlockType getComputerBits(World* world, IntTup spot, const glm::vec3& pp)
 
     BlockType myBits = DG_COMPUTERBLOCK;
     setDirectionBits(myBits, direction);
-    return myBits;
-}
-
-inline void setComputerBits(World* world, IntTup spot, const glm::vec3& pp)
-{
-    world->set(spot, getComputerBits(world, spot, pp));
+    world->set(spot, myBits);
 }
 
 inline void addComputer(UsableMesh& mesh, BlockType block, IntTup position, PxU32& index, PxU32& tindex)

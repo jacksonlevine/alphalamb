@@ -4,7 +4,7 @@
 #include "SpecialBlockInfo.h"
 
 template <MaterialName stairID>
-BlockType getStairBits(World* world, IntTup spot, const glm::vec3& pp)
+void setStairBits(World* world, IntTup spot, const glm::vec3& pp)
 {
     static std::vector<IntTup> neighbs = {
         IntTup(1, 0, 0),
@@ -36,15 +36,7 @@ BlockType getStairBits(World* world, IntTup spot, const glm::vec3& pp)
             myBits |= bits[i];
         }
     }
-
-    return myBits;
-}
-
-
-template <MaterialName stairID>
-void setStairBits(World* world, IntTup spot, const glm::vec3& pp)
-{
-    world->set(spot, getStairBits<stairID>(world, spot, pp));
+    world->set(spot, myBits);
 }
 
 template <MaterialName stairMaterial>
