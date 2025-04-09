@@ -103,6 +103,9 @@ uniform float scale;
             uniform float overridingDewyFogFactor;
             uniform float dewyFogFactor;
 
+
+            uniform float underwater;
+
             in vec3 ppos;
             in vec3 grassColor;
             float mDist(float x1, float y1, float x2, float y2) {
@@ -147,6 +150,11 @@ fogFactor *= dff;
 
 // Apply fog to the final color
 vec4 fogColor = vec4(fogCol.xyz, 1.0);
+if(underwater > 0.5f) {
+    fogColor = vec4(0.0, 0.0, 1.0, 1.0);
+    fogFactor *= 50.0f;
+
+}
 vec4 tex = texture(texture1, TexCoord) + vec4(grassColor * 0.3, 0.0);
 FragColor = mix(vec4((tex * brightness).xyz, tex.a), fogColor, fogFactor);
                 vec3 lutCoords = clamp(FragColor.xyz, 0.0, 1.0);
@@ -162,6 +170,7 @@ FragColor = mix(vec4((tex * brightness).xyz, tex.a), fogColor, fogFactor);
                 //if(FragColor.a < 1.0) {
                 //    FragColor.a += distance*100.5f;
                 //}
+
 
             }
         )glsl",

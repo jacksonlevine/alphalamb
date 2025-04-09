@@ -1423,8 +1423,11 @@ int main()
                 auto theintspot = IntTup(thespot.x, thespot.y, thespot.z);
                 theScene.bulkPlaceGizmo->corner2 = theintspot;
             }
+            if (theScene.blockHeadIn != WATER)
+            {
+                dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, theScene.timeOfDay);
+            }
 
-            dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, theScene.timeOfDay);
 
             if (theScene.our<jl::Camera>().transform.position.y > 300.0f)
             {
@@ -1514,7 +1517,7 @@ int main()
             static GLuint fogColLoc = glGetUniformLocation(mainShader.shaderID, "fogCol");
             static GLuint odffLoc = glGetUniformLocation(mainShader.shaderID, "overridingDewyFogFactor");
             static GLuint wcaLoc = glGetUniformLocation(mainShader.shaderID, "worldCurveAmount");
-
+            static GLuint uwloc = glGetUniformLocation(mainShader.shaderID, "underwater");
             glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera.mvp));
             glActiveTexture(GL_TEXTURE0);
             glUniform1i(texture1Loc, 0);
@@ -1526,7 +1529,7 @@ int main()
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
             glUniform1f(scaleLoc, 1.0f);
             glUniform1f( wcaLoc, campos.y > 230.f ? glm::max(0.f, std::min(50.f, campos.y - 230.f)) / 50.f : 0.f );
-
+            glUniform1f(uwloc, theScene.blockHeadIn == WATER ? 1.0f : 0.0f);
             auto ourCam = theScene.our<jl::Camera>().transform.position;
             IntTup itspot(
                 ourCam.x,
