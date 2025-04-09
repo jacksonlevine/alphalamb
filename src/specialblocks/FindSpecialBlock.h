@@ -50,13 +50,13 @@ constexpr std::optional<getBitsFunc> findSpecialGetBits(MaterialName bt)
     switch (bt)
     {
     case FENCE:
-        return setFenceBits;
+        return getFenceBits;
     case STONE_STAIRS:
-        return setStairBits<STONE_STAIRS>;
+        return getStairBits<STONE_STAIRS>;
     case WOOD_STAIRS:
-        return setStairBits<WOOD_STAIRS>;
+        return getStairBits<WOOD_STAIRS>;
     case DG_COMPUTERBLOCK:
-        return setComputerBits;
+        return getComputerBits;
     default:
         return std::nullopt;
     }
