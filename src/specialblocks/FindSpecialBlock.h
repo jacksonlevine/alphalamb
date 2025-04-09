@@ -10,6 +10,7 @@
 #include "Stairs.h"
 #include "../PrecompHeader.h"
 #include "Computer.h"
+#include "Door.h"
 
 constexpr std::optional<addBlockFunc> findSpecialBlockMeshFunc(MaterialName bt)
 {
@@ -42,6 +43,17 @@ constexpr std::optional<setBitsFunc> findSpecialSetBits(MaterialName bt)
             return setComputerBits;
         default:
             return std::nullopt;
+    }
+}
+
+constexpr std::optional<removeBitsFunc> findSpecialRemoveBits(MaterialName bt)
+{
+    switch (bt)
+    {
+    case DOOR:
+        return removeDoorBits;
+    default:
+        return std::nullopt;
     }
 }
 

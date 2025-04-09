@@ -10,6 +10,9 @@
 using addBlockFunc = std::function<void(UsableMesh&, uint32_t, IntTup, PxU32 &, PxU32 &)>;
 
 using setBitsFunc = std::function<void(World*, IntTup, const glm::vec3& /*player pos in case we wanna face block toward player on place*/)>;
+using removeBitsFunc = std::function<void(World*, IntTup)>;
+
+
 
 inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<float> &brightnesses, MaterialName block, UsableMesh& outmesh, IntTup position, PxU32& index, PxU32& tindex)
 {
