@@ -373,11 +373,12 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
                 glUniform1f(dewyFogFactorLoc, dewyFogFactor);
                 glUniform1f(grassRedChangeLoc, grassRedChange);
                 glUniform1f(timeRenderedLoc, chunkinfo.timeBeenRendered);
+                glDisable(GL_CULL_FACE);
                 if (actuallyDraw)
                 {
                     drawTransparentsFromChunkIndex(static_cast<int>(chunkinfo.chunkIndex), glInfo);
                 }
-
+                glEnable(GL_CULL_FACE);
             }
         }
     }
@@ -442,7 +443,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
             {
                 if(!generatedChunks.contains(spotHere))
                 {
-                    generateChunk(world, spotHere, implicatedChunks);
+                    generateChunk(world, spotHere, &implicatedChunks);
+                    generatedChunks.insert(spotHere);
                 }
             }
         }
@@ -696,7 +698,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
                                 if (isBoundary || !m.hollow) {
                                     world->setNUDMLocked(IntTup{x, y, z}, m.block);
-                                    if (world->userDataMap->getLocked(IntTup{x, y, z}) != std::nullopt)
+                                    if (world->userDataMap->getUnsafe(IntTup{x, y, z}) != std::nullopt)
                                     {
                                         spotsToEraseInUDM.emplace_back(x, y, z);
                                     }
@@ -741,7 +743,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         for ( auto & p : vm.points)
                         {
                             world->setNUDMLocked(offset+p.localSpot, p.colorIndex);
-                            if (world->userDataMap->getLocked(offset+p.localSpot) != std::nullopt)
+                            if (world->userDataMap->getUnsafe(offset+p.localSpot) != std::nullopt)
                             {
                                 spotsToEraseInUDM.emplace_back(offset+p.localSpot);
                             }
@@ -840,7 +842,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
     std::cout << "Rebuild thread finished!\n";
 }
 
-void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>& implicatedChunks)
+void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks)
 {
 
     srand(chunkSpot.x * 73856093 ^ chunkSpot.z * 19349663);
@@ -890,9 +892,9 @@ void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std:
                     {
                         auto finalspot = realSpot + point.localSpot + offset;
                         auto chunkhere = WorldRenderer::worldToChunkPos(TwoIntTup(finalspot.x, finalspot.z));
-                        if (chunkhere != chunkSpot)
+                        if (implicatedChunks && chunkhere != chunkSpot)
                         {
-                            implicatedChunks.insert(chunkhere);
+                            implicatedChunks->insert(chunkhere);
                         }
                         world->setNUDM(finalspot, point.colorIndex);
                     }
@@ -907,7 +909,7 @@ void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std:
     //
     // }
 
-    generatedChunks.insert(chunkSpot);
+
 }
 
 void WorldRenderer::clearInFlightMeshUpdates()
@@ -1135,8 +1137,9 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         BlockType neighblock = (getBlock(nx, ny, nz) & BLOCK_ID_BITS);
                         bool neightransparent = isBlockTransparent(nx, ny, nz);
                         bool neighborair = neighblock == AIR;
+                        bool solidNeighboringTransparent = (neightransparent && !blockHereTransparent);
 
-                        if (neighborair || (neightransparent && !blockHereTransparent) || (blockHereTransparent && neighblock != blockID)) {
+                        if (neighborair || solidNeighboringTransparent || (blockHereTransparent && (neighblock != blockID) && neightransparent)) {
                             Side side = static_cast<Side>(i);
 
                             if (!ambOccl) {
@@ -1147,6 +1150,17 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                                               side, static_cast<MaterialName>(blockID), 1, mesh, index, tindex);
                                 calculateAmbientOcclusion(here, side, world, locked, blockID, mesh);
                             }
+                            // if (blockID == WATER && side == Side::Top)
+                            // {
+                            //     if (!ambOccl) {
+                            //         addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y)+1, static_cast<float>(here.z)),
+                            //                      Side::Bottom, static_cast<MaterialName>(blockID), 1, mesh, index, tindex);
+                            //     } else {
+                            //         addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y)+1, static_cast<float>(here.z)),
+                            //                       Side::Bottom, static_cast<MaterialName>(blockID), 1, mesh, index, tindex);
+                            //         calculateAmbientOcclusion(here, side, world, locked, blockID, mesh);
+                            //     }
+                            // }
                         }
                     }
                 }

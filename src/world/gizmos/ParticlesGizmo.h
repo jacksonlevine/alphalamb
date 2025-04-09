@@ -53,8 +53,9 @@ public:
         if (!filterdataset)
         {
             PxFilterData filterData;
-            filterData.word0 = 3 << 0;
+            filterData.word0 = 3;
             shape->setSimulationFilterData(filterData);
+            shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
             filterdataset = true;
         }
 
@@ -94,10 +95,11 @@ public:
     {
         static FastNoiseLite noise;
         static auto _ = [] {
-            noise.SetNoiseType(FastNoiseLite::NoiseType_Value); // Run once
+            noise.SetNoiseType(FastNoiseLite::NoiseType_Value);
+            noise.SetSeed(time(NULL));
             return 0;
         }();
-        noise.SetSeed(time(NULL));
+
         for(int i = 0; i < amount; i++)
         {
             glm::vec3 here(
@@ -176,7 +178,8 @@ private:
                 {
                     spot.y -= 1;
                 }
-                if (world->getLocked(spot) != AIR)
+                auto wl = (MaterialName)(world->getLocked(spot));
+                if (wl != AIR && std::find(noColl.begin(), noColl.end(), wl) != noColl.end())
                 {
                     addFace(PxVec3(spot.x, spot.y, spot.z), Side::Top, GRASS, 1, mesh, index, tindex);
                 }

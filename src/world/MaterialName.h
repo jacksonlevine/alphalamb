@@ -111,7 +111,12 @@ constexpr auto noAmbOccl = std::to_array({
     FENCE, GLASS,DG_COMPUTERBLOCK});
 constexpr auto noCustCollShape = std::to_array({
     DG_COMPUTERBLOCK});
-
+constexpr auto liquids = std::to_array({
+    WATER
+});
+constexpr auto noColl = std::to_array({
+    WATER
+});
 constexpr auto transparents = std::to_array({
     AIR,
     DG_COMPUTERBLOCK,

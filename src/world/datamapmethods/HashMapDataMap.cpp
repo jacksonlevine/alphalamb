@@ -59,7 +59,7 @@ std::optional<BlockType> HashMapDataMap::get(const IntTup& spot) const {
     return block;
 }
 
-std::optional<BlockType> HashMapDataMap::getLocked(const IntTup& spot) const
+std::optional<BlockType> HashMapDataMap::getUnsafe(const IntTup& spot) const
 {
     std::optional<BlockType> block = std::nullopt;
     if (map.contains(spot)) {
@@ -82,7 +82,7 @@ void HashMapDataMap::set(const IntTup& spot, BlockType block)
     map.insert_or_assign(spot, block);
 }
 
-void HashMapDataMap::setLocked(const IntTup& spot, BlockType block)
+void HashMapDataMap::setUnsafe(const IntTup& spot, BlockType block)
 {
     map.insert_or_assign(spot, block);
 }

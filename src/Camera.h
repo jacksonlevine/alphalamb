@@ -22,8 +22,6 @@ namespace jl {
         float unwrappedYaw = 0.0f;
         float unwrappedPitch = 0.0f;
 
-
-
         void interpTowardTargetYP(float deltatime);
         Camera()
 

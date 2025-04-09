@@ -807,7 +807,7 @@ int main()
 
         static float lastTime = glfwGetTime();
         float currentTime = glfwGetTime();
-        deltaTime = currentTime - lastTime;
+        deltaTime = std::min(0.03f, currentTime - lastTime);
         lastTime = currentTime;
 
 
@@ -846,9 +846,27 @@ int main()
 
 
 
+
+
             if (auto t = theScene.world->tryToGetReadLockOnDMs(); t != std::nullopt)
             {
                 theScene.lastBlockAtCursor = theScene.world->getRawLocked(theScene.blockSelectGizmo->selectedSpot);
+
+                auto pos = theScene.our<jl::Camera>().transform.position;
+                auto & cont = theScene.our<Controls>();
+                auto crouched = cont.crouch;
+                theScene.blockHeadIn = (MaterialName)(theScene.world->getRawLocked(IntTup(pos.x, pos.y, pos.z)) & BLOCK_ID_BITS);
+                if (crouched)
+                {
+                    theScene.blockFeetIn = theScene.blockHeadIn;
+                } else
+                {
+                    theScene.blockFeetIn = (MaterialName)(theScene.world->getRawLocked(IntTup(pos.x, pos.y - 1.0f, pos.z)) & BLOCK_ID_BITS);
+                }
+
+                cont.swimming = std::find(liquids.begin(), liquids.end(), theScene.blockFeetIn) != liquids.end();
+
+
             }
 
 
