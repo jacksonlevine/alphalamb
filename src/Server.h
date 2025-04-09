@@ -432,6 +432,39 @@ private:
                             serverWorld.placedVoxModels.models.push_back(v);
                         }
 
+
+                        auto & vm = voxelModels[m.name];
+                    std::vector<IntTup> spotsToEraseInUDM;
+                    spotsToEraseInUDM.reserve(500);
+
+                    {
+                        //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
+
+                        auto lock = serverWorld.nonUserDataMap->getUniqueLock();
+                        std::shared_lock<std::shared_mutex> udmRL(serverWorld.userDataMap->mutex());
+
+                        IntTup offset = IntTup(vm.dimensions.x/-2, 0, vm.dimensions.z/-2) + m.spot;
+                        for ( auto & p : vm.points)
+                        {
+                            serverWorld.setNUDMLocked(offset+p.localSpot, p.colorIndex);
+                            if (serverWorld.userDataMap->getUnsafe(offset+p.localSpot) != std::nullopt)
+                            {
+                                spotsToEraseInUDM.emplace_back(offset+p.localSpot);
+                            }
+
+                        }
+
+
+
+                    }
+                    {
+                        auto lock = serverWorld.userDataMap->getUniqueLock();
+                        for (auto & spot : spotsToEraseInUDM)
+                        {
+                            serverWorld.userDataMap->erase(spot, true);
+                        }
+                    }
+
                         //auto & vm = voxelModels[(int)m.name];
 
                         redistrib = true;

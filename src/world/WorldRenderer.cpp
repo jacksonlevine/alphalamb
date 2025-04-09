@@ -373,11 +373,12 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
                 glUniform1f(dewyFogFactorLoc, dewyFogFactor);
                 glUniform1f(grassRedChangeLoc, grassRedChange);
                 glUniform1f(timeRenderedLoc, chunkinfo.timeBeenRendered);
+                glDisable(GL_CULL_FACE);
                 if (actuallyDraw)
                 {
                     drawTransparentsFromChunkIndex(static_cast<int>(chunkinfo.chunkIndex), glInfo);
                 }
-
+                glEnable(GL_CULL_FACE);
             }
         }
     }
@@ -1136,8 +1137,9 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         BlockType neighblock = (getBlock(nx, ny, nz) & BLOCK_ID_BITS);
                         bool neightransparent = isBlockTransparent(nx, ny, nz);
                         bool neighborair = neighblock == AIR;
+                        bool solidNeighboringTransparent = (neightransparent && !blockHereTransparent);
 
-                        if (neighborair || (neightransparent && !blockHereTransparent) || (blockHereTransparent && neighblock != blockID)) {
+                        if (neighborair || solidNeighboringTransparent || (blockHereTransparent && (neighblock != blockID) && neightransparent)) {
                             Side side = static_cast<Side>(i);
 
                             if (!ambOccl) {
@@ -1148,6 +1150,17 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                                               side, static_cast<MaterialName>(blockID), 1, mesh, index, tindex);
                                 calculateAmbientOcclusion(here, side, world, locked, blockID, mesh);
                             }
+                            // if (blockID == WATER && side == Side::Top)
+                            // {
+                            //     if (!ambOccl) {
+                            //         addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y)+1, static_cast<float>(here.z)),
+                            //                      Side::Bottom, static_cast<MaterialName>(blockID), 1, mesh, index, tindex);
+                            //     } else {
+                            //         addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y)+1, static_cast<float>(here.z)),
+                            //                       Side::Bottom, static_cast<MaterialName>(blockID), 1, mesh, index, tindex);
+                            //         calculateAmbientOcclusion(here, side, world, locked, blockID, mesh);
+                            //     }
+                            // }
                         }
                     }
                 }

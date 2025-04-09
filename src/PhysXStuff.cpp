@@ -49,6 +49,20 @@ SurfaceData::SurfaceData()
 // }
 //
 
+
+PxFilterFlags FilterShaderExample(
+    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
+    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
+{
+    pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+    if(((filterData0.word0 == 2) && (filterData1.word0 == 3))
+        || ((filterData1.word0 == 2) && (filterData0.word0 == 3)))
+        return PxFilterFlag::eKILL;
+
+    return PxFilterFlag::eDEFAULT;
+}
+
 void _initializePhysX() {
     // Step 1: Create the foundation
     gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
@@ -68,7 +82,7 @@ void _initializePhysX() {
     PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
     sceneDesc.cpuDispatcher = gDispatcher;
-    sceneDesc.filterShader = PxDefaultSimulationFilterShader;
+    sceneDesc.filterShader = FilterShaderExample;
     gScene = gPhysics->createScene(sceneDesc);
 
     gControllerManager = PxCreateControllerManager(*gScene);

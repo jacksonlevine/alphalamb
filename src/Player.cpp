@@ -26,6 +26,65 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
     PhysicsComponent& physicsComponent, MovementComponent& movementComponent, Controls& controls, jl::Camera & camera, ParticleEffectComponent & particleComponent, InventoryComponent& inventory)
 {
 
+
+    if (controls.swimming) {
+        // Totally different player movement logic for swimming
+        float swimSpeed = 8.0f; // Base swimming speed
+
+        // Zero out gravity effects when swimming
+        camera.transform.velocity /= (1.0f + deltaTime * 2.0f); // Higher water resistance
+
+        // Controls for swimming movement - 3D movement in water
+        if (controls.forward) {
+            camera.transform.velocity += camera.transform.direction * deltaTime * swimSpeed;
+        }
+        if (controls.backward) {
+            camera.transform.velocity -= camera.transform.direction * deltaTime * swimSpeed;
+        }
+        if (controls.right) {
+            camera.transform.velocity += camera.transform.right * deltaTime * swimSpeed;
+        }
+        if (controls.left) {
+            camera.transform.velocity -= camera.transform.right * deltaTime * swimSpeed;
+        }
+        if (controls.jump) {
+            camera.transform.velocity += glm::vec3(0.0f, 1.0f, 0.0f) * deltaTime * swimSpeed;
+        }
+        if (controls.crouch) {
+            camera.transform.velocity -= glm::vec3(0.0f, 1.0f, 0.0f) * deltaTime * swimSpeed;
+        }
+
+        // Apply natural buoyancy - gentle upward drift
+        camera.transform.velocity += glm::vec3(0.0f, 0.5f, 0.0f) * deltaTime;
+
+        // Apply velocity-based movement
+        glm::vec3 displacement = camera.transform.velocity * deltaTime;
+
+        // Move controller with swim physics
+        PxControllerFilters filters;
+        filters.mFilterFlags = PxQueryFlag::eSTATIC;
+        physicsComponent.controller->move(
+            PxVec3(displacement.x, displacement.y, displacement.z),
+            0.001f,
+            deltaTime,
+            filters
+        );
+
+        // Update position
+        PxExtendedVec3 newPos = physicsComponent.controller->getPosition();
+        camera.transform.position.x = static_cast<float>(newPos.x);
+        camera.transform.position.y = static_cast<float>(newPos.y + CAMERA_OFFSET - (movementComponent.crouchOverride ? 1.0f: 0.0f));
+        camera.transform.position.z = static_cast<float>(newPos.z);
+
+        // particleComponent.footDustTimer += deltaTime;
+        // if (particleComponent.footDustTimer > 0.3f) {
+        //     particles->particleBurst(camera.transform.position, 3, WATER, 0.8f, 0.1f);
+        //     particleComponent.footDustTimer = 0.0f;
+        // }
+
+        return; // Skip the rest of the normal movement logic
+    }
+
     //std::cout << "PlayerUpdate with seed " << world->worldGenMethod->getSeed() << std::endl;
 
     auto & jetpackSource = movementComponent.jetpackSource;
@@ -696,7 +755,6 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         }
     }
 
-    // Only apply displacement if we're not climbing
     if (!isClimbingUp)
     {
         displacement.y += camera.transform.velocity.y * deltaTime;
@@ -704,14 +762,12 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         displacement.z += camera.transform.velocity.z * deltaTime;
 
         PxControllerFilters filters;
-        filters.mFilterFlags = PxQueryFlag::eSTATIC; // Only collides with static geometry
+        filters.mFilterFlags = PxQueryFlag::eSTATIC;
 
-        // Set step height based on sliding state for the controller move
         if (isSliding) {
             controller->setStepOffset(1.5f);
         }
 
-        // Move the character controller
         PxControllerCollisionFlags collisionFlags = controller->move(
             PxVec3(displacement.x, displacement.y, displacement.z),
             0.001f,
@@ -719,7 +775,6 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
             filters
         );
 
-        // Update grounded state
         camera.transform.grounded = (collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN) || isGrounded;
         if (camera.transform.grounded)
         {
