@@ -54,6 +54,28 @@ inline uint32_t getDoorTopBit(uint32_t input) {
 
 inline void setDoorBits(World* world, IntTup spot, const glm::vec3& pp)
 {
+    auto rawWasHere = world->getRaw(spot);
+    auto IDwasHere = rawWasHere & BLOCK_ID_BITS;
+    if (IDwasHere == DOOR)
+    {
+        //if its a re-place that means toggle the door
+        int top = getDoorTopBit(rawWasHere);
+        IntTup otherHalf;
+        if(top == 1) {
+            otherHalf = spot + IntTup(0, -1, 0);
+        } else {
+            otherHalf = spot + IntTup(0, 1, 0);
+        }
+        BlockType rawOtherHalf = world->getRaw(otherHalf);
+
+        toggleDoorOpenBit(rawWasHere);
+        toggleDoorOpenBit(rawOtherHalf);
+
+        world->set(spot, rawWasHere);
+        world->set(otherHalf, rawOtherHalf);
+        return;
+    }
+
     static std::vector<IntTup> neighborAxes = {
         IntTup(1,0,0),
         IntTup(0,0,1),
@@ -172,7 +194,7 @@ inline void addDoor(UsableMesh& mesh, BlockType block, IntTup position, PxU32& i
         1.0f
     };
 
-    constexpr float doorthick = 0.25f;
+    constexpr float doorthick = 0.15f;
     static std::vector<PxVec3> baseDoorModel = {
         //Front
         PxVec3(0.f, 0.f, 0.f),
@@ -233,10 +255,17 @@ inline void addDoor(UsableMesh& mesh, BlockType block, IntTup position, PxU32& i
         modelIndex = (direction + open) % 4;
     }
 
-    //int doorTop = getDoorTopBit(block);
+    int doorTop = getDoorTopBit(block);
 
+    if (doorTop)
+    {
+        addShapeWithMaterial(dirModels.at(modelIndex), baseDoorModelBrightnesses, WOOD_PLANKS, mesh, position, index, tindex);
 
-    addShapeWithMaterial(dirModels.at(modelIndex), baseDoorModelBrightnesses, WOOD_PLANKS, mesh, position, index, tindex);
+    } else
+    {
+        addShapeWithMaterial(dirModels.at(modelIndex), baseDoorModelBrightnesses, WOOD_PLANKS, mesh, position, index, tindex);
+
+    }
 
 
 

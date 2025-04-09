@@ -778,7 +778,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                     if(request.changeTo != std::nullopt)
                     {
                         auto blockThere = world->get(request.changeSpot);
-                        if (blockThere != AIR)
+                        if (blockThere != AIR  && (blockThere != (MaterialName)(request.changeTo.value() & BLOCK_ID_BITS)))
                         {
                             if (auto f = findSpecialRemoveBits((MaterialName)blockThere); f != std::nullopt)
                             {

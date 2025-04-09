@@ -198,17 +198,28 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
 
                             using namespace std;
 
-                            IntTup playerBlockSpot1 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y), floor(cam.transform.position.z));
-                            IntTup playerBlockSpot2 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y-1), floor(cam.transform.position.z));
 
-                            if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
+                            BlockType blockThere = scene->world->get(spot);
+                            if (blockThere == DOOR)
                             {
-                                //std::cout << "Senfing blokc place \n";
-                                std::cout << "Place at: " << placeSpot.x << " " << placeSpot.y << " " << placeSpot.z << " " << scene->our<InventoryComponent>().currentHeldBlock << std::endl;
                                 pushToMainToNetworkQueue(BlockSet{
-                                    .spot = placeSpot, .block =  scene->our<InventoryComponent>().currentHeldBlock, .pp = cam.transform.position
-                                });
+                                        .spot = spot, .block =  DOOR, .pp = cam.transform.position
+                                    });
+                            } else
+                            {
+                                IntTup playerBlockSpot1 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y), floor(cam.transform.position.z));
+                                IntTup playerBlockSpot2 = IntTup(floor(cam.transform.position.x), floor(cam.transform.position.y-1), floor(cam.transform.position.z));
+
+                                if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
+                                {
+                                    //std::cout << "Senfing blokc place \n";
+                                    std::cout << "Place at: " << placeSpot.x << " " << placeSpot.y << " " << placeSpot.z << " " << scene->our<InventoryComponent>().currentHeldBlock << std::endl;
+                                    pushToMainToNetworkQueue(BlockSet{
+                                        .spot = placeSpot, .block =  scene->our<InventoryComponent>().currentHeldBlock, .pp = cam.transform.position
+                                    });
+                                }
                             }
+
                         }
                     } else if (scene->bulkPlaceGizmo->active)
                     {

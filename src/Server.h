@@ -407,7 +407,7 @@ private:
                             serverWorld.userDataMap->set(m.spot, m.block);
                         }
 
-                        if (blockThere != AIR)
+                        if (blockThere != AIR && (blockThere != (MaterialName)(m.block & BLOCK_ID_BITS)))
                         {
                             if (auto f = findSpecialRemoveBits((MaterialName)blockThere); f != std::nullopt)
                             {

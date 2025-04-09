@@ -106,7 +106,7 @@ DEFINE_ENUM_WITH_STRING_CONVERSIONS(MaterialName, BlockType,
     (JETPACK_PARTICLE_BLOCK)
     (DG_COMPUTERBLOCK)
 )
-
+constexpr auto noHeadBlock = std::to_array({DOOR});
 constexpr auto noAmbOccl = std::to_array({
     FENCE, GLASS,DG_COMPUTERBLOCK, DOOR});
 constexpr auto noCustCollShape = std::to_array({
