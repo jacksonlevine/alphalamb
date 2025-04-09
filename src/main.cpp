@@ -974,9 +974,9 @@ int main()
             std::vector<AnimationState> animStates;
             // billboards.reserve(10);
             // animStates.reserve(10);
-            auto simscene = theScene.worldIntroTimer >= 5.0f;
+            auto simscene = theScene.worldIntroTimer >= 1.0f;
             //std::cout << "World intro timer " << theScene.worldIntroTimer << std::endl;
-            if(theScene.worldIntroTimer < 5.0f)
+            if(theScene.worldIntroTimer < 1.0f)
             {
                 if(theScene.worldReceived.load())
                 {
