@@ -1609,14 +1609,14 @@ int main()
                 glUniform3f(fogColLoc, currAtmos.fogColor.x, currAtmos.fogColor.y, currAtmos.fogColor.z);
 
                 glUniform3f(offsetLoc, -0.5f, -0.5f, -0.5f);
-                // bool isme = id == theScene.myPlayerIndex;
-                // if (isme)
-                // {
-                //     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.guiCamera->mvp));
-                //     glUniform3f(posLoc, 3.0, -1.2, std::min((float)wwi / 600.0f, 2.0f));
-                //     glDisable(GL_DEPTH_TEST);
-                //     glUniform3f(camPosLoc, 0, 0, 0);
-                // } else
+                bool isme = id == theScene.myPlayerIndex;
+                if (isme)
+                {
+                    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.guiCamera->mvp));
+                    glUniform3f(posLoc, 3.0, -1.2, std::min((float)wwi / 600.0f, 2.0f));
+                    glDisable(GL_DEPTH_TEST);
+                    glUniform3f(camPosLoc, 0, 0, 0);
+                } else
                 {
                     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.our<jl::Camera>().mvp));
                     glUniform3f(posLoc, pos.x, pos.y, pos.z);
