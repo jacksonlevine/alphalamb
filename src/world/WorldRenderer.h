@@ -88,7 +88,7 @@ enum class Side
 // };
 
 template<bool doBrightness = true>
-__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex);
+__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex, float offsety = 0.0f);
 
 void genCGLBuffers();
 constexpr float onePixel = 0.00183823529411764705882352941176f;     //  1/544      Padding

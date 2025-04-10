@@ -667,7 +667,7 @@ void renderImGui()
             }
         case GuiScreen::InGame:
 
-            ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.98e4");
+            ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg 0.0.99a");
 
             for (int i = 0; i < theScene.our<MovementComponent>().stamCount; i++)
             {

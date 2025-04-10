@@ -25,14 +25,52 @@
 void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, RenderComponent& renderComponent,
     PhysicsComponent& physicsComponent, MovementComponent& movementComponent, Controls& controls, jl::Camera & camera, ParticleEffectComponent & particleComponent, InventoryComponent& inventory)
 {
+    auto & lastBlockStandingOn = particleComponent.lastBlockStandingOn;
 
+    if(controls.anyMovement())
+    {
+        if (controls.swimming)
+        {
+            movementComponent.footstepInterval = 1.0f;
+
+        } else if(controls.sprint) {
+
+            movementComponent.footstepInterval = 0.35f;
+        }else
+        {
+            movementComponent.footstepInterval = 0.5f;
+        }
+        if(auto b =  getFootstepSound(lastBlockStandingOn); b != std::nullopt)
+        {
+            if(movementComponent.footstepTimer < movementComponent.footstepInterval)
+            {
+                movementComponent.footstepTimer += deltaTime;
+            } else
+            {
+                movementComponent.footstepTimer = 0.0f;
+
+                auto & stepSounds = getBufferSeries(fromMaterial(static_cast<MaterialName>(lastBlockStandingOn & BLOCK_ID_BITS)));
+                if(!stepSounds.empty())
+                {
+                    if(movementComponent.soundSeriesIndexer < stepSounds.size() && movementComponent.soundSeriesIndexer >= 0)
+                    {
+                        alSourceStop(movementComponent.footstepSource);
+                        playBufferFromSource(sounds.at((int)stepSounds[movementComponent.soundSeriesIndexer]), movementComponent.footstepSource);
+                    }
+                    movementComponent.soundSeriesIndexer  = (movementComponent.soundSeriesIndexer + 1) % stepSounds.size();
+                }
+
+
+            }
+        }
+    }
 
     if (controls.swimming) {
         // Totally different player movement logic for swimming
         float swimSpeed = 8.0f; // Base swimming speed
 
         // Zero out gravity effects when swimming
-        camera.transform.velocity /= (1.0f + deltaTime * 2.0f); // Higher water resistance
+        camera.transform.velocity /= (1.0f + deltaTime * 0.5f); // Higher water resistance
 
         // Controls for swimming movement - 3D movement in water
         if (controls.forward) {
@@ -48,14 +86,13 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
             camera.transform.velocity -= camera.transform.right * deltaTime * swimSpeed;
         }
         if (controls.jump) {
-            camera.transform.velocity += glm::vec3(0.0f, 1.0f, 0.0f) * deltaTime * swimSpeed;
+            camera.transform.velocity += glm::vec3(0.0f, 2.0f, 0.0f) * deltaTime * swimSpeed;
         }
-        if (controls.crouch) {
-            camera.transform.velocity -= glm::vec3(0.0f, 1.0f, 0.0f) * deltaTime * swimSpeed;
+        if (controls.sprint) {
+            camera.transform.velocity -= glm::vec3(0.0f, 2.0f, 0.0f) * deltaTime * swimSpeed;
         }
 
-        // Apply natural buoyancy - gentle upward drift
-        camera.transform.velocity += glm::vec3(0.0f, 0.5f, 0.0f) * deltaTime;
+        camera.transform.velocity -= glm::vec3(0.0f, 1.0f, 0.0f) * deltaTime;
 
         // Apply velocity-based movement
         glm::vec3 displacement = camera.transform.velocity * deltaTime;
@@ -98,7 +135,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
     auto & dashtimer = movementComponent.dashtimer;
     auto & slidThisDash = movementComponent.slidThisDash;
     auto & isSliding = movementComponent.isSliding;
-    auto & lastBlockStandingOn = particleComponent.lastBlockStandingOn;
+
     auto & slideTimer = movementComponent.slideTimer;
     auto & slideDuration = movementComponent.slideDuration;
     auto & originalStepHeight = physicsComponent.originalStepHeight;
@@ -136,39 +173,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
 
 
-    if(controls.anyMovement())
-    {
-        if(controls.sprint)
-        {
-            movementComponent.footstepInterval = 0.35f;
-        } else
-        {
-            movementComponent.footstepInterval = 0.5f;
-        }
-        if(auto b =  getFootstepSound(lastBlockStandingOn); b != std::nullopt)
-        {
-            if(movementComponent.footstepTimer < movementComponent.footstepInterval)
-            {
-                movementComponent.footstepTimer += deltaTime;
-            } else
-            {
-                movementComponent.footstepTimer = 0.0f;
 
-                auto & stepSounds = getBufferSeries(fromMaterial(static_cast<MaterialName>(lastBlockStandingOn & BLOCK_ID_BITS)));
-                if(!stepSounds.empty())
-                {
-                    if(movementComponent.soundSeriesIndexer < stepSounds.size() && movementComponent.soundSeriesIndexer >= 0)
-                    {
-                        alSourceStop(movementComponent.footstepSource);
-                        playBufferFromSource(sounds.at((int)stepSounds[movementComponent.soundSeriesIndexer]), movementComponent.footstepSource);
-                    }
-                    movementComponent.soundSeriesIndexer  = (movementComponent.soundSeriesIndexer + 1) % stepSounds.size();
-                }
-
-
-            }
-        }
-    }
 
     glm::vec3 displacement(0.0f, 0.0f, 0.0f);
     isGrounded = false;
