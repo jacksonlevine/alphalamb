@@ -27,6 +27,14 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 {
     auto & lastBlockStandingOn = particleComponent.lastBlockStandingOn;
 
+    if(movementComponent.crouchOverride)
+    {
+        movementComponent.crouchDegree = std::min(movementComponent.crouchDegree + (deltaTime * 3.0f), 1.0f);
+    } else
+    {
+        movementComponent.crouchDegree = std::max(movementComponent.crouchDegree - (deltaTime * 3.0f), 0.0f);
+    }
+
     if(controls.anyMovement())
     {
         if (controls.swimming)
@@ -70,7 +78,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         float swimSpeed = 8.0f; // Base swimming speed
 
         // Zero out gravity effects when swimming
-        camera.transform.velocity /= (1.0f + deltaTime * 0.5f); // Higher water resistance
+        camera.transform.velocity /= (1.0f + deltaTime * 1.3f); // Higher water resistance
 
         // Controls for swimming movement - 3D movement in water
         if (controls.forward) {
@@ -110,7 +118,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         // Update position
         PxExtendedVec3 newPos = physicsComponent.controller->getPosition();
         camera.transform.position.x = static_cast<float>(newPos.x);
-        camera.transform.position.y = static_cast<float>(newPos.y + CAMERA_OFFSET - (movementComponent.crouchOverride ? 1.0f: 0.0f));
+        camera.transform.position.y = static_cast<float>(newPos.y + CAMERA_OFFSET - movementComponent.crouchDegree);
         camera.transform.position.z = static_cast<float>(newPos.z);
 
         // particleComponent.footDustTimer += deltaTime;
@@ -154,7 +162,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
     controller->setPosition(PxExtendedVec3(
         camera.transform.position.x,
-        camera.transform.position.y - CAMERA_OFFSET + (crouchOverride ? 1.0f: 0.0f),
+        camera.transform.position.y - CAMERA_OFFSET + (movementComponent.crouchDegree),
         camera.transform.position.z
         ));
 
@@ -437,11 +445,11 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
                                 {
                                     int blockType = world->getLocked(IntTup(
                                         std::floor(grabPosition.x),
-                                        std::floor(grabPosition.y-CAMERA_OFFSET),
+                                        std::floor(grabPosition.y-CAMERA_OFFSET + (movementComponent.crouchDegree)),
                                         std::floor(grabPosition.z)));
                                     int blockType2 = world->getLocked(IntTup(
                                         std::floor(grabPosition.x),
-                                        std::floor(grabPosition.y-CAMERA_OFFSET)+1,
+                                        std::floor(grabPosition.y-CAMERA_OFFSET + (movementComponent.crouchDegree))+1,
                                         std::floor(grabPosition.z)));
                                     spotclear = ((blockType == AIR) && (blockType2 == AIR));
                                 }
@@ -450,7 +458,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
                             if (spotclear)
                             {
                                 // Update controller position
-                                controller->setPosition(PxExtendedVec3(grabPosition.x, grabPosition.y - CAMERA_OFFSET, grabPosition.z));
+                                controller->setPosition(PxExtendedVec3(grabPosition.x, grabPosition.y - CAMERA_OFFSET + ( movementComponent.crouchDegree), grabPosition.z));
 
                                 // Zero out velocity
                                 camera.transform.velocity = glm::vec3(0.0f);
@@ -529,11 +537,11 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
                 {
                     int blockType = world->getLocked(IntTup(
                         std::floor(finalPos.x),
-                        std::floor(finalPos.y-CAMERA_OFFSET),
+                        std::floor(finalPos.y-CAMERA_OFFSET + ( movementComponent.crouchDegree)),
                         std::floor(finalPos.z)));
                     int blockType2 = world->getLocked(IntTup(
                         std::floor(finalPos.x),
-                        std::floor(finalPos.y-CAMERA_OFFSET)+1,
+                        std::floor(finalPos.y-CAMERA_OFFSET + (movementComponent.crouchDegree))+1,
                         std::floor(finalPos.z)));
                     spotclear = ((blockType == AIR) && (blockType2 == AIR));
                 }
@@ -542,7 +550,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
             if (spotclear)
             {
                 // Update controller position
-                controller->setPosition(PxExtendedVec3(finalPos.x, finalPos.y - CAMERA_OFFSET, finalPos.z));
+                controller->setPosition(PxExtendedVec3(finalPos.x, finalPos.y - CAMERA_OFFSET + ( movementComponent.crouchDegree), finalPos.z));
 
                 // Update camera position
                 camera.transform.position = finalPos;
@@ -591,11 +599,11 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
                 {
                     int blockType = world->getLocked(IntTup(
                         std::floor(newPos.x),
-                        std::floor(newPos.y-CAMERA_OFFSET),
+                        std::floor(newPos.y-CAMERA_OFFSET + ( movementComponent.crouchDegree)),
                         std::floor(newPos.z)));
                     int blockType2 = world->getLocked(IntTup(
                         std::floor(newPos.x),
-                        std::floor(newPos.y-CAMERA_OFFSET)+1,
+                        std::floor(newPos.y-CAMERA_OFFSET + ( movementComponent.crouchDegree))+1,
                         std::floor(newPos.z)));
                     spotclear = ((blockType == AIR) && (blockType2 == AIR));
                 }
@@ -603,7 +611,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
             if (spotclear)
             {
                 // Update controller position
-                controller->setPosition(PxExtendedVec3(newPos.x, newPos.y - CAMERA_OFFSET, newPos.z));
+                controller->setPosition(PxExtendedVec3(newPos.x, newPos.y - CAMERA_OFFSET + ( movementComponent.crouchDegree), newPos.z));
 
                 // Update camera position directly
                 camera.transform.position = newPos;
@@ -819,7 +827,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         // Update position
         PxExtendedVec3 newPos = controller->getPosition();
         camera.transform.position.x = static_cast<float>(newPos.x);
-        camera.transform.position.y = static_cast<float>(newPos.y + CAMERA_OFFSET - (crouchOverride ? 1.0f: 0.0f));
+        camera.transform.position.y = static_cast<float>(newPos.y + CAMERA_OFFSET - movementComponent.crouchDegree);
         camera.transform.position.z = static_cast<float>(newPos.z);
     }
 }

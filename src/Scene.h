@@ -102,6 +102,7 @@ struct Scene
     BlockType lastBlockAtCursor = 0;
     TextEditor* currentEditor = nullptr;
     PythonContext pythonContext = {};
+    MaterialName blockFeetInLower = AIR;
     MaterialName blockFeetIn = AIR;
     MaterialName blockHeadIn = AIR;
 

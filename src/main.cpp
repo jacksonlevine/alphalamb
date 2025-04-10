@@ -872,15 +872,27 @@ int main()
                 auto & cont = theScene.our<Controls>();
                 auto crouched = cont.crouch;
                 theScene.blockHeadIn = (MaterialName)(theScene.world->getRawLocked(IntTup(pos.x, pos.y, pos.z)) & BLOCK_ID_BITS);
-                if (crouched)
+                if (theScene.our<MovementComponent>().crouchOverride)
                 {
                     theScene.blockFeetIn = theScene.blockHeadIn;
+                    theScene.blockFeetInLower = (MaterialName)(theScene.world->getRawLocked(IntTup(pos.x, std::floor(pos.y - 0.5f), pos.z)) & BLOCK_ID_BITS);
                 } else
                 {
-                    theScene.blockFeetIn = (MaterialName)(theScene.world->getRawLocked(IntTup(pos.x, pos.y - 1.0f, pos.z)) & BLOCK_ID_BITS);
+                    theScene.blockFeetIn = (MaterialName)(theScene.world->getRawLocked(IntTup(pos.x, (pos.y - 1.0f), pos.z)) & BLOCK_ID_BITS);
+                    theScene.blockFeetInLower = (MaterialName)(theScene.world->getRawLocked(IntTup(pos.x, std::floor(pos.y - 1.0f - 0.5f), pos.z)) & BLOCK_ID_BITS);
                 }
-
-                cont.swimming = std::find(liquids.begin(), liquids.end(), theScene.blockFeetIn) != liquids.end();
+                auto blockFeetInWater = std::find(liquids.begin(), liquids.end(), theScene.blockFeetIn) != liquids.end();
+                auto blockFeetInLowerWater = std::find(liquids.begin(), liquids.end(), theScene.blockFeetInLower) != liquids.end();
+                if(blockFeetInWater)
+                {
+                    cont.swimming = true;
+                } else
+                {
+                    if(!blockFeetInLowerWater)
+                    {
+                        cont.swimming = false;
+                    }
+                }
 
 
             }
@@ -1170,7 +1182,7 @@ int main()
 
                         theScene.REG.get<PhysicsComponent>(m.myPlayerIndex).controller->setPosition(PxExtendedVec3(
                     m.startPos.x,
-                    m.startPos.y - CAMERA_OFFSET,
+                    m.startPos.y,
                     m.startPos.z)
                         );
 
@@ -1254,7 +1266,7 @@ int main()
 
                         theScene.REG.get<PhysicsComponent>(m.index).controller->setPosition(PxExtendedVec3(
                         m.position.x,
-                        m.position.y + CAMERA_OFFSET,
+                        m.position.y - CAMERA_OFFSET,
                         m.position.z)
                             );
                         // if (theScene.existingInvs.contains(m.id))
@@ -1609,15 +1621,17 @@ int main()
                 glUniform3f(fogColLoc, currAtmos.fogColor.x, currAtmos.fogColor.y, currAtmos.fogColor.z);
 
                 glUniform3f(offsetLoc, -0.5f, -0.5f, -0.5f);
-                bool isme = id == theScene.myPlayerIndex;
+                bool isme = (id == theScene.myPlayerIndex);
                 if (isme)
                 {
+                    //std::cout << "isme " << std::endl;
                     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.guiCamera->mvp));
                     glUniform3f(posLoc, 3.0, -1.2, std::min((float)wwi / 600.0f, 2.0f));
                     glDisable(GL_DEPTH_TEST);
                     glUniform3f(camPosLoc, 0, 0, 0);
                 } else
                 {
+                    std::cout << "Not me " << (int)id << " " << (int)theScene.myPlayerIndex << std::endl;
                     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.our<jl::Camera>().mvp));
                     glUniform3f(posLoc, pos.x, pos.y, pos.z);
                 }
@@ -1625,11 +1639,19 @@ int main()
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, worldTex.id);
 
+                if(isme)
+                {
+                    drawHandledBlock(theScene.guiCamera->transform.position, invComp.currentHeldBlock, mainShader.shaderID, invComp.lastHeldBlock, renderComp.handledBlockMeshInfo);
 
-                drawHandledBlock(camera.transform.position, invComp.currentHeldBlock, mainShader.shaderID, invComp.lastHeldBlock, renderComp.handledBlockMeshInfo);
+                } else
+                {
+                    drawHandledBlock(camera.transform.position, invComp.currentHeldBlock, mainShader.shaderID, invComp.lastHeldBlock, renderComp.handledBlockMeshInfo);
+
+                }
+
                 glEnable(GL_DEPTH_TEST);
 
-                if (jpEquipped)
+                if (jpEquipped && !isme)
                 {
                     {
                         glUseProgram(gltfShader.shaderID);

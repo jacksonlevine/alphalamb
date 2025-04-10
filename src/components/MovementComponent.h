@@ -39,6 +39,8 @@ struct MovementComponent {
     float footstepTimer = 0.0f;
     float footstepInterval = 0.5f;
 
+    float crouchDegree = 0.0f;
+
     int soundSeriesIndexer = 0;
 
     template<class Archive>
