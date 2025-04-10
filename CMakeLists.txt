@@ -196,6 +196,8 @@ add_executable(DistantGarden
         src/components/NPPositionComponent.cpp
         src/components/NPPositionComponent.h
         src/specialblocks/FindEntityCreateFunc.h
+        src/specialblocks/Door.h
+        src/specialblocks/Cable.h
 
 )
 
@@ -235,6 +237,8 @@ add_executable(DGServer
         src/components/NPPositionComponent.cpp
         src/components/NPPositionComponent.h
         src/specialblocks/FindEntityCreateFunc.h
+        src/specialblocks/Door.h
+        src/specialblocks/Cable.h
 
 )
 
