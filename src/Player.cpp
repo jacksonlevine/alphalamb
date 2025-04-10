@@ -632,7 +632,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
             if(footDustTimer > 0.1)
             {
-                particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 10, JETPACK_PARTICLE_BLOCK, 0.2f, 0.0f);
+                particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 10, JETPACK_PARTICLE_BLOCK, 0.2f, 5.0f);
                 footDustTimer = 0.0f;
             } else
             {

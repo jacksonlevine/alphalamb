@@ -56,6 +56,7 @@ public:
             filterData.word0 = 3;
             shape->setSimulationFilterData(filterData);
             shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
+            shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
             filterdataset = true;
         }
 
@@ -103,9 +104,9 @@ public:
         for(int i = 0; i < amount; i++)
         {
             glm::vec3 here(
-                noise.GetNoise(26.0f*(spot.x+i), 26.0f*(spot.z-i)) * width,
-                noise.GetNoise(26.0f*(spot.x-i), 26.0f*(spot.z+i)) * width,
-                noise.GetNoise(26.0f*(spot.y+i), 26.0f*(spot.x-i)) * width
+                noise.GetNoise(26.0f*(spot.x+i) * energy, 26.0f*(spot.z-i) * energy) * width,
+                noise.GetNoise(26.0f*(spot.x-i) * energy, 26.0f*(spot.z+i) * energy) * width,
+                noise.GetNoise(26.0f*(spot.y+i) * energy, 26.0f*(spot.x-i) * energy) * width
                 );
             addParticle(
                 here + spot,

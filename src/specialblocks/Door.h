@@ -259,7 +259,7 @@ inline void addDoor(UsableMesh& mesh, BlockType block, IntTup position, PxU32& i
 
     if (doorTop)
     {
-        addShapeWithMaterial(dirModels.at(modelIndex), baseDoorModelBrightnesses, WOOD_PLANKS, mesh, position, index, tindex);
+        addShapeWithMaterial(dirModels.at(modelIndex), baseDoorModelBrightnesses, GLASS, mesh, position, index, tindex);
 
     } else
     {

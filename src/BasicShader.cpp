@@ -120,7 +120,7 @@ float minFogHeight = 20.0;    // Fog reaches max at y=20
 float fogMaxDistance = renderDistance * 16.0; // Fog fades in near render distance
 
 // Calculate horizontal (XZ) distance from camera
-float horizDist = length(ppos.xz - camPos.xz);
+float horizDist = mDist(ppos.x, ppos.z, camPos.x, camPos.z);
 
 // Calculate vertical distance (height fog)
 float heightFactor = smoothstep(maxFogHeight, minFogHeight, ppos.y);
@@ -151,8 +151,8 @@ fogFactor *= dff;
 // Apply fog to the final color
 vec4 fogColor = vec4(fogCol.xyz, 1.0);
 if(underwater > 0.5f) {
-    fogColor = vec4(0.0, 0.0, 1.0, 1.0);
-    fogFactor *= 50.0f;
+    fogColor = vec4(0.2, 0.2, 0.8, 1.0);
+    fogFactor = smoothstep(1.0, 15.0, horizDist);
 
 }
 vec4 tex = texture(texture1, TexCoord) + vec4(grassColor * 0.3, 0.0);

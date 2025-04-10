@@ -215,16 +215,19 @@ bool loadDM(std::string filename, World* outWorld, entt::registry& reg, BlockAre
 
 BlockType World::get(const IntTup& spot)
 {
+    if (spot.y == 0) { return BEDROCK; }
     return (getRaw(spot) & BLOCK_ID_BITS);
 }
 
 BlockType World::getLocked(IntTup spot)
 {
+    if (spot.y == 0) { return BEDROCK; }
     return (getRawLocked(spot) & BLOCK_ID_BITS);
 }
 
 BlockType World::getRaw(IntTup spot)
 {
+    if (spot.y == 0) { return BEDROCK; }
     // if (auto mem = blockMemo->get(spot); mem != std::nullopt)
     // {
     //     return mem.value();
@@ -248,6 +251,7 @@ BlockType World::getRaw(IntTup spot)
 
 BlockType World::getRawLocked(IntTup spot)
 {
+    if (spot.y == 0) { return BEDROCK; }
     // if (auto mem = blockMemo->get(spot); mem != std::nullopt)
     // {
     //     return mem.value();

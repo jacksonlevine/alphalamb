@@ -60,6 +60,13 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot, float deltaTime)
                 {
                     editStaticMeshCollider(collider, PxVec3(0,0,0), mesh.positions, mesh.indices);
                 }
+                if(tcollider == nullptr)
+                {
+                    tcollider = createStaticMeshCollider(PxVec3(0,0,0), mesh.tpositions, mesh.tindices);
+                } else
+                {
+                    editStaticMeshCollider(tcollider, PxVec3(0,0,0), mesh.tpositions, mesh.tindices);
+                }
             }
 
 
@@ -87,8 +94,14 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot, float deltaTime)
 
 CollisionCage::~CollisionCage()
 {
-    if(collider != nullptr)
+    if(tcollider != nullptr)
     {
-        //collider->release();
+        collider->release();
+        collider = nullptr;
+    }
+    if(tcollider != nullptr)
+    {
+        tcollider->release();
+        tcollider = nullptr;
     }
 }

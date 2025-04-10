@@ -50,13 +50,4 @@ PhysicsComponent::~PhysicsComponent()
         std::cout << "Controller already released" << std::endl;
     }
 
-    if (collisionCage.collider != nullptr)
-    {
-        collisionCage.collider->release();
-        collisionCage.collider = nullptr;
-        std::cout << "Collcage collider released." << std::endl;
-    } else
-    {
-        std::cout << "collcage collider already released" << std::endl;
-    }
 }

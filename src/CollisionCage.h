@@ -18,9 +18,29 @@ using namespace physx;
 class CollisionCage {
 public:
     void updateToSpot(World* world, glm::vec3 spot, float deltaTime);
-
+    CollisionCage() = default;
     ~CollisionCage();
+    CollisionCage(const CollisionCage&) = delete;
+    CollisionCage& operator=(const CollisionCage&) = delete;
+    CollisionCage(CollisionCage&& other)
+    {
+        this->collider = other.collider;
+        this->tcollider = other.tcollider;
+        this->lastBlockSpot = other.lastBlockSpot;
+        other.collider = nullptr;
+        other.tcollider = nullptr;
+    }
+    CollisionCage& operator=(CollisionCage&& other)
+    {
+        this->collider = other.collider;
+        this->tcollider = other.tcollider;
+        this->lastBlockSpot = other.lastBlockSpot;
+        other.collider = nullptr;
+        other.tcollider = nullptr;
+        return *this;
+    }
     PxRigidStatic* collider = nullptr;
+    PxRigidStatic* tcollider = nullptr;
 private:
     IntTup lastBlockSpot = IntTup(-9999,9999,-9999);
 
