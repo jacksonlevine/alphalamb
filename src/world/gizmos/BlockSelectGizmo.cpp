@@ -80,7 +80,13 @@ void BlockSelectGizmo::draw(World* world, entt::entity playerIndex, entt::regist
                     lastpos = selectedSpot;
                     hitProgress = 0.0f;
                 }
-                hitNormal = IntTup(h.normal.x, h.normal.y, h.normal.z);
+                auto hn = h.normal;
+                hn.normalize();
+
+                hitNormal = IntTup(
+                    hn.x,
+                    hn.y,
+                    hn.z);
             }
         }
 

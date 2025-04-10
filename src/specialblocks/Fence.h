@@ -52,6 +52,44 @@ inline void setFenceBits(World* world, IntTup spot, const glm::vec3& pp )
     world->set(spot, myBits);
 }
 
+inline void removeFenceBits(World* world, IntTup spot )
+{
+    static std::vector<IntTup> neighbs = {
+        IntTup(1, 0, 0),
+        IntTup(-1, 0, 0),
+        IntTup(0, 0, 1),
+        IntTup(0, 0, -1),
+    };
+
+    static std::vector<BlockType> bits = {
+        CONNECT_X_BIT,
+        CONNECT_NEGX_BIT,
+        CONNECT_Z_BIT,
+        CONNECT_NEGZ_BIT,
+    };
+
+    static std::vector<BlockType> bitsopposite = {
+        CONNECT_NEGX_BIT,
+        CONNECT_X_BIT,
+        CONNECT_NEGZ_BIT,
+        CONNECT_Z_BIT,
+    };
+    for (int i = 0; i < 4; i++)
+    {
+        auto here = spot + neighbs[i];
+        auto b = world->getRaw(here);
+        auto bid = (b & BLOCK_ID_BITS);
+        auto mname = static_cast<MaterialName>(bid);
+        if (mname == FENCE)
+        {
+            //std::cout <<"Fence to the " << neighbs[i].x << ", " << neighbs[i].y << ", " << neighbs[i].z << std::endl;
+            b ^= bitsopposite[i];
+            world->set(here, b);
+        }
+    }
+    world->set(spot, AIR);
+}
+
 inline void addFence(UsableMesh& mesh, BlockType block, IntTup position, PxU32& index, PxU32& tindex)
 {
     constexpr float postDistFromEdge = 0.3f;

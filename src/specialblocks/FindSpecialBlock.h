@@ -5,6 +5,7 @@
 #ifndef FINDSPECIALBLOCK_H
 #define FINDSPECIALBLOCK_H
 
+#include "Cable.h"
 #include "Fence.h"
 #include "SpecialBlockInfo.h"
 #include "Stairs.h"
@@ -26,6 +27,8 @@ constexpr std::optional<addBlockFunc> findSpecialBlockMeshFunc(MaterialName bt)
         return addStairs<WOOD_PLANKS>;
     case DG_COMPUTERBLOCK:
         return addComputer;
+    case CABLE:
+        return addCable;
     default:
         return std::nullopt;
     }
@@ -45,6 +48,8 @@ constexpr std::optional<setBitsFunc> findSpecialSetBits(MaterialName bt)
             return setStairBits<WOOD_STAIRS>;
         case DG_COMPUTERBLOCK:
             return setComputerBits;
+        case CABLE:
+            return setCableBits;
         default:
             return std::nullopt;
     }
@@ -56,6 +61,10 @@ constexpr std::optional<removeBitsFunc> findSpecialRemoveBits(MaterialName bt)
     {
     case DOOR:
         return removeDoorBits;
+    case FENCE:
+        return removeFenceBits;
+    case CABLE:
+        return removeCableBits;
     default:
         return std::nullopt;
     }

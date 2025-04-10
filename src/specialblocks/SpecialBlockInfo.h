@@ -131,7 +131,55 @@ inline std::vector<physx::PxVec3> rotateCoordinatesAroundYNegative90(const std::
     return rotatedCoords;
 }
 
+inline std::vector<physx::PxVec3> rotateCoordinatesAroundXNegative90(const std::vector<physx::PxVec3>& coords, int32_t numRotations) {
+    std::vector<physx::PxVec3> rotatedCoords = coords;
 
+    const physx::PxVec3 center(0.5f, 0.5f, 0.5f);
+
+    for (int32_t rotation = 0; rotation < numRotations; ++rotation) {
+        for (auto& vec : rotatedCoords) {
+            // Translate to origin
+            physx::PxVec3 translated = vec - center;
+
+            // Perform 90-degree clockwise rotation around X axis
+            // y' = -z, z' = y
+            physx::PxVec3 rotated;
+            rotated.x = translated.x;
+            rotated.y = -translated.z;
+            rotated.z = translated.y;
+
+            // Translate back
+            vec = rotated + center;
+        }
+    }
+
+    return rotatedCoords;
+}
+
+inline std::vector<physx::PxVec3> rotateCoordinatesAroundZNegative90(const std::vector<physx::PxVec3>& coords, int32_t numRotations) {
+    std::vector<physx::PxVec3> rotatedCoords = coords;
+
+    const physx::PxVec3 center(0.5f, 0.5f, 0.5f);
+
+    for (int32_t rotation = 0; rotation < numRotations; ++rotation) {
+        for (auto& vec : rotatedCoords) {
+            // Translate to origin
+            physx::PxVec3 translated = vec - center;
+
+            // Perform 90-degree clockwise rotation around Z axis
+            // x' = y, y' = -x
+            physx::PxVec3 rotated;
+            rotated.x = translated.y;
+            rotated.y = -translated.x;
+            rotated.z = translated.z;
+
+            // Translate back
+            vec = rotated + center;
+        }
+    }
+
+    return rotatedCoords;
+}
 
 
 template<typename T>

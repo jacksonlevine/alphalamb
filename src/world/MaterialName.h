@@ -102,13 +102,13 @@ DEFINE_ENUM_WITH_STRING_CONVERSIONS(MaterialName, BlockType,
     (BEECH_PLANKS)
     (WESTERN_HEMLOCK_PLANKS)
     (EUCALYPTUS_PLANKS)
-    (ILLUMINITE_ORE)
+    (CABLE)
     (JETPACK_PARTICLE_BLOCK)
     (DG_COMPUTERBLOCK)
 )
 constexpr auto noHeadBlock = std::to_array({DOOR});
 constexpr auto noAmbOccl = std::to_array({
-    FENCE, GLASS,DG_COMPUTERBLOCK, DOOR});
+    FENCE, GLASS,DG_COMPUTERBLOCK, DOOR, CABLE});
 constexpr auto noCustCollShape = std::to_array({
     DG_COMPUTERBLOCK});
 constexpr auto liquids = std::to_array({
@@ -166,7 +166,7 @@ constexpr auto transparents = std::to_array({
 
    JACK_O_LANTERN,
 
-   ILLUMINITE_ORE,
+   CABLE,
        WATER,
 
    GLASS,
@@ -269,7 +269,7 @@ constexpr std::array<BlockTextures, BLOCK_COUNT> TEXS = {{
     {{ {11, 12}, {11, 12}, {11, 12} }}, // 87 Beech Planks
     {{ {12, 12}, {12, 12}, {12, 12} }}, // 88 Western Hemlock Planks
     {{ {13, 12}, {13, 12}, {13, 12} }}, // 89 Eucalyptus Planks
-    {{ {12, 4}, {12, 4}, {12, 4} }}, // 90 Illuminite Ore
+    {{ {12, 4}, {12, 4}, {12, 4} }}, // 90 Cable
     {{ {14, 14}, {14, 14}, {14, 14} }}, // 91 Jetback Particle Block
         {{ {14,3}, {14,4}, {14,4} }} // 92 Computer
 }};

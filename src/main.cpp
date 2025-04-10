@@ -194,7 +194,12 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                         {
 
                             auto & spot = scene->blockSelectGizmo->selectedSpot;
-                            IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
+                            auto hn = scene->blockSelectGizmo->hitNormal;
+
+                            glm::vec3 spotf(spot.x + 0.5f, spot.y + 0.5f, spot.z + 0.5f);
+                            glm::vec3 placespotf = spotf + glm::vec3(hn.x, hn.y, hn.z);
+                            std::cout << "Hit normal: " << hn.x << " " << hn.y << " " << hn.z << std::endl;
+                            IntTup placeSpot(std::floor(placespotf.x), std::floor(placespotf.y), std::floor(placespotf.z));
 
                             using namespace std;
 
