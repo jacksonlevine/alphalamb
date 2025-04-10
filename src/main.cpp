@@ -553,7 +553,7 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
     static float lastTime = glfwGetTime();
-    if (glfwGetTime() - lastTime > 0.005f)
+    if (glfwGetTime() - lastTime > 0.005f && currentGuiScreen == GuiScreen::InGame)
     {
         lastTime = glfwGetTime();
         Scene* scene = static_cast<Scene*>(glfwGetWindowUserPointer(window));

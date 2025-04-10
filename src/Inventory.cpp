@@ -127,12 +127,11 @@ void imguiInventory(Inventory& inv)
 
 
     ImGui::SetNextWindowPos(ImVec2(pos.x + backgroundSize.x*0.2f, pos.y + backgroundSize.y*0.2f));
-    ImGui::SetNextWindowSize(backgroundSize);
+    ImGui::SetNextWindowSize(ImVec2(backgroundSize.x - (backgroundSize.x*0.4f), backgroundSize.y - (backgroundSize.y*0.4f)));
     //ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
-    ImGui::Begin("Background", nullptr, ImGuiWindowFlags_NoDecoration |
-                                        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar
-                                        | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoNav);
+    ImGui::Begin("Background", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar
+                                        | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar );
 
 
     for (int j = 0; j < INVHEIGHT; j++)

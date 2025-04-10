@@ -97,6 +97,11 @@ std::vector<float> generateSubdividedQuad(int divisions)
 
 void DrawCustomButtonBackground(ImVec2& pos, const ImVec2& size, DGButtonType type)
 {
+
+    ImVec2 windowStart = ImGui::GetWindowPos();
+    ImVec2 windowSize = ImGui::GetWindowSize();
+
+
     GLboolean depthTestEnabled = glIsEnabled(GL_DEPTH_TEST);
     glDisable(GL_DEPTH_TEST);
     static jl::Texture textures[5] = {
@@ -164,10 +169,16 @@ void main()
             uniform sampler2D texture1;
 
             uniform float bright;
-
+            uniform vec2 ndcMin;
+            uniform vec2 ndcMax;
             void main()
             {
                 FragColor = texture(texture1, TexCoord) * bright;
+                // In fragment shader
+                if (gl_FragCoord.x < ndcMin.x || gl_FragCoord.x > ndcMax.x ||
+                    gl_FragCoord.y > ndcMax.y || gl_FragCoord.y < ndcMin.y) { // Note Y comparison direction
+                    discard;
+                }
             }
         )glsl",
         "customButtonShaderYo"
@@ -214,7 +225,8 @@ void main()
     static GLint sizeUniform = glGetUniformLocation(shader.shaderID, "uSize");
 
     static GLint timeUni = glGetUniformLocation(shader.shaderID, "uTime");
-
+    static GLint ndcm = glGetUniformLocation(shader.shaderID, "ndcMin");
+    static GLint ndcma = glGetUniformLocation(shader.shaderID, "ndcMax");
     static GLint brightUni = glGetUniformLocation(shader.shaderID, "bright");
     glUniform2f(posUniform, ndcPos.x, ndcPos.y);
     glUniform2f(sizeUniform, ndcSize.x, ndcSize.y);
@@ -234,6 +246,15 @@ void main()
     textures[(int)type].bind_to_unit(4);
     static GLint texPos = glGetUniformLocation(shader.shaderID, "texture1");
     glUniform1i(texPos, 4);
+
+    // Convert your windowStart and windowSize to pixel coordinates for clipping
+    ImVec2 clipMin = windowStart;
+    ImVec2 clipMax = ImVec2(windowStart.x + windowSize.x, windowStart.y + windowSize.y);
+
+    // Then pass these to the shader
+    glUniform2f(ndcma, clipMax.x, clipMax.y);
+    glUniform2f(ndcm, clipMin.x, clipMin.y);
+
     glDrawArrays(GL_TRIANGLES, 0, 6 * (BUTTONDIVS  * BUTTONDIVS));
     if (depthTestEnabled)
         glEnable(GL_DEPTH_TEST);
