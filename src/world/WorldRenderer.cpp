@@ -785,6 +785,16 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
 
                         auto blockThere = world->get(request.changeSpot);
+                        if (blockThere == LIGHT)
+                        {
+                            std::cout << "It was a light!!" << std::endl;
+                            request.rebuild = true;
+                            lightpass = true;
+                            std::vector<std::pair<IntTup, int>> thisspot = {
+                                std::make_pair(request.changeSpot, 12)
+                            };
+                            unpropagateAllLightsLayered(thisspot, lightmap);
+                        }
                         if (blockThere != AIR  && (blockThere != (MaterialName)(request.changeTo.value() & BLOCK_ID_BITS)))
                         {
                             if (auto f = findSpecialRemoveBits((MaterialName)blockThere); f != std::nullopt)
@@ -1268,6 +1278,7 @@ void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, 
 
         // Apply occlusion based on how many adjacent blocks are solid
         float occlusionValue = 0.0f;
+
         switch (solidCount) {
             case 1: occlusionValue = -0.3f; break;
             case 2: occlusionValue = -0.5f; break;

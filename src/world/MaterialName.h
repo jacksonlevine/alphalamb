@@ -108,7 +108,7 @@ DEFINE_ENUM_WITH_STRING_CONVERSIONS(MaterialName, BlockType,
 )
 constexpr auto noHeadBlock = std::to_array({DOOR});
 constexpr auto noAmbOccl = std::to_array({
-    FENCE, GLASS,DG_COMPUTERBLOCK, DOOR, CABLE});
+    FENCE, GLASS,DG_COMPUTERBLOCK, DOOR, CABLE, LIGHT});
 constexpr auto noCustCollShape = std::to_array({
     DG_COMPUTERBLOCK});
 constexpr auto liquids = std::to_array({

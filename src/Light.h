@@ -10,7 +10,7 @@
 #include "world/World.h"
 
 struct LightRay {
-    uint8_t origin;
+    IntTup origin;
     int level;
 };
 
@@ -36,10 +36,21 @@ void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value, std::uno
 std::vector<std::pair<IntTup, int>> getChunkLightSources(const TwoIntTup& spot, World* world, int chunkw, int chunkh, std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap, bool
                                                          locked);
 
-void propagateAllLightsLayered(World* world, const std::vector<std::pair<IntTup, int>>& lightSources, std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr, bool
+void propagateAllLightsLayered(World* world, const std::vector<std::pair<IntTup, int>>& lightSources,
+                               std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap,
+                               std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr, bool
                                locked = false);
+
+
+void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& lightSourcesToRemove, std::unordered_map<IntTup, LightSpot,
+                                IntTupHash>& lightmap, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr, bool locked = false);
+
 
 void lightPassOnChunk(World* world, TwoIntTup spot, int chunkw, int chunkh, std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr, bool
                       locked = false);
+
+
+
+
 
 #endif //LIGHT_H

@@ -9,11 +9,10 @@ void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value,
 {
     auto lmentry = lightmap.find(spot);
     bool originfound = false;
-    auto originhash = IntTupHash{}(origin, true);
     if(lmentry != lightmap.end()) {
         if(value != 0) {
             for(auto ray : lmentry->second.rays) {
-                if(ray.origin == originhash) {
+                if(ray.origin == origin) {
                     originfound = true;
                     ray.level = value;
                     break;
@@ -21,16 +20,16 @@ void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value,
             }
             if(!originfound) {
                 lmentry->second.rays.push_back(LightRay{
-                    .origin = originhash, .level = value
+                    .origin = origin, .level = value
                 });
             }
         } else {
-            std::erase_if(lmentry->second.rays, [originhash](auto & ray) { return ray.origin == originhash; });
+            std::erase_if(lmentry->second.rays, [origin](auto & ray) { return ray.origin == origin; });
         }
     } else {
         lightmap.insert({spot, LightSpot{}});
         lightmap.at(spot).rays.push_back(LightRay{
-            .origin = originhash, .level = value
+            .origin = origin, .level = value
         });
     }
 }
@@ -68,25 +67,25 @@ std::vector<std::pair<IntTup, int>> getChunkLightSources(const TwoIntTup& spot, 
 }
 
 void propagateAllLightsLayered(World* world, const std::vector<std::pair<IntTup, int>>& lightSources,
-                               std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks, bool
-                               locked)
+                               std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap,
+                               std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks,
+                               bool locked)
 {
     constexpr int maxLightLevel = 16;
 
     std::unordered_set<IntTup, IntTupHash> visited;
-    std::vector<std::vector<IntTup>> layers(maxLightLevel + 1); // 0–16
+    std::vector<std::vector<std::pair<IntTup, IntTup>>> layers(maxLightLevel + 1); // (position, source)
 
     // Initialize top-level lights
     for (const auto& [pos, level] : lightSources) {
         if (visited.contains(pos)) continue;
         visited.insert(pos);
-        layers[level].push_back(pos);
+        layers[level].push_back({pos, pos});
         setLightLevelFromOriginHere(pos, pos, level, lightmap);
     }
 
     std::shared_lock<std::shared_mutex> url;
     std::shared_lock<std::shared_mutex> nrl;
-
 
     if (!locked)
     {
@@ -95,7 +94,7 @@ void propagateAllLightsLayered(World* world, const std::vector<std::pair<IntTup,
     }
 
     for (int level = maxLightLevel; level > 1; --level) {
-        for (const auto& spot : layers[level]) {
+        for (const auto& [spot, source] : layers[level]) {
             for (const auto& offset : neighbs) {
                 IntTup neighbor = spot + offset;
 
@@ -103,8 +102,61 @@ void propagateAllLightsLayered(World* world, const std::vector<std::pair<IntTup,
                 if (std::find(transparents.begin(), transparents.end(), world->getLocked(neighbor)) == transparents.end()) continue;
 
                 visited.insert(neighbor);
-                layers[level - 1].push_back(neighbor);
-                setLightLevelFromOriginHere(neighbor, spot, level - 1, lightmap);
+                layers[level - 1].push_back({neighbor, source});
+                setLightLevelFromOriginHere(neighbor, source, level - 1, lightmap);
+            }
+        }
+    }
+}
+
+
+void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& lightSourcesToRemove,
+                                std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap,
+                                std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks,
+                                bool locked)
+{
+    constexpr int maxLightLevel = 16;
+
+    std::unordered_set<IntTup, IntTupHash> visited;
+    std::vector<std::vector<std::pair<IntTup, IntTup>>> layers(maxLightLevel + 1); // Position and its source origin
+
+    // Initialize top-level lights to remove
+    for (const auto& [pos, level] : lightSourcesToRemove) {
+        if (visited.contains(pos)) continue;
+        visited.insert(pos);
+        layers[level].push_back({pos, pos}); // Source is its own origin
+
+        // Remove light from origin point
+        setLightLevelFromOriginHere(pos, pos, 0, lightmap);
+    }
+
+    // Process each layer, from brightest to dimmest
+    for (int level = maxLightLevel; level > 1; --level) {
+        for (const auto& [spot, origin] : layers[level]) {
+            for (const auto& offset : neighbs) {
+                IntTup neighbor = spot + offset;
+
+                if (visited.contains(neighbor)) continue;
+
+                // Check if this neighbor was affected by the light we're removing
+                auto lmentry = lightmap.find(neighbor);
+                if (lmentry != lightmap.end()) {
+                    bool originFound = false;
+
+                    // Check if this spot has a ray from the ORIGINAL source (not the neighbor it came from)
+                    for (const auto& ray : lmentry->second.rays) {
+                        if (ray.origin == origin) { // Check against the original light source
+                            originFound = true;
+                            break;
+                        }
+                    }
+
+                    if (originFound) {
+                        visited.insert(neighbor);
+                        layers[level - 1].push_back({neighbor, origin});
+                        setLightLevelFromOriginHere(neighbor, origin, 0, lightmap);
+                    }
+                }
             }
         }
     }
@@ -115,5 +167,6 @@ void lightPassOnChunk(World* world, TwoIntTup spot, int chunkw, int chunkh,
                       locked)
 {
     auto sources = getChunkLightSources(spot, world, chunkw, chunkh, lightmap, locked);
+    unpropagateAllLightsLayered(sources, lightmap, implicatedChunks, locked);
     propagateAllLightsLayered(world, sources, lightmap, implicatedChunks, locked);
 }

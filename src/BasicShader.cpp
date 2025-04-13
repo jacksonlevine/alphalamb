@@ -151,7 +151,7 @@ fogFactor *= dff;
 // Apply fog to the final color
 vec4 fogColor = vec4(fogCol.xyz, 1.0);
 if(underwater > 0.5f) {
-    fogColor = vec4(0.2, 0.2, 0.8, 1.0);
+    fogColor = vec4(0.2, 0.2, 0.8, 1.0) * ambientBrightness;
     fogFactor = smoothstep(1.0, 15.0, horizDist);
 
 }
