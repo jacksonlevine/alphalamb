@@ -32,7 +32,17 @@ IntTup operator-(IntTup first, const IntTup& second);
 
 struct IntTupHash {
     std::size_t operator()(const IntTup& tup) const;
-    std::uint8_t operator()(const IntTup& tup, bool small) const;
+    std::uint32_t operator()(const IntTup& tup, bool small) const noexcept {
+        std::uint32_t h = static_cast<std::uint32_t>(tup.x);
+        h = (h * 16777619) ^ static_cast<std::uint32_t>(tup.y);
+        h = (h * 16777619) ^ static_cast<std::uint32_t>(tup.z);
+        h ^= h >> 16;
+        h *= 0x85EBCA6B;
+        h ^= h >> 13;
+        h *= 0xC2B2AE35;
+        h ^= h >> 16;
+        return h;
+    }
 };
 
 

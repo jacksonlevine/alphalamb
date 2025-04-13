@@ -76,7 +76,7 @@ inline void pushToMainToNetworkQueue(const DGMessage& m)
         networkCV.notify_one();
     } else
     {
-        std::cout << "No space available in main to network queue \n";
+
     }
 
 }
@@ -89,7 +89,7 @@ inline void pushToNetworkToMainQueue(const DGMessage& m)
         //networkCV.notify_one();
     } else
     {
-        std::cout << "No space available in network to main queue \n";
+
     }
 }
 

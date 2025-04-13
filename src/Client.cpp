@@ -33,9 +33,7 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                 visit([&](const auto& m) {
                     using T = std::decay_t<decltype(m)>;
                     if constexpr (std::is_same_v<T, WorldInfo>) {
-                        std::cout << "Got world info " << m.seed << " \n"
-                            << "playerIndex: " << (int)m.yourPlayerIndex << " \n"
-                            << "yourPosition: " << m.yourPosition.x << " " << m.yourPosition.y << " " << m.yourPosition.z << " \n";
+
 
                         theScene.world->setSeed(m.seed);
                         //theScene.myPlayerIndex = theScene.addPlayerWithIndex(m.yourPlayerIndex, theScene.settings.clientUID);
@@ -50,8 +48,8 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                         //Who knows, just to keep in mind who cares etc
                         theScene.REG.get<jl::Camera>(theScene.myPlayerIndex).updateWithYawPitch(0.0f, 0.0f);*/
 
-                        std::cout << "My starting position: " << pos.x << " " << pos.y << " " << pos.z << std::endl;
-                        std::cout << "My starting position2: " << pos2.x << " " << pos2.y << " " << pos2.z << std::endl;
+
+
                         theScene.worldReceived.store(true);
                         //Dont do this yet, receive the file first
                         //theScene.worldReceived = true;
@@ -69,11 +67,11 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                         pushToNetworkToMainQueue(m);
                     }
                     else if constexpr (std::is_same_v<T, PlayerLeave>) {
-                        std::cout << "Got player leave \n";
+
                         pushToNetworkToMainQueue(m);
                     }
                     else if constexpr (std::is_same_v<T, BulkBlockSet>) {
-                        std::cout << "Got bulk block set \n";
+
                         pushToNetworkToMainQueue(m);
                     }
                     else if constexpr (std::is_same_v<T, YawPitchUpdate>) {
@@ -81,7 +79,7 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                         pushToNetworkToMainQueue(m);
                     }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
-                        std::cout << "Got player present \n";
+
                         pushToNetworkToMainQueue(m);
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
@@ -93,7 +91,7 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                         pushToNetworkToMainQueue(m);
                     }
                     else if constexpr (std::is_same_v<T, FileTransferInit>) {
-                        std::cout << "Got file transfer init \n";
+
 
                         std::vector<char> filemsg(m.fileSize);
                         boost::system::error_code ec;
@@ -104,7 +102,7 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                         boost::asio::read(*socket, boost::asio::buffer(filemsg.data(), m.fileSize), ec);
                         if(!ec)
                         {
-                            std::cout << "Got world file \n";
+
                             std::ofstream file("mpworld.txt", std::ios::trunc);
                             if(file.is_open())
                             {
@@ -114,11 +112,11 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                                 if(isWorld)
                                 {
                                     std::vector<char> rfb(m.regFileSize);
-                                    std::cout << "About to read that shit " << m.regFileSize * sizeof(char) << " bytes" << std::endl;
+
                                     boost::asio::read(*socket, boost::asio::buffer(rfb.data(), m.regFileSize * sizeof(char)), ec);
                                     if (!ec)
                                     {
-                                        std::cout << "Got reg file \n";
+
                                         std::ofstream f2("snapshot.bin", std::ios::binary | std::ios::trunc);
 
                                         if(f2.is_open())
@@ -137,7 +135,7 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                                                     theScene.myPlayerIndex = entity;
                                                 }
                                             }
-                                            std::cout << "Playerindex here: " << (int)theScene.myPlayerIndex << " \n";
+
 
                                             // if (theScene.existingInvs.contains(theScene.settings.clientUID))
                                             // {
@@ -148,11 +146,11 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                                             // }
                                         } else
                                         {
-                                            std::cout << "Failed to load reg file \n" << std::endl;
+
                                         }
                                     } else
                                     {
-                                        std::cout << "ec on reading reg file: " <<  ec.message() << std::endl;
+
                                     }
 
 
@@ -161,7 +159,7 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
 
                             } else
                             {
-                                std::cout << "Couldn't open mpworld.txt to write \n";
+
                             }
                         }
                     }

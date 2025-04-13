@@ -356,7 +356,7 @@ public:
 
         } else
         {
-            std::cout << "Spot not in activeChunks \n";
+
         }
     }
 
@@ -375,7 +375,7 @@ public:
 
         } else
         {
-            std::cout << "Spot not in activeChunks \n";
+
         }
     }
 

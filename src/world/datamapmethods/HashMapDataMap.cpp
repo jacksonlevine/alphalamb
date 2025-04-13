@@ -51,8 +51,7 @@ std::optional<BlockType> HashMapDataMap::get(const IntTup& spot) const {
 
     if (lookup_count % 1000 == 0) {
         double average_lookup_time = cumulative_lookup_time.count() / lookup_count;
-        std::cout << "Average lookup time after " << lookup_count << " lookups: "
-                  << average_lookup_time * 1e6 << " microseconds\n";
+
     }
 #endif
 

@@ -185,7 +185,7 @@ inline std::optional<Inventory> loadInvFromFile(std::string filename, ClientUID 
             boost::uuids::string_generator gen{};
             if (gen(word) == id)
             {
-                std::cout << "Found a matching inv! \n";
+
 
                 //Get all the rest of the words since its mtaching
                 std::vector<std::string> words;

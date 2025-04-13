@@ -9,8 +9,9 @@
 #include "PrecompHeader.h"
 #include "world/World.h"
 
+
 struct LightRay {
-    IntTup origin;
+    uint32_t originhash;
     int level;
 };
 

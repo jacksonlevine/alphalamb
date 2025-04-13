@@ -35,7 +35,7 @@ inline VoxModel loadVoxFile(const std::string& filename) {
     if (!file) {
         std::string loadError = "Cannot open file: ";
         loadError += filename;
-        std::cout << loadError;
+
         //throw std::runtime_error(loadError);
     }
 

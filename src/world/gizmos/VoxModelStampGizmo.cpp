@@ -14,7 +14,7 @@ void VoxModelStampGizmo::draw(World* world, entt::entity playerIndex, entt::regi
         glUseProgram(shaderProgram);
         if (modelIndex != lastModelIndex)
         {
-            std::cout << "Model index: " << modelIndex << std::endl;
+
             UsableMesh mesh = {};
             PxU32 index = 0;
             PxU32 tindex = 0;

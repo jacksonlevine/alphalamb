@@ -27,14 +27,14 @@ inline bool connectToServer(const char* addr, const char* port)
     try
     {
         // Connect to the server
-        std::cout << "about to connect \n";
+
         boost::asio::connect(tsocket, resolver.resolve(addr, port));
-        std::cout << "connected \n";
+
         connected = true;
     } catch(std::exception e)
     {
         connected = false;
-        std::cout << e.what() << "\n";
+
     }
 
     if (connected)
@@ -48,10 +48,10 @@ inline bool connectToServer(const char* addr, const char* port)
 
 inline void exitWorld(Scene* scene)
 {
-    std::cout << "Stopping \n";
+
     scene->clientShouldRun.store(false);
     scene->worldRenderer->stopThreads();
-    std::cout << "Stopped \n";
+
 
     if(scene->multiplayer)
     {

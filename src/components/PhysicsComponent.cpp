@@ -44,10 +44,10 @@ PhysicsComponent::~PhysicsComponent()
     {
         controller->release();
         controller = nullptr;
-        std::cout << "Controller released." << std::endl;
+
     } else
     {
-        std::cout << "Controller already released" << std::endl;
+
     }
 
 }

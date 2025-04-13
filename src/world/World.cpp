@@ -22,7 +22,7 @@ bool loadDM(std::string filename, World* outWorld, entt::registry& reg, BlockAre
     std::ifstream file(filename);
     if (!file.is_open())
     {
-        std::cout << "Could not open file " << filename << " for reading." << std::endl;
+
         return false;
     } else
     {
@@ -275,7 +275,7 @@ BlockType World::getRawLocked(IntTup spot)
 
 void World::set(IntTup spot, const BlockType val)
 {
-    std::cout << "Setting " << spot.x << " " << spot.y << " " << spot.z << " " << val << std::endl;
+
     userDataMap->set(spot, val);
     //blockMemo->set(spot, val);
 }

@@ -78,7 +78,7 @@ inline std::vector<char> loadBinaryFile(const std::string& filename) {
         return buffer;
     } else
     {
-        std::cout << "Error opening file for binary: " << filename << std::endl;
+
     }
     return std::vector<char>();
 }
@@ -107,7 +107,7 @@ private:
         //Client needs to send their greeting before they get anything.
         ClientToServerGreeting playerInit = {};
         boost::asio::read(*m_socket, boost::asio::buffer(&playerInit, sizeof(DGMessage)));
-        std::cout << "Server got client UID: " << playerInit.id << std::endl;
+
         m_clientUID = playerInit.id;
 
         {
@@ -120,7 +120,7 @@ private:
                 auto comp = view.get<UUIDComponent>(entity);
                 if (m_clientUID == comp.uuid)
                 {
-                    std::cout << "Player already exists in registry! " << m_clientUID << std::endl;
+
                     m_playerIndex = entity;
                     break;
                 }
@@ -128,7 +128,7 @@ private:
             }
             if (m_playerIndex == entt::null)
             {
-                std::cout << "Player is new to this registry. " << m_clientUID << std::endl;
+
                 m_playerIndex = serverReg.create();
                 emplacePlayerParts(serverReg, m_playerIndex, m_clientUID);
 
@@ -216,7 +216,7 @@ private:
                     [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
                     {
                         if (!ec) {
-                            std::cout << "Successfully wrote playerpresent " << bytes_transferred << " bytes." << std::endl;
+
                         } else {
                             std::cerr << "Error writing to socket: " << ec.message() << std::endl;
                         }
@@ -233,7 +233,7 @@ private:
                         [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
                         {
                             if (!ec) {
-                                std::cout << "Successfully wrote ourplayerpresent " << bytes_transferred << " bytes." << std::endl;
+
                             } else {
                                 std::cerr << "Error writing to socket: " << ec.message() << std::endl;
                             }
@@ -266,7 +266,7 @@ private:
                 visit([&](const auto& m) {
                     using T = std::decay_t<decltype(m)>;
                     if constexpr (std::is_same_v<T, WorldInfo>) {
-                        std::cout << "Got world info " << m.seed << " \n";
+
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
                         //std::cout << "Got controls update from " << m_playerIndex << " \n";
@@ -308,10 +308,10 @@ private:
                         excludeyou = true;
                     }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
-                        std::cout << "Got playerpresent \n";
+
                     }
                     else if constexpr (std::is_same_v<T, PlayerLeave>) {
-                        std::cout << "Got playerleave \n";
+
                     }
                     else if constexpr (std::is_same_v<T, YawPitchUpdate>) {
                         //std::cout << "Got yawpitchupdate \n";
@@ -388,7 +388,7 @@ private:
 
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
-                        std::cout << "Got block set" << m.block << "\n";
+
 
 
 
@@ -398,7 +398,7 @@ private:
 
                         if(auto func = findSpecialSetBits((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
                         {
-                            std::cout << "Calling custom func on server \n";
+
                             auto campos = m.pp;
                             func.value()(&serverWorld, m.spot, campos);
 
@@ -411,7 +411,7 @@ private:
                         {
                             if (auto f = findSpecialRemoveBits((MaterialName)blockThere); f != std::nullopt)
                             {
-                                std::cout << "Calling custom remove bits func on server \n";
+
                                 f.value()(&serverWorld, m.spot);
                             }
                         }
@@ -420,14 +420,14 @@ private:
 
                         if(auto f = findEntityRemoveFunc((MaterialName)(blockThere)); f != std::nullopt)
                         {
-                            std::cout << "Calling entity remove on spot " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
+
                             f.value()(serverReg, m.spot);
                         }
 
                         //Adding block entity
                         if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
                         {
-                            std::cout << "Calling custom entity create on server " << std::endl;
+
                             func.value()(serverReg, m.spot);
                         }
 
@@ -484,7 +484,7 @@ private:
                     else if constexpr (std::is_same_v<T, BulkBlockSet>) {
                         auto b = BlockArea{m.corner1, m.corner2, m.block, m.hollow
                         };
-                        std::cout << "Got bulk block set \n";
+
                         {
                             std::unique_lock<std::shared_mutex> barlock(serverWorld.blockAreas.baMutex);
                             serverWorld.blockAreas.blockAreas.push_back(b);
@@ -577,7 +577,7 @@ private:
                         redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, FileTransferInit>) {
-                        std::cout << "Got file transfer init \n";
+
 
                     }
                 }, m_message);
@@ -591,7 +591,7 @@ private:
                 //Wait for next message
             waitForMessage();
             } else {
-                std::cout << "Error reading message: " << ec.message() << std::endl;
+
                 if (ec == boost::asio::error::connection_reset ||
                     ec == boost::asio::error::eof ||
                     ec == boost::asio::error::operation_aborted ||
@@ -600,7 +600,7 @@ private:
                     ec == boost::asio::error::broken_pipe ||
                     ec == boost::asio::error::shut_down)
                 {
-                    std::cout << "Removing player \n";
+
 
 
                     DGMessage pl = PlayerLeave {
@@ -654,7 +654,7 @@ public:
         serverWorld.blockAreas.baMutex.unlock();
         clientsMutex.lock();
         serverReg.clear();
-        std::cout << "Cleared serverReg" << std::endl;
+
         clientsMutex.unlock();
     }
 
@@ -668,19 +668,17 @@ public:
         // this is an async accept which means the lambda function is
         // executed, when a client connects
         m_acceptor.async_accept([this](const boost::system::error_code& ec, tcp::socket socket) {
-            std::cout << "Async accept callback called \n";
+
             if (!ec) {
                 // Create a shared_ptr for the socket
-                std::cout << "No ec \n";
+
 
                 try
                 {
                     auto shared_socket = std::make_shared<tcp::socket>(std::move(socket));
 
                     // Log the connection
-                    std::cout << "creating session on: "
-                              << shared_socket->remote_endpoint().address().to_string()
-                              << ":" << shared_socket->remote_endpoint().port() << '\n';
+
 
                     // auto index = serverReg.create();
                     // //emplacePlayerParts(serverReg, index);
@@ -704,13 +702,13 @@ public:
                      sesh->run();
                 } catch (std::exception& e)
                 {
-                    std::cout << "Couldn't create session: " << e.what() << "\n";
+
                 }
 
 
-                std::cout << "session created\n";
+
             } else {
-                std::cout << "error: " << ec.message() << std::endl;
+
             }
 
             do_accept();
@@ -743,7 +741,7 @@ inline void launchLocalServer(int port)
 {
 
     if (!localserver_running.load()) {
-        std::cout << "Starting local server...\n";
+
 
         if (!localserver_io_context) {
             localserver_io_context = std::make_unique<boost::asio::io_context>();
@@ -757,7 +755,7 @@ inline void launchLocalServer(int port)
         localserver_io_context.reset(new boost::asio::io_context());
 
     } else {
-        std::cout << "Local server is already running.\n";
+
     }
 }
 inline void endLocalServerIfRunning()

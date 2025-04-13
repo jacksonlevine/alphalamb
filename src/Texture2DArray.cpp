@@ -27,19 +27,19 @@ Texture2DArray::Texture2DArray(const std::vector<std::string>& paths) {
 
     if(width < 1)
     {
-        std::cout << "WIDTH PANIC \n";
+
     }
     if(height < 1)
     {
-        std::cout << "HEIGHT PANIC \n";
+
     }
     if(depth < 1)
     {
-        std::cout << "DEPTH PANIC \n";
+
 
     }
 
-    std::cout << "Width: " << std::to_string(width) << "Height: " << std::to_string(height) << "Depth: " << std::to_string(depth) << "\n";
+
 
     // Allocate storage for the 3D texture
     //glTexStorage3D(GL_TEXTURE_3D, 1, GL_RGBA8, width, height, depth);
@@ -47,11 +47,11 @@ Texture2DArray::Texture2DArray(const std::vector<std::string>& paths) {
 
     if(width < 0)
     {
-        std::cout << "WIDTH PANIC \n";
+
     }
     if(height < 0)
     {
-        std::cout << "HEIGHT PANIC \n";
+
     }
 
     // Upload the first texture slice

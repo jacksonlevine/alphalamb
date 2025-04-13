@@ -512,12 +512,12 @@ void renderImGui()
                     {
                         theScene.localServerPort = "25000";
                     }
-                    std::cout << "Hosting on port: " << theScene.localServerPort << std::endl;
+
 
                     launchLocalServer(std::stoi(theScene.localServerPort));
 
                     std::this_thread::sleep_for(std::chrono::seconds(1));
-                    std::cout << "launched and slept " << std::endl;
+
 
                     theScene.enableMultiplayer();
 
@@ -532,11 +532,11 @@ void renderImGui()
                         currentGuiScreen = GuiScreen::InGame;
                     } else
                     {
-                        std::cout << "Couldn't connect \n";
+
                     }
                 } catch (std::exception& e)
                 {
-                    std::cout << "HERE AT IGUI" <<  e.what() << "\n";
+
                 }
 
             }
@@ -575,8 +575,8 @@ void renderImGui()
                 if (colonPos != std::string::npos) {
                     std::string ip = theScene.serverAddress.substr(0, colonPos);
                     std::string port = theScene.serverAddress.substr(colonPos + 1);
-                    std::cout << "IP: " << ip << "\n";
-                    std::cout << "Port: " << port << "\n";
+
+
 
                     theScene.enableMultiplayer();
 
@@ -591,10 +591,10 @@ void renderImGui()
                         currentGuiScreen = GuiScreen::InGame;
                     } else
                     {
-                        std::cout << "Couldn't connect \n";
+
                     }
                 } else {
-                    std::cout << "Invalid format.\n";
+
                 }
 
 

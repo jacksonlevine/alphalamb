@@ -390,7 +390,7 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
 void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 {
 
-    std::cout << "Mesh thread started!\n";
+
     NUM_THREADS_RUNNING.fetch_add(1);  // Atomic increment
     //std::cout << "Mesh incremented NUM_THREADS_RUNNING. Current value: " << NUM_THREADS_RUNNING.load() << "\n";
 
@@ -654,13 +654,13 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
     mbtActiveChunks.clear();
 
     NUM_THREADS_RUNNING.fetch_sub(1);
-    std::cout << "Mesh build thread finished!\n";
+
 
 }
 
 void WorldRenderer::rebuildThreadFunction(World* world)
 {
-    std::cout << "Rebuild thread started!\n";
+
     NUM_THREADS_RUNNING.fetch_add(1);  // Atomic increment
     //std::cout << "Rebuild thread incremented NUM_THREADS_RUNNING. Current value: " << NUM_THREADS_RUNNING.load() << "\n";
 
@@ -725,7 +725,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                     rebuildToMainAreaNotifications.push(request.area);
                 } else
                 {
-                    std::cout << "No more space in rebuildtomainareanotifications \n";
+
                 }
 
 
@@ -773,7 +773,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         });
                     } else
                     {
-                        std::cout << "No more space in rebuildtomainareanotifications \n";
+
                     }
 
                 }else
@@ -787,7 +787,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         auto blockThere = world->get(request.changeSpot);
                         if (blockThere == LIGHT)
                         {
-                            std::cout << "It was a light!!" << std::endl;
+
                             request.rebuild = true;
                             lightpass = true;
                             std::vector<std::pair<IntTup, int>> thisspot = {
@@ -799,7 +799,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         {
                             if (auto f = findSpecialRemoveBits((MaterialName)blockThere); f != std::nullopt)
                             {
-                                std::cout << "Calling custom remove bits func on client \n";
+
                                 f.value()(world, request.changeSpot);
                             }
                         }
@@ -825,7 +825,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                                 //std::cout << "Got readlock on dms \n";
                                 mesh = fromChunkLocked(request.chunkPos, world, chunkSize, lightpass);
                             } else if (rebuildThreadRunning) {
-                                std::cout << "Failed to get read lock on DMs\n";
+
                                 rebuildQueue.push(request);
                                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
                                 continue;
@@ -873,7 +873,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
         }
     }
     NUM_THREADS_RUNNING.fetch_sub(1);
-    std::cout << "Rebuild thread finished!\n";
+
 }
 
 void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks)
@@ -1238,8 +1238,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
 
     if (lookup_count % 1000 == 0) {
         double average_lookup_time = cumulative_lookup_time.count() / lookup_count;
-        std::cout << "Average remesh time after " << lookup_count << " lookups: "
-                  << average_lookup_time * 1e6 << " microseconds\n";
+
     }
 #endif
 

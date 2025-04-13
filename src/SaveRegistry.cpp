@@ -30,10 +30,10 @@ void saveRegistry(entt::registry & reg, const char* filename)
 
 void loadRegistry(entt::registry & reg, const char* filename)
 {
-    std::cout << "Loading registry..." << std::endl;
+
     if (std::filesystem::exists(filename))
     {
-        std::cout << "Registry exists." << std::endl;
+
         //reg.clear();
 
         std::ifstream input(filename, std::ios::binary);
@@ -53,5 +53,5 @@ void loadRegistry(entt::registry & reg, const char* filename)
         .get<ComputerComponent>(inputArchive)
         .get<NPPositionComponent>(inputArchive);
     }
-    std::cout << "Done loading registry" << std::endl;
+
 }

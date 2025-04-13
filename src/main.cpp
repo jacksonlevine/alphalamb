@@ -49,6 +49,7 @@
 
 #include "DrawSky.h"
 #include "FileArchives.h"
+#include "LightSpeedTest.h"
 #include "Planets.h"
 #include "SaveRegistry.h"
 #include "specialblocks/FindSpecialBlock.h"
@@ -198,7 +199,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
 
                             glm::vec3 spotf(spot.x + 0.5f, spot.y + 0.5f, spot.z + 0.5f);
                             glm::vec3 placespotf = spotf + glm::vec3(hn.x, hn.y, hn.z);
-                            std::cout << "Hit normal: " << hn.x << " " << hn.y << " " << hn.z << std::endl;
+
                             IntTup placeSpot(std::floor(placespotf.x), std::floor(placespotf.y), std::floor(placespotf.z));
 
                             using namespace std;
@@ -218,7 +219,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                                 if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
                                 {
                                     //std::cout << "Senfing blokc place \n";
-                                    std::cout << "Place at: " << placeSpot.x << " " << placeSpot.y << " " << placeSpot.z << " " << scene->our<InventoryComponent>().currentHeldBlock << std::endl;
+
                                     pushToMainToNetworkQueue(BlockSet{
                                         .spot = placeSpot, .block =  scene->our<InventoryComponent>().currentHeldBlock, .pp = cam.transform.position
                                     });
@@ -448,9 +449,9 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
         if (key == GLFW_KEY_T)
         {
-            std::cout << "Num threads running: " << NUM_THREADS_RUNNING << '\n';
+
             auto & pos = scene->our<jl::Camera>().transform.position;
-            std::cout << "Position: " << pos.x << " " << pos.y << " " << pos.z << '\n';
+
 
         } else
         if (key == GLFW_KEY_H)
@@ -638,7 +639,7 @@ void enterWorld(Scene* s)
 }
 // Define a regular function with the correct signature
 static void onPhysicsComponentAdded(entt::registry& reg, entt::entity entity) {
-    std::cout << "Physics component added. " << std::endl;
+
 }
 
 int main()
@@ -745,6 +746,8 @@ int main()
     theScene.vmStampGizmo = vms;
 
     //theScene.gizmos.push_back(vms);
+
+    //lighttest();
 
     for(auto & gizmo : theScene.gizmos)
     {
@@ -1249,7 +1252,7 @@ int main()
                         }
                     }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
-                       std::cout << "Processing palyerpresent\n";
+
                         bool isInReg = false;
                         auto view = theScene.REG.view<UUIDComponent>();
                         for(auto entity : view)
@@ -1308,14 +1311,14 @@ int main()
 
                                 if(auto f = findEntityRemoveFunc((MaterialName)blockThere); f != std::nullopt)
                                 {
-                                    std::cout << "Calling custom entity destroy on client \n";
+
                                     f.value()(theScene.REG, m.spot);
                                 }
 
                         //If adding block entity
                             if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
                             {
-                                std::cout << "Calling custom entity create on client \n";
+
                                 func.value()(theScene.REG, m.spot);
                             }
 
@@ -1632,7 +1635,7 @@ int main()
                     glUniform3f(camPosLoc, 0, 0, 0);
                 } else
                 {
-                    std::cout << "Not me " << (int)id << " " << (int)theScene.myPlayerIndex << std::endl;
+
                     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.our<jl::Camera>().mvp));
                     glUniform3f(posLoc, pos.x, pos.y, pos.z);
                 }

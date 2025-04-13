@@ -140,15 +140,15 @@ struct Scene
                     settingsFile >> ambOccl;
                 
                     settingsFile >> settings.musicVol;
-                std::cout << "Setting volume: " << settings.musicVol << std::endl;
+
                     alSourcef(musicSource, AL_GAIN, settings.musicVol);
                 
-                    std::cout << "Loaded UID: " << settings.clientUID << std::endl;
+
             }
         } else
         {
             settings.clientUID = boost::uuids::random_generator()();
-            std::cout << "New UID: " << settings.clientUID << std::endl;
+
             saveSettings();
         }
 

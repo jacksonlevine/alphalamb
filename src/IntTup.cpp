@@ -80,10 +80,6 @@ std::size_t IntTupHash::operator()(const IntTup& tup) const {
     return (std::hash<int>{}(tup.x) ^ (std::hash<int>{}(tup.y) << 1)) ^ (std::hash<int>{}(tup.z) << 2);
 }
 
-std::uint8_t IntTupHash::operator()(const IntTup& tup, bool small) const {
-    return (std::hash<int>{}(tup.x) ^ (std::hash<int>{}(tup.y) << 1)) ^ (std::hash<int>{}(tup.z) << 2);
-}
-
 
 TwoIntTup::TwoIntTup(int x, int z) : x(x), z(z)
 {

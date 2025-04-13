@@ -9,10 +9,11 @@ void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value,
 {
     auto lmentry = lightmap.find(spot);
     bool originfound = false;
+    auto originhash = IntTupHash{}(origin, true);
     if(lmentry != lightmap.end()) {
         if(value != 0) {
             for(auto ray : lmentry->second.rays) {
-                if(ray.origin == origin) {
+                if(ray.originhash == originhash) {
                     originfound = true;
                     ray.level = value;
                     break;
@@ -20,16 +21,16 @@ void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value,
             }
             if(!originfound) {
                 lmentry->second.rays.push_back(LightRay{
-                    .origin = origin, .level = value
+                    .originhash = originhash, .level = value
                 });
             }
         } else {
-            std::erase_if(lmentry->second.rays, [origin](auto & ray) { return ray.origin == origin; });
+            std::erase_if(lmentry->second.rays, [originhash](auto & ray) { return ray.originhash == originhash; });
         }
     } else {
         lightmap.insert({spot, LightSpot{}});
         lightmap.at(spot).rays.push_back(LightRay{
-            .origin = origin, .level = value
+            .originhash = originhash, .level = value
         });
     }
 }
@@ -133,6 +134,7 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
     // Process each layer, from brightest to dimmest
     for (int level = maxLightLevel; level > 1; --level) {
         for (const auto& [spot, origin] : layers[level]) {
+            auto originhash = IntTupHash{}(origin, true);
             for (const auto& offset : neighbs) {
                 IntTup neighbor = spot + offset;
 
@@ -145,7 +147,7 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
 
                     // Check if this spot has a ray from the ORIGINAL source (not the neighbor it came from)
                     for (const auto& ray : lmentry->second.rays) {
-                        if (ray.origin == origin) { // Check against the original light source
+                        if (ray.originhash == originhash) { // Check against the original light source
                             originFound = true;
                             break;
                         }

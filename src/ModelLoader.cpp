@@ -45,7 +45,7 @@ int getNumberOfComponents(int acctype)
 ModelAndTextures ModelLoader::loadModel(const char* path, bool createCollider)
 {
 
-    std::cout << "Loading Model File: " << path << std::endl;
+
 
 
     tinygltf::Model model;
@@ -57,15 +57,15 @@ ModelAndTextures ModelLoader::loadModel(const char* path, bool createCollider)
     const bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, path); // for .glb
 
     if (!warn.empty()) {
-        std::cout << "Warn: " << warn.c_str() << "\n";
+
     }
 
     if (!err.empty()) {
-        std::cout << "Err: " << err.c_str() << "\n";
+
     }
 
     if (!ret) {
-        std::cout << "Failed to parse glTF at " << path << "\n";
+
     }
 
     std::vector<ModelGLObjects> modelGLObjects;
@@ -81,9 +81,9 @@ ModelAndTextures ModelLoader::loadModel(const char* path, bool createCollider)
 for (const tinygltf::Mesh& mesh : model.meshes) {
     int index = 0;
 
-        std::cout << "Mesh \n";
+
     for (const tinygltf::Primitive& primitive : mesh.primitives) {
-        std::cout << "Primitive \n";
+
         if (index == 0)
         {
             // === Print Vertex Positions ===
@@ -92,7 +92,7 @@ for (const tinygltf::Mesh& mesh : model.meshes) {
                 const tinygltf::BufferView& positionBufferView = model.bufferViews[positionAccessor.bufferView];
                 const tinygltf::Buffer& positionBuffer = model.buffers[positionBufferView.buffer];
 
-                std::cout << "Vertex Positions (Count: " << positionAccessor.count << "):" << std::endl;
+
                 const float* positions = reinterpret_cast<const float*>(&positionBuffer.data.at(0) + positionBufferView.byteOffset);
                 for (size_t i = 0; i < positionAccessor.count; ++i) {
                     int components = getNumberOfComponents(positionAccessor.type);
@@ -116,7 +116,7 @@ for (const tinygltf::Mesh& mesh : model.meshes) {
                     //     std::cout << static_cast<uint32_t>(indices[i]) << " ";
                     // }
                 } else if (indexAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) {
-                    std::cout << "UnSIGNED SHORT \n";
+
                     const uint16_t* indices = reinterpret_cast<const uint16_t*>(&indexBuffer.data.at(0) + indexBufferView.byteOffset);
                     for (size_t i = 0; i < indexAccessor.count; ++i) {
                         collindices.push_back(indices[i]);
@@ -128,7 +128,7 @@ for (const tinygltf::Mesh& mesh : model.meshes) {
                     //     std::cout << indices[i] << " ";
                     // }
                 }
-                std::cout << std::endl;
+
             }
         }
         index++;
@@ -242,7 +242,7 @@ for (const tinygltf::Mesh& mesh : model.meshes) {
     {
         if (path == "assets/models/ladder1.glb")
         {
-            std::cout <<"Ladder \n";
+
             auto myrig = _createStaticMeshCollider(PxVec3(0.0, 0.0, 0.0), collpositions, collindices, true);
             return ModelAndTextures{modelGLObjects, texids, myrig};
         } else

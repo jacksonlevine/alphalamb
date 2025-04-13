@@ -309,14 +309,14 @@ PxRigidStatic* editStaticMeshCollider(PxRigidStatic* existing, const PxVec3& pos
     if (!status || result == PxTriangleMeshCookingResult::eFAILURE ||
         result == PxTriangleMeshCookingResult::eEMPTY_MESH)
     {
-        std::cout << "Mesh cooking failed or empty, result: " << std::to_string(result) << std::endl;
+
         return existing;
     }
 
     switch (result)
     {
     case PxTriangleMeshCookingResult::eLARGE_TRIANGLE:
-        std::cout << "Large triangle mesh cooking result" << std::endl;
+
         break;
     case PxTriangleMeshCookingResult::eSUCCESS:
         break;
@@ -327,7 +327,7 @@ PxRigidStatic* editStaticMeshCollider(PxRigidStatic* existing, const PxVec3& pos
 
     if (!triangleMesh)
     {
-        std::cout << "Failed to create triangle mesh" << std::endl;
+
         return existing;
     }
 
@@ -341,7 +341,7 @@ PxRigidStatic* editStaticMeshCollider(PxRigidStatic* existing, const PxVec3& pos
 
     if (!newShape)
     {
-        std::cout << "Failed to create shape" << std::endl;
+
         triangleMesh->release();  // Clean up the mesh if shape creation failed
         return existing;
     }

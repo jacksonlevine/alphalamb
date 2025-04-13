@@ -200,6 +200,8 @@ add_executable(DistantGarden
         src/specialblocks/Cable.h
         src/Light.cpp
         src/Light.h
+        src/LightSpeedTest.cpp
+        src/LightSpeedTest.h
 
 )
 
