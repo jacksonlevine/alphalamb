@@ -92,7 +92,7 @@ struct Scene
     jl::Camera* menuCamera = nullptr;
     bool showingControls = false;
     std::string localServerPort = "";
-    float timeOfDay = 450.0f;
+    float timeOfDay = 0.0f;
     static constexpr float dayLength = 900.0f;
     PlanetType currentPlanetType = PlanetType::Home;
     std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>> existingInvs = {};

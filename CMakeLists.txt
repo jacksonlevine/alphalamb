@@ -198,6 +198,8 @@ add_executable(DistantGarden
         src/specialblocks/FindEntityCreateFunc.h
         src/specialblocks/Door.h
         src/specialblocks/Cable.h
+        src/Light.cpp
+        src/Light.h
 
 )
 
@@ -239,6 +241,8 @@ add_executable(DGServer
         src/specialblocks/FindEntityCreateFunc.h
         src/specialblocks/Door.h
         src/specialblocks/Cable.h
+        src/Light.cpp
+        src/Light.h
 
 )
 

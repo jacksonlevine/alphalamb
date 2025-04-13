@@ -10,7 +10,7 @@
 
 struct InventoryComponent {
     MaterialName lastHeldBlock = AIR;
-    MaterialName currentHeldBlock = DG_COMPUTERBLOCK;
+    MaterialName currentHeldBlock = LIGHT;
     Inventory inventory = {};
     template<typename Archive>
     void serialize(Archive& archive)

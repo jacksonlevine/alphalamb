@@ -67,12 +67,7 @@ IntTup operator-(IntTup first,
     return first;
 }
 
-IntTup::IntTup(int x, int y, int z)
-{
-    this->x = x;
-    this->y = y;
-    this->z = z;
-}
+
 
 IntTup::IntTup(int x, int z)
 {
@@ -85,6 +80,9 @@ std::size_t IntTupHash::operator()(const IntTup& tup) const {
     return (std::hash<int>{}(tup.x) ^ (std::hash<int>{}(tup.y) << 1)) ^ (std::hash<int>{}(tup.z) << 2);
 }
 
+std::uint8_t IntTupHash::operator()(const IntTup& tup, bool small) const {
+    return (std::hash<int>{}(tup.x) ^ (std::hash<int>{}(tup.y) << 1)) ^ (std::hash<int>{}(tup.z) << 2);
+}
 
 
 TwoIntTup::TwoIntTup(int x, int z) : x(x), z(z)
@@ -135,8 +133,6 @@ std::size_t TwoIntTupHash::operator()(const TwoIntTup& tup) const
     return std::hash<int>{}(tup.x) ^ (std::hash<int>{}(tup.z) << 1);
 }
 
-std::string getIntTupHashAsString(const IntTup& tup) {
-    IntTupHash hashFunc; // Instantiate the hash functor
-    std::size_t hashValue = hashFunc(tup); // Compute the hash
-    return std::to_string(hashValue); // Convert hash to string
+std::string getIntTupHashAsString(const IntTup& tup, bool small = false) {
+    return small ? std::to_string(IntTupHash{}(tup, small)) : std::to_string(IntTupHash{}(tup));
 }

@@ -523,6 +523,7 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
             auto & camera = scene->our<jl::Camera>();
 
             camera.updateYPIndirect(camera.targetYaw + static_cast<float>(xOffset), camera.targetPitch + static_cast<float>(yOffset));
+            scene->guiCamera->updateWithYawPitch(scene->guiCamera->transform.yaw + static_cast<float>(xOffset), scene->guiCamera->transform.pitch + static_cast<float>(yOffset));
         }
 
         lastx = xpos;

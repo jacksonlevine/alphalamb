@@ -11,7 +11,7 @@
 #include "../specialblocks/FindEntityCreateFunc.h"
 #include "../specialblocks/FindSpecialBlock.h"
 std::atomic<int> NUM_THREADS_RUNNING = 0;
-
+std::unordered_map<IntTup, LightSpot, IntTupHash> lightmap = {};
 
 void genCGLBuffers()
 {
@@ -533,7 +533,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                                 auto& buffer = changeBuffers[changeBufferIndex];
                                 buffer.in_use.store(true);
-                                buffer.mesh = fromChunk(spotHere, world, chunkSize);
+                                buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
 
                                 buffer.chunkIndex = addUninitializedChunkBuffer();
                                 buffer.from = std::nullopt;
@@ -612,7 +612,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                                             auto& buffer = changeBuffers[changeBufferIndex];
                                             buffer.in_use.store(true);
-                                            buffer.mesh = fromChunk(spotHere, world, chunkSize);
+                                            buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
 
                                             buffer.chunkIndex = chunkIndex;
                                             buffer.from = oldSpot;
@@ -670,6 +670,8 @@ void WorldRenderer::rebuildThreadFunction(World* world)
         if (rebuildQueue.pop(request)) {
             //std::cout << "Popped one: " << request.chunkPos.x << " " << request.chunkPos.z << " \n";
 
+            auto lightpass = (request.changeTo != std::nullopt && request.changeTo.value() == LIGHT);
+
             if (request.isArea)
             {
                 std::vector<IntTup> spotsToEraseInUDM;
@@ -678,7 +680,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
                 {
                     //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
-                    std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
+
                     auto lock = world->nonUserDataMap->getUniqueLock();
                     std::shared_lock<std::shared_mutex> udmRL(world->userDataMap->mutex());
                     auto m = request.area;
@@ -716,6 +718,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         world->userDataMap->erase(spot, true);
                     }
                 }
+
 
                 if (rebuildToMainAreaNotifications.write_available() > 0)
                 {
@@ -775,8 +778,12 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
                 }else
                 {
+
                     if(request.changeTo != std::nullopt)
                     {
+
+
+
                         auto blockThere = world->get(request.changeSpot);
                         if (blockThere != AIR  && (blockThere != (MaterialName)(request.changeTo.value() & BLOCK_ID_BITS)))
                         {
@@ -806,7 +813,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                             if (auto locks = world->tryToGetReadLockOnDMs()) {
                                 // Get the chunk data with locks held
                                 //std::cout << "Got readlock on dms \n";
-                                mesh = fromChunkLocked(request.chunkPos, world, chunkSize);
+                                mesh = fromChunkLocked(request.chunkPos, world, chunkSize, lightpass);
                             } else if (rebuildThreadRunning) {
                                 std::cout << "Failed to get read lock on DMs\n";
                                 rebuildQueue.push(request);
@@ -838,6 +845,14 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                             buffer.ready.store(true);
                             buffer.in_use.store(false);
                         }
+                        //
+                        // if (lightpass)
+                        // {
+                        //     for (auto & chunk: implicatedChunks)
+                        //     {
+                        //
+                        //     }
+                        // }
                     }
                 }
 
@@ -1039,20 +1054,23 @@ glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),});
 
 
 
-UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked);
-UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize)
+UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked, bool light);
+UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool light)
 {
-    return fromChunk(spot, world, chunkSize, false);
+    return fromChunk(spot, world, chunkSize, false, light);
 }
-UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize)
+UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize, bool light)
 {
-    return fromChunk(spot, world, chunkSize, true);
+    return fromChunk(spot, world, chunkSize, true, light);
 }
 
 //#define MEASURE_CHUNKREB
 ///Create a UsableMesh from the specified chunk spot
 ///This gets called in the mesh building coroutine
-UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked)
+
+#define MEASURE_CHUNKREB
+
+UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked, bool light)
 {
 #ifdef MEASURE_CHUNKREB
     static size_t lookup_count = 0;
@@ -1062,6 +1080,12 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
 #ifdef MEASURE_CHUNKREB
     auto startt = std::chrono::high_resolution_clock::now();
 #endif
+
+    if (light)
+    {
+        lightPassOnChunk(world, spot, chunkSize, 250, lightmap, nullptr, locked);
+    }
+
 
     UsableMesh mesh;
     PxU32 index = 0;
@@ -1151,6 +1175,12 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         if (neighborair || solidNeighboringTransparent || (blockHereTransparent && (neighblock != blockID) && neightransparent)) {
                             Side side = static_cast<Side>(i);
 
+                            auto blockbright = 0;
+                            auto ns = here + neighborSpots[(int)side];
+                            if (lightmap.contains(ns))
+                            {
+                                blockbright = lightmap.at(ns).sum();
+                            }
 
                             if (blockID == WATER && side == Side::Top)
                             {
@@ -1162,10 +1192,11 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                                 } else {
                                     addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
                                                   side, static_cast<MaterialName>(blockID), 1, mesh, index, tindex, -0.2f);
-                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh);
+
+                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockbright);
                                     addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y)+1, static_cast<float>(here.z)),
                                                   Side::Bottom, static_cast<MaterialName>(blockID), 1, mesh, index, tindex, -0.2f);
-                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh);
+                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockbright);
                                 }
 
                             } else
@@ -1176,7 +1207,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                                 } else {
                                     addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
                                                   side, static_cast<MaterialName>(blockID), 1, mesh, index, tindex);
-                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh);
+                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockbright);
                                 }
                             }
                         }
@@ -1206,15 +1237,15 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
 }
 
 // This function calculates and adds ambient occlusion brightness values for a face
-void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, bool locked, BlockType blockType, UsableMesh& mesh)
+void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, bool locked, BlockType blockType, UsableMesh& mesh, int blockBright)
 {
     float baseBrightness;
     switch(side) {
-        case Side::Top:    baseBrightness = 1.0f; break;
-        case Side::Left:   baseBrightness = 0.7f; break;
-        case Side::Bottom: baseBrightness = 0.4f; break;
-        case Side::Right:  baseBrightness = 0.8f; break;
-        default:           baseBrightness = 0.9f; break;
+        case Side::Top:    baseBrightness = 1.0f * (blockBright / 16.0f); break;
+        case Side::Left:   baseBrightness = 0.7f * (blockBright / 16.0f); break;
+        case Side::Bottom: baseBrightness = 0.4f * (blockBright / 16.0f); break;
+        case Side::Right:  baseBrightness = 0.8f * (blockBright / 16.0f); break;
+        default:           baseBrightness = 0.9f * (blockBright / 16.0f); break;
     }
 
     float isGrass = blockType == GRASS ? 1.0f : 0.0f;

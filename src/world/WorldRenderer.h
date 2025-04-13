@@ -11,6 +11,7 @@
 #include "../IntTup.h"
 #include "../PrecompHeader.h"
 #include "RebuildQueue.h"
+#include "../Light.h"
 
 struct DrawInstructions
 {
@@ -95,7 +96,7 @@ constexpr float onePixel = 0.00183823529411764705882352941176f;     //  1/544   
 constexpr float textureWidth = 0.02941176470588235294117647058824f; // 16/544      16 pixel texture width
 constexpr float texSlotWidth = 0.03308823529411764705882352941176f;
 std::array<IntTup, 3> getAdjacentOffsets(Side side, int vertexIndex);
-void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, bool locked, BlockType blockType, UsableMesh& mesh);
+void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, bool locked, BlockType blockType, UsableMesh& mesh, int blockBright);
 inline static PxVec3 cubefaces[6][4] = {
     {//front
         PxVec3(0.0, 0.0, 0.0),PxVec3(1.0, 0.0, 0.0),PxVec3(1.0, 1.0, 0.0),PxVec3(0.0, 1.0, 0.0)},
@@ -129,8 +130,8 @@ inline static IntTup neighborSpots[6] = {
 };
 
 
-UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize);
-UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize);
+UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool light = false);
+UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize, bool light = false);
 
 struct UsedChunkInfo
 {
@@ -146,7 +147,7 @@ struct ReadyToDrawChunkInfo
     explicit ReadyToDrawChunkInfo(size_t index) : chunkIndex(index) {}
 };
 extern std::atomic<int> NUM_THREADS_RUNNING;
-
+extern std::unordered_map<IntTup, LightSpot, IntTupHash> lightmap;
 
 class WorldRenderer {
 public:
@@ -156,6 +157,8 @@ public:
     static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2));
     int MIN_DISTANCE = renderDistance + 1;
     int lastMaxChunks = maxChunks;
+
+
     int currentMinDistance()
     {
         return currentRenderDistance + 1;
@@ -164,6 +167,8 @@ public:
     {
         return (currentRenderDistance*2) * (currentRenderDistance*2);
     }
+
+
 
     std::array<SmallChunkGLInfo, maxChunks> chunkPool;
 

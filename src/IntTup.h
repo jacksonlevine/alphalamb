@@ -14,7 +14,7 @@ public:
     int x;
     int y;
     int z;
-    IntTup(int x, int y, int z);
+    constexpr IntTup(int x, int y, int z) : x(x), y(y), z(z) {}
     IntTup(int x, int z);
     IntTup();
     void set(int x, int y, int z);
@@ -23,6 +23,7 @@ public:
     bool operator!=(const IntTup& other) const;
     IntTup& operator=(const IntTup& other);
     IntTup& operator+=(const IntTup& other);
+
 };
 
 IntTup operator+(IntTup first, const IntTup& second);
@@ -31,6 +32,7 @@ IntTup operator-(IntTup first, const IntTup& second);
 
 struct IntTupHash {
     std::size_t operator()(const IntTup& tup) const;
+    std::uint8_t operator()(const IntTup& tup, bool small) const;
 };
 
 

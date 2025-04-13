@@ -156,13 +156,13 @@ if(underwater > 0.5f) {
 
 }
 vec4 tex = texture(texture1, TexCoord) + vec4(grassColor * 0.3, 0.0);
-FragColor = mix(vec4((tex * brightness).xyz, tex.a), fogColor, fogFactor);
+FragColor = mix(vec4((tex * max(0.0, min(1.0, brightness + ambientBrightness))).xyz, tex.a), fogColor, fogFactor);
                 vec3 lutCoords = clamp(FragColor.xyz, 0.0, 1.0);
                 lutCoords = lutCoords * (63.0/64.0) + (0.5/64.0);
                 vec4 lutTex = texture(lut, lutCoords);
 
                 FragColor = vec4(lutTex.xyz, FragColor.a * timeRended);
-                FragColor = vec4(FragColor.xyz * ambientBrightness, FragColor.a);
+                //FragColor = vec4(FragColor.xyz * ambientBrightness, FragColor.a);
                 if(FragColor.a < 0.1f) {
                     discard;
                 }
