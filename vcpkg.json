@@ -2,7 +2,7 @@
     "name": "distantgarden",
     "version": "0.0.0",
     "builtin-baseline": "96b5ced82828ecaf67e6010a892c98d3e96ed1c2",
-    "dependencies": [ "glfw3", "glm", "glew", "tinygltf", "libsndfile", "boost-asio", "boost-uuid", "boost-lockfree", "boost-container", "boost-variant2",
+    "dependencies": [ "glfw3", "glm", "glew", "tinygltf", "libsndfile", "boost-asio", "boost-uuid", "boost-lockfree", "boost-container", "boost-variant2", "boost-thread",
         {
             "name": "imgui",
             "features": [ "glfw-binding", "opengl3-binding" ]

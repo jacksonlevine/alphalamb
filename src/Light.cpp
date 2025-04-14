@@ -5,6 +5,7 @@
 #include "Light.h"
 
 #include "world/WorldRenderer.h"
+boost::sync_queue<TwoIntTup> lightOverlapNotificationQueue = {};
 
 void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value,
                                  LightMapType& lightmap)
@@ -56,7 +57,6 @@ std::vector<std::pair<IntTup, int>> getChunkLightSources(const TwoIntTup& spot, 
     {
         url = std::shared_lock<std::shared_mutex>(world->userDataMap->mutex());
         nrl = std::shared_lock<std::shared_mutex>(world->nonUserDataMap->mutex());
-        lock3 = std::shared_lock<std::shared_mutex>(lightmapMutex);
     }
     auto startspot = IntTup(spot.x * chunkw, 0, spot.z * chunkw);
     for (int i = 0; i < chunkw; i++)
@@ -124,18 +124,18 @@ void propagateAllLightsLayered(World* world,
         visited[idx] = true;
         layers[level].push_back({pos, pos});
         setLightLevelFromOriginHere(pos, pos, level, lightmap);
-        if (implicatedChunks) {
-            implicatedChunks->insert({pos.x / 16, pos.z / 16});
-        }
+        // if (implicatedChunks) {
+        //     implicatedChunks->insert({pos.x / 16, pos.z / 16});
+        // }
     }
 
     std::shared_lock<std::shared_mutex> url;
     std::shared_lock<std::shared_mutex> nrl;
-    std::shared_lock<std::shared_mutex> lock3;
+    std::unique_lock<std::shared_mutex> lock3;
     if (!locked) {
         url = std::shared_lock<std::shared_mutex>(world->userDataMap->mutex());
         nrl = std::shared_lock<std::shared_mutex>(world->nonUserDataMap->mutex());
-        lock3 = std::shared_lock<std::shared_mutex>(lightmapMutex);
+        lock3 = std::unique_lock<std::shared_mutex>(lightmapMutex);
     }
 
     for (int level = maxLightLevel; level > 1; --level) {
@@ -150,9 +150,9 @@ void propagateAllLightsLayered(World* world,
                 visited[idx] = true;
                 layers[level - 1].push_back({neighbor, source});
                 setLightLevelFromOriginHere(neighbor, source, level - 1, lightmap);
-                if (implicatedChunks) {
-                    implicatedChunks->insert({neighbor.x / 16, neighbor.z / 16});
-                }
+                // if (implicatedChunks) {
+                //     implicatedChunks->insert({neighbor.x / 16, neighbor.z / 16});
+                // }
             }
         }
         layers[level].clear();
@@ -160,8 +160,8 @@ void propagateAllLightsLayered(World* world,
 }
 void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& lightSourcesToRemove,
                                  LightMapType& lightmap,
-                                 std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks,
-                                 bool locked) {
+                                 std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks, bool locked
+) {
     constexpr int maxLightLevel = 16;
     constexpr int chunkWidth = 16, chunkHeight = 250, chunkDepth = 16;
     constexpr int pad = 16;
@@ -194,6 +194,13 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
     std::bitset<volume> visited;
     std::vector<std::vector<std::pair<IntTup, IntTup>>> layers(maxLightLevel + 1);
 
+
+
+    std::unique_lock<std::shared_mutex> lock;
+    if (!locked)
+    {
+        lock = std::unique_lock<std::shared_mutex>(lightmapMutex);
+    }
     IntTupHash hasher;
     for (const auto& [pos, level] : lightSourcesToRemove) {
         size_t idx = (pos.x - minX) + (pos.z - minZ) * width + (pos.y - minY) * width * depth;
@@ -202,9 +209,9 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
         visited[idx] = true;
         layers[level].push_back({pos, pos});
         setLightLevelFromOriginHere(pos, pos, 0, lightmap);
-        if (implicatedChunks) {
-            implicatedChunks->insert({pos.x / 16, pos.z / 16});
-        }
+        // if (implicatedChunks) {
+        //     implicatedChunks->insert({pos.x / 16, pos.z / 16});
+        // }
     }
 
     for (int level = maxLightLevel; level > 1; --level) {
@@ -215,6 +222,7 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
                 size_t idx = (neighbor.x - minX) + (neighbor.z - minZ) * width + (neighbor.y - minY) * width * depth;
                 if (idx >= volume) continue;
                 if (visited[idx]) continue;
+                std::cout << "spot: " << neighbor.x << " " << neighbor.y << " " << neighbor.z  << std::endl;
 
                 auto lmentry = lightmap.find(neighbor);
                 if (lmentry != lightmap.end()) {
@@ -232,9 +240,9 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
                         visited[idx] = true;
                         layers[level - 1].push_back({neighbor, origin});
                         setLightLevelFromOriginHere(neighbor, origin, 0, lightmap);
-                        if (implicatedChunks) {
-                            implicatedChunks->insert({neighbor.x / 16, neighbor.z / 16});
-                        }
+                        // if (implicatedChunks) {
+                        //     implicatedChunks->insert({neighbor.x / 16, neighbor.z / 16});
+                        // }
                     }
                 }
             }
@@ -243,10 +251,17 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
     }
 }
 void lightPassOnChunk(World* world, TwoIntTup spot, int chunkw, int chunkh,
-                      LightMapType& lightmap, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks, bool
+                      LightMapType& lightmap, bool
                       locked)
 {
+    auto implicatedChunks = std::unordered_set<TwoIntTup, TwoIntTupHash>();
+
     auto sources = getChunkLightSources(spot, world, chunkw, chunkh, lightmap, locked);
-    unpropagateAllLightsLayered(sources, lightmap, implicatedChunks, locked);
-    propagateAllLightsLayered(world, sources, lightmap, implicatedChunks, locked);
+    unpropagateAllLightsLayered(sources, lightmap, &implicatedChunks, locked);
+    propagateAllLightsLayered(world, sources, lightmap, &implicatedChunks, locked);
+
+    for (const auto & spot : implicatedChunks)
+    {
+        lightOverlapNotificationQueue.push(spot);
+    }
 }

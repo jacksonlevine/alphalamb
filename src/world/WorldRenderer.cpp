@@ -16,7 +16,7 @@ std::atomic<int> NUM_THREADS_RUNNING = 0;
 
 LightMapType lightmap = {};
 std::shared_mutex lightmapMutex = {};
-
+boost::unordered_flat_set<TwoIntTup, TwoIntTupHash> litChunks;
 void genCGLBuffers()
 {
 
@@ -417,7 +417,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
         TwoIntTup playerChunkPosition = worldToChunkPos(
         TwoIntTup(std::floor(playerCamera->transform.position.x),
-            std::floor(playerCamera->transform.position.z)));
+                     std::floor(playerCamera->transform.position.z)));
 
         static std::array<TwoIntTup, (renderDistance*2)*(renderDistance*2)> checkspots = {};
 
@@ -449,6 +449,23 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                 {
                     generateChunk(world, spotHere, &implicatedChunks);
                     generatedChunks.insert(spotHere);
+                    // bool lockgot = false;
+                    // while (!lockgot)
+                    // {
+                    //     if (auto lock = world->tryToGetReadLockOnDMsAndWriteLockOnLM(); lock != std::nullopt)
+                    //     {
+                    //         lockgot = true;
+                    //         ///std::cout << "Got lock" << std::endl;
+                    //         lightPassOnChunk(world, spotHere, chunkSize, 250, lightmap, true);
+                    //         generatedChunks.insert(spotHere);
+                    //     } else
+                    //     {
+                    //         std::cout << "Cant get lock" << std::endl;
+                    //         std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                    //     }
+                    // }
+
+
                 }
             }
         }
@@ -464,10 +481,19 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                     auto & uci = mbtActiveChunks.at(chunk);
                     UsableMesh mesh;
                     {
-                        if (auto locks = world->tryToGetReadLockOnDMs()) {
-                            //std::cout << "Got readlock on dms \n";
-                            mesh = fromChunkLocked(chunk, world, chunkSize);
+                        bool gotlock = false;
+                        while (!gotlock)
+                        {
+                            if (auto locks = world->tryToGetReadLockOnDMs()) {
+                                //std::cout << "Got readlock on dms \n";
+                                mesh = fromChunkLocked(chunk, world, chunkSize);
+                                gotlock = true;
+                            } else
+                            {
+                                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                            }
                         }
+
                     }
 
 
@@ -824,6 +850,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         UsableMesh mesh;
                         // Scope the locks so they're released after getting data
                         {
+
                             if (auto locks = world->tryToGetReadLockOnDMs()) {
                                 // Get the chunk data with locks held
                                 //std::cout << "Got readlock on dms \n";
@@ -1095,9 +1122,10 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
     auto startt = std::chrono::high_resolution_clock::now();
 #endif
 
-    if (light)
+    if (light || !litChunks.contains(spot))
     {
-        lightPassOnChunk(world, spot, chunkSize, 250, lightmap, nullptr, locked);
+        lightPassOnChunk(world, spot, chunkSize, 250, lightmap, locked);
+        litChunks.insert(spot);
     }
 
 
@@ -1191,10 +1219,21 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
 
                             auto blockbright = 0;
                             auto ns = here + neighborSpots[(int)side];
-                            if (lightmap.contains(ns))
+                            if (locked)
                             {
-                                blockbright = lightmap.at(ns).sum();
+                                if (lightmap.contains(ns))
+                                {
+                                    blockbright = lightmap.at(ns).sum();
+                                }
+                            } else
+                            {
+                                auto lock =std::shared_lock<std::shared_mutex>(lightmapMutex);
+                                if (lightmap.contains(ns))
+                                {
+                                    blockbright = lightmap.at(ns).sum();
+                                }
                             }
+
 
                             if (blockID == WATER && side == Side::Top)
                             {

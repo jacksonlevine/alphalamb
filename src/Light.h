@@ -11,6 +11,7 @@
 
 
 
+extern boost::sync_queue<TwoIntTup> lightOverlapNotificationQueue;
 
 struct LightRay {
     uint32_t originhash;
@@ -51,7 +52,7 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
                                  lightmap, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr, bool locked = false);
 
 
-void lightPassOnChunk(World* world, TwoIntTup spot, int chunkw, int chunkh, LightMapType& lightmap, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr, bool
+void lightPassOnChunk(World* world, TwoIntTup spot, int chunkw, int chunkh, LightMapType& lightmap, bool
                       locked = false);
 
 

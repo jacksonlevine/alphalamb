@@ -35,7 +35,7 @@ find_package(OpenAL CONFIG REQUIRED)
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 find_package(EnTT CONFIG REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container variant2)
+find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container variant2 thread)
 message(STATUS "Boost version: ${Boost_VERSION}")
 find_package(imgui CONFIG REQUIRED)
 
@@ -264,7 +264,7 @@ function(add_common_libraries target)
     target_link_directories(${target} PUBLIC ${CMAKE_SOURCE_DIR}/lib)
     target_include_directories(${target} PRIVATE ${TINYGLTF_INCLUDE_DIRS})
     target_link_libraries(${target} PRIVATE imgui::imgui)
-    target_link_libraries(${target} PRIVATE Boost::asio Boost::uuid)
+    target_link_libraries(${target} PRIVATE Boost::asio Boost::uuid Boost::thread)
     target_link_libraries(${target} PRIVATE Boost::lockfree)
     
     

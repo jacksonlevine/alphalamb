@@ -13,6 +13,8 @@
 #include "RebuildQueue.h"
 #include "../Light.h"
 
+
+
 struct DrawInstructions
 {
     GLuint vao = 0;
@@ -150,6 +152,7 @@ extern std::atomic<int> NUM_THREADS_RUNNING;
 
 extern LightMapType lightmap;
 extern std::shared_mutex lightmapMutex;
+extern boost::unordered_flat_set<TwoIntTup, TwoIntTupHash> litChunks;
 
 class WorldRenderer {
 public:
@@ -206,6 +209,7 @@ public:
 
     ///Chunks that have had their terrain features generated already.
     boost::unordered_flat_set<TwoIntTup, TwoIntTupHash> generatedChunks;
+
     static void generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr);
 
     WorldRenderer()

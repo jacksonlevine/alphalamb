@@ -26,7 +26,7 @@ void lighttest()
     {
         auto url = std::shared_lock<std::shared_mutex>(world.userDataMap->mutex());
         auto nrl = std::shared_lock<std::shared_mutex>(world.nonUserDataMap->mutex());
-        auto lock3 = std::shared_lock<std::shared_mutex>(lightmapMutex);
+        auto lock3 = std::unique_lock<std::shared_mutex>(lightmapMutex);
 
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 250; j++) {

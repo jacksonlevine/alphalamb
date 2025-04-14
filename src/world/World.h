@@ -265,6 +265,9 @@ public:
     std::optional<std::pair<std::shared_lock<std::shared_mutex>,
     std::pair<std::shared_lock<std::shared_mutex>,
     std::shared_lock<std::shared_mutex>>>> tryToGetReadLockOnDMs();
+    std::optional<std::pair<std::shared_lock<std::shared_mutex>,
+    std::pair<std::shared_lock<std::shared_mutex>,
+    std::unique_lock<std::shared_mutex>>>> tryToGetReadLockOnDMsAndWriteLockOnLM();
 };
 
 #endif //WORLD_H
