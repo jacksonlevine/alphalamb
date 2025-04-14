@@ -10,13 +10,15 @@
 #include "world/World.h"
 
 
+
+
 struct LightRay {
     uint32_t originhash;
     int level;
 };
 
 struct LightSpot {
-    std::vector<LightRay> rays;
+    boost::container::vector<LightRay> rays;
     int sum() {
         int res = 0;
         for(auto ray : rays) {
@@ -25,6 +27,7 @@ struct LightSpot {
         return res;
     }
 };
+using LightMapType = boost::unordered_flat_map<IntTup, LightSpot, IntTupHash>;
 
 constexpr auto neighbs = std::to_array({
     IntTup(-1,0,0), IntTup(1,0,0),
@@ -32,22 +35,23 @@ constexpr auto neighbs = std::to_array({
     IntTup(0,0,-1), IntTup(0,0,1)
 });
 
-void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value, std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap);
+void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value, LightMapType& lightmap);
 
-std::vector<std::pair<IntTup, int>> getChunkLightSources(const TwoIntTup& spot, World* world, int chunkw, int chunkh, std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap, bool
+std::vector<std::pair<IntTup, int>> getChunkLightSources(const TwoIntTup& spot, World* world, int chunkw, int chunkh, LightMapType&
+                                                         lightmap, bool
                                                          locked);
 
 void propagateAllLightsLayered(World* world, const std::vector<std::pair<IntTup, int>>& lightSources,
-                               std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap,
+                               LightMapType& lightmap,
                                std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr, bool
                                locked = false);
 
 
-void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& lightSourcesToRemove, std::unordered_map<IntTup, LightSpot,
-                                IntTupHash>& lightmap, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr, bool locked = false);
+void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& lightSourcesToRemove, LightMapType&
+                                 lightmap, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr, bool locked = false);
 
 
-void lightPassOnChunk(World* world, TwoIntTup spot, int chunkw, int chunkh, std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr, bool
+void lightPassOnChunk(World* world, TwoIntTup spot, int chunkw, int chunkh, LightMapType& lightmap, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr, bool
                       locked = false);
 
 

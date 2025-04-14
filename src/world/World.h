@@ -7,6 +7,7 @@
 #include "DataMap.h"
 #include "VoxelModels.h"
 #include "WorldGenMethod.h"
+
 #include "../PlayerInfoMapKeyedByUID.h"
 #include "../SaveRegistry.h"
 #include "datamapmethods/HashMapDataMap.h"
@@ -38,16 +39,7 @@ constexpr void setDirectionBits(BlockType& inout, const BlockType& direction) {
 };
 
 
-inline std::optional<std::shared_lock<std::shared_mutex>> tryToGetReadLockOnDM(DataMap* map)
-{
-    std::shared_lock<std::shared_mutex> lock1(map->mutex(), std::try_to_lock);
-    if (!lock1.owns_lock()) {
-        return std::nullopt;
-    }
-
-
-    return std::move(lock1);
-}
+std::optional<std::shared_lock<std::shared_mutex>> tryToGetReadLockOnDM(DataMap* map);
 
 struct BlockArea
 {
@@ -271,20 +263,8 @@ public:
     void setNUDM(const IntTup& spot, BlockType val);
     void setNUDMLocked(const IntTup& spot, BlockType val);
     std::optional<std::pair<std::shared_lock<std::shared_mutex>,
-                                 std::shared_lock<std::shared_mutex>>> tryToGetReadLockOnDMs()
-    {
-        std::shared_lock<std::shared_mutex> lock1(userDataMap->mutex(), std::try_to_lock);
-        if (!lock1.owns_lock()) {
-            return std::nullopt;
-        }
-
-        std::shared_lock<std::shared_mutex> lock2(nonUserDataMap->mutex(), std::try_to_lock);
-        if (!lock2.owns_lock()) {
-            return std::nullopt;
-        }
-
-        return std::make_pair(std::move(lock1), std::move(lock2));
-    }
+    std::pair<std::shared_lock<std::shared_mutex>,
+    std::shared_lock<std::shared_mutex>>>> tryToGetReadLockOnDMs();
 };
 
 #endif //WORLD_H

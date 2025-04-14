@@ -12,6 +12,8 @@
 #include <string>
 #include <exception>
 #include <boost/asio.hpp>
+#include <boost/unordered_set.hpp>
+#include <boost/container/vector.hpp>
 #include <glm\glm.hpp>
 #include <physx/PxPhysicsAPI.h>
 #include "boost/lockfree/spsc_queue.hpp"
@@ -36,7 +38,7 @@
 #include <sndfile.h>
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <boost/unordered/unordered_flat_set.hpp>
-
+#include <bitset>
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 #include <imgui_impl_glfw.h>

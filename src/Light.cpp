@@ -4,8 +4,10 @@
 
 #include "Light.h"
 
+#include "world/WorldRenderer.h"
+
 void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value,
-    std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap)
+                                 LightMapType& lightmap)
 {
     auto lmentry = lightmap.find(spot);
     bool originfound = false;
@@ -25,7 +27,14 @@ void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value,
                 });
             }
         } else {
-            std::erase_if(lmentry->second.rays, [originhash](auto & ray) { return ray.originhash == originhash; });
+            lmentry->second.rays.erase(
+                std::remove_if(
+                    lmentry->second.rays.begin(),
+                    lmentry->second.rays.end(),
+                    [originhash](auto & ray) { return ray.originhash == originhash; }
+                ),
+                lmentry->second.rays.end()
+            );
         }
     } else {
         lightmap.insert({spot, LightSpot{}});
@@ -36,17 +45,18 @@ void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value,
 }
 
 std::vector<std::pair<IntTup, int>> getChunkLightSources(const TwoIntTup& spot, World* world, int chunkw, int chunkh,
-                                                         std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap, bool locked)
+                                                         LightMapType& lightmap, bool locked)
 {
     std::vector<std::pair<IntTup, int>> chunkLightSources;
     std::shared_lock<std::shared_mutex> url;
     std::shared_lock<std::shared_mutex> nrl;
-
+    std::shared_lock<std::shared_mutex> lock3;
 
     if (!locked)
     {
         url = std::shared_lock<std::shared_mutex>(world->userDataMap->mutex());
         nrl = std::shared_lock<std::shared_mutex>(world->nonUserDataMap->mutex());
+        lock3 = std::shared_lock<std::shared_mutex>(lightmapMutex);
     }
     auto startspot = IntTup(spot.x * chunkw, 0, spot.z * chunkw);
     for (int i = 0; i < chunkw; i++)
@@ -66,106 +76,174 @@ std::vector<std::pair<IntTup, int>> getChunkLightSources(const TwoIntTup& spot, 
     }
     return chunkLightSources;
 }
-
-void propagateAllLightsLayered(World* world, const std::vector<std::pair<IntTup, int>>& lightSources,
-                               std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap,
-                               std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks,
-                               bool locked)
-{
+void propagateAllLightsLayered(World* world,
+                              const std::vector<std::pair<IntTup, int>>& lightSources,
+                              LightMapType& lightmap,
+                              std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks,
+                              bool locked) {
     constexpr int maxLightLevel = 16;
+    constexpr int chunkWidth = 16, chunkHeight = 250, chunkDepth = 16;
+    constexpr int pad = 16;
+    constexpr size_t width = chunkWidth + 2 * pad;
+    constexpr size_t height = chunkHeight + 2 * pad;
+    constexpr size_t depth = chunkDepth + 2 * pad;
+    constexpr size_t volume = width * height * depth;
 
-    std::unordered_set<IntTup, IntTupHash> visited;
-    std::vector<std::vector<std::pair<IntTup, IntTup>>> layers(maxLightLevel + 1); // (position, source)
+    int minX = 0, maxX = 0, minY = 0, maxY = 0, minZ = 0, maxZ = 0;
+    if (!lightSources.empty()) {
+        minX = maxX = lightSources[0].first.x;
+        minY = maxY = lightSources[0].first.y;
+        minZ = maxZ = lightSources[0].first.z;
+        for (const auto& [pos, _] : lightSources) {
+            minX = std::min(minX, pos.x);
+            maxX = std::max(maxX, pos.x);
+            minY = std::min(minY, pos.y);
+            maxY = std::max(maxY, pos.y);
+            minZ = std::min(minZ, pos.z);
+            maxZ = std::max(maxZ, pos.z);
+        }
+        minX = (minX - (minX % 16)) - pad;
+        maxX = (maxX - (maxX % 16)) + chunkWidth + pad - 1;
+        minY = (minY - (minY % chunkHeight)) - pad;
+        maxY = (maxY - (maxY % chunkHeight)) + chunkHeight + pad - 1;
+        minZ = (minZ - (minZ % 16)) - pad;
+        maxZ = (maxZ - (maxZ % 16)) + chunkDepth + pad - 1;
+    }
 
-    // Initialize top-level lights
+    std::bitset<volume> visited;
+    std::vector<std::vector<std::pair<IntTup, IntTup>>> layers(maxLightLevel + 1);
+    std::array<bool, 256> transparentCache{};
+    for (int i : transparents) {
+        transparentCache[i] = true;
+    }
+
     for (const auto& [pos, level] : lightSources) {
-        if (visited.contains(pos)) continue;
-        visited.insert(pos);
+        size_t idx = (pos.x - minX) + (pos.z - minZ) * width + (pos.y - minY) * width * depth;
+        if (idx >= volume) continue;
+        if (visited[idx]) continue;
+        visited[idx] = true;
         layers[level].push_back({pos, pos});
         setLightLevelFromOriginHere(pos, pos, level, lightmap);
+        if (implicatedChunks) {
+            implicatedChunks->insert({pos.x / 16, pos.z / 16});
+        }
     }
 
     std::shared_lock<std::shared_mutex> url;
     std::shared_lock<std::shared_mutex> nrl;
-
-    if (!locked)
-    {
+    std::shared_lock<std::shared_mutex> lock3;
+    if (!locked) {
         url = std::shared_lock<std::shared_mutex>(world->userDataMap->mutex());
         nrl = std::shared_lock<std::shared_mutex>(world->nonUserDataMap->mutex());
+        lock3 = std::shared_lock<std::shared_mutex>(lightmapMutex);
     }
 
     for (int level = maxLightLevel; level > 1; --level) {
         for (const auto& [spot, source] : layers[level]) {
             for (const auto& offset : neighbs) {
                 IntTup neighbor = spot + offset;
+                size_t idx = (neighbor.x - minX) + (neighbor.z - minZ) * width + (neighbor.y - minY) * width * depth;
+                if (idx >= volume) continue;
+                if (visited[idx]) continue;
+                if (!transparentCache[world->getLocked(neighbor)]) continue;
 
-                if (visited.contains(neighbor)) continue;
-                if (std::find(transparents.begin(), transparents.end(), world->getLocked(neighbor)) == transparents.end()) continue;
-
-                visited.insert(neighbor);
+                visited[idx] = true;
                 layers[level - 1].push_back({neighbor, source});
                 setLightLevelFromOriginHere(neighbor, source, level - 1, lightmap);
+                if (implicatedChunks) {
+                    implicatedChunks->insert({neighbor.x / 16, neighbor.z / 16});
+                }
             }
         }
+        layers[level].clear();
     }
 }
-
-
 void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& lightSourcesToRemove,
-                                std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap,
-                                std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks,
-                                bool locked)
-{
+                                 LightMapType& lightmap,
+                                 std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks,
+                                 bool locked) {
     constexpr int maxLightLevel = 16;
+    constexpr int chunkWidth = 16, chunkHeight = 250, chunkDepth = 16;
+    constexpr int pad = 16;
+    constexpr size_t width = chunkWidth + 2 * pad;
+    constexpr size_t height = chunkHeight + 2 * pad;
+    constexpr size_t depth = chunkDepth + 2 * pad;
+    constexpr size_t volume = width * height * depth;
 
-    std::unordered_set<IntTup, IntTupHash> visited;
-    std::vector<std::vector<std::pair<IntTup, IntTup>>> layers(maxLightLevel + 1); // Position and its source origin
-
-    // Initialize top-level lights to remove
-    for (const auto& [pos, level] : lightSourcesToRemove) {
-        if (visited.contains(pos)) continue;
-        visited.insert(pos);
-        layers[level].push_back({pos, pos}); // Source is its own origin
-
-        // Remove light from origin point
-        setLightLevelFromOriginHere(pos, pos, 0, lightmap);
+    int minX = 0, maxX = 0, minY = 0, maxY = 0, minZ = 0, maxZ = 0;
+    if (!lightSourcesToRemove.empty()) {
+        minX = maxX = lightSourcesToRemove[0].first.x;
+        minY = maxY = lightSourcesToRemove[0].first.y;
+        minZ = maxZ = lightSourcesToRemove[0].first.z;
+        for (const auto& [pos, _] : lightSourcesToRemove) {
+            minX = std::min(minX, pos.x);
+            maxX = std::max(maxX, pos.x);
+            minY = std::min(minY, pos.y);
+            maxY = std::max(maxY, pos.y);
+            minZ = std::min(minZ, pos.z);
+            maxZ = std::max(maxZ, pos.z);
+        }
+        minX = (minX - (minX % 16)) - pad;
+        maxX = (maxX - (maxX % 16)) + chunkWidth + pad - 1;
+        minY = (minY - (minY % chunkHeight)) - pad;
+        maxY = (maxY - (maxY % chunkHeight)) + chunkHeight + pad - 1;
+        minZ = (minZ - (minZ % 16)) - pad;
+        maxZ = (maxZ - (maxZ % 16)) + chunkDepth + pad - 1;
     }
 
-    // Process each layer, from brightest to dimmest
+    std::bitset<volume> visited;
+    std::vector<std::vector<std::pair<IntTup, IntTup>>> layers(maxLightLevel + 1);
+
+    IntTupHash hasher;
+    for (const auto& [pos, level] : lightSourcesToRemove) {
+        size_t idx = (pos.x - minX) + (pos.z - minZ) * width + (pos.y - minY) * width * depth;
+        if (idx >= volume) continue;
+        if (visited[idx]) continue;
+        visited[idx] = true;
+        layers[level].push_back({pos, pos});
+        setLightLevelFromOriginHere(pos, pos, 0, lightmap);
+        if (implicatedChunks) {
+            implicatedChunks->insert({pos.x / 16, pos.z / 16});
+        }
+    }
+
     for (int level = maxLightLevel; level > 1; --level) {
         for (const auto& [spot, origin] : layers[level]) {
-            auto originhash = IntTupHash{}(origin, true);
+            auto originhash = hasher(origin, true);
             for (const auto& offset : neighbs) {
                 IntTup neighbor = spot + offset;
+                size_t idx = (neighbor.x - minX) + (neighbor.z - minZ) * width + (neighbor.y - minY) * width * depth;
+                if (idx >= volume) continue;
+                if (visited[idx]) continue;
 
-                if (visited.contains(neighbor)) continue;
-
-                // Check if this neighbor was affected by the light we're removing
                 auto lmentry = lightmap.find(neighbor);
                 if (lmentry != lightmap.end()) {
-                    bool originFound = false;
-
-                    // Check if this spot has a ray from the ORIGINAL source (not the neighbor it came from)
-                    for (const auto& ray : lmentry->second.rays) {
-                        if (ray.originhash == originhash) { // Check against the original light source
-                            originFound = true;
-                            break;
+                    auto& rays = lmentry->second.rays;
+                    for (auto it = rays.begin(); it != rays.end();) {
+                        if (it->originhash == originhash) {
+                            it = rays.erase(it);
+                        } else {
+                            ++it;
                         }
                     }
-
-                    if (originFound) {
-                        visited.insert(neighbor);
+                    if (rays.empty()) {
+                        lightmap.erase(lmentry);
+                    } else {
+                        visited[idx] = true;
                         layers[level - 1].push_back({neighbor, origin});
                         setLightLevelFromOriginHere(neighbor, origin, 0, lightmap);
+                        if (implicatedChunks) {
+                            implicatedChunks->insert({neighbor.x / 16, neighbor.z / 16});
+                        }
                     }
                 }
             }
         }
+        layers[level].clear();
     }
 }
-
 void lightPassOnChunk(World* world, TwoIntTup spot, int chunkw, int chunkh,
-                      std::unordered_map<IntTup, LightSpot, IntTupHash>& lightmap, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks, bool
+                      LightMapType& lightmap, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks, bool
                       locked)
 {
     auto sources = getChunkLightSources(spot, world, chunkw, chunkh, lightmap, locked);

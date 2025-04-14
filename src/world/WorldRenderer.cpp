@@ -11,7 +11,11 @@
 #include "../specialblocks/FindEntityCreateFunc.h"
 #include "../specialblocks/FindSpecialBlock.h"
 std::atomic<int> NUM_THREADS_RUNNING = 0;
-std::unordered_map<IntTup, LightSpot, IntTupHash> lightmap = {};
+
+
+
+LightMapType lightmap = {};
+std::shared_mutex lightmapMutex = {};
 
 void genCGLBuffers()
 {

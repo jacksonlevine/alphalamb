@@ -747,7 +747,7 @@ int main()
 
     //theScene.gizmos.push_back(vms);
 
-    //lighttest();
+    lighttest();
 
     for(auto & gizmo : theScene.gizmos)
     {

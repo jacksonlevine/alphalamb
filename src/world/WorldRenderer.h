@@ -147,7 +147,9 @@ struct ReadyToDrawChunkInfo
     explicit ReadyToDrawChunkInfo(size_t index) : chunkIndex(index) {}
 };
 extern std::atomic<int> NUM_THREADS_RUNNING;
-extern std::unordered_map<IntTup, LightSpot, IntTupHash> lightmap;
+
+extern LightMapType lightmap;
+extern std::shared_mutex lightmapMutex;
 
 class WorldRenderer {
 public:

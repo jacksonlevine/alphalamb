@@ -4,12 +4,24 @@
 
 #include "World.h"
 
+#include "WorldRenderer.h"
 #include "../BlockType.h"
 
 
+std::optional<std::shared_lock<std::shared_mutex>> tryToGetReadLockOnDM(DataMap* map)
+{
+    std::shared_lock<std::shared_mutex> lock1(map->mutex(), std::try_to_lock);
+    if (!lock1.owns_lock()) {
+        return std::nullopt;
+    }
+
+
+    return std::move(lock1);
+}
+
 bool loadDM(std::string filename, World* outWorld, entt::registry& reg, BlockAreaRegistry& blockAreas,
-    PlacedVoxModelRegistry& pvmr, InvMapKeyedByUID* im,
-    std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>>* existingInvs, const char* regfilename)
+            PlacedVoxModelRegistry& pvmr, InvMapKeyedByUID* im,
+            std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>>* existingInvs, const char* regfilename)
 {
 
     loadRegistry(reg, regfilename);
@@ -289,4 +301,27 @@ void World::setNUDMLocked(const IntTup& spot, const BlockType val)
 {
     nonUserDataMap->setUnsafe(spot, val);
     //blockMemo->set(spot, val);
+}
+
+std::optional<std::pair<std::shared_lock<std::shared_mutex>, std::pair<std::shared_lock<std::shared_mutex>, std::
+shared_lock<std::shared_mutex>>>> World::tryToGetReadLockOnDMs()
+{
+
+    std::shared_lock<std::shared_mutex> lock1(userDataMap->mutex(), std::try_to_lock);
+    if (!lock1.owns_lock()) {
+        return std::nullopt;
+    }
+
+    std::shared_lock<std::shared_mutex> lock2(nonUserDataMap->mutex(), std::try_to_lock);
+    if (!lock2.owns_lock()) {
+        return std::nullopt;
+    }
+
+    std::shared_lock<std::shared_mutex> lock3(lightmapMutex, std::try_to_lock);
+    if (!lock3.owns_lock()) {
+        return std::nullopt;
+    }
+
+    return std::make_pair(std::move(lock1), std::make_pair(std::move(lock2), std::move(lock3)));
+
 }
