@@ -8,14 +8,13 @@
 boost::sync_queue<TwoIntTup> lightOverlapNotificationQueue = {};
 
 
-
-
-std::pair<std::vector<std::pair<IntTup, int>>, std::vector<std::pair<IntTup, int>>> getChunkLightSourcesBlockAndAmbient(
+ChunkLightSources getChunkLightSourcesBlockAndAmbient(
     const TwoIntTup& spot, World* world, int chunkw, int chunkh,
-    LightMapType& lightmap, bool locked)
+    bool locked)
 {
     std::vector<std::pair<IntTup, int>> chunkLightSources;
-    std::vector<std::pair<IntTup, int>> ambientLightSources;
+    std::vector<std::pair<IntTup, int>> oldAmbientLightSources;
+    std::vector<std::pair<IntTup, int>> newAmbientLightSources;
     std::shared_lock<std::shared_mutex> url;
     std::shared_lock<std::shared_mutex> nrl;
     std::shared_lock<std::shared_mutex> lock3;
@@ -31,7 +30,7 @@ std::pair<std::vector<std::pair<IntTup, int>>, std::vector<std::pair<IntTup, int
         for (int k = 0; k < chunkw; k++)
         {
             bool foundground = false;
-            std::pair<IntTup, int> spotgonnapush;
+
             for (int j = chunkh-1; j > -1; j--)
             {
                 auto spott = startspot + IntTup(i,j,k);
@@ -47,24 +46,27 @@ std::pair<std::vector<std::pair<IntTup, int>>, std::vector<std::pair<IntTup, int
                     {
                         if (spott == ray.origin)
                         {
-                            spotgonnapush = std::make_pair(spott, 16);
+                            oldAmbientLightSources.push_back(std::make_pair(spott, 16));
 
-                            foundground = true;
                         }
                     }
 
                 }
                 if (h != AIR && !foundground)
                 {
-                    spotgonnapush = std::make_pair(spott + IntTup(0,1,0), 16);
+                    newAmbientLightSources.push_back(std::make_pair(spott, 16));
                     foundground = true;
                 }
             }
-            ambientLightSources.push_back(spotgonnapush);
         }
 
     }
-    return std::make_pair(chunkLightSources, ambientLightSources);
+    return ChunkLightSources{
+        .blockSources = chunkLightSources,
+        .ambientOldSources = oldAmbientLightSources,
+        .ambientNewSources = newAmbientLightSources,
+
+    };
 }
 
 

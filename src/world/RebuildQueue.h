@@ -22,6 +22,8 @@ struct ChunkRebuildRequest {
 
     bool isVoxelModel = false;
     PlacedVoxModel vm = {};
+    bool doLightPass = false;
+    bool queueLightpassImplicated = true;
 
     glm::vec3 playerPosAtPlaceTime = glm::vec3(0.f);
 

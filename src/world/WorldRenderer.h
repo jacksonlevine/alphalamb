@@ -131,9 +131,11 @@ inline static IntTup neighborSpots[6] = {
     IntTup(0,1,0),
     IntTup(0,-1,0)
 };
-
+template<bool queueimplics = true>
+UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked, bool light);
 
 UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool light = false);
+
 UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize, bool light = false);
 
 struct UsedChunkInfo
@@ -334,7 +336,7 @@ public:
         rebuildQueue.push(ChunkRebuildRequest(vox));
     }
 
-    void requestChunkRebuildFromMainThread(const IntTup& spot, std::optional<BlockType> changeTo = std::nullopt, bool rebuild = true, const glm::vec3& pp = glm::vec3(0.f))
+    void requestChunkRebuildFromMainThread(const IntTup& spot, std::optional<BlockType> changeTo = std::nullopt, bool rebuild = true, const glm::vec3& pp = glm::vec3(0.f), bool lightpass = false, bool queuelightimplic = true)
     {
         //TwoIntTup version of spot
         auto titspot = TwoIntTup(spot.x, spot.z);
@@ -344,7 +346,7 @@ public:
             //std::cout << "Requesting rebuild for spot: " << chunkspot.x << " " << chunkspot.z << std::endl;
             if(changeTo != std::nullopt)
             {
-                rebuildQueue.push(ChunkRebuildRequest(
+                auto req = ChunkRebuildRequest(
                     chunkspot,
                     activeChunks.at(chunkspot).chunkIndex,
                     true,
@@ -352,14 +354,20 @@ public:
                     changeTo.value(),
                     rebuild,
                     pp
-                ));
+                );
+                req.doLightPass = lightpass;
+                req.queueLightpassImplicated = queuelightimplic;
+                rebuildQueue.push(req);
             } else
             {
-                rebuildQueue.push(ChunkRebuildRequest(
+                auto req = ChunkRebuildRequest(
                     chunkspot,
                     activeChunks.at(chunkspot).chunkIndex,
                     true
-                ));
+                );
+                req.doLightPass = lightpass;
+                req.queueLightpassImplicated = queuelightimplic;
+                rebuildQueue.push(req);
             }
 
         } else

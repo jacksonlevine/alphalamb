@@ -81,9 +81,17 @@ void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value,
         });
     }
 }
-std::pair<std::vector<std::pair<IntTup, int>>, std::vector<std::pair<IntTup, int>>> getChunkLightSourcesBlockAndAmbient(
-    const TwoIntTup& spot, World* world, int chunkw, int chunkh, LightMapType&
-    lightmap, bool
+
+struct ChunkLightSources
+{
+    std::vector<std::pair<IntTup, int>> blockSources;
+    std::vector<std::pair<IntTup, int>> ambientOldSources;
+    std::vector<std::pair<IntTup, int>> ambientNewSources;
+};
+
+
+ChunkLightSources getChunkLightSourcesBlockAndAmbient(
+    const TwoIntTup& spot, World* world, int chunkw, int chunkh, bool
     locked);
 
 void propagateAllLightsLayered(World* world, const std::vector<std::pair<IntTup, int>>& lightSources,

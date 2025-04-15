@@ -10,13 +10,13 @@ void lightPassOnChunk(World* world, TwoIntTup spot, int chunkw, int chunkh,
 {
     auto implicatedChunks = std::unordered_set<TwoIntTup, TwoIntTupHash>();
 
-    auto sources = getChunkLightSourcesBlockAndAmbient(spot, world, chunkw, chunkh, lightmap, locked);
+    auto sources = getChunkLightSourcesBlockAndAmbient(spot, world, chunkw, chunkh, locked);
 
-    unpropagateAllLightsLayered(sources.first, lightmap, spot , &implicatedChunks, locked);
-    propagateAllLightsLayered(world, sources.first, lightmap,spot , &implicatedChunks, locked);
+    unpropagateAllLightsLayered(sources.blockSources, lightmap, spot , &implicatedChunks, locked);
+    propagateAllLightsLayered(world, sources.blockSources, lightmap,spot , &implicatedChunks, locked);
 
-    unpropagateAllLightsLayered(sources.second, ambientlightmap, spot ,&implicatedChunks, locked);
-    propagateAllLightsLayered(world, sources.second, ambientlightmap,spot , &implicatedChunks, locked);
+    unpropagateAllLightsLayered(sources.ambientOldSources, ambientlightmap, spot ,&implicatedChunks, locked);
+    propagateAllLightsLayered(world, sources.ambientNewSources, ambientlightmap,spot , &implicatedChunks, locked);
     if (queue)
     {
         for (const auto & spot2 : implicatedChunks)

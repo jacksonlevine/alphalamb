@@ -946,62 +946,6 @@ int main()
                                    .spot = spot, .block = AIR, .pp = glm::vec3(0.f)
                                 });
 
-                            } else
-                            {
-                                if (theScene.world && theScene.blockSelectGizmo && theScene.worldRenderer)
-                                {
-                                    //std::cout << "Setting" << std::endl;
-                                    auto & spot = theScene.blockSelectGizmo->selectedSpot;
-                                    //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
-                                    BlockType blockThere = theScene.world->get(spot);
-                                    glm::vec3 burstspot = glm::vec3(
-                                        theScene.blockSelectGizmo->selectedSpot.x+ 0.5,
-                                        theScene.blockSelectGizmo->selectedSpot.y + 0.5,
-                                        theScene.blockSelectGizmo->selectedSpot.z + 0.5);
-                                    if (theScene.particles)
-                                    {
-                                        theScene.particles->particleBurst(burstspot,
-                                                                     12, (MaterialName)blockThere, 2.0, 1.0f);
-                                    }
-
-                                    //theScene.world->set(spot, AIR);
-                    //std::cout << "Set the block "  << std::endl;;
-                                    auto cs = WorldRenderer::chunkSize;
-                                    // Then in your code:
-                                    auto xmod = properMod(spot.x, cs);
-                                    auto zmod = properMod(spot.z, cs);
-                                    //std::cout << "Xmod: " << xmod << " Zmod: " << zmod << std::endl;
-                                    theScene.worldRenderer->requestChunkRebuildFromMainThread(
-                                        spot, AIR, false, ourpp
-                                        );
-
-                                    if(xmod == WorldRenderer::chunkSize - 1)
-                                    {
-                                        theScene.worldRenderer->requestChunkRebuildFromMainThread(
-                                            IntTup(spot.x+1, spot.y, spot.z));
-
-                                    } else if(xmod == 0)
-                                    {
-                                        theScene.worldRenderer->requestChunkRebuildFromMainThread(
-                                            IntTup(spot.x-1, spot.y, spot.z));
-                                    }
-
-                                    if(zmod == WorldRenderer::chunkSize - 1)
-                                    {
-                                        theScene.worldRenderer->requestChunkRebuildFromMainThread(
-                                            IntTup(spot.x, spot.y, spot.z+1));
-
-                                    } else if(zmod == 0)
-                                    {
-                                        theScene.worldRenderer->requestChunkRebuildFromMainThread(
-                                            IntTup(spot.x, spot.y, spot.z-1));
-                                    }
-                                    theScene.worldRenderer->requestChunkRebuildFromMainThread(
-                                        spot
-                                        );
-
-                                    //std::cout << "Request filed " << std::endl;
-                                }
                             }
                         }
                     }
@@ -1345,23 +1289,23 @@ int main()
                                 if(xmod == scene->worldRenderer->chunkSize - 1)
                                 {
                                     scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                        IntTup(spot.x+1, spot.y, spot.z));
+                                        IntTup(spot.x+1, spot.y, spot.z), std::nullopt, true, glm::vec3(0.f), true, false);
 
                                 } else if(xmod == 0)
                                 {
                                     scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                        IntTup(spot.x-1, spot.y, spot.z));
+                                        IntTup(spot.x-1, spot.y, spot.z), std::nullopt, true, glm::vec3(0.f), true, false);
                                 }
 
                                 if(zmod == scene->worldRenderer->chunkSize - 1)
                                 {
                                     scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                        IntTup(spot.x, spot.y, spot.z+1));
+                                        IntTup(spot.x, spot.y, spot.z+1), std::nullopt, true, glm::vec3(0.f), true, false);
 
                                 } else if(zmod == 0)
                                 {
                                     scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                        IntTup(spot.x, spot.y, spot.z-1));
+                                        IntTup(spot.x, spot.y, spot.z-1), std::nullopt, true, glm::vec3(0.f), true, false);
                                 }
                                 scene->worldRenderer->requestChunkRebuildFromMainThread(
                                     spot

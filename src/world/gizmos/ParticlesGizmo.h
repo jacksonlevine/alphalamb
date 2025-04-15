@@ -85,6 +85,7 @@ public:
         static bool filterdataset = false;
 
         if (!filterdataset)
+        if (!filterdataset)
         {
             PxFilterData filterData;
             filterData.word0 = 3;
