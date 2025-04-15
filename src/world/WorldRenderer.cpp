@@ -10,6 +10,7 @@
 #include "../IndexOptimization.h"
 #include "../specialblocks/FindEntityCreateFunc.h"
 #include "../specialblocks/FindSpecialBlock.h"
+#include "../Light.tpp"
 std::atomic<int> NUM_THREADS_RUNNING = 0;
 
 
@@ -408,7 +409,6 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         mbtActiveChunks.reserve(maxChunks);
         activeChunks.reserve(maxChunks);
 
-
     while(meshBuildingThreadRunning)
     {
 
@@ -448,22 +448,22 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                 if(!generatedChunks.contains(spotHere))
                 {
                     generateChunk(world, spotHere, &implicatedChunks);
-                    generatedChunks.insert(spotHere);
-                    // bool lockgot = false;
-                    // while (!lockgot)
-                    // {
-                    //     if (auto lock = world->tryToGetReadLockOnDMsAndWriteLockOnLM(); lock != std::nullopt)
-                    //     {
-                    //         lockgot = true;
-                    //         ///std::cout << "Got lock" << std::endl;
-                    //         lightPassOnChunk(world, spotHere, chunkSize, 250, lightmap, true);
-                    //         generatedChunks.insert(spotHere);
-                    //     } else
-                    //     {
-                    //         std::cout << "Cant get lock" << std::endl;
-                    //         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                    //     }
-                    // }
+                     generatedChunks.insert(spotHere);
+
+                }
+            }
+        }
+        for (auto & spotHere : checkspots)
+        {
+            int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
+            if(dist <= currentMinDistance())
+            {
+                if(!litChunks.contains(spotHere))
+                {
+
+                    lightPassOnChunk<false>(world, spotHere, chunkSize, 250, false);
+                    litChunks.insert(spotHere);
+                    //std::cout << "GAfter" << std::endl;
 
 
                 }
@@ -479,21 +479,17 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                 if (mbtActiveChunks.contains(chunk))
                 {
                     auto & uci = mbtActiveChunks.at(chunk);
-                    bool lockgot = false;
+
                     UsableMesh mesh;
                     {
 
-                            if (auto locks = world->tryToGetReadLockOnDMs()) {
-                                //std::cout << "Got readlock on dms \n";
-                                lockgot = true;
-                                mesh = fromChunkLocked(chunk, world, chunkSize);
-                            }
+
+                                mesh = fromChunk(chunk, world, chunkSize, true);
+                                //I think have to do light pass for generation implicated chunks because they put new blocks there
 
 
                     }
 
-                    if (lockgot)
-                    {
                         size_t changeBufferIndex = -1;
                         {
                             std::unique_lock<std::mutex> lock(mbtBufferMutex);
@@ -515,7 +511,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                             buffer.ready.store(true);
                             buffer.in_use.store(false);
                         }
-                    }
+
 
                 }
 
@@ -697,10 +693,13 @@ void WorldRenderer::rebuildThreadFunction(World* world)
         ChunkRebuildRequest request;
         //std::cout << "Running \n";
         if (rebuildQueue.pop(request)) {
-            //std::cout << "Popped one: " << request.chunkPos.x << " " << request.chunkPos.z << " \n";
+            std::cout << "Popped one: " << request.chunkPos.x << " " << request.chunkPos.z << " \n";
 
             auto lightpass = (request.changeTo != std::nullopt);
-
+            if (lightpass)
+            {
+                request.rebuild = true;
+            }
             if (request.isArea)
             {
                 std::vector<IntTup> spotsToEraseInUDM;
@@ -822,8 +821,13 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                              std::vector<std::pair<IntTup, int>> thisspot = {
                                  std::make_pair(request.changeSpot, 12)
                              };
-                            unpropagateAllLightsLayered(thisspot, lightmap);
+                            unpropagateAllLightsLayered(thisspot, lightmap, request.chunkPos);
                         }
+
+                        // std::vector<std::pair<IntTup, int>> thisspot = {
+                        //     std::make_pair(request.changeSpot + IntTup(0,1,0), 12)
+                        // };
+                        // unpropagateAllLightsLayered(thisspot, ambientlightmap, request.chunkPos);
                         if (blockThere != AIR  && (blockThere != (MaterialName)(request.changeTo.value() & BLOCK_ID_BITS)))
                         {
                             if (auto f = findSpecialRemoveBits((MaterialName)blockThere); f != std::nullopt)
@@ -850,16 +854,9 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         // Scope the locks so they're released after getting data
                         {
 
-                            if (auto locks = world->tryToGetReadLockOnDMs()) {
-                                // Get the chunk data with locks held
-                                //std::cout << "Got readlock on dms \n";
-                                mesh = fromChunkLocked(request.chunkPos, world, chunkSize, lightpass);
-                            } else if (rebuildThreadRunning) {
 
-                                rebuildQueue.push(request);
-                                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                                continue;
-                            }
+                                mesh = fromChunk(request.chunkPos, world, chunkSize, lightpass);
+
                         } // locks are released here
 
 
@@ -1123,7 +1120,8 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
 
     if (light || !litChunks.contains(spot))
     {
-        lightPassOnChunk(world, spot, chunkSize, 250, lightmap, locked);
+        std::cout << "Doing it with light " << std::endl;
+        lightPassOnChunk(world, spot, chunkSize, 250, locked);
         litChunks.insert(spot);
     }
 

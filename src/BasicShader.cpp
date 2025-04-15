@@ -68,7 +68,7 @@ uniform float scale;
                 uint ambient = ppp & 0x3FFFu;            // lower 14 bits
 
 
-                brightness = min(1.0, (float(block)/16.0) + ((float(ambient)/16.0) * ambientBrightness)) + occlvalues[occlusion];
+                brightness = max(0.2, min(1.0, (float(block)/16.0) + ((float(ambient)/16.0) * ambientBrightness)) + occlvalues[occlusion]);
                 TexCoord = inTexCoord;
 
                 float fadeInProgress = min(1.0, timeRendered*2.5f);

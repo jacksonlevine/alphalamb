@@ -17,10 +17,43 @@ struct ParticleInstance
     PxRigidDynamic* body = nullptr;
     float timeExisted = 0.0f;
 
-    void destroyThis()
+    ParticleInstance(glm::vec3 position, float scale, float blockID, PxShape* shape)
+        : position(position), scale(scale), blockID(blockID), timeExisted(0.0f)
+    {
+        body = PxCreateDynamic(
+            *gPhysics,
+            PxTransform(PxVec3(position.x, position.y, position.z)),
+            *shape,  // Pass the shape here
+            1.0f    // Density
+        );
+        gScene->addActor(*body);
+    }
+    ParticleInstance() = default;
+    ParticleInstance(const ParticleInstance& other) = delete;
+    ParticleInstance(ParticleInstance&& other)
+    {
+        position = other.position;
+        scale = other.scale;
+        blockID = other.blockID;
+        timeExisted = other.timeExisted;
+        body = other.body;
+        other.body = nullptr;
+    }
+    ParticleInstance& operator=(const ParticleInstance& other) = delete;
+    ParticleInstance& operator=(ParticleInstance&& other)
+    {
+        position = other.position;
+        scale = other.scale;
+        blockID = other.blockID;
+        timeExisted = other.timeExisted;
+        body = other.body;
+        other.body = nullptr;
+        return *this;
+    }
+
+    ~ParticleInstance()
     {
         if (body == nullptr) return;
-
         //Detach shape from the actor so it doesnt release our shape too
         PxU32 numShapes = body->getNbShapes();
         std::vector<PxShape*> shapes(numShapes);
@@ -31,6 +64,7 @@ struct ParticleInstance
 
         // Release the actor
         body->release();
+        body = nullptr;
     }
 };
 
@@ -60,18 +94,13 @@ public:
             filterdataset = true;
         }
 
-        instances.emplace_back(position, scale, (float)blockID, nullptr, 0.0f);
-        instances.back().body = PxCreateDynamic(
-            *gPhysics,
-            PxTransform(PxVec3(position.x, position.y, position.z)),
-            *shape,  // Pass the shape here
-            1.0f    // Density
-        );
+        instances.emplace_back(position, scale, (float)blockID, shape);
+
         instances.back().body->setLinearVelocity(velocity, true);
         //instances.back().body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, false);
         //instances.back().body->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, false);
 
-        gScene->addActor(*instances.back().body);
+
 
     }
 
@@ -82,12 +111,11 @@ public:
             instance.timeExisted += deltaTime;
         }
         auto it = std::remove_if(instances.begin(), instances.end(), [](ParticleInstance& instance) {
-        if (instance.timeExisted > 2.0f) {
-            instance.destroyThis();
-            return true;
-        }
-        return false;
-    });
+            if (instance.timeExisted > 2.0f) {
+                return true;
+            }
+            return false;
+        });
         instances.erase(it, instances.end());
     }
 

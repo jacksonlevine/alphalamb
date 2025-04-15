@@ -463,7 +463,6 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
                                 // Zero out velocity
                                 camera.transform.velocity = glm::vec3(0.0f);
 
-                                // Play grab sound if you have one
                                 // playSound(sounds.at((int)SoundBuffers::LEDGE_GRAB));
                             }
 

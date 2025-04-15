@@ -7,43 +7,8 @@
 #include "world/WorldRenderer.h"
 boost::sync_queue<TwoIntTup> lightOverlapNotificationQueue = {};
 
-void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value,
-                                 LightMapType& lightmap)
-{
-    auto lmentry = lightmap.find(spot);
-    bool originfound = false;
-    auto originhash = IntTupHash{}(origin, true);
-    if(lmentry != lightmap.end()) {
-        if(value != 0) {
-            for(auto ray : lmentry->second.rays) {
-                if(ray.originhash == originhash) {
-                    originfound = true;
-                    ray.level = value;
-                    break;
-                }
-            }
-            if(!originfound) {
-                lmentry->second.rays.push_back(LightRay{
-                    .originhash = originhash, .level = value
-                });
-            }
-        } else {
-            lmentry->second.rays.erase(
-                std::remove_if(
-                    lmentry->second.rays.begin(),
-                    lmentry->second.rays.end(),
-                    [originhash](auto & ray) { return ray.originhash == originhash; }
-                ),
-                lmentry->second.rays.end()
-            );
-        }
-    } else {
-        lightmap.insert({spot, LightSpot{}});
-        lightmap.at(spot).rays.push_back(LightRay{
-            .originhash = originhash, .level = value
-        });
-    }
-}
+
+
 
 std::pair<std::vector<std::pair<IntTup, int>>, std::vector<std::pair<IntTup, int>>> getChunkLightSourcesBlockAndAmbient(
     const TwoIntTup& spot, World* world, int chunkw, int chunkh,
@@ -54,7 +19,7 @@ std::pair<std::vector<std::pair<IntTup, int>>, std::vector<std::pair<IntTup, int
     std::shared_lock<std::shared_mutex> url;
     std::shared_lock<std::shared_mutex> nrl;
     std::shared_lock<std::shared_mutex> lock3;
-
+    static IntTupHash spotHash;
     if (!locked)
     {
         url = std::shared_lock<std::shared_mutex>(world->userDataMap->mutex());
@@ -66,6 +31,7 @@ std::pair<std::vector<std::pair<IntTup, int>>, std::vector<std::pair<IntTup, int
         for (int k = 0; k < chunkw; k++)
         {
             bool foundground = false;
+            std::pair<IntTup, int> spotgonnapush;
             for (int j = chunkh-1; j > -1; j--)
             {
                 auto spott = startspot + IntTup(i,j,k);
@@ -74,22 +40,41 @@ std::pair<std::vector<std::pair<IntTup, int>>, std::vector<std::pair<IntTup, int
                 {
                     chunkLightSources.push_back(std::make_pair(spott, 12));
                 }
+                auto lightspot = ambientlightmap.find(spott);
+                if (lightspot != ambientlightmap.end())
+                {
+                    for (const auto & ray : lightspot->second.rays)
+                    {
+                        if (spott == ray.origin)
+                        {
+                            spotgonnapush = std::make_pair(spott, 16);
+
+                            foundground = true;
+                        }
+                    }
+
+                }
                 if (h != AIR && !foundground)
                 {
-                    ambientLightSources.push_back(std::make_pair(spott + IntTup(0,1,0), 16));
+                    spotgonnapush = std::make_pair(spott + IntTup(0,1,0), 16);
                     foundground = true;
                 }
             }
+            ambientLightSources.push_back(spotgonnapush);
         }
 
     }
     return std::make_pair(chunkLightSources, ambientLightSources);
 }
+
+
 void propagateAllLightsLayered(World* world,
                               const std::vector<std::pair<IntTup, int>>& lightSources,
                               LightMapType& lightmap,
+                              TwoIntTup chunkOrigin,
                               std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks,
-                              bool locked) {
+                              bool locked
+                              ) {
     constexpr int maxLightLevel = 16;
     constexpr int chunkWidth = 16, chunkHeight = 250, chunkDepth = 16;
     constexpr int pad = 16;
@@ -98,26 +83,9 @@ void propagateAllLightsLayered(World* world,
     constexpr size_t depth = chunkDepth + 2 * pad;
     constexpr size_t volume = width * height * depth;
 
-    int minX = 0, maxX = 0, minY = 0, maxY = 0, minZ = 0, maxZ = 0;
-    if (!lightSources.empty()) {
-        minX = maxX = lightSources[0].first.x;
-        minY = maxY = lightSources[0].first.y;
-        minZ = maxZ = lightSources[0].first.z;
-        for (const auto& [pos, _] : lightSources) {
-            minX = std::min(minX, pos.x);
-            maxX = std::max(maxX, pos.x);
-            minY = std::min(minY, pos.y);
-            maxY = std::max(maxY, pos.y);
-            minZ = std::min(minZ, pos.z);
-            maxZ = std::max(maxZ, pos.z);
-        }
-        minX = (minX - (minX % 16)) - pad;
-        maxX = (maxX - (maxX % 16)) + chunkWidth + pad - 1;
-        minY = (minY - (minY % chunkHeight)) - pad;
-        maxY = (maxY - (maxY % chunkHeight)) + chunkHeight + pad - 1;
-        minZ = (minZ - (minZ % 16)) - pad;
-        maxZ = (maxZ - (maxZ % 16)) + chunkDepth + pad - 1;
-    }
+    int minX = chunkOrigin.x * chunkWidth - pad;
+    int minY = 0 - pad;
+    int minZ = chunkOrigin.z * chunkDepth - pad;
 
     std::bitset<volume> visited;
     std::vector<std::vector<std::pair<IntTup, IntTup>>> layers(maxLightLevel + 1);
@@ -132,9 +100,12 @@ void propagateAllLightsLayered(World* world,
         if (visited[idx]) continue;
         visited[idx] = true;
         layers[level].push_back({pos, pos});
-        setLightLevelFromOriginHere(pos, pos, level, lightmap);
+        setLightLevelFromOriginHere<true>(pos, pos, level, lightmap);
         if (implicatedChunks) {
-            implicatedChunks->insert(WorldRenderer::worldToChunkPos(TwoIntTup(pos.x, pos.z)));
+            TwoIntTup chunkPos = WorldRenderer::worldToChunkPos(TwoIntTup(pos.x, pos.z));
+            if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
+                implicatedChunks->insert(chunkPos);
+            }
         }
     }
 
@@ -158,9 +129,12 @@ void propagateAllLightsLayered(World* world,
 
                 visited[idx] = true;
                 layers[level - 1].push_back({neighbor, source});
-                setLightLevelFromOriginHere(neighbor, source, level - 1, lightmap);
+                setLightLevelFromOriginHere<true>(neighbor, source, level - 1, lightmap);
                 if (implicatedChunks) {
-                    implicatedChunks->insert(WorldRenderer::worldToChunkPos(TwoIntTup(neighbor.x, neighbor.z)));
+                    TwoIntTup chunkPos = WorldRenderer::worldToChunkPos(TwoIntTup(neighbor.x, neighbor.z));
+                    if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
+                        implicatedChunks->insert(chunkPos);
+                    }
                 }
             }
         }
@@ -169,8 +143,11 @@ void propagateAllLightsLayered(World* world,
 }
 void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& lightSourcesToRemove,
                                  LightMapType& lightmap,
-                                 std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks, bool locked
-) {
+
+                                 TwoIntTup chunkOrigin,
+
+                                 std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks,
+                                 bool locked) { // Added parameter
     constexpr int maxLightLevel = 16;
     constexpr int chunkWidth = 16, chunkHeight = 250, chunkDepth = 16;
     constexpr int pad = 16;
@@ -179,35 +156,15 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
     constexpr size_t depth = chunkDepth + 2 * pad;
     constexpr size_t volume = width * height * depth;
 
-    int minX = 0, maxX = 0, minY = 0, maxY = 0, minZ = 0, maxZ = 0;
-    if (!lightSourcesToRemove.empty()) {
-        minX = maxX = lightSourcesToRemove[0].first.x;
-        minY = maxY = lightSourcesToRemove[0].first.y;
-        minZ = maxZ = lightSourcesToRemove[0].first.z;
-        for (const auto& [pos, _] : lightSourcesToRemove) {
-            minX = std::min(minX, pos.x);
-            maxX = std::max(maxX, pos.x);
-            minY = std::min(minY, pos.y);
-            maxY = std::max(maxY, pos.y);
-            minZ = std::min(minZ, pos.z);
-            maxZ = std::max(maxZ, pos.z);
-        }
-        minX = (minX - (minX % 16)) - pad;
-        maxX = (maxX - (maxX % 16)) + chunkWidth + pad - 1;
-        minY = (minY - (minY % chunkHeight)) - pad;
-        maxY = (maxY - (maxY % chunkHeight)) + chunkHeight + pad - 1;
-        minZ = (minZ - (minZ % 16)) - pad;
-        maxZ = (maxZ - (maxZ % 16)) + chunkDepth + pad - 1;
-    }
+    int minX = chunkOrigin.x * chunkWidth - pad;
+    int minY = 0 - pad;
+    int minZ = chunkOrigin.z * chunkDepth - pad;
 
     std::bitset<volume> visited;
     std::vector<std::vector<std::pair<IntTup, IntTup>>> layers(maxLightLevel + 1);
 
-
-
     std::unique_lock<std::shared_mutex> lock;
-    if (!locked)
-    {
+    if (!locked) {
         lock = std::unique_lock<std::shared_mutex>(lightmapMutex);
     }
     IntTupHash hasher;
@@ -219,13 +176,15 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
         layers[level].push_back({pos, pos});
         setLightLevelFromOriginHere(pos, pos, 0, lightmap);
         if (implicatedChunks) {
-            implicatedChunks->insert(WorldRenderer::worldToChunkPos(TwoIntTup(pos.x, pos.z)));
+            TwoIntTup chunkPos = WorldRenderer::worldToChunkPos(TwoIntTup(pos.x, pos.z));
+            if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
+                implicatedChunks->insert(chunkPos);
+            }
         }
     }
 
     for (int level = maxLightLevel; level > 1; --level) {
         for (const auto& [spot, origin] : layers[level]) {
-            auto originhash = hasher(origin, true);
             for (const auto& offset : neighbs) {
                 IntTup neighbor = spot + offset;
                 size_t idx = (neighbor.x - minX) + (neighbor.z - minZ) * width + (neighbor.y - minY) * width * depth;
@@ -236,7 +195,7 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
                 if (lmentry != lightmap.end()) {
                     auto& rays = lmentry->second.rays;
                     for (auto it = rays.begin(); it != rays.end();) {
-                        if (it->originhash == originhash) {
+                        if (it->origin == origin) {
                             it = rays.erase(it);
                         } else {
                             ++it;
@@ -248,37 +207,16 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
                         visited[idx] = true;
                         layers[level - 1].push_back({neighbor, origin});
                         setLightLevelFromOriginHere(neighbor, origin, 0, lightmap);
-                        if (implicatedChunks)
-                        {
-                            implicatedChunks->insert(WorldRenderer::worldToChunkPos(TwoIntTup(neighbor.x, neighbor.z)));
+                        if (implicatedChunks) {
+                            TwoIntTup chunkPos = WorldRenderer::worldToChunkPos(TwoIntTup(neighbor.x, neighbor.z));
+                            if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
+                                implicatedChunks->insert(chunkPos);
+                            }
                         }
-
                     }
                 }
             }
         }
         layers[level].clear();
-    }
-}
-void lightPassOnChunk(World* world, TwoIntTup spot, int chunkw, int chunkh,
-                      LightMapType& lightmap, bool
-                      locked)
-{
-    auto implicatedChunks = std::unordered_set<TwoIntTup, TwoIntTupHash>();
-
-    auto sources = getChunkLightSourcesBlockAndAmbient(spot, world, chunkw, chunkh, lightmap, locked);
-
-    unpropagateAllLightsLayered(sources.first, lightmap, &implicatedChunks, locked);
-    propagateAllLightsLayered(world, sources.first, lightmap, &implicatedChunks, locked);
-
-    unpropagateAllLightsLayered(sources.second, ambientlightmap, &implicatedChunks, locked);
-    propagateAllLightsLayered(world, sources.second, ambientlightmap, &implicatedChunks, locked);
-
-    for (const auto & spot : implicatedChunks)
-    {
-        tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::accessor a;
-
-        lightOverlapNotificationQueue.push(spot);
-
     }
 }

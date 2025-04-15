@@ -368,7 +368,7 @@ public:
         }
     }
 
-    void requestChunkSpotRebuildFromMainThread(const TwoIntTup& chunkspot)
+    void requestChunkSpotRebuildFromMainThread(const TwoIntTup& chunkspot, bool priority = true)
     {
         if (activeChunks.contains(chunkspot))
         {
@@ -377,7 +377,7 @@ public:
             rebuildQueue.push(ChunkRebuildRequest(
                 chunkspot,
                 activeChunks.at(chunkspot).chunkIndex,
-                true
+                priority
             ));
 
 
