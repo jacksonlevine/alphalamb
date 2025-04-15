@@ -7,8 +7,7 @@
 jl::Shader getBasicShader()
 {
     jl::Shader shader(
-        R"glsl(
-            #version 330 core
+        R"glsl(#version 450 core
             layout(location = 0) in vec3 inPosition;
             layout(location = 1) in vec2 inTexCoord;
             layout(location = 2) in float inBrightness;
@@ -46,11 +45,13 @@ uniform float scale;
             uniform float timeRendered;
 
             out float brightness;
+
             out vec3 ppos;
             out vec3 grassColor;
             out float timeRended;
             uniform vec3 camPos;
             uniform float worldCurveAmount;
+            uniform float ambientBrightness;
 
             void main()
             {
@@ -58,7 +59,16 @@ uniform float scale;
                 mat4 rotmat = getRotationMatrix(0.0, 0.0, rot);
                 vec4 rotposition = rotmat * vec4(inPosition, 1.0);
 
-                brightness = inBrightness;
+                float occlvalues[4] = float[4](0.0, -0.3, -0.5, 0.7);
+               uint ppp = floatBitsToUint(inBrightness);
+
+                //// Unpack:
+                uint block = (ppp >> 16u) & 0xFFFFu;     // upper 16 bits
+                uint occlusion = (ppp >> 14u) & 0x3u;    // bits 14–15
+                uint ambient = ppp & 0x3FFFu;            // lower 14 bits
+
+
+                brightness = min(1.0, (float(block)/16.0) + ((float(ambient)/16.0) * ambientBrightness)) + occlvalues[occlusion];
                 TexCoord = inTexCoord;
 
                 float fadeInProgress = min(1.0, timeRendered*2.5f);
@@ -87,8 +97,7 @@ uniform float scale;
                 }
             }
         )glsl",
-        R"glsl(
-            #version 330 core
+        R"glsl(#version 450 core
             out vec4 FragColor;
 
             in vec2 TexCoord;
@@ -156,13 +165,14 @@ if(underwater > 0.5f) {
 
 }
 vec4 tex = texture(texture1, TexCoord) + vec4(grassColor * 0.3, 0.0);
-FragColor = mix(vec4((tex * max(0.0, min(1.0, brightness + ambientBrightness))).xyz, tex.a), fogColor, fogFactor);
+FragColor = mix(vec4((tex * brightness).xyz, tex.a), fogColor, fogFactor);
                 vec3 lutCoords = clamp(FragColor.xyz, 0.0, 1.0);
                 lutCoords = lutCoords * (63.0/64.0) + (0.5/64.0);
                 vec4 lutTex = texture(lut, lutCoords);
 
                 FragColor = vec4(lutTex.xyz, FragColor.a * timeRended);
-                //FragColor = vec4(FragColor.xyz * ambientBrightness, FragColor.a);
+
+
                 if(FragColor.a < 0.1f) {
                     discard;
                 }

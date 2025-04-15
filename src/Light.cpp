@@ -45,10 +45,12 @@ void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value,
     }
 }
 
-std::vector<std::pair<IntTup, int>> getChunkLightSources(const TwoIntTup& spot, World* world, int chunkw, int chunkh,
-                                                         LightMapType& lightmap, bool locked)
+std::pair<std::vector<std::pair<IntTup, int>>, std::vector<std::pair<IntTup, int>>> getChunkLightSourcesBlockAndAmbient(
+    const TwoIntTup& spot, World* world, int chunkw, int chunkh,
+    LightMapType& lightmap, bool locked)
 {
     std::vector<std::pair<IntTup, int>> chunkLightSources;
+    std::vector<std::pair<IntTup, int>> ambientLightSources;
     std::shared_lock<std::shared_mutex> url;
     std::shared_lock<std::shared_mutex> nrl;
     std::shared_lock<std::shared_mutex> lock3;
@@ -63,18 +65,25 @@ std::vector<std::pair<IntTup, int>> getChunkLightSources(const TwoIntTup& spot, 
     {
         for (int k = 0; k < chunkw; k++)
         {
-            for (int j = 0; j < chunkh; j++)
+            bool foundground = false;
+            for (int j = chunkh-1; j > -1; j--)
             {
                 auto spott = startspot + IntTup(i,j,k);
-                if (world->getLocked(spott) == LIGHT)
+                auto h = world->getLocked(spott);
+                if (h == LIGHT)
                 {
                     chunkLightSources.push_back(std::make_pair(spott, 12));
+                }
+                if (std::find(transparents.begin(), transparents.end(), h) == transparents.end() && !foundground)
+                {
+                    ambientLightSources.push_back(std::make_pair(spott, 16));
+                    foundground = true;
                 }
             }
         }
 
     }
-    return chunkLightSources;
+    return std::make_pair(chunkLightSources, ambientLightSources);
 }
 void propagateAllLightsLayered(World* world,
                               const std::vector<std::pair<IntTup, int>>& lightSources,
@@ -257,9 +266,13 @@ void lightPassOnChunk(World* world, TwoIntTup spot, int chunkw, int chunkh,
 {
     auto implicatedChunks = std::unordered_set<TwoIntTup, TwoIntTupHash>();
 
-    auto sources = getChunkLightSources(spot, world, chunkw, chunkh, lightmap, locked);
-    unpropagateAllLightsLayered(sources, lightmap, &implicatedChunks, locked);
-    propagateAllLightsLayered(world, sources, lightmap, &implicatedChunks, locked);
+    auto sources = getChunkLightSourcesBlockAndAmbient(spot, world, chunkw, chunkh, lightmap, locked);
+
+    unpropagateAllLightsLayered(sources.first, lightmap, &implicatedChunks, locked);
+    propagateAllLightsLayered(world, sources.first, lightmap, &implicatedChunks, locked);
+
+    unpropagateAllLightsLayered(sources.second, ambientlightmap, &implicatedChunks, locked);
+    propagateAllLightsLayered(world, sources.second, ambientlightmap, &implicatedChunks, locked);
 
     for (const auto & spot : implicatedChunks)
     {

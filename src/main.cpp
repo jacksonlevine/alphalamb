@@ -653,7 +653,9 @@ int main()
 
    // glfwWindowHint(GLFW_SAMPLES, 32); // Set MSAA samples (4x MSAA)
 
-
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     theScene.window = glfwCreateWindow(800, 800, "project7", nullptr, nullptr);
     GLFWwindow* window = theScene.window;
@@ -698,6 +700,11 @@ int main()
     initializePhysX();
 
     loadGameVoxelModels();
+
+    const GLubyte* version = glGetString(GL_SHADING_LANGUAGE_VERSION);
+    if (version) {
+        std::cout << "GLSL version: " << version << std::endl;
+    }
 
     GLuint lutTexture = load3DLUT("resources/film_default.png");
 

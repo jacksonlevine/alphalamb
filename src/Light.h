@@ -38,9 +38,10 @@ constexpr auto neighbs = std::to_array({
 
 void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value, LightMapType& lightmap);
 
-std::vector<std::pair<IntTup, int>> getChunkLightSources(const TwoIntTup& spot, World* world, int chunkw, int chunkh, LightMapType&
-                                                         lightmap, bool
-                                                         locked);
+std::pair<std::vector<std::pair<IntTup, int>>, std::vector<std::pair<IntTup, int>>> getChunkLightSourcesBlockAndAmbient(
+    const TwoIntTup& spot, World* world, int chunkw, int chunkh, LightMapType&
+    lightmap, bool
+    locked);
 
 void propagateAllLightsLayered(World* world, const std::vector<std::pair<IntTup, int>>& lightSources,
                                LightMapType& lightmap,
@@ -56,7 +57,14 @@ void lightPassOnChunk(World* world, TwoIntTup spot, int chunkw, int chunkh, Ligh
                       locked = false);
 
 
+inline float getBlockAmbientLightVal(uint16_t value1, uint16_t value2)
+{
+    uint32_t packed = (uint32_t(value1) << 16) | uint32_t(value2);
 
+    float packedFloat;
+    memcpy(&packedFloat, &packed, sizeof(float));
+    return packedFloat;
+}
 
 
 #endif //LIGHT_H

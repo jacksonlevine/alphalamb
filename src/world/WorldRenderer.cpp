@@ -13,7 +13,7 @@
 std::atomic<int> NUM_THREADS_RUNNING = 0;
 
 
-
+LightMapType ambientlightmap = {};
 LightMapType lightmap = {};
 std::shared_mutex lightmapMutex = {};
 tbb::concurrent_unordered_set<TwoIntTup, TwoIntTupHash> litChunks;
@@ -700,7 +700,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
         if (rebuildQueue.pop(request)) {
             //std::cout << "Popped one: " << request.chunkPos.x << " " << request.chunkPos.z << " \n";
 
-            auto lightpass = (request.changeTo != std::nullopt && request.changeTo.value() == LIGHT);
+            auto lightpass = (request.changeTo != std::nullopt);
 
             if (request.isArea)
             {
@@ -820,9 +820,9 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
                             request.rebuild = true;
                             lightpass = true;
-                            std::vector<std::pair<IntTup, int>> thisspot = {
-                                std::make_pair(request.changeSpot, 12)
-                            };
+                             std::vector<std::pair<IntTup, int>> thisspot = {
+                                 std::make_pair(request.changeSpot, 12)
+                             };
                             unpropagateAllLightsLayered(thisspot, lightmap);
                         }
                         if (blockThere != AIR  && (blockThere != (MaterialName)(request.changeTo.value() & BLOCK_ID_BITS)))
@@ -1217,13 +1217,18 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         if (neighborair || solidNeighboringTransparent || (blockHereTransparent && (neighblock != blockID) && neightransparent)) {
                             Side side = static_cast<Side>(i);
 
-                            auto blockbright = 0;
+                            uint16_t blockbright = 0;
+                            uint16_t ambientbright = 0;
                             auto ns = here + neighborSpots[(int)side];
                             if (locked)
                             {
                                 if (lightmap.contains(ns))
                                 {
                                     blockbright = lightmap.at(ns).sum();
+                                }
+                                if (ambientlightmap.contains(ns))
+                                {
+                                    ambientbright = ambientlightmap.at(ns).sum();
                                 }
                             } else
                             {
@@ -1232,7 +1237,13 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                                 {
                                     blockbright = lightmap.at(ns).sum();
                                 }
+                                if (ambientlightmap.contains(ns))
+                                {
+                                    ambientbright = ambientlightmap.at(ns).sum();
+                                }
                             }
+
+                            auto blockandambbright = getBlockAmbientLightVal(blockbright, ambientbright);
 
 
                             if (blockID == WATER && side == Side::Top)
@@ -1246,10 +1257,10 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                                     addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
                                                   side, static_cast<MaterialName>(blockID), 1, mesh, index, tindex, -0.2f);
 
-                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockbright);
+                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockandambbright);
                                     addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y)+1, static_cast<float>(here.z)),
                                                   Side::Bottom, static_cast<MaterialName>(blockID), 1, mesh, index, tindex, -0.2f);
-                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockbright);
+                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockandambbright);
                                 }
 
                             } else
@@ -1260,7 +1271,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                                 } else {
                                     addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
                                                   side, static_cast<MaterialName>(blockID), 1, mesh, index, tindex);
-                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockbright);
+                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockandambbright);
                                 }
                             }
                         }
@@ -1289,21 +1300,22 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
 }
 
 // This function calculates and adds ambient occlusion brightness values for a face
-void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, bool locked, BlockType blockType, UsableMesh& mesh, int blockBright)
+void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, bool locked, BlockType blockType, UsableMesh& mesh, float
+                               blockandambbright)
 {
     float baseBrightness;
     switch(side) {
-        case Side::Top:    baseBrightness = 1.0f * (blockBright / 16.0f); break;
-        case Side::Left:   baseBrightness = 0.7f * (blockBright / 16.0f); break;
-        case Side::Bottom: baseBrightness = 0.4f * (blockBright / 16.0f); break;
-        case Side::Right:  baseBrightness = 0.8f * (blockBright / 16.0f); break;
-        default:           baseBrightness = 0.9f * (blockBright / 16.0f); break;
+        case Side::Top:    baseBrightness = 1.0f * (blockandambbright / 16.0f); break;
+        case Side::Left:   baseBrightness = 0.7f * (blockandambbright / 16.0f); break;
+        case Side::Bottom: baseBrightness = 0.4f * (blockandambbright / 16.0f); break;
+        case Side::Right:  baseBrightness = 0.8f * (blockandambbright / 16.0f); break;
+        default:           baseBrightness = 0.9f * (blockandambbright / 16.0f); break;
     }
 
     float isGrass = blockType == GRASS ? 1.0f : 0.0f;
 
     // Calculate occlusion for each vertex of the face
-    float occlusion[4];
+    int occlusion[4];
     for (int v = 0; v < 4; v++) {
         // Get the 3 adjacent blocks for this vertex
         std::array<IntTup, 3> adjacentOffsets = getAdjacentOffsets(side, v);
@@ -1319,30 +1331,44 @@ void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, 
         }
 
         // Apply occlusion based on how many adjacent blocks are solid
-        float occlusionValue = 0.0f;
+        int occlusionValue = 0;
 
         switch (solidCount) {
-            case 1: occlusionValue = -0.3f; break;
-            case 2: occlusionValue = -0.5f; break;
-            case 3: occlusionValue = -0.7f; break;
-            default: occlusionValue = 0.0f; break;
+            case 1: occlusionValue = 1; break;
+            case 2: occlusionValue = 2; break;
+            case 3: occlusionValue = 3; break;
+            default: occlusionValue = 0; break;
         }
 
-        // Clamp final brightness to valid range
-        occlusion[v] = std::max(0.0f, baseBrightness + occlusionValue);
+        occlusion[v] = occlusionValue;
     }
+    auto packonocclbits = [](int occlusion, float blockandambbright)
+    {
+        uint32_t packed;
+        memcpy(&packed, &blockandambbright, sizeof(float));
+
+        // Step 2: Set the occlusion bits (let's use bits 14-15)
+        // First clear those bits
+        packed &= ~(0x3 << 14);  // Clear bits 14-15
+        packed |= (uint32_t(occlusion) << 14);  // Set occlusion in bits 14-15
+
+        // Step 3: Convert back to float
+        float result;
+        memcpy(&result, &packed, sizeof(float));
+        return result;
+    };
 
     // Add brightness data to the appropriate arrays based on transparency
     bool isTransparent = std::ranges::find(transparents, blockType) != transparents.end();
     if (isTransparent) {
         mesh.tbrightness.insert(mesh.tbrightness.end(), {
-            occlusion[0], isGrass, occlusion[1], isGrass,
-            occlusion[2], isGrass, occlusion[3], isGrass
+            packonocclbits(occlusion[0], blockandambbright), isGrass, packonocclbits(occlusion[1], blockandambbright), isGrass,
+            packonocclbits(occlusion[2], blockandambbright), isGrass, packonocclbits(occlusion[3], blockandambbright), isGrass
         });
     } else {
         mesh.brightness.insert(mesh.brightness.end(), {
-            occlusion[0], isGrass, occlusion[1], isGrass,
-            occlusion[2], isGrass, occlusion[3], isGrass
+            packonocclbits(occlusion[0], blockandambbright), isGrass, packonocclbits(occlusion[1], blockandambbright), isGrass,
+            packonocclbits(occlusion[2], blockandambbright), isGrass, packonocclbits(occlusion[3], blockandambbright), isGrass
         });
     }
 }
