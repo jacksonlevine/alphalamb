@@ -41,6 +41,7 @@ find_package(imgui CONFIG REQUIRED)
 
 find_package(unofficial-omniverse-physx-sdk CONFIG REQUIRED)
 find_package(cereal CONFIG REQUIRED)
+find_package(TBB CONFIG REQUIRED)
 
 
 message(STATUS "Available targets in CMake:")
@@ -250,6 +251,8 @@ add_executable(DGServer
 
 target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)
 target_link_libraries(DistantGarden PRIVATE pocketpy)
+target_link_libraries(DistantGarden PRIVATE TBB::tbb)
+
 function(add_common_libraries target)
     
     target_precompile_headers( ${target}

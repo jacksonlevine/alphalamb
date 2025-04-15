@@ -10,6 +10,7 @@
         "physx",
         "openal-soft",
         "entt",
-        "cereal"
+        "cereal",
+        "tbb"
     ]
 }

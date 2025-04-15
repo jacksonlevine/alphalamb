@@ -1450,6 +1450,11 @@ int main()
 
                 break; //Only do oen per frame
             }
+            TwoIntTup popped;
+            if (lightOverlapNotificationQueue.try_pull(popped) == boost::queue_op_status::success)
+            {
+                theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(popped);
+            }
 
             Atmosphere currAtmos = skyAndFogColor(theScene.currentPlanetType);
 

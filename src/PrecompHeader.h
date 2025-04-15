@@ -55,5 +55,6 @@
 #include <cereal/types/array.hpp>
 #include "CerealHelpers.h"
 #include <boost/thread/concurrent_queues/sync_queue.hpp>
-
+#include <tbb/tbb.h>
+#include <tbb/concurrent_unordered_set.h>
 #endif //PRECOMPHEADER_H

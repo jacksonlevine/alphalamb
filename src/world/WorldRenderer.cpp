@@ -16,7 +16,7 @@ std::atomic<int> NUM_THREADS_RUNNING = 0;
 
 LightMapType lightmap = {};
 std::shared_mutex lightmapMutex = {};
-boost::unordered_flat_set<TwoIntTup, TwoIntTupHash> litChunks;
+tbb::concurrent_unordered_set<TwoIntTup, TwoIntTupHash> litChunks;
 void genCGLBuffers()
 {
 

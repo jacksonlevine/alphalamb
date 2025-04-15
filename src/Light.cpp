@@ -124,9 +124,9 @@ void propagateAllLightsLayered(World* world,
         visited[idx] = true;
         layers[level].push_back({pos, pos});
         setLightLevelFromOriginHere(pos, pos, level, lightmap);
-        // if (implicatedChunks) {
-        //     implicatedChunks->insert({pos.x / 16, pos.z / 16});
-        // }
+        if (implicatedChunks) {
+            implicatedChunks->insert(WorldRenderer::worldToChunkPos(TwoIntTup(pos.x, pos.z)));
+        }
     }
 
     std::shared_lock<std::shared_mutex> url;
@@ -150,9 +150,9 @@ void propagateAllLightsLayered(World* world,
                 visited[idx] = true;
                 layers[level - 1].push_back({neighbor, source});
                 setLightLevelFromOriginHere(neighbor, source, level - 1, lightmap);
-                // if (implicatedChunks) {
-                //     implicatedChunks->insert({neighbor.x / 16, neighbor.z / 16});
-                // }
+                if (implicatedChunks) {
+                    implicatedChunks->insert(WorldRenderer::worldToChunkPos(TwoIntTup(neighbor.x, neighbor.z)));
+                }
             }
         }
         layers[level].clear();
@@ -209,9 +209,9 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
         visited[idx] = true;
         layers[level].push_back({pos, pos});
         setLightLevelFromOriginHere(pos, pos, 0, lightmap);
-        // if (implicatedChunks) {
-        //     implicatedChunks->insert({pos.x / 16, pos.z / 16});
-        // }
+        if (implicatedChunks) {
+            implicatedChunks->insert(WorldRenderer::worldToChunkPos(TwoIntTup(pos.x, pos.z)));
+        }
     }
 
     for (int level = maxLightLevel; level > 1; --level) {
@@ -222,7 +222,6 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
                 size_t idx = (neighbor.x - minX) + (neighbor.z - minZ) * width + (neighbor.y - minY) * width * depth;
                 if (idx >= volume) continue;
                 if (visited[idx]) continue;
-                std::cout << "spot: " << neighbor.x << " " << neighbor.y << " " << neighbor.z  << std::endl;
 
                 auto lmentry = lightmap.find(neighbor);
                 if (lmentry != lightmap.end()) {
@@ -240,9 +239,11 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, int>>& ligh
                         visited[idx] = true;
                         layers[level - 1].push_back({neighbor, origin});
                         setLightLevelFromOriginHere(neighbor, origin, 0, lightmap);
-                        // if (implicatedChunks) {
-                        //     implicatedChunks->insert({neighbor.x / 16, neighbor.z / 16});
-                        // }
+                        if (implicatedChunks)
+                        {
+                            implicatedChunks->insert(WorldRenderer::worldToChunkPos(TwoIntTup(neighbor.x, neighbor.z)));
+                        }
+
                     }
                 }
             }

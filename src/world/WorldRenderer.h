@@ -152,7 +152,7 @@ extern std::atomic<int> NUM_THREADS_RUNNING;
 
 extern LightMapType lightmap;
 extern std::shared_mutex lightmapMutex;
-extern boost::unordered_flat_set<TwoIntTup, TwoIntTupHash> litChunks;
+extern tbb::concurrent_unordered_set<TwoIntTup, TwoIntTupHash> litChunks;
 
 class WorldRenderer {
 public:
