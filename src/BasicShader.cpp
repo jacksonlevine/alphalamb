@@ -59,7 +59,7 @@ uniform float scale;
                 mat4 rotmat = getRotationMatrix(0.0, 0.0, rot);
                 vec4 rotposition = rotmat * vec4(inPosition, 1.0);
 
-                float occlvalues[4] = float[4](0.0, -0.3, -0.5, 0.7);
+                float occlvalues[4] = float[4](0.0, -0.3, -0.5, -0.7);
                uint ppp = floatBitsToUint(inBrightness);
 
                 //// Unpack:
@@ -129,7 +129,7 @@ float minFogHeight = 20.0;    // Fog reaches max at y=20
 float fogMaxDistance = renderDistance * 16.0; // Fog fades in near render distance
 
 // Calculate horizontal (XZ) distance from camera
-float horizDist = mDist(ppos.x, ppos.z, camPos.x, camPos.z);
+float horizDist = length(ppos - camPos);
 
 // Calculate vertical distance (height fog)
 float heightFactor = smoothstep(maxFogHeight, minFogHeight, ppos.y);

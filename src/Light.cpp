@@ -74,9 +74,9 @@ std::pair<std::vector<std::pair<IntTup, int>>, std::vector<std::pair<IntTup, int
                 {
                     chunkLightSources.push_back(std::make_pair(spott, 12));
                 }
-                if (std::find(transparents.begin(), transparents.end(), h) == transparents.end() && !foundground)
+                if (h != AIR && !foundground)
                 {
-                    ambientLightSources.push_back(std::make_pair(spott, 16));
+                    ambientLightSources.push_back(std::make_pair(spott + IntTup(0,1,0), 16));
                     foundground = true;
                 }
             }
