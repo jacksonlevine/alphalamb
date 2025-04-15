@@ -276,6 +276,9 @@ void lightPassOnChunk(World* world, TwoIntTup spot, int chunkw, int chunkh,
 
     for (const auto & spot : implicatedChunks)
     {
+        tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::accessor a;
+
         lightOverlapNotificationQueue.push(spot);
+
     }
 }

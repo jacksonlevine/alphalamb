@@ -479,45 +479,44 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                 if (mbtActiveChunks.contains(chunk))
                 {
                     auto & uci = mbtActiveChunks.at(chunk);
+                    bool lockgot = false;
                     UsableMesh mesh;
                     {
-                        bool gotlock = false;
-                        while (!gotlock)
-                        {
+
                             if (auto locks = world->tryToGetReadLockOnDMs()) {
                                 //std::cout << "Got readlock on dms \n";
+                                lockgot = true;
                                 mesh = fromChunkLocked(chunk, world, chunkSize);
-                                gotlock = true;
-                            } else
-                            {
-                                std::this_thread::sleep_for(std::chrono::milliseconds(5));
                             }
+
+
+                    }
+
+                    if (lockgot)
+                    {
+                        size_t changeBufferIndex = -1;
+                        {
+                            std::unique_lock<std::mutex> lock(mbtBufferMutex);
+                            mbtBufferCV.wait(lock, [&]() {
+                                return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
+                            });
+
+                            if (!meshBuildingThreadRunning) break;
                         }
 
+                        if (changeBufferIndex != -1)
+                        {
+                            auto& buffer = changeBuffers[changeBufferIndex];
+                            buffer.in_use.store(true);
+                            buffer.mesh = mesh;
+                            buffer.chunkIndex = uci.chunkIndex;
+                            buffer.from = chunk;
+                            buffer.to = chunk;
+                            buffer.ready.store(true);
+                            buffer.in_use.store(false);
+                        }
                     }
 
-
-                    size_t changeBufferIndex = -1;
-                    {
-                        std::unique_lock<std::mutex> lock(mbtBufferMutex);
-                        mbtBufferCV.wait(lock, [&]() {
-                            return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
-                        });
-
-                        if (!meshBuildingThreadRunning) break;
-                    }
-
-                    if (changeBufferIndex != -1)
-                    {
-                        auto& buffer = changeBuffers[changeBufferIndex];
-                        buffer.in_use.store(true);
-                        buffer.mesh = mesh;
-                        buffer.chunkIndex = uci.chunkIndex;
-                        buffer.from = chunk;
-                        buffer.to = chunk;
-                        buffer.ready.store(true);
-                        buffer.in_use.store(false);
-                    }
                 }
 
             }

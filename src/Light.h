@@ -13,6 +13,7 @@
 
 extern boost::sync_queue<TwoIntTup> lightOverlapNotificationQueue;
 
+
 struct LightRay {
     uint32_t originhash;
     int level;

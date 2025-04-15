@@ -79,4 +79,15 @@ struct TwoIntTupHash {
 
 std::string getIntTupHashAsString(const IntTup& tup);
 
+struct TwoIntTupHashCompare {
+    static size_t hash(const TwoIntTup& tup) {
+        size_t h1 = std::hash<int>()(tup.x);
+        size_t h2 = std::hash<int>()(tup.z);
+        return h1 ^ (h2 << 1);
+    }
+
+    static bool equal(const TwoIntTup& a, const TwoIntTup& b) {
+        return a == b;
+    }
+};
 #endif //INTTUP_H
