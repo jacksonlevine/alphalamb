@@ -1308,7 +1308,7 @@ int main()
                                         IntTup(spot.x, spot.y, spot.z-1), std::nullopt, true, glm::vec3(0.f), true, false);
                                 }
                                 scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                    spot
+                                    spot, std::nullopt, true, glm::vec3(0.f), true, false
                                     );
 
                             } else
@@ -1402,7 +1402,7 @@ int main()
                 break; //Only do oen per frame
             }
             TwoIntTup popped;
-            while (lightOverlapNotificationQueue.try_pull(popped) == boost::queue_op_status::success)
+            if (lightOverlapNotificationQueue.try_pull(popped) == boost::queue_op_status::success)
             {
                 theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(popped, false);
             }

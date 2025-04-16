@@ -13,8 +13,11 @@
 extern boost::sync_queue<TwoIntTup> lightOverlapNotificationQueue;
 
 
+constexpr int MAXLIGHTVAL = 12;
+constexpr int TORCHLIGHTVAL = 10;
+
 struct LightRay {
-    IntTup origin;
+    uint32_t originhash;
     int level;
 };
 
@@ -25,7 +28,7 @@ struct LightSpot {
         for(auto ray : rays) {
             res += ray.level;
         }
-        return glm::min(16, res);
+        return glm::min(12, res);
     }
 };
 using LightMapType = boost::unordered_flat_map<IntTup, LightSpot, IntTupHash>;
@@ -36,55 +39,67 @@ constexpr auto neighbs = std::to_array({
     IntTup(0,0,-1), IntTup(0,0,1)
 });
 
+
+constexpr auto neighbs4 = std::to_array({
+    IntTup(-1,0,0), IntTup(1,0,0),
+    IntTup(0,0,-1), IntTup(0,0,1)
+});
+
 template<bool ifHigher = false>
 void setLightLevelFromOriginHere(IntTup spot, IntTup origin, int value,
                                  LightMapType& lightmap)
 {
     auto lmentry = lightmap.find(spot);
-    bool originfound = false;
-    if(lmentry != lightmap.end()) {
-        if(value != 0) {
-            for(auto ray : lmentry->second.rays) {
-                if(ray.origin == origin) {
-                    originfound = true;
-                    if constexpr (ifHigher)
-                    {
-                        if (ray.level < value) ray.level = value;
+    auto originhash = IntTupHash{}(origin, true);
+    if (lmentry != lightmap.end()) {
+        auto& rays = lmentry->second.rays;
 
-                    } else
-                    {
+        if (value != 0) {
+            bool originfound = false;
+
+            for (auto& ray : rays) {
+                if (ray.originhash == originhash) {
+                    originfound = true;
+                    if constexpr (ifHigher) {
+                        if (ray.level < value) {
+                            ray.level = value;
+                        }
+                    } else {
                         ray.level = value;
                     }
-
                     break;
                 }
             }
-            if(!originfound) {
-                lmentry->second.rays.push_back(LightRay{
-                    .origin = origin, .level = value
+            if (!originfound) {
+                rays.push_back(LightRay{
+                    .originhash = originhash, .level = value
                 });
             }
         } else {
-            lmentry->second.rays.erase(
+            rays.erase(
                 std::remove_if(
-                    lmentry->second.rays.begin(),
-                    lmentry->second.rays.end(),
-                    [origin](auto & ray) { return ray.origin == origin; }
+                    rays.begin(),
+                    rays.end(),
+                    [originhash](const auto& ray) { return ray.originhash == originhash; }
                 ),
-                lmentry->second.rays.end()
+                rays.end()
             );
+            if (rays.empty()) {
+                lightmap.erase(lmentry);
+            }
         }
-    } else {
+    } else if (value != 0) { // Only add new entry if value != 0
         lightmap.insert({spot, LightSpot{}});
         lightmap.at(spot).rays.push_back(LightRay{
-            .origin = origin, .level = value
+            .originhash = originhash, .level = value
         });
     }
 }
 
 struct ChunkLightSources
 {
-    std::vector<std::pair<IntTup, int>> blockSources;
+    std::vector<std::pair<IntTup, int>> oldBlockSources;
+    std::vector<std::pair<IntTup, int>> newBlockSources;
     std::vector<std::pair<IntTup, int>> ambientOldSources;
     std::vector<std::pair<IntTup, int>> ambientNewSources;
 };

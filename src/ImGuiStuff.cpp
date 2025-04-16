@@ -635,7 +635,7 @@ void renderImGui()
                 std::string leavelabel;
                 if (localserver_running.load())
                 {
-                    leavelabel = "Leave to main menu and close server";
+                    leavelabel = "Leave to main menu and save/close server";
                 } else
                 {
                     leavelabel = "Disconnect and leave to main menu";
