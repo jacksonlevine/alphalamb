@@ -43,6 +43,7 @@ ChunkLightSources getChunkLightSourcesBlockAndAmbient(
                 auto lightspot = ambientlightmap.find(spott);
                 if (lightspot != ambientlightmap.end())
                 {
+                    //std::cout << "rays count: " << lightspot->second.rays.size() << std::endl;
                     for (const auto & ray : lightspot->second.rays)
                     {
                         if (originhash == ray.originhash)

@@ -449,7 +449,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
             {
                 if(!generatedChunks.contains(spotHere))
                 {
-                    generateChunk(world, spotHere, &implicatedChunks);
+                    //generateChunk(world, spotHere, &implicatedChunks);
                      generatedChunks.insert(spotHere);
 
                 }
@@ -695,7 +695,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
         ChunkRebuildRequest request;
         //std::cout << "Running \n";
         if (rebuildQueue.pop(request)) {
-            std::cout << "Popped one: " << request.chunkPos.x << " " << request.chunkPos.z << " \n";
+            //std::cout << "Popped one: " << request.chunkPos.x << " " << request.chunkPos.z << " \n";
 
             auto lightpass = (request.changeTo != std::nullopt) || request.doLightPass;
             if (lightpass)
