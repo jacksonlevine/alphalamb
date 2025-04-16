@@ -451,7 +451,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         {
 
             auto & pos = scene->our<jl::Camera>().transform.position;
-
+            scene->worldRenderer->printMemoryFootprint();
 
         } else
         if (key == GLFW_KEY_H)

@@ -161,7 +161,7 @@ extern tbb::concurrent_unordered_set<TwoIntTup, TwoIntTupHash> litChunks;
 class WorldRenderer {
 public:
     static constexpr int chunkSize = 16;
-    static constexpr int renderDistance = 128;
+    static constexpr int renderDistance = 17;
     int currentRenderDistance = 17;
     static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2));
     int MIN_DISTANCE = renderDistance + 1;
@@ -263,25 +263,25 @@ public:
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
-    std::array<ChangeBuffer, 128> changeBuffers = {};
+    std::array<ChangeBuffer, 64> changeBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<128>> freedChangeBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<64>> freedChangeBuffers = {};
 
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
-    std::array<ChangeBuffer, 128> userChangeMeshBuffers = {};
+    std::array<ChangeBuffer, 64> userChangeMeshBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<128>> freedUserChangeMeshBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<64>> freedUserChangeMeshBuffers = {};
 
     ///After being added to mbtActiveChunks, we await a confirmation back in this before we know we can reuse that chunk again
     ///One way queue, from main thread to mesh building thread, to notify of mbtActiveChunks entries that have been confirmed/entered into activeChunks.
-    boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<128>> confirmedActiveChunksQueue = {};
+    boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<64>> confirmedActiveChunksQueue = {};
 
 
 
     //A way for the rebuild thread to ask the main thread "What chunks are active from this area?" so that the main thread can submit rebuild requests for them
-    boost::lockfree::spsc_queue<BlockArea, boost::lockfree::capacity<256>> rebuildToMainAreaNotifications = {};
+    boost::lockfree::spsc_queue<BlockArea, boost::lockfree::capacity<128>> rebuildToMainAreaNotifications = {};
 
 
     double getDewyFogFactor(float temperature_noise, float humidity_noise);
@@ -375,6 +375,84 @@ public:
 
         }
     }
+
+    void printMemoryFootprint() const {
+    size_t total = 0;
+
+    std::cout << "Memory Footprint of WorldRenderer (in bytes):\n";
+    std::cout << "---------------------------------------------\n";
+
+    // Static and primitive members
+    auto add_size = [&](const char* name, size_t size) {
+        std::cout << name << ": " << size << " bytes\n";
+        total += size;
+    };
+
+    add_size("currentRenderDistance (int)", sizeof(currentRenderDistance));
+    add_size("MIN_DISTANCE (int)", sizeof(MIN_DISTANCE));
+    add_size("lastMaxChunks (int)", sizeof(lastMaxChunks));
+    add_size("chunkPoolSize (std::atomic<size_t>)", sizeof(chunkPoolSize));
+    add_size("rebuildThreadRunning (std::atomic<int>)", sizeof(rebuildThreadRunning));
+    add_size("meshBuildingThreadRunning (std::atomic<int>)", sizeof(meshBuildingThreadRunning));
+
+    // chunkPool (std::array<SmallChunkGLInfo, maxChunks>)
+    size_t chunkPoolSize = sizeof(chunkPool);
+    add_size("chunkPool (std::array<SmallChunkGLInfo, maxChunks>)", chunkPoolSize);
+
+    // rebuildQueue (assuming it's a custom queue, sizeof gives static size)
+    add_size("rebuildQueue (RebuildQueue)", sizeof(rebuildQueue));
+
+    // Threads (sizeof gives static size, stack size not included)
+    add_size("rebuildThread (std::thread)", sizeof(rebuildThread));
+    add_size("chunkWorker (std::thread)", sizeof(chunkWorker));
+
+    // Synchronization primitives
+    add_size("bufferMutex (std::mutex)", sizeof(bufferMutex));
+    add_size("bufferCV (std::condition_variable)", sizeof(bufferCV));
+    add_size("mbtBufferMutex (std::mutex)", sizeof(mbtBufferMutex));
+    add_size("mbtBufferCV (std::condition_variable)", sizeof(mbtBufferCV));
+
+    // activeChunks (boost::unordered_flat_map)
+    size_t activeChunksSize = sizeof(activeChunks) + (sizeof(std::pair<TwoIntTup, ReadyToDrawChunkInfo>) * activeChunks.bucket_count());
+    add_size("activeChunks (boost::unordered_flat_map)", activeChunksSize);
+
+    // mbtActiveChunks (boost::unordered_flat_map)
+    size_t mbtActiveChunksSize = sizeof(mbtActiveChunks) + (sizeof(std::pair<TwoIntTup, UsedChunkInfo>) * mbtActiveChunks.bucket_count());
+    add_size("mbtActiveChunks (boost::unordered_flat_map)", mbtActiveChunksSize);
+
+    // generatedChunks (boost::unordered_flat_set)
+    size_t generatedChunksSize = sizeof(generatedChunks) + (sizeof(TwoIntTup) * generatedChunks.bucket_count());
+    add_size("generatedChunks (boost::unordered_flat_set)", generatedChunksSize);
+
+    // changeBuffers (std::array<ChangeBuffer, 128>)
+    size_t changeBuffersSize = sizeof(changeBuffers);
+    add_size("changeBuffers (std::array<ChangeBuffer, 128>)", changeBuffersSize);
+
+    // freedChangeBuffers (boost::lockfree::spsc_queue)
+    size_t freedChangeBuffersSize = sizeof(freedChangeBuffers) + (sizeof(size_t) * 128); // Capacity is 128
+    add_size("freedChangeBuffers (boost::lockfree::spsc_queue<size_t, 128>)", freedChangeBuffersSize);
+
+    // userChangeMeshBuffers (std::array<ChangeBuffer, 128>)
+    size_t userChangeMeshBuffersSize = sizeof(userChangeMeshBuffers);
+    add_size("userChangeMeshBuffers (std::array<ChangeBuffer, 128>)", userChangeMeshBuffersSize);
+
+    // freedUserChangeMeshBuffers (boost::lockfree::spsc_queue)
+    size_t freedUserChangeMeshBuffersSize = sizeof(freedUserChangeMeshBuffers) + (sizeof(size_t) * 128); // Capacity is 128
+    add_size("freedUserChangeMeshBuffers (boost::lockfree::spsc_queue<size_t, 128>)", freedUserChangeMeshBuffersSize);
+
+    // confirmedActiveChunksQueue (boost::lockfree::spsc_queue)
+    size_t confirmedActiveChunksQueueSize = sizeof(confirmedActiveChunksQueue) + (sizeof(TwoIntTup) * 128); // Capacity is 128
+    add_size("confirmedActiveChunksQueue (boost::lockfree::spsc_queue<TwoIntTup, 128>)", confirmedActiveChunksQueueSize);
+
+    // rebuildToMainAreaNotifications (boost::lockfree::spsc_queue)
+    size_t rebuildToMainAreaNotificationsSize = sizeof(rebuildToMainAreaNotifications) + (sizeof(BlockArea) * 256); // Capacity is 256
+    add_size("rebuildToMainAreaNotifications (boost::lockfree::spsc_queue<BlockArea, 256>)", rebuildToMainAreaNotificationsSize);
+
+    std::cout << "---------------------------------------------\n";
+    std::cout << "Total estimated memory footprint: " << total << " bytes (" << total / 1024.0 << " KB)\n";
+    std::cout << "Note: Sizes for containers (e.g., unordered_map, spsc_queue) include allocated capacity. "
+              << "Thread stack sizes and dynamic allocations are not included.\n";
+}
 
     void requestChunkSpotRebuildFromMainThread(const TwoIntTup& chunkspot, bool priority = true)
     {
