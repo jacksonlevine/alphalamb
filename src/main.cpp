@@ -875,7 +875,7 @@ int main()
 
 
 
-            if (auto t = theScene.world->tryToGetReadLockOnDMs(); t != std::nullopt)
+            if (auto t = theScene.world->tryToGetReadLockOnDMsOnly(); t != std::nullopt)
             {
                 theScene.lastBlockAtCursor = theScene.world->getRawLocked(theScene.blockSelectGizmo->selectedSpot);
 
@@ -1400,6 +1400,12 @@ int main()
                 }
 
                 break; //Only do oen per frame
+            }
+
+            TwoIntTup popped;
+            if (lightOverlapNotificationQueue.try_pull(popped) == boost::queue_op_status::success)
+            {
+                theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(popped, false);
             }
 
 

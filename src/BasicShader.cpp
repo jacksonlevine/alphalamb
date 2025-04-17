@@ -66,7 +66,7 @@ uniform float scale;
         uint blockRaw   = (ppp >> 16u) & 0xFFFFu; // Get the upper 16 bits for the block (12-bit RGB)
         uint ambientRaw = ppp & 0x3FFFu;          // Get the lower 14 bits for the ambient (12-bit RGB)
 
-        uint occlusion  = (ambientRaw >> 14u) & 0x3u; // Extract occlusion (2 bits)
+        uint occlusion = (ppp >> 14u) & 0x3u;    // bits 14–15
 
         ambientRaw &= 0x0FFFu;
 

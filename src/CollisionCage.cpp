@@ -23,7 +23,7 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot, float deltaTime)
 
             PxU32 index = 0;
             PxU32 tindex = 0;
-            auto lock = world->tryToGetReadLockOnDMs();
+            auto lock = world->tryToGetReadLockOnDMsOnly();
             if(lock != std::nullopt)
             {
                 for(int x = -6; x < 6; x++)

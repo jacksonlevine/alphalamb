@@ -259,7 +259,7 @@ inline void drawComputerScreensInReg(World* world, entt::registry& reg, jl::Came
         //std::cout << "Should be drawing: " << pos.position.x << " " << pos.position.y << " " << pos.position.z << std::endl;
         if (!comp.directionset)
         {
-            if (auto l = world->tryToGetReadLockOnDMs(); l != std::nullopt)
+            if (auto l = world->tryToGetReadLockOnDMsOnly(); l != std::nullopt)
             {
                 auto rawthere = world->getRawLocked(IntTup(pos.position.x, pos.position.y, pos.position.z));
 

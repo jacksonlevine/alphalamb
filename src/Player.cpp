@@ -311,7 +311,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
     // Check what block we're standing on...
     {
-        auto locked = world->tryToGetReadLockOnDMs();
+        auto locked = world->tryToGetReadLockOnDMsOnly();
         if (locked != std::nullopt)
         {
             lastBlockStandingOn = (MaterialName)world->getLocked(IntTup(camera.transform.position.x, camera.transform.position.y-2, camera.transform.position.z));
@@ -407,7 +407,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
                         bool isSpaceClear = true;
                         {
-                            auto locked = world->tryToGetReadLockOnDMs();
+                            auto locked = world->tryToGetReadLockOnDMsOnly();
                             if (locked != std::nullopt)
                             {
                                 int blockType = world->getLocked(ledgeBlockPos);
@@ -440,7 +440,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
                             bool spotclear = true;
                             {
-                                auto locked = world->tryToGetReadLockOnDMs();
+                                auto locked = world->tryToGetReadLockOnDMsOnly();
                                 if (locked != std::nullopt)
                                 {
                                     int blockType = world->getLocked(IntTup(
@@ -531,7 +531,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
             bool spotclear = true;
             {
-                auto locked = world->tryToGetReadLockOnDMs();
+                auto locked = world->tryToGetReadLockOnDMsOnly();
                 if (locked != std::nullopt)
                 {
                     int blockType = world->getLocked(IntTup(
@@ -593,7 +593,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
             bool spotclear = false;
             {
-                auto locked = world->tryToGetReadLockOnDMs();
+                auto locked = world->tryToGetReadLockOnDMsOnly();
                 if (locked != std::nullopt)
                 {
                     int blockType = world->getLocked(IntTup(

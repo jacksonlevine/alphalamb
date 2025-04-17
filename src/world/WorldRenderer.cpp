@@ -475,49 +475,49 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
         for (auto & spotHere : checkspots)
         {
-            {
-                TwoIntTup chunk;
-                if (lightOverlapNotificationQueue.try_pull(chunk) == boost::queue_op_status::success)
-                {
-                    if (mbtActiveChunks.contains(chunk))
-                    {
-                        auto & uci = mbtActiveChunks.at(chunk);
-
-                        UsableMesh mesh;
-                        {
-
-
-                            mesh = fromChunk(chunk, world, chunkSize, false);
-
-
-                        }
-
-                        size_t changeBufferIndex = -1;
-                        {
-                            std::unique_lock<std::mutex> lock(mbtBufferMutex);
-                            mbtBufferCV.wait(lock, [&]() {
-                                return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
-                            });
-
-                            if (!meshBuildingThreadRunning) break;
-                        }
-
-                        if (changeBufferIndex != -1)
-                        {
-                            auto& buffer = changeBuffers[changeBufferIndex];
-                            buffer.in_use.store(true);
-                            buffer.mesh = mesh;
-                            buffer.chunkIndex = uci.chunkIndex;
-                            buffer.from = chunk;
-                            buffer.to = chunk;
-                            buffer.ready.store(true);
-                            buffer.in_use.store(false);
-                        }
-
-
-                    }
-                }
-            }
+            // {
+            //     TwoIntTup chunk;
+            //     if (lightOverlapNotificationQueue.try_pull(chunk) == boost::queue_op_status::success)
+            //     {
+            //         if (mbtActiveChunks.contains(chunk))
+            //         {
+            //             auto & uci = mbtActiveChunks.at(chunk);
+            //
+            //             UsableMesh mesh;
+            //             {
+            //
+            //
+            //                 mesh = fromChunk(chunk, world, chunkSize, false);
+            //
+            //
+            //             }
+            //
+            //             size_t changeBufferIndex = -1;
+            //             {
+            //                 std::unique_lock<std::mutex> lock(mbtBufferMutex);
+            //                 mbtBufferCV.wait(lock, [&]() {
+            //                     return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
+            //                 });
+            //
+            //                 if (!meshBuildingThreadRunning) break;
+            //             }
+            //
+            //             if (changeBufferIndex != -1)
+            //             {
+            //                 auto& buffer = changeBuffers[changeBufferIndex];
+            //                 buffer.in_use.store(true);
+            //                 buffer.mesh = mesh;
+            //                 buffer.chunkIndex = uci.chunkIndex;
+            //                 buffer.from = chunk;
+            //                 buffer.to = chunk;
+            //                 buffer.ready.store(true);
+            //                 buffer.in_use.store(false);
+            //             }
+            //
+            //
+            //         }
+            //     }
+            // }
 
             for (auto & chunk : implicatedChunks)
             {

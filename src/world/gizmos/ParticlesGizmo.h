@@ -198,7 +198,7 @@ private:
         PxU32 index = 0;
         PxU32 tindex = 0;
 
-        auto lock = world->tryToGetReadLockOnDMs();
+        auto lock = world->tryToGetReadLockOnDMsOnly();
         if (lock != std::nullopt)
         {
             for (auto & particle : instances)

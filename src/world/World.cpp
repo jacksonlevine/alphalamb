@@ -326,6 +326,24 @@ shared_lock<std::shared_mutex>>>> World::tryToGetReadLockOnDMs()
 
 }
 
+std::optional<std::pair<std::shared_lock<std::shared_mutex>, std::shared_lock<std::shared_mutex>>> World::tryToGetReadLockOnDMsOnly()
+{
+
+    std::shared_lock<std::shared_mutex> lock1(userDataMap->mutex(), std::try_to_lock);
+    if (!lock1.owns_lock()) {
+        return std::nullopt;
+    }
+
+    std::shared_lock<std::shared_mutex> lock2(nonUserDataMap->mutex(), std::try_to_lock);
+    if (!lock2.owns_lock()) {
+        return std::nullopt;
+    }
+
+    return std::make_pair(std::move(lock1), std::move(lock2));
+
+}
+
+
 std::optional<std::pair<std::shared_lock<std::shared_mutex>, std::pair<std::shared_lock<std::shared_mutex>, std::
 unique_lock<std::shared_mutex>>>> World::tryToGetReadLockOnDMsAndWriteLockOnLM()
 {
