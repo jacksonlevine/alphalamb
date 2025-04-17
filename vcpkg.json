@@ -11,6 +11,7 @@
         "openal-soft",
         "entt",
         "cereal",
-        "tbb"
+        "tbb",
+        "rapidcheck"
     ]
 }

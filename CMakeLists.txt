@@ -34,6 +34,9 @@ find_package(SndFile CONFIG REQUIRED)
 find_package(OpenAL CONFIG REQUIRED)
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 find_package(EnTT CONFIG REQUIRED)
+# this is heuristically generated, and may not be correct
+find_package(rapidcheck CONFIG REQUIRED)
+
 
 find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container variant2 thread)
 message(STATUS "Boost version: ${Boost_VERSION}")
@@ -254,9 +257,11 @@ target_link_libraries(DistantGarden PRIVATE pocketpy)
 target_link_libraries(DistantGarden PRIVATE TBB::tbb)
 
 function(add_common_libraries target)
+
+    # note: 3 additional targets are not displayed.
+    target_link_libraries(${target} PRIVATE rapidcheck rapidcheck_boost)
     
-    target_precompile_headers( ${target}
-            PRIVATE ${CMAKE_SOURCE_DIR}/src/PrecompHeader.h )
+    target_precompile_headers(${target} PRIVATE ${CMAKE_SOURCE_DIR}/src/PrecompHeader.h)
 
     target_link_libraries(${target} PRIVATE EnTT::EnTT)
 

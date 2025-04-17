@@ -44,7 +44,7 @@ uniform float scale;
 
             uniform float timeRendered;
 
-            out float brightness;
+            out vec3 brightness;
 
             out vec3 ppos;
             out vec3 grassColor;
@@ -62,13 +62,33 @@ uniform float scale;
                 float occlvalues[4] = float[4](0.0, -0.3, -0.5, -0.7);
                uint ppp = floatBitsToUint(inBrightness);
 
-                //// Unpack:
-                uint block = (ppp >> 16u) & 0xFFFFu;     // upper 16 bits
-                uint occlusion = (ppp >> 14u) & 0x3u;    // bits 14–15
-                uint ambient = ppp & 0x3FFFu;            // lower 14 bits
+
+        uint blockRaw   = (ppp >> 16u) & 0xFFFFu; // Get the upper 16 bits for the block (12-bit RGB)
+        uint ambientRaw = ppp & 0x3FFFu;          // Get the lower 14 bits for the ambient (12-bit RGB)
+
+        uint occlusion  = (ambientRaw >> 14u) & 0x3u; // Extract occlusion (2 bits)
+
+        ambientRaw &= 0x0FFFu;
+
+        uint blockr = (blockRaw >> 8u) & 0xFu;
+        uint blockg = (blockRaw >> 4u) & 0xFu;
+        uint blockb = blockRaw & 0xFu;
+
+        uint ambientr = (ambientRaw >> 8u) & 0xFu;
+        uint ambientg = (ambientRaw >> 4u) & 0xFu;
+        uint ambientb = ambientRaw & 0xFu;
 
 
-                brightness = max(0.2, min(1.0, (float(block)/12.0) + ((float(ambient)/12.0) * ambientBrightness)) + occlvalues[occlusion]);
+                brightness =
+                vec3(
+                max(0.2, min(1.0, (float(blockr)/12.0) + ((float(ambientr)/12.0) * ambientBrightness)) + occlvalues[occlusion]),
+                max(0.2, min(1.0, (float(blockg)/12.0) + ((float(ambientg)/12.0) * ambientBrightness)) + occlvalues[occlusion]),
+                max(0.2, min(1.0, (float(blockb)/12.0) + ((float(ambientb)/12.0) * ambientBrightness)) + occlvalues[occlusion])
+                );
+
+
+
+
                 TexCoord = inTexCoord;
 
                 float fadeInProgress = min(1.0, timeRendered*2.5f);
@@ -101,7 +121,7 @@ uniform float scale;
             out vec4 FragColor;
 
             in vec2 TexCoord;
-            in float brightness;
+            in vec3 brightness;
             uniform sampler2D texture1;
             uniform sampler3D lut;
             uniform vec3 camPos;
@@ -165,7 +185,7 @@ if(underwater > 0.5f) {
 
 }
 vec4 tex = texture(texture1, TexCoord) + vec4(grassColor * 0.3, 0.0);
-FragColor = mix(vec4((tex * brightness).xyz, tex.a), fogColor, fogFactor);
+FragColor = mix(vec4(vec3(tex.r * brightness.r, tex.g * brightness.g, tex.b * brightness.b), tex.a), fogColor, fogFactor);
                 vec3 lutCoords = clamp(FragColor.xyz, 0.0, 1.0);
                 lutCoords = lutCoords * (63.0/64.0) + (0.5/64.0);
                 vec4 lutTex = texture(lut, lutCoords);

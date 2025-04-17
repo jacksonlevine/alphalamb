@@ -22,7 +22,7 @@ void lighttest()
     //         }
     // }
     int fake = 0;
-    std::vector<std::pair<IntTup, int>>* lightSources = new std::vector<std::pair<IntTup, int>>();
+    std::vector<std::pair<IntTup, ColorPack>>* lightSources = new std::vector<std::pair<IntTup, ColorPack>>();
     {
         auto url = std::shared_lock<std::shared_mutex>(world.userDataMap->mutex());
         auto nrl = std::shared_lock<std::shared_mutex>(world.nonUserDataMap->mutex());
@@ -36,7 +36,7 @@ void lighttest()
                     {
                         fake++;
                     }
-                    lightSources->emplace_back(IntTup(i, j, k), 16);
+                    lightSources->emplace_back(IntTup(i, j, k), SKYLIGHTVAL);
                 }
             }
         }

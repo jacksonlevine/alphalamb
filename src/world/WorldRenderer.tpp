@@ -28,7 +28,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
 
     if (light || !litChunks.contains(spot))
     {
-        std::cout << "Doing it with light " << std::endl;
+       // std::cout << "Doing it with light " << std::endl;
         lightPassOnChunk<queueimplics>(world, spot, chunkSize, 250, locked);
         litChunks.insert(spot);
     }
@@ -122,8 +122,8 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         if (neighborair || solidNeighboringTransparent || (blockHereTransparent && (neighblock != blockID) && neightransparent)) {
                             Side side = static_cast<Side>(i);
 
-                            uint16_t blockbright = 0;
-                            uint16_t ambientbright = 0;
+                            ColorPack blockbright = {};
+                            ColorPack ambientbright = {};
                             auto ns = here + neighborSpots[(int)side];
                             if (locked)
                             {

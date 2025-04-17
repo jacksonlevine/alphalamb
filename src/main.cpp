@@ -1401,11 +1401,7 @@ int main()
 
                 break; //Only do oen per frame
             }
-            TwoIntTup popped;
-            if (lightOverlapNotificationQueue.try_pull(popped) == boost::queue_op_status::success)
-            {
-                theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(popped, false);
-            }
+
 
             Atmosphere currAtmos = skyAndFogColor(theScene.currentPlanetType);
 
@@ -1599,15 +1595,15 @@ int main()
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, worldTex.id);
 
-                if(isme)
-                {
-                    drawHandledBlock(theScene.guiCamera->transform.position, invComp.currentHeldBlock, mainShader.shaderID, invComp.lastHeldBlock, renderComp.handledBlockMeshInfo);
+                // if(isme)
+                // {
+                //     drawHandledBlock(theScene.guiCamera->transform.position, invComp.currentHeldBlock, mainShader.shaderID, invComp.lastHeldBlock, renderComp.handledBlockMeshInfo);
+                //
+                // } else
+                // {
+                drawHandledBlock(camera.transform.position, invComp.currentHeldBlock, mainShader.shaderID, invComp.lastHeldBlock, renderComp.handledBlockMeshInfo);
 
-                } else
-                {
-                    drawHandledBlock(camera.transform.position, invComp.currentHeldBlock, mainShader.shaderID, invComp.lastHeldBlock, renderComp.handledBlockMeshInfo);
-
-                }
+                //}
 
                 glEnable(GL_DEPTH_TEST);
 

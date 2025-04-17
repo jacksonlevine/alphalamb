@@ -288,7 +288,7 @@ private:
                                     auto resultantspot = concerningChunkPos + TwoIntTup(x, z);
                                     if (!g->contains(resultantspot))
                                     {
-                                        //WorldRenderer::generateChunk(&serverWorld, resultantspot);
+                                        WorldRenderer::generateChunk(&serverWorld, resultantspot);
                                         g->insert(resultantspot);
                                     }
 
