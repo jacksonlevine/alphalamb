@@ -524,7 +524,7 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
             auto & camera = scene->our<jl::Camera>();
 
             camera.updateYPIndirect(camera.targetYaw + static_cast<float>(xOffset), camera.targetPitch + static_cast<float>(yOffset));
-            scene->guiCamera->updateWithYawPitch(scene->guiCamera->transform.yaw + static_cast<float>(xOffset), scene->guiCamera->transform.pitch + static_cast<float>(yOffset));
+            //scene->guiCamera->updateWithYawPitch(scene->guiCamera->transform.yaw + static_cast<float>(xOffset), scene->guiCamera->transform.pitch + static_cast<float>(yOffset));
         }
 
         lastx = xpos;
@@ -1245,7 +1245,7 @@ int main()
                         //std::cout << " Server Setting" << std::endl;
                             auto & spot = m.spot;
                             //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
-                            BlockType blockThere = scene->world->get(spot);
+                            BlockType blockThere = scene->world->get(spot); //TODO why is it locking on it maybe we can do something better here
                             glm::vec3 burstspot = glm::vec3(
                                 spot.x+ 0.5,
                                 spot.y + 0.5,
@@ -1584,14 +1584,14 @@ int main()
 
                 glUniform3f(offsetLoc, -0.5f, -0.5f, -0.5f);
                 bool isme = (id == theScene.myPlayerIndex);
-                if (isme)
-                {
-                    //std::cout << "isme " << std::endl;
-                    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.guiCamera->mvp));
-                    glUniform3f(posLoc, 3.0, -1.2, std::min((float)wwi / 600.0f, 2.0f));
-                    glDisable(GL_DEPTH_TEST);
-                    glUniform3f(camPosLoc, 0, 0, 0);
-                } else
+                // if (isme)
+                // {
+                //     //std::cout << "isme " << std::endl;
+                //     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.guiCamera->mvp));
+                //     glUniform3f(posLoc, 3.0, -1.2, std::min((float)wwi / 600.0f, 2.0f));
+                //     glDisable(GL_DEPTH_TEST);
+                //     glUniform3f(camPosLoc, 0, 0, 0);
+                // } else
                 {
 
                     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.our<jl::Camera>().mvp));
