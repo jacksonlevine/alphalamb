@@ -34,7 +34,7 @@ inline void drawHandledBlock(glm::vec3 playerPos, MaterialName block, GLuint glt
     }
     if (meshInfo.drawInstructions.vao != 0)
     {
-        if (std::find(transparents.begin(), transparents.end(), block) != transparents.end())
+        if (transparents.test(block))
         {
             drawTransparentsFromDrawInstructions(meshInfo.drawInstructions);
         } else

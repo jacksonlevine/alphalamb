@@ -892,8 +892,8 @@ int main()
                     theScene.blockFeetIn = (MaterialName)(theScene.world->getRawLocked(IntTup(pos.x, (pos.y - 1.0f), pos.z)) & BLOCK_ID_BITS);
                     theScene.blockFeetInLower = (MaterialName)(theScene.world->getRawLocked(IntTup(pos.x, std::floor(pos.y - 1.0f - 0.5f), pos.z)) & BLOCK_ID_BITS);
                 }
-                auto blockFeetInWater = std::find(liquids.begin(), liquids.end(), theScene.blockFeetIn) != liquids.end();
-                auto blockFeetInLowerWater = std::find(liquids.begin(), liquids.end(), theScene.blockFeetInLower) != liquids.end();
+                auto blockFeetInWater = liquids.test(theScene.blockFeetIn);
+                auto blockFeetInLowerWater = liquids.test(theScene.blockFeetInLower);
                 if(blockFeetInWater)
                 {
                     cont.swimming = true;

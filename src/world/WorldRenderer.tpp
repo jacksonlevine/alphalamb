@@ -55,7 +55,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
 
                 chunkData[idx] = locked ? world->getRawLocked(here) : world->getRaw(here);
                 isTransparent[idx] = (chunkData[idx] == AIR) ||
-                    (std::ranges::find(transparents, (chunkData[idx] & BLOCK_ID_BITS)) != transparents.end());
+                    (transparents.test((chunkData[idx] & BLOCK_ID_BITS)));
             }
         }
     }
@@ -78,7 +78,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
         if (x < 0 || x >= chunkSize || y < 0 || y >= 250 || z < 0 || z >= chunkSize) {
             IntTup pos = start + IntTup(x, y, z);
             BlockType block = locked ? world->getRawLocked(pos) : world->getRaw(pos);
-            return (block == AIR) || (std::ranges::find(transparents, block & BLOCK_ID_BITS) != transparents.end());
+            return (block == AIR) || (transparents.test(block & BLOCK_ID_BITS));
         }
 
         int idx = (x * chunkSize * 250) + (z * 250) + y;
@@ -222,7 +222,7 @@ __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideH
         glm::vec2(onePixel, -(onePixel + textureWidth)),
     };
     //If the material's transparent, add these verts to the "t____" parts of the mesh. If not, add them to the normal mesh.
-    if (std::ranges::find(transparents, material) != transparents.end())
+    if (transparents.test(material))
     {
         std::ranges::transform(cubefaces[static_cast<int>(side)], std::back_inserter(mesh.tpositions), [offset, sideHeight, offsety](const auto& v) {
             auto newv = v;

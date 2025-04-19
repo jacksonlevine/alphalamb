@@ -106,73 +106,57 @@ DEFINE_ENUM_WITH_STRING_CONVERSIONS(MaterialName, BlockType,
     (JETPACK_PARTICLE_BLOCK)
     (DG_COMPUTERBLOCK)
 )
-constexpr auto noHeadBlock = std::to_array({DOOR});
-constexpr auto noAmbOccl = std::to_array({
-    FENCE, GLASS,DG_COMPUTERBLOCK, DOOR, CABLE, LIGHT});
-constexpr auto noCustCollShape = std::to_array({
-    DG_COMPUTERBLOCK});
-constexpr auto liquids = std::to_array({
-    WATER
-});
-constexpr auto noColl = std::to_array({
-    WATER
-});
-constexpr auto transparents = std::to_array({
+
+constexpr std::bitset<BLOCK_COUNT> makeBitset(std::initializer_list<int> ids) {
+    std::bitset<BLOCK_COUNT> bits;
+    for (int id : ids) {
+        bits.set(id);
+    }
+    return bits;
+}
+
+constexpr auto noHeadBlock = makeBitset({DOOR});
+
+constexpr auto noAmbOccl = makeBitset({FENCE, GLASS, DG_COMPUTERBLOCK, DOOR, CABLE, LIGHT});
+
+constexpr auto noCustCollShape = makeBitset({DG_COMPUTERBLOCK});
+
+constexpr auto liquids = makeBitset({WATER});
+
+constexpr auto noColl = makeBitset({WATER});
+
+constexpr auto transparents = makeBitset({
     AIR,
     DG_COMPUTERBLOCK,
-
     STONE_STAIRS,
     WOOD_STAIRS,
-
-       LEAVES,
-
-   BUSH_LEAVES,
-
-   LIGHT,
-
-   DOOR,
-
-   LADDER,
-
-   WOODEN_TRUNK,
-
-   BAMBOO,
-
-   RED_LIGHT,
-
-   SNOWY_LEAVES,
-
-   ARTIC_WILLOW_LEAVES,
-
-   CEDAR_LEAVES,
-
-   PALM_LEAVES,
-
-   JOSHUA_LEAVES,
-
-   PAPER_BIRCH_LEAVES,
-
-   GREEN_ALDER_LEAVES,
-
-   WILLOW_LEAVES,
-
-   BEECH_LEAVES,
-
-   WESTERN_HEMLOCK_LEAVES,
-
-   EUCALYPTUS_LEAVES,
-
-   FIG_LEAVES,
-
-   JACK_O_LANTERN,
-
-   CABLE,
-       WATER,
-
-   GLASS,
-
-   TORCH,
-FENCE});
+    LEAVES,
+    BUSH_LEAVES,
+    LIGHT,
+    DOOR,
+    LADDER,
+    WOODEN_TRUNK,
+    BAMBOO,
+    RED_LIGHT,
+    SNOWY_LEAVES,
+    ARTIC_WILLOW_LEAVES,
+    CEDAR_LEAVES,
+    PALM_LEAVES,
+    JOSHUA_LEAVES,
+    PAPER_BIRCH_LEAVES,
+    GREEN_ALDER_LEAVES,
+    WILLOW_LEAVES,
+    BEECH_LEAVES,
+    WESTERN_HEMLOCK_LEAVES,
+    EUCALYPTUS_LEAVES,
+    FIG_LEAVES,
+    JACK_O_LANTERN,
+    CABLE,
+    WATER,
+    GLASS,
+    TORCH,
+    FENCE
+});
 
 using TexCoord = std::pair<uint8_t, uint8_t>;
 using BlockTextures = std::array<TexCoord, 3>;

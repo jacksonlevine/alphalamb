@@ -118,10 +118,7 @@ void propagateAllLightsLayered(World* world,
     std::bitset<volume> visited;
     // Layers indexed by max(R,G,B)
     std::vector<std::vector<std::tuple<IntTup, IntTup, ColorPack>>> layers(maxLightLevel + 1);
-    std::array<bool, 256> transparentCache{};
-    for (int i : transparents) {
-        transparentCache[i] = true;
-    }
+
 
     // Initialize light sources
     for (const auto& [pos, color] : lightSources) {
@@ -160,7 +157,7 @@ void propagateAllLightsLayered(World* world,
                 size_t idx = (neighbor.x - minX) + (neighbor.z - minZ) * width + (neighbor.y - minY) * width * depth;
                 if (idx >= volume) continue;
                 if (visited[idx]) continue;
-                if (!transparentCache[world->getLocked(neighbor)]) continue;
+                if (!transparents.test(world->getLocked(neighbor))) continue;
 
                 visited[idx] = true;
                 // Reduce all RGB components by 1

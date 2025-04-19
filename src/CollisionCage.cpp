@@ -35,9 +35,9 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot, float deltaTime)
                             IntTup spotHere = blockSpot + IntTup(x,y,z);
                             auto rawhere = world->getRawLocked(spotHere);
                             auto idhere = (MaterialName)(rawhere & BLOCK_ID_BITS);
-                            if(rawhere != AIR && std::find(noColl.begin(), noColl.end(), idhere) == noColl.end())
+                            if(rawhere != AIR && !noColl.test(idhere))
                             {
-                                if (auto func = findSpecialBlockMeshFunc(idhere); func != std::nullopt && std::find(noCustCollShape.begin(), noCustCollShape.end(), idhere) == noCustCollShape.end())
+                                if (auto func = findSpecialBlockMeshFunc(idhere); func != std::nullopt && !noCustCollShape.test(idhere))
                                 {
                                     func.value()(mesh, rawhere, IntTup(spotHere.x, spotHere.y, spotHere.z), index, tindex);
                                 } else

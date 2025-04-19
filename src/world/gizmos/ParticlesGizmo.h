@@ -209,7 +209,7 @@ private:
                     spot.y -= 1;
                 }
                 auto wl = (MaterialName)(world->getLocked(spot));
-                if (wl != AIR && std::find(noColl.begin(), noColl.end(), wl) != noColl.end())
+                if (wl != AIR && noColl.test(wl))
                 {
                     addFace(PxVec3(spot.x, spot.y, spot.z), Side::Top, GRASS, 1, mesh, index, tindex);
                 }

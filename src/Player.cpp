@@ -317,10 +317,10 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
             lastBlockStandingOn = (MaterialName)world->getLocked(IntTup(camera.transform.position.x, camera.transform.position.y-2, camera.transform.position.z));
             auto blockInHead = world->getLocked(IntTup(std::floor(camera.transform.position.x), std::floor(camera.transform.position.y), std::floor(camera.transform.position.z)));
             auto blockOverHead = world->getLocked(IntTup(std::floor(camera.transform.position.x), std::floor(camera.transform.position.y + 1), std::floor(camera.transform.position.z)));
-            if (blockInHead != AIR && std::find(noHeadBlock.begin(), noHeadBlock.end(), blockInHead) == noHeadBlock.end())
+            if (blockInHead != AIR && !noHeadBlock.test(blockInHead))
             {
                 crouchOverride = true;
-            } else if (blockOverHead == AIR || std::find(noHeadBlock.begin(), noHeadBlock.end(), blockOverHead) != noHeadBlock.end())
+            } else if (blockOverHead == AIR || noHeadBlock.test(blockOverHead))
             {
                 crouchOverride = controls.crouch;
             }

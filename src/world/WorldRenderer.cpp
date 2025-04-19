@@ -1094,7 +1094,7 @@ void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, 
         for (const auto& offset : adjacentOffsets) {
             IntTup adjPos = blockPos + offset;
             BlockType adjBlock = locked ? world->getLocked(adjPos) : world->get(adjPos);
-            if (adjBlock != AIR && std::find(noAmbOccl.begin(), noAmbOccl.end(), adjBlock) == noAmbOccl.end()) {
+            if (adjBlock != AIR && !noAmbOccl.test(adjBlock)) {
                 solidCount++;
             }
         }
@@ -1128,7 +1128,7 @@ void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, 
     };
 
     // Add brightness data to the appropriate arrays based on transparency
-    bool isTransparent = std::ranges::find(transparents, blockType) != transparents.end();
+    bool isTransparent = transparents.test(blockType);
     if (isTransparent) {
         mesh.tbrightness.insert(mesh.tbrightness.end(), {
             packonocclbits(occlusion[0], blockandambbright), isGrass, packonocclbits(occlusion[1], blockandambbright), isGrass,

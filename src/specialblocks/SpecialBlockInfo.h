@@ -32,7 +32,7 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<f
     //If the material's transparent, add these verts to the "t____" parts of the mesh. If not, add them to the normal mesh.
     PxVec3 offset(position.x, position.y, position.z);
 
-    if (std::ranges::find(transparents, block) != transparents.end())
+    if (transparents.test(block))
     {
         auto transformed =  cwtriangles | std::views::transform([&](const PxVec3& v) {
             auto newv = v;
