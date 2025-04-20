@@ -253,8 +253,7 @@ add_executable(DGServer
 )
 
 target_link_libraries(DistantGarden PRIVATE OpenAL::OpenAL)
-target_link_libraries(DistantGarden PRIVATE pocketpy)
-target_link_libraries(DistantGarden PRIVATE TBB::tbb)
+
 
 function(add_common_libraries target)
 
@@ -264,6 +263,8 @@ function(add_common_libraries target)
     target_precompile_headers(${target} PRIVATE ${CMAKE_SOURCE_DIR}/src/PrecompHeader.h)
 
     target_link_libraries(${target} PRIVATE EnTT::EnTT)
+    target_link_libraries(${target} PRIVATE pocketpy)
+    target_link_libraries(${target} PRIVATE TBB::tbb)
 
     target_link_libraries(${target} PRIVATE cereal::cereal)
     # Include directories

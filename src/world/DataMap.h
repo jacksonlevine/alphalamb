@@ -19,7 +19,11 @@ public:
     virtual std::optional<BlockType> getUnsafe(const IntTup& spot) const = 0;
     virtual void clear() = 0;
     virtual void set(const IntTup& spot, BlockType block) = 0;
-    virtual void erase(const IntTup& spot, bool locked = true) = 0;
+    virtual void erase(const IntTup& spot, bool locked = false) = 0;
+
+    ///Erase a chunk of data
+    virtual void erase(const TwoIntTup& spot, bool locked = false) = 0;
+
     virtual void setUnsafe(const IntTup& spot, BlockType block) = 0;
     virtual std::shared_mutex& mutex() = 0;
 

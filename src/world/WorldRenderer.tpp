@@ -25,14 +25,15 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
 #ifdef MEASURE_CHUNKREB
     auto startt = std::chrono::high_resolution_clock::now();
 #endif
-
-    if (light || !litChunks.contains(spot))
     {
-       // std::cout << "Doing it with light " << std::endl;
-        lightPassOnChunk<queueimplics>(world, spot, chunkSize, 250, locked);
-        litChunks.insert(spot);
+        tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor acc;
+        if (light || !litChunks.find(acc, spot))
+        {
+           // std::cout << "Doing it with light " << std::endl;
+            lightPassOnChunk<queueimplics>(world, spot, chunkSize, 250, locked);
+            litChunks.insert({spot, true});
+        }
     }
-
 
     UsableMesh mesh;
     PxU32 index = 0;

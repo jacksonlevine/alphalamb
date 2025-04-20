@@ -12,7 +12,7 @@
 // Add these to WorldRenderer.h class definition
 struct ChunkRebuildRequest {
     TwoIntTup chunkPos;
-    size_t chunkIndex = 0 ;
+    size_t chunkIndex = 0;
     bool isHighPriority;
     bool rebuild = true;
     IntTup changeSpot = IntTup(0,0,0);
@@ -46,7 +46,6 @@ struct ChunkRebuildRequest {
           timestamp(std::chrono::steady_clock::now()) {}
     ChunkRebuildRequest()
         : chunkPos(0, 0), chunkIndex(0), isHighPriority(false), timestamp(std::chrono::steady_clock::now()) {}
-
 };
 
 // Priority queue comparator

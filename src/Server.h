@@ -17,7 +17,7 @@
 #include "world/DataMap.h"
 #include "world/World.h"
 using tcp = boost::asio::ip::tcp;
-using flatCposSet = boost::unordered_flat_set<TwoIntTup, TwoIntTupHash>;
+using flatCposSet = tbb::concurrent_unordered_set<TwoIntTup, TwoIntTupHash>;
 
 struct ServerPlayer
 {

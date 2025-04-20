@@ -149,7 +149,7 @@ float minFogHeight = 20.0;    // Fog reaches max at y=20
 float fogMaxDistance = renderDistance * 16.0; // Fog fades in near render distance
 
 // Calculate horizontal (XZ) distance from camera
-float horizDist = length(ppos - camPos);
+float horizDist = mDist(ppos.x, ppos.z, camPos.x, camPos.z);
 
 // Calculate vertical distance (height fog)
 float heightFactor = smoothstep(maxFogHeight, minFogHeight, ppos.y);

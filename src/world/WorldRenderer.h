@@ -156,7 +156,7 @@ extern std::atomic<int> NUM_THREADS_RUNNING;
 extern LightMapType lightmap;
 extern LightMapType ambientlightmap;
 extern std::shared_mutex lightmapMutex;
-extern tbb::concurrent_unordered_set<TwoIntTup, TwoIntTupHash> litChunks;
+extern tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare> litChunks;
 
 class WorldRenderer {
 public:
@@ -212,7 +212,7 @@ public:
     boost::unordered_flat_map<TwoIntTup, UsedChunkInfo, TwoIntTupHash, std::equal_to<>> mbtActiveChunks = {};
 
     ///Chunks that have had their terrain features generated already.
-    boost::unordered_flat_set<TwoIntTup, TwoIntTupHash> generatedChunks;
+    tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare> generatedChunks;
 
     static void generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr);
 
@@ -263,20 +263,20 @@ public:
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
-    std::array<ChangeBuffer, 64> changeBuffers = {};
+    std::array<ChangeBuffer, 256> changeBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<64>> freedChangeBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<256>> freedChangeBuffers = {};
 
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
-    std::array<ChangeBuffer, 64> userChangeMeshBuffers = {};
+    std::array<ChangeBuffer, 256> userChangeMeshBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<64>> freedUserChangeMeshBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<256>> freedUserChangeMeshBuffers = {};
 
     ///After being added to mbtActiveChunks, we await a confirmation back in this before we know we can reuse that chunk again
     ///One way queue, from main thread to mesh building thread, to notify of mbtActiveChunks entries that have been confirmed/entered into activeChunks.
-    boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<64>> confirmedActiveChunksQueue = {};
+    boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<256>> confirmedActiveChunksQueue = {};
 
 
 
@@ -420,9 +420,9 @@ public:
     size_t mbtActiveChunksSize = sizeof(mbtActiveChunks) + (sizeof(std::pair<TwoIntTup, UsedChunkInfo>) * mbtActiveChunks.bucket_count());
     add_size("mbtActiveChunks (boost::unordered_flat_map)", mbtActiveChunksSize);
 
-    // generatedChunks (boost::unordered_flat_set)
-    size_t generatedChunksSize = sizeof(generatedChunks) + (sizeof(TwoIntTup) * generatedChunks.bucket_count());
-    add_size("generatedChunks (boost::unordered_flat_set)", generatedChunksSize);
+    //// generatedChunks (boost::unordered_flat_set)
+    //size_t generatedChunksSize = sizeof(generatedChunks) + (sizeof(TwoIntTup) * generatedChunks.unsafe_bucket_count());
+    //add_size("generatedChunks (boost::unordered_flat_set)", generatedChunksSize);
 
     // changeBuffers (std::array<ChangeBuffer, 128>)
     size_t changeBuffersSize = sizeof(changeBuffers);

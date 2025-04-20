@@ -17,7 +17,7 @@ std::atomic<int> NUM_THREADS_RUNNING = 0;
 LightMapType ambientlightmap = {};
 LightMapType lightmap = {};
 std::shared_mutex lightmapMutex = {};
-tbb::concurrent_unordered_set<TwoIntTup, TwoIntTupHash> litChunks;
+tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare> litChunks;
 
 #include "WorldRenderer.tpp"
 void genCGLBuffers()
@@ -321,7 +321,7 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
             freedUserChangeMeshBuffers.push(i);  // Return to free list
             notifyBufferFreed();
 
-            //break; //Only do one per frame
+            break; //Only do one per frame
         }
     }
     TwoIntTup playerChunkPosition = worldToChunkPos(
@@ -421,7 +421,14 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         TwoIntTup(std::floor(playerCamera->transform.position.x),
                      std::floor(playerCamera->transform.position.z)));
 
-        static std::array<TwoIntTup, (renderDistance*2)*(renderDistance*2)> checkspots = {};
+        static std::vector<TwoIntTup> checkspots((currentRenderDistance * 2) * (currentRenderDistance * 2));
+
+        static int lastRendDist = currentRenderDistance;
+        if (currentRenderDistance != lastRendDist) {
+            lastRendDist = currentRenderDistance;
+            checkspots.reserve((currentRenderDistance * 2) * (currentRenderDistance * 2));
+        }
+
 
         int index = 0;
         for (int i = -currentRenderDistance; i < currentRenderDistance; i++)
@@ -447,30 +454,30 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
             int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
             if(dist <= currentMinDistance())
             {
-                if(!generatedChunks.contains(spotHere))
-                {
+              /*  if(!generatedChunks.contains(spotHere))
+                {*/
                     generateChunk(world, spotHere, &implicatedChunks);
-                     generatedChunks.insert(spotHere);
+                //    generatedChunks.insert({spotHere, true});
 
-                }
+                //}
             }
         }
-        for (auto & spotHere : checkspots)
-        {
-            int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
-            if(dist <= currentMinDistance())
-            {
-                if(!litChunks.contains(spotHere))
-                {
+        //for (auto & spotHere : checkspots)
+        //{
+        //    int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
+        //    if(dist <= currentMinDistance())
+        //    {
+        //        if(!litChunks.contains(spotHere))
+        //        {
 
-                    lightPassOnChunk<false>(world, spotHere, chunkSize, 250, false);
-                    litChunks.insert(spotHere);
-                    //std::cout << "GAfter" << std::endl;
+        //            lightPassOnChunk<false>(world, spotHere, chunkSize, 250, false);
+        //            litChunks.insert(spotHere);
+        //            //std::cout << "GAfter" << std::endl;
 
 
-                }
-            }
-        }
+        //        }
+        //    }
+        //}
 
 
         for (auto & spotHere : checkspots)
@@ -691,6 +698,15 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
 
                                             mbtActiveChunks.erase(oldSpot);
+                                            //generatedChunks.erase(oldSpot);
+                                            litChunks.erase(oldSpot);
+                                            {
+                                                auto lmlock = std::unique_lock<std::shared_mutex>(lightmapMutex);
+                                                ambientlightmap.eraseChunk(oldSpot);
+                                                lightmap.eraseChunk(oldSpot);
+                                            }
+
+                                            world->nonUserDataMap->erase(oldSpot);
                                             mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
 
                                             buffer.ready.store(true);   // Signal that data is ready
