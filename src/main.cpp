@@ -1568,15 +1568,23 @@ int main()
             glUniform1f(timeRenderedLoc, 10.0f);
             glUniform1f(scaleLoc, 0.4f);
 
+            glUseProgram(mainShader.shaderID);
+
+            glUniform1f(odffLoc, dewyFogFactorAtCam);
+
+            glUniform3f(fogColLoc, currAtmos.fogColor.x, currAtmos.fogColor.y, currAtmos.fogColor.z);
+
+            glUniform3f(offsetLoc, -0.5f, -0.5f, -0.5f);
+
             for (auto entity : playerView)
             {
                 auto id = entity;
 
-                auto inventory = playerView.get<InventoryComponent>(entity);
-                auto camera = playerView.get<jl::Camera>(entity);
-                auto controls = playerView.get<Controls>(entity);
-                auto invComp = playerView.get<InventoryComponent>(entity);
-                auto renderComp = playerView.get<RenderComponent>(entity);
+                auto & inventory = playerView.get<InventoryComponent>(entity);
+                auto & camera = playerView.get<jl::Camera>(entity);
+                auto & controls = playerView.get<Controls>(entity);
+                auto & invComp = playerView.get<InventoryComponent>(entity);
+                auto & renderComp = playerView.get<RenderComponent>(entity);
 
                 auto equippeditems = inventory.inventory.getEquippedItems();
                 bool jpEquipped = false;
@@ -1590,13 +1598,7 @@ int main()
                 auto pos = camera.transform.position + (camera.transform.direction*0.5f) + (camera.transform.right * 0.5f);
                 pos.y -= 0.5f;
 
-                glUseProgram(mainShader.shaderID);
-
-                glUniform1f(odffLoc, dewyFogFactorAtCam);
-
-                glUniform3f(fogColLoc, currAtmos.fogColor.x, currAtmos.fogColor.y, currAtmos.fogColor.z);
-
-                glUniform3f(offsetLoc, -0.5f, -0.5f, -0.5f);
+                
                 bool isme = (id == theScene.myPlayerIndex);
                 // if (isme)
                 // {
@@ -1625,15 +1627,15 @@ int main()
 
                 //}
 
-                glEnable(GL_DEPTH_TEST);
+               // glEnable(GL_DEPTH_TEST);
 
                 if (jpEquipped && !isme)
                 {
                     {
                         glUseProgram(gltfShader.shaderID);
 
-                        glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
-                        glActiveTexture(GL_TEXTURE0);
+                        //glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
+                        //glActiveTexture(GL_TEXTURE0);
 
                         if (controls.secondary1)
                         {

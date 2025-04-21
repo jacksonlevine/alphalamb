@@ -408,8 +408,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         freedUserChangeMeshBuffers.push(i);
     }
 
-        mbtActiveChunks.reserve(maxChunks);
-        activeChunks.reserve(maxChunks);
+        mbtActiveChunks.reserve(currentMaxChunks() + 4);
+        activeChunks.reserve(currentMaxChunks() + 4);
 
     while(meshBuildingThreadRunning)
     {
@@ -537,7 +537,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                     {
 
 
-                                mesh = fromChunk(chunk, world, chunkSize, true);
+                                mesh = fromChunk(chunk, world, chunkSize, false, true);
                                 //I think have to do light pass for generation implicated chunks because they put new blocks there
 
 
@@ -557,7 +557,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                         {
                             auto& buffer = changeBuffers[changeBufferIndex];
                             buffer.in_use.store(true);
-                            buffer.mesh = mesh;
+                            buffer.mesh = std::move(mesh);
                             buffer.chunkIndex = uci.chunkIndex;
                             buffer.from = chunk;
                             buffer.to = chunk;
@@ -943,7 +943,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         {
                             auto& buffer = userChangeMeshBuffers[changeBufferIndex];
                             buffer.in_use.store(true);
-                            buffer.mesh = mesh;
+                            buffer.mesh = std::move(mesh);
                             buffer.chunkIndex = request.chunkIndex;
                             buffer.from = request.chunkPos;
                             buffer.to = request.chunkPos;

@@ -24,17 +24,40 @@ struct DrawInstructions
 };
 
 using namespace physx;
-struct UsableMesh
+class UsableMesh
 {
-    std::vector<PxVec3> positions = {};
-    std::vector<glm::vec2> texcoords = {};
-    std::vector<PxU32> indices = {};
-    std::vector<float> brightness = {};
+public:
+    // Constructor that reserves space for 64 elements in each vector
+    UsableMesh()
+    {
+        positions.reserve(64);
+        texcoords.reserve(64);
+        indices.reserve(64);
+        brightness.reserve(64);
+        tpositions.reserve(64);
+        ttexcoords.reserve(64);
+        tindices.reserve(64);
+        tbrightness.reserve(64);
+    }
 
-    std::vector<PxVec3> tpositions = {};
-    std::vector<glm::vec2> ttexcoords = {};
-    std::vector<PxU32> tindices = {};
-    std::vector<float> tbrightness = {};
+    // Delete copy constructor and copy assignment to prevent copying
+    UsableMesh(const UsableMesh&) = delete;
+    UsableMesh& operator=(const UsableMesh&) = delete;
+
+    // Move constructor and move assignment are implicitly defined (or can be defaulted)
+    UsableMesh(UsableMesh&&) noexcept = default;
+    UsableMesh& operator=(UsableMesh&&) noexcept = default;
+
+    // Vectors with reserved capacity
+    std::vector<PxVec3> positions;
+    std::vector<glm::vec2> texcoords;
+    std::vector<PxU32> indices;
+    std::vector<float> brightness;
+
+    std::vector<PxVec3> tpositions;
+    std::vector<glm::vec2> ttexcoords;
+    std::vector<PxU32> tindices;
+    std::vector<float> tbrightness;
 };
 
 struct ChunkGLInfo

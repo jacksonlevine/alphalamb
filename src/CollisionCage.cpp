@@ -23,51 +23,64 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot, float deltaTime)
 
             PxU32 index = 0;
             PxU32 tindex = 0;
-            auto lock = world->tryToGetReadLockOnDMsOnly();
-            if(lock != std::nullopt)
+            bool locked = false;
             {
-                for(int x = -5; x < 5; x++)
-                {
-                    for(int z = -5; z < 5; z++)
-                    {
-                        for(int y = 5; y > -5; y--)
-                        {
-                            IntTup spotHere = blockSpot + IntTup(x,y,z);
-                            auto rawhere = world->getRawLocked(spotHere);
-                            auto idhere = (MaterialName)(rawhere & BLOCK_ID_BITS);
-                            if(rawhere != AIR && !noColl.test(idhere))
-                            {
-                                if (auto func = findSpecialBlockMeshFunc(idhere); func != std::nullopt && !noCustCollShape.test(idhere))
-                                {
-                                    func.value()(mesh, rawhere, IntTup(spotHere.x, spotHere.y, spotHere.z), index, tindex);
-                                } else
-                                {
-                                    for (int i = 0; i < 6; i++)
-                                    {
-                                        addFace(PxVec3(spotHere.x, spotHere.y, spotHere.z), (Side)i, GRASS, 1, mesh, index, tindex);
-                                    }
-                                }
 
+                auto lock = world->tryToGetReadLockOnDMsOnly();
+                if (lock != std::nullopt)
+                {
+                    locked = true;
+                    for (int x = -5; x < 5; x++)
+                    {
+                        for (int z = -5; z < 5; z++)
+                        {
+                            for (int y = 5; y > -5; y--)
+                            {
+                                IntTup spotHere = blockSpot + IntTup(x, y, z);
+                                auto rawhere = world->getRawLocked(spotHere);
+                                auto idhere = (MaterialName)(rawhere & BLOCK_ID_BITS);
+                                if (rawhere != AIR && !noColl.test(idhere))
+                                {
+                                    if (auto func = findSpecialBlockMeshFunc(idhere); func != std::nullopt && !noCustCollShape.test(idhere))
+                                    {
+                                        func.value()(mesh, rawhere, IntTup(spotHere.x, spotHere.y, spotHere.z), index, tindex);
+                                    }
+                                    else
+                                    {
+                                        for (int i = 0; i < 6; i++)
+                                        {
+                                            addFace(PxVec3(spotHere.x, spotHere.y, spotHere.z), (Side)i, GRASS, 1, mesh, index, tindex);
+                                        }
+                                    }
+
+                                }
                             }
                         }
                     }
                 }
-
-                if(collider == nullptr)
+            }
+            if (locked) {
+                //mesh.positions.insert(mesh.positions.end(), mesh.tpositions.begin(), mesh.tpositions.end());
+                //mesh.indices.insert(mesh.indices.end(), mesh.tindices.begin(), mesh.tpositions.end());
+                if (collider == nullptr)
                 {
-                    collider = createStaticMeshCollider(PxVec3(0,0,0), mesh.positions, mesh.indices);
-                } else
-                {
-                    editStaticMeshCollider(collider, PxVec3(0,0,0), mesh.positions, mesh.indices);
+                    collider = createStaticMeshCollider(PxVec3(0, 0, 0), mesh.positions, mesh.indices);
                 }
-                if(tcollider == nullptr)
+                else
                 {
-                    tcollider = createStaticMeshCollider(PxVec3(0,0,0), mesh.tpositions, mesh.tindices);
-                } else
+                    editStaticMeshCollider(collider, PxVec3(0, 0, 0), mesh.positions, mesh.indices);
+                }
+                if (tcollider == nullptr)
                 {
-                    editStaticMeshCollider(tcollider, PxVec3(0,0,0), mesh.tpositions, mesh.tindices);
+                    tcollider = createStaticMeshCollider(PxVec3(0, 0, 0), mesh.tpositions, mesh.tindices);
+                }
+                else
+                {
+                    editStaticMeshCollider(tcollider, PxVec3(0, 0, 0), mesh.tpositions, mesh.tindices);
                 }
             }
+                
+            
 
 
 
