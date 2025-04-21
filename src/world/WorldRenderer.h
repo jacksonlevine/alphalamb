@@ -209,7 +209,7 @@ public:
     boost::unordered_flat_map<TwoIntTup, ReadyToDrawChunkInfo, TwoIntTupHash, std::equal_to<>> activeChunks = {};
 
     ///Only for Mesh Building thread access. Its internal record of what spots it has generated & sent out the geometry for.
-    boost::unordered_flat_map<TwoIntTup, UsedChunkInfo, TwoIntTupHash, std::equal_to<>> mbtActiveChunks = {};
+    boost::unordered_map<TwoIntTup, UsedChunkInfo, TwoIntTupHash, std::equal_to<>> mbtActiveChunks = {};
 
     ///Chunks that have had their terrain features generated already.
     tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare> generatedChunks;
@@ -414,11 +414,11 @@ public:
 
     // activeChunks (boost::unordered_flat_map)
     size_t activeChunksSize = sizeof(activeChunks) + (sizeof(std::pair<TwoIntTup, ReadyToDrawChunkInfo>) * activeChunks.bucket_count());
-    add_size("activeChunks (boost::unordered_flat_map)", activeChunksSize);
+    add_size("activeChunks (boost::unordered_map)", activeChunksSize);
 
     // mbtActiveChunks (boost::unordered_flat_map)
     size_t mbtActiveChunksSize = sizeof(mbtActiveChunks) + (sizeof(std::pair<TwoIntTup, UsedChunkInfo>) * mbtActiveChunks.bucket_count());
-    add_size("mbtActiveChunks (boost::unordered_flat_map)", mbtActiveChunksSize);
+    add_size("mbtActiveChunks (boost::unordered_map)", mbtActiveChunksSize);
 
     //// generatedChunks (boost::unordered_flat_set)
     //size_t generatedChunksSize = sizeof(generatedChunks) + (sizeof(TwoIntTup) * generatedChunks.unsafe_bucket_count());

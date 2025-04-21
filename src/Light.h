@@ -99,8 +99,9 @@ struct LightRay
     ColorPack level;
 };
 
-struct LightSpot {
-    boost::container::vector<LightRay> rays;
+class LightSpot {
+public:
+    boost::container::vector<LightRay> rays = {};
 
     ColorPack sum() {
         ColorPack res = {};
@@ -109,17 +110,33 @@ struct LightSpot {
         }
         return res;
     }
+    LightSpot()
+    {
+        rays.reserve(5);
+    }
+    ~LightSpot() = default;
+    LightSpot(const LightSpot& other) = delete;
+    LightSpot& operator=(const LightSpot& other) = delete;
+    LightSpot& operator=(LightSpot&& other)
+    {
+        rays = std::move(other.rays);
+        return *this;
+    };
+    LightSpot(LightSpot&& other)
+    {
+        rays = std::move(other.rays);
+    }
 };
 
 // Memory-efficient LightMap class with same API as original
 class LightMapType {
 private:
     struct ChunkData {
-        boost::unordered_flat_map<IntTup, LightSpot, IntTupHash> spots;
+        boost::unordered_map<IntTup, LightSpot, IntTupHash> spots;
     };
 
     int chunkSize;
-    boost::unordered_flat_map<TwoIntTup, ChunkData, TwoIntTupHash> chunks;
+    boost::unordered_map<TwoIntTup, ChunkData, TwoIntTupHash> chunks;
 
     TwoIntTup getChunkPos(const IntTup& pos) const {
         return TwoIntTup(
@@ -130,9 +147,9 @@ private:
 
     IntTup getLocalPos(const IntTup& pos, const TwoIntTup& chunkPos) const {
         return IntTup(
-            pos.x - chunkPos.x * chunkSize,
+            pos.x - std::floor(chunkPos.x * chunkSize),
             pos.y,
-            pos.z - chunkPos.z * chunkSize
+            pos.z - std::floor(chunkPos.z * chunkSize)
         );
     }
 
@@ -144,14 +161,14 @@ public:
         LightMapType* map;
         bool isEnd;
         TwoIntTup currentChunk;
-        typename boost::unordered_flat_map<IntTup, LightSpot, IntTupHash>::iterator spotIt;
+        typename boost::unordered_map<IntTup, LightSpot, IntTupHash>::iterator spotIt;
         mutable std::pair<IntTup, LightSpot> current;
 
         iterator(LightMapType* map, bool end)
             : map(map), isEnd(end), currentChunk(), spotIt() {}
 
         iterator(LightMapType* map, const TwoIntTup& chunk,
-            typename boost::unordered_flat_map<IntTup, LightSpot, IntTupHash>::iterator spot)
+            typename boost::unordered_map<IntTup, LightSpot, IntTupHash>::iterator spot)
             : map(map), isEnd(false), currentChunk(chunk), spotIt(spot) {}
 
     public:
@@ -159,12 +176,12 @@ public:
             if (isEnd) return nullptr;
             // Convert local position to world position
             IntTup worldPos(
-                spotIt->first.x + currentChunk.x * map->chunkSize,
+                spotIt->first.x - currentChunk.x * map->chunkSize,
                 spotIt->first.y,
-                spotIt->first.z + currentChunk.z * map->chunkSize
+                spotIt->first.z - currentChunk.z * map->chunkSize
             );
             current.first = worldPos;
-            current.second = spotIt->second;
+            current.second = std::move(spotIt->second);
             return reinterpret_cast<std::pair<const IntTup, LightSpot>*>(&current);
         }
 
@@ -329,7 +346,7 @@ void setLightLevelFromOriginHere(IntTup spot, IntTup origin, ColorPack value,
             if (rays.empty()) {
                 auto it = lightmap.find(spot);
                 if (it != lightmap.end()) {
-                    lightmap.erase(it);
+                    lightmap.erase(std::move(it));
                 }
             }
         }

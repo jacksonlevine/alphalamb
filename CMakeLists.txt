@@ -206,6 +206,7 @@ add_executable(DistantGarden
         src/Light.h
         src/LightSpeedTest.cpp
         src/LightSpeedTest.h
+        src/StepTimerProfiler.h
 
 )
 

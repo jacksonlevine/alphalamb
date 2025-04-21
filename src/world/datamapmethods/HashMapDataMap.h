@@ -31,7 +31,7 @@ private:
     }
 
     // Map of chunks: key is chunk position (x,z), value is a map of positions (with full x,y,z) to blocks
-    std::unordered_map<TwoIntTup, std::unordered_map<IntTup, BlockType, IntTupHash>, TwoIntTupHash> chunks;
+    boost::unordered_map<TwoIntTup, boost::unordered_map<IntTup, BlockType, IntTupHash>, TwoIntTupHash> chunks;
 
 #ifdef MEASURE_LOOKUP
     mutable size_t lookup_count = 0;
@@ -48,8 +48,8 @@ public:
 
 private:
     HashMapDataMap& dataMap;
-    using ChunkMap = std::unordered_map<TwoIntTup, std::unordered_map<IntTup, BlockType, IntTupHash>, TwoIntTupHash>;
-    using BlockMap = std::unordered_map<IntTup, BlockType, IntTupHash>;
+    using ChunkMap = boost::unordered_map<TwoIntTup, boost::unordered_map<IntTup, BlockType, IntTupHash>, TwoIntTupHash>;
+    using BlockMap = boost::unordered_map<IntTup, BlockType, IntTupHash>;
 
     typename ChunkMap::iterator chunkIt;
     typename ChunkMap::iterator chunkEnd;

@@ -52,6 +52,7 @@
 #include "LightSpeedTest.h"
 #include "Planets.h"
 #include "SaveRegistry.h"
+#include "StepTimerProfiler.h"
 #include "specialblocks/FindSpecialBlock.h"
 //Tinygltf includes stb image
 //#include <stb_image.h>
@@ -645,6 +646,8 @@ static void onPhysicsComponentAdded(entt::registry& reg, entt::entity entity) {
 int main()
 {
 
+    StepTimerProfiler profiler;
+
     glfwInit();
     GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 
@@ -852,7 +855,7 @@ int main()
         theScene.vmStampGizmo->spot = theScene.blockSelectGizmo->selectedSpot;
 
 
-
+        profiler.checkTime("Set some crap");
 
         if (theScene.myPlayerIndex != entt::null && theScene.worldReceived.load())
         {
@@ -907,7 +910,7 @@ int main()
 
 
             }
-
+            profiler.checkTime("Update some blocks");
 
 
             // auto pos = theScene.getOur<jl::Camera>().transform.position;
@@ -952,11 +955,11 @@ int main()
 
                 }
             }
-
+            profiler.checkTime("Update hit profress");
             std::vector<Billboard> billboards;
             std::vector<AnimationState> animStates;
-            // billboards.reserve(10);
-            // animStates.reserve(10);
+            billboards.reserve(10);
+            animStates.reserve(10);
             auto simscene = theScene.worldIntroTimer >= 1.0f;
             //std::cout << "World intro timer " << theScene.worldIntroTimer << std::endl;
             if(theScene.worldIntroTimer < 1.0f)
@@ -969,14 +972,14 @@ int main()
             }
 
             auto playerView = theScene.REG.view<RenderComponent, PhysicsComponent, Controls, jl::Camera, MovementComponent, InventoryComponent, ParticleEffectComponent>();
-
+            profiler.checkTime("Make some variables");
             if (simscene)
             {
                 if(theScene.multiplayer)
                 {
                     sendControlsUpdatesLol(tsocket, deltaTime);
                 }
-
+                profiler.checkTime("Send control updates");
 
                 for (auto entity : playerView)
                 {
@@ -1005,11 +1008,14 @@ int main()
                     billboard.direction = camera.transform.direction;
                     billboard.characterNum = static_cast<int>(id) % 4;
 
-
+                    profiler.checkTime("Check and set some vars for a player");
 
 
                     collisionCage.updateToSpot(&world, camera.transform.position, deltaTime);
+
+                    profiler.checkTime("Update collcage for a player");
                     camera.updateWithYawPitch(camera.transform.yaw, camera.transform.pitch);
+                    profiler.checkTime("Update yp for a player");
                     if (id == theScene.myPlayerIndex)
                     {
                         camera.interpTowardTargetYP(deltaTime);
@@ -1063,9 +1069,12 @@ int main()
                         animation_state = newState;
                     }
 
-                    PlayerUpdate(deltaTime, &world, particles, renderComponent, physicsComponent, movementComponent, controls, camera, particleComponent, inventory);
+                    profiler.checkTime("Set some more stuff");
 
+                    PlayerUpdate(deltaTime, &world, particles, renderComponent, physicsComponent, movementComponent, controls, camera, particleComponent, inventory);
+                    profiler.checkTime("PlayerUpdate for a player");
                 }
+                profiler.checkTime("For entity playerview 1");
             }
             // else
             // {
@@ -1095,7 +1104,7 @@ int main()
 
         jl::updateBillboards(billboards);
         jl::updateAnimStates(animStates);
-
+            profiler.checkTime("Update billboards and anim states");
 
 
 
@@ -1351,7 +1360,7 @@ int main()
 
                 break; //Only do one per frame
             }
-
+            profiler.checkTime("Popped a network message");
 
 
 
@@ -1362,7 +1371,7 @@ int main()
                 gScene->simulate(deltaTime);
                 //std::cout << "Simming scene with seed " <<
             }
-
+            profiler.checkTime("Start simulate");
 
 
 
@@ -1373,6 +1382,8 @@ int main()
 
 
             setListenerToCameraPos(&camera);
+
+            profiler.checkTime("Set listener pos");
 
             BlockArea m = {};
 
@@ -1402,12 +1413,14 @@ int main()
                 break; //Only do oen per frame
             }
 
+            profiler.checkTime("Rebuild area notifs");
+
             TwoIntTup popped;
             if (lightOverlapNotificationQueue.try_pull(popped) == boost::queue_op_status::success)
             {
                 theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(popped, false);
             }
-
+            profiler.checkTime("Light overlap notifs");
 
             Atmosphere currAtmos = skyAndFogColor(theScene.currentPlanetType);
 
@@ -1493,7 +1506,7 @@ int main()
             //         }
             //     }
             // }
-
+            profiler.checkTime("Some crap");
 
             glUseProgram(mainShader.shaderID);
 
@@ -1545,12 +1558,13 @@ int main()
 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, worldTex.id);
-
+            profiler.checkTime("Send some uniforms");
 
             //std::cout << "World intro time" << theScene.worldIntroTimer << std::endl;
             renderer->mainThreadDraw(&theScene.our<jl::Camera>(), mainShader.shaderID, world.worldGenMethod, deltaTime, true);
+            profiler.checkTime("Draw from main thread");
             vms->draw(&world, theScene.myPlayerIndex, theScene.REG);
-
+            profiler.checkTime("Draw voxel model stamper");
             glUniform1f(timeRenderedLoc, 10.0f);
             glUniform1f(scaleLoc, 0.4f);
 
@@ -1654,6 +1668,7 @@ int main()
                     }
                 }
             }
+            profiler.checkTime("For entity playerview 2");
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
             glUniform1f(scaleLoc, 1.0f);
 
@@ -1681,6 +1696,7 @@ int main()
             {
                 gScene->fetchResults(true);
             }
+            profiler.checkTime("Fetch results");
 
 
 
@@ -1696,7 +1712,7 @@ int main()
             {
                 gizmo->draw(&world, theScene.myPlayerIndex, theScene.REG);
             }
-
+            profiler.checkTime("Draw gizmos");
 
 
 
@@ -1751,7 +1767,7 @@ int main()
                 jl::drawBillboards(billboards.size());
                 glEnable(GL_CULL_FACE);
             }
-
+            profiler.checkTime("Draw billboards");
 
 
 
@@ -1759,11 +1775,11 @@ int main()
 
             drawComputerScreensInReg(&world, theScene.REG, camera);
 
-
+            profiler.checkTime("Draw sun and moon and computers");
 
             renderImGui();
 
-
+            profiler.checkTime("Render imgui");
 
 
 
@@ -1771,8 +1787,10 @@ int main()
 
             particles->cleanUpOldParticles(deltaTime);
 
-            theScene.hud->draw();
+            profiler.checkTime("Cleanup old particles");
 
+            theScene.hud->draw();
+            profiler.checkTime("Draw hud");
 
         } else
         {
@@ -1783,6 +1801,8 @@ int main()
 
         glfwPollEvents();
         glfwSwapBuffers(window);
+
+        profiler.checkTime("Swapbuffers");
     }
 
 

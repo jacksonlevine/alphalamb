@@ -14,7 +14,7 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot, float deltaTime)
 {
     IntTup blockSpot(std::floor(spot.x), std::floor(spot.y), std::floor(spot.z));
 
-    if (updateTimer > 0.01f)
+    if (updateTimer > 0.03f)
     {
         updateTimer = 0.0f;
         if(true)
@@ -26,11 +26,11 @@ void CollisionCage::updateToSpot(World* world, glm::vec3 spot, float deltaTime)
             auto lock = world->tryToGetReadLockOnDMsOnly();
             if(lock != std::nullopt)
             {
-                for(int x = -6; x < 6; x++)
+                for(int x = -5; x < 5; x++)
                 {
-                    for(int z = -6; z < 6; z++)
+                    for(int z = -5; z < 5; z++)
                     {
-                        for(int y = 6; y > -6; y--)
+                        for(int y = 5; y > -5; y--)
                         {
                             IntTup spotHere = blockSpot + IntTup(x,y,z);
                             auto rawhere = world->getRawLocked(spotHere);

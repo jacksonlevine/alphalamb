@@ -454,12 +454,13 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
             int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
             if(dist <= currentMinDistance())
             {
-              /*  if(!generatedChunks.contains(spotHere))
-                {*/
+                auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor();
+                if(!generatedChunks.find(acc, spotHere))
+                {
                     generateChunk(world, spotHere, &implicatedChunks);
-                //    generatedChunks.insert({spotHere, true});
+                    generatedChunks.insert({spotHere, true});
 
-                //}
+                }
             }
         }
         //for (auto & spotHere : checkspots)
@@ -698,7 +699,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
 
                                             mbtActiveChunks.erase(oldSpot);
-                                            //generatedChunks.erase(oldSpot);
+                                            generatedChunks.erase(oldSpot);
                                             litChunks.erase(oldSpot);
                                             {
                                                 auto lmlock = std::unique_lock<std::shared_mutex>(lightmapMutex);
