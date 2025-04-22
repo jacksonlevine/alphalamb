@@ -6,6 +6,7 @@
 #define DRAWSKY_H
 #include "AtomicRWInt.h"
 #include "AtomicRWInt.h"
+#include "Camera.h"
 
 
 class World;
