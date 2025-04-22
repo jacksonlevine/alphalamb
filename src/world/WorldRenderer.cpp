@@ -472,24 +472,24 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                 }
             }
         }
-        for (auto & spotHere : checkspots)
-        {
-            int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
-            //Do a lightpass for all of the nearby ones within 6 dist
-            if(dist <= 6)
-            {
-                auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor();
-                if(!litChunks.find(acc, spotHere))
-                {
+        //for (auto & spotHere : checkspots)
+        //{
+        //    int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
+        //    //Do a lightpass for all of the nearby ones within 6 dist
+        //    if(dist <= 6)
+        //    {
+        //        auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor();
+        //        if(!litChunks.find(acc, spotHere))
+        //        {
 
-                    lightPassOnChunk<false>(world, spotHere, chunkSize, 250, false);
-                    litChunks.insert({spotHere, true});
-                    //std::cout << "GAfter" << std::endl;
+        //            lightPassOnChunk<false>(world, spotHere, chunkSize, 250, false);
+        //            litChunks.insert({spotHere, true});
+        //            //std::cout << "GAfter" << std::endl;
 
 
-                }
-            }
-        }
+        //        }
+        //    }
+        //}
 
 
         for (auto & spotHere : checkspots)
@@ -886,16 +886,16 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
 
                         auto blockThere = world->get(request.changeSpot);
-                        if (blockThere == LIGHT)
-                        {
-
-                            request.rebuild = true;
-                            lightpass = true;
-                             std::vector<std::pair<IntTup, ColorPack>> thisspot = {
-                                 std::make_pair(request.changeSpot, SKYLIGHTVAL)
-                             };
-                            unpropagateAllLightsLayered(thisspot, lightmap, request.chunkPos);
-                        }
+                        // if (blockThere == LIGHT)
+                        // {
+                        //
+                        //     //request.rebuild = true;
+                        //     //lightpass = true;
+                        //     //  std::vector<std::pair<IntTup, ColorPack>> thisspot = {
+                        //     //      std::make_pair(request.changeSpot, SKYLIGHTVAL)
+                        //     //  };
+                        //     // unpropagateAllLightsLayered(thisspot, lightmap, request.chunkPos);
+                        // }
 
                         // std::vector<std::pair<IntTup, int>> thisspot = {
                         //     std::make_pair(request.changeSpot + IntTup(0,1,0), 12)

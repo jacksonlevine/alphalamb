@@ -185,7 +185,8 @@ void setLightLevelFromOriginHere(IntTup spot, IntTup origin, ColorPack value,
     }
     else if (value != 0) { // Only add new entry if value != 0
         lightmap.insert({ spot, LightSpot{} });
-        lightmap.at(spot).rays.push_back(LightRay{
+        auto & vec = lightmap.at(spot).rays;
+        vec.push_back(LightRay{
             .originhash = originhash, .level = value
             });
     }
@@ -225,7 +226,6 @@ inline float getBlockAmbientLightVal(uint16_t value1, uint16_t value2)
     float packedFloat;
     memcpy(&packedFloat, &packed, sizeof(float));
     return packedFloat;
-
 }
 
 

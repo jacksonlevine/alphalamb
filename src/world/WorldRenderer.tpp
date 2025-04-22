@@ -14,197 +14,349 @@
 ///Create a UsableMesh from the specified chunk spot
 ///This gets called in the mesh building coroutine and rebuild coroutine
 ///Queueimplics = default true, whether to queue chunks implicated by light pass for rebuild
+
 template<bool queueimplics>
 UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked, bool light)
 {
 #ifdef MEASURE_CHUNKREB
-    static size_t lookup_count = 0;
-    static std::chrono::duration<double> cumulative_lookup_time = std::chrono::duration<double>::zero();
-#endif
-
-#ifdef MEASURE_CHUNKREB
     auto startt = std::chrono::high_resolution_clock::now();
 #endif
-    {
-        tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor acc;
-        if (light || !litChunks.find(acc, spot))
-        {
-           // std::cout << "Doing it with light " << std::endl;
-            lightPassOnChunk<queueimplics>(world, spot, chunkSize, 250, locked);
-            litChunks.insert({spot, true});
-        }
-    }
 
+    if(locked)
+    {
+        std::cout << "Locked " << std::endl;
+    }
     UsableMesh mesh;
     PxU32 index = 0;
     PxU32 tindex = 0;
 
     IntTup start(spot.x * chunkSize, spot.z * chunkSize);
+    int chunkHeight = 250;
 
-    // Pre-cache chunk data to avoid repeated world lookups
-    std::vector<BlockType> chunkData(chunkSize * chunkSize * 250, AIR);
+    // Cache chunk data and transparency
+    std::vector<BlockType> chunkData(chunkSize * chunkSize * chunkHeight, AIR);
+    std::vector<bool> isTransparent(chunkSize * chunkSize * chunkHeight, true);
 
-    // Pre-compute whether each block is transparent
-    std::vector<bool> isTransparent(chunkSize * chunkSize * 250, true);
+    // Light source collections (only used if light = true)
+    std::vector<std::pair<IntTup, ColorPack>> oldBlockSources;
+    std::vector<std::pair<IntTup, ColorPack>> newBlockSources;
+    std::vector<std::pair<IntTup, ColorPack>> oldAmbientSources;
+    std::vector<std::pair<IntTup, ColorPack>> newAmbientSources;
 
-    // Fill cache
-    for (int x = 0; x < chunkSize; x++) {
-        for (int z = 0; z < chunkSize; z++) {
-            for (int y = 0; y < 250; y++) {
-                IntTup here = start + IntTup(x, y, z);
-                int idx = (x * chunkSize * 250) + (z * 250) + y;
+    // Track blocks to process for meshing
+    std::vector<std::tuple<int, int, int>> blocksToMesh;
 
-                chunkData[idx] = locked ? world->getRawLocked(here) : world->getRaw(here);
-                isTransparent[idx] = (chunkData[idx] == AIR) ||
-                    (transparents.test((chunkData[idx] & BLOCK_ID_BITS)));
-            }
+    std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
+
+    // Check if lighting is needed
+    bool doLight = light;
+    if (!doLight) {
+        tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor acc;
+        if (!litChunks.find(acc, spot)) {
+            doLight = true;
         }
     }
 
-    // Helper to get block from cache with bounds checking
-    auto getBlock = [&](int x, int y, int z) -> BlockType {
-        // Out of bounds check
-        if (x < 0 || x >= chunkSize || y < 0 || y >= 250 || z < 0 || z >= chunkSize) {
-            IntTup pos = start + IntTup(x, y, z);
-            return locked ? world->getRawLocked(pos) : world->getRaw(pos);
+    // SCollect block data, light sources (if doLight), and blocks to mesh
+    if (!locked) {
+        std::shared_lock<std::shared_mutex> url(world->userDataMap->mutex());
+        std::shared_lock<std::shared_mutex> nrl(world->nonUserDataMap->mutex());
+        std::shared_lock<std::shared_mutex> lightLock;
+        if(doLight) {
+            lightLock = std::shared_lock<std::shared_mutex>(lightmapMutex);
         }
 
-        int idx = (x * chunkSize * 250) + (z * 250) + y;
-        return chunkData[idx];
-    };
+        for (int x = 0; x < chunkSize; x++) {
+            for (int z = 0; z < chunkSize; z++) {
+                bool foundGround = false;
+                bool hitSolid = false;
+                for (int y = chunkHeight - 1; y >= 0; y--) {
+                    IntTup here = start + IntTup(x, y, z);
+                    int idx = (x * chunkSize * chunkHeight) + (z * chunkHeight) + y;
 
-    // Helper to check transparency
-    auto isBlockTransparent = [&](int x, int y, int z) -> bool {
-        // Out of bounds check
-        if (x < 0 || x >= chunkSize || y < 0 || y >= 250 || z < 0 || z >= chunkSize) {
-            IntTup pos = start + IntTup(x, y, z);
-            BlockType block = locked ? world->getRawLocked(pos) : world->getRaw(pos);
-            return (block == AIR) || (transparents.test(block & BLOCK_ID_BITS));
-        }
+                    // Cache block data
+                    chunkData[idx] = world->getRawLocked(here);
+                    isTransparent[idx] = (chunkData[idx] == AIR) ||
+                                        (transparents.test(chunkData[idx] & BLOCK_ID_BITS));
 
-        int idx = (x * chunkSize * 250) + (z * 250) + y;
-        return isTransparent[idx];
-    };
+                    // Light source collection (if doLight)
+                    if (doLight) {
+                        BlockType h = chunkData[idx];
+                        auto originhash = IntTupHash{}(here, true);
+                        if (h == LIGHT) {
+                            newBlockSources.push_back(std::make_pair(here, TORCHLIGHTVAL));
+                        }
 
-    // Process the chunk
-    for (int x = 0; x < chunkSize; x++) {
-        for (int z = 0; z < chunkSize; z++) {
-            for (int y = 0; y < 250; y++) {
-                int idx = (x * chunkSize * 250) + (z * 250) + y;
-                BlockType rawBlockHere = chunkData[idx];
-                uint32_t blockID = (rawBlockHere & BLOCK_ID_BITS);
-                MaterialName mat = static_cast<MaterialName>(blockID);
-
-                // Skip air blocks
-                if (blockID == AIR) continue;
-
-                IntTup here = start + IntTup(x, y, z);
-
-                if (auto specialFunc = findSpecialBlockMeshFunc(mat); specialFunc != std::nullopt)
-                {
-                    specialFunc.value()(mesh, rawBlockHere, here, index, tindex);
-                } else
-                {
-                    bool blockHereTransparent = isTransparent[idx];
-
-
-                    // Check each neighbor direction
-                    for (int i = 0; i < std::size(neighborSpots); i++) {
-                        auto neigh = neighborSpots[i];
-                        int nx = x + neigh.x;
-                        int ny = y + neigh.y;
-                        int nz = z + neigh.z;
-
-                        BlockType neighblock = (getBlock(nx, ny, nz) & BLOCK_ID_BITS);
-                        bool neightransparent = isBlockTransparent(nx, ny, nz);
-                        bool neighborair = neighblock == AIR;
-                        bool solidNeighboringTransparent = (neightransparent && !blockHereTransparent);
-
-                        if (neighborair || solidNeighboringTransparent || (blockHereTransparent && (neighblock != blockID) && neightransparent)) {
-                            Side side = static_cast<Side>(i);
-
-                            ColorPack blockbright = {};
-                            ColorPack ambientbright = {};
-                            auto ns = here + neighborSpots[(int)side];
-                            if (locked)
-                            {
-                                if (lightmap.contains(ns))
-                                {
-                                    blockbright = lightmap.at(ns).sum();
-                                }
-                                if (ambientlightmap.contains(ns))
-                                {
-                                    ambientbright = ambientlightmap.at(ns).sum();
-                                }
-                            } else
-                            {
-                                auto lock =std::shared_lock<std::shared_mutex>(lightmapMutex);
-                                if (lightmap.contains(ns))
-                                {
-                                    blockbright = lightmap.at(ns).sum();
-                                }
-                                if (ambientlightmap.contains(ns))
-                                {
-                                    ambientbright = ambientlightmap.at(ns).sum();
+                        // Check ambient lightmap
+                        auto ambientSpot = ambientlightmap.find(here);
+                        if (ambientSpot != ambientlightmap.end()) {
+                            for (const auto& ray : ambientSpot->second.rays) {
+                                if (originhash == ray.originhash) {
+                                    oldAmbientSources.push_back(std::make_pair(here, SKYLIGHTVAL));
                                 }
                             }
+                        }
 
-                            auto blockandambbright = getBlockAmbientLightVal(blockbright, ambientbright);
-
-
-                            if (blockID == WATER && side == Side::Top)
-                            {
-                                if (!ambOccl) {
-                                    addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                                 side, static_cast<MaterialName>(blockID), 1, mesh, index, tindex, -0.2f);
-                                    addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y)+1, static_cast<float>(here.z)),
-                                                Side::Bottom, static_cast<MaterialName>(blockID), 1, mesh, index, tindex, -0.2f);
-                                } else {
-                                    addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                                  side, static_cast<MaterialName>(blockID), 1, mesh, index, tindex, -0.2f);
-
-                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockandambbright);
-                                    addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y)+1, static_cast<float>(here.z)),
-                                                  Side::Bottom, static_cast<MaterialName>(blockID), 1, mesh, index, tindex, -0.2f);
-                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockandambbright);
+                        // Check block lightmap
+                        auto blockSpot = lightmap.find(here);
+                        if (blockSpot != lightmap.end()) {
+                            for (const auto& ray : blockSpot->second.rays) {
+                                if (originhash == ray.originhash) {
+                                    oldBlockSources.push_back(std::make_pair(here, TORCHLIGHTVAL));
                                 }
+                            }
+                        }
 
-                            } else
-                            {
-                                if (!ambOccl) {
-                                    addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                                 side, static_cast<MaterialName>(blockID), 1, mesh, index, tindex);
+                        // Ambient light source detection
+                        if (h != AIR) {
+                            if (!foundGround) {
+                                newAmbientSources.push_back(std::make_pair(here + IntTup(0, 1, 0), SKYLIGHTVAL));
+                                foundGround = true;
+                            }
+                            hitSolid = true;
+                        } else if (!hitSolid) {
+                            for (const auto& neighb : neighbs4) {
+                                IntTup neighbPos = here + neighb;
+                                // Use cache if neighbor is in-bounds
+                                int nx = x + neighb.x;
+                                int nz = z + neighb.z;
+                                int ny = y + neighb.y;
+                                BlockType neighBlock;
+                                if (nx >= 0 && nx < chunkSize && ny >= 0 && ny < chunkHeight && nz >= 0 && nz < chunkSize) {
+                                    int nidx = (nx * chunkSize * chunkHeight) + (nz * chunkHeight) + ny;
+                                    neighBlock = chunkData[nidx];
                                 } else {
-                                    addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                                  side, static_cast<MaterialName>(blockID), 1, mesh, index, tindex);
-                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockandambbright);
+                                    neighBlock = world->getLocked(neighbPos);
+                                }
+                                if (neighBlock != AIR) {
+                                    newAmbientSources.push_back(std::make_pair(here, SKYLIGHTVAL));
+                                    break;
                                 }
                             }
                         }
                     }
+
+                    // Mark non-air blocks for meshing
+                    if ((chunkData[idx] & BLOCK_ID_BITS) != AIR) {
+                        blocksToMesh.emplace_back(x, y, z);
+                    }
                 }
-
-
             }
+        }
+        // Locks released here (url, nrl, lightLock)
+    } else {
+        // Locked mode: No locks needed, access world directly
+        for (int x = 0; x < chunkSize; x++) {
+            for (int z = 0; z < chunkSize; z++) {
+                bool foundGround = false;
+                bool hitSolid = false;
+                for (int y = chunkHeight - 1; y >= 0; y--) {
+                    IntTup here = start + IntTup(x, y, z);
+                    int idx = (x * chunkSize * chunkHeight) + (z * chunkHeight) + y;
+
+                    // Cache block data
+                    chunkData[idx] = world->getRawLocked(here);
+                    isTransparent[idx] = (chunkData[idx] == AIR) ||
+                                        (transparents.test(chunkData[idx] & BLOCK_ID_BITS));
+
+                    // Light source collection (if doLight)
+                    if (doLight) {
+                        BlockType h = chunkData[idx];
+                        auto originhash = IntTupHash{}(here, true);
+                        if (h == LIGHT) {
+                            newBlockSources.push_back(std::make_pair(here, TORCHLIGHTVAL));
+                        }
+
+                        // Check ambient lightmap
+                        auto ambientSpot = ambientlightmap.find(here);
+                        if (ambientSpot != ambientlightmap.end()) {
+                            for (const auto& ray : ambientSpot->second.rays) {
+                                if (originhash == ray.originhash) {
+                                    oldAmbientSources.push_back(std::make_pair(here, SKYLIGHTVAL));
+                                }
+                            }
+                        }
+
+                        // Check block lightmap
+                        auto blockSpot = lightmap.find(here);
+                        if (blockSpot != lightmap.end()) {
+                            for (const auto& ray : blockSpot->second.rays) {
+                                if (originhash == ray.originhash) {
+                                    oldBlockSources.push_back(std::make_pair(here, TORCHLIGHTVAL));
+                                }
+                            }
+                        }
+
+                        // Ambient light source detection
+                        if (h != AIR) {
+                            if (!foundGround) {
+                                newAmbientSources.push_back(std::make_pair(here + IntTup(0, 1, 0), SKYLIGHTVAL));
+                                foundGround = true;
+                            }
+                            hitSolid = true;
+                        } else if (!hitSolid) {
+                            for (const auto& neighb : neighbs4) {
+                                IntTup neighbPos = here + neighb;
+                                // Use cache if neighbor is in-bounds
+                                int nx = x + neighb.x;
+                                int nz = z + neighb.z;
+                                int ny = y + neighb.y;
+                                BlockType neighBlock;
+                                if (nx >= 0 && nx < chunkSize && ny >= 0 && ny < chunkHeight && nz >= 0 && nz < chunkSize) {
+                                    int nidx = (nx * chunkSize * chunkHeight) + (nz * chunkHeight) + ny;
+                                    neighBlock = chunkData[nidx];
+                                } else {
+                                    neighBlock = world->getLocked(neighbPos);
+                                }
+                                if (neighBlock != AIR) {
+                                    newAmbientSources.push_back(std::make_pair(here, SKYLIGHTVAL));
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // Mark non-air blocks for meshing
+                    if ((chunkData[idx] & BLOCK_ID_BITS) != AIR) {
+                        blocksToMesh.emplace_back(x, y, z);
+                    }
+                }
+            }
+        }
+        // lightLock released here (if doLight)
+    }
+
+    // Perform light propagation before meshing (if doLight)
+    if (doLight) {
+        if(!locked)
+        {
+            std::shared_lock<std::shared_mutex> url(world->userDataMap->mutex());
+            std::shared_lock<std::shared_mutex> nrl(world->nonUserDataMap->mutex());
+            auto lightlock = std::unique_lock<std::shared_mutex>(lightmapMutex);
+
+            unpropagateAllLightsLayered(oldBlockSources, lightmap, spot, &implicatedChunks, true);
+            propagateAllLightsLayered(world, newBlockSources, lightmap, spot, &implicatedChunks, true);
+            unpropagateAllLightsLayered(oldAmbientSources, ambientlightmap, spot, &implicatedChunks, true);
+            propagateAllLightsLayered(world, newAmbientSources, ambientlightmap, spot, &implicatedChunks, true);
+        }
+
+
+        litChunks.insert({spot, true});
+    }
+
+    auto getBlock = [&](int x, int y, int z) -> BlockType {
+        if (x < 0 || x >= chunkSize || y < 0 || y >= chunkHeight || z < 0 || z >= chunkSize) {
+            IntTup pos = start + IntTup(x, y, z);
+            return !locked ? world->getRaw(pos) : world->getRawLocked(pos);
+        }
+        int idx = (x * chunkSize * chunkHeight) + (z * chunkHeight) + y;
+        return chunkData[idx];
+    };
+
+    auto isBlockTransparent = [&](int x, int y, int z) -> bool {
+        if (x < 0 || x >= chunkSize || y < 0 || y >= chunkHeight || z < 0 || z >= chunkSize) {
+            IntTup pos = start + IntTup(x, y, z);
+            BlockType block = !locked ? world->getRaw(pos) : world->getRawLocked(pos);
+            return (block == AIR) || (transparents.test(block & BLOCK_ID_BITS));
+        }
+        int idx = (x * chunkSize * chunkHeight) + (z * chunkHeight) + y;
+        return isTransparent[idx];
+    };
+
+    for (const auto& [x, y, z] : blocksToMesh) {
+        int idx = (x * chunkSize * chunkHeight) + (z * chunkHeight) + y;
+        BlockType rawBlockHere = chunkData[idx];
+        uint32_t blockID = (rawBlockHere & BLOCK_ID_BITS);
+        MaterialName mat = static_cast<MaterialName>(blockID);
+
+        IntTup here = start + IntTup(x, y, z);
+
+        if (auto specialFunc = findSpecialBlockMeshFunc(mat); specialFunc != std::nullopt) {
+            specialFunc.value()(mesh, rawBlockHere, here, index, tindex);
+        } else {
+            bool blockHereTransparent = isTransparent[idx];
+
+            for (int i = 0; i < std::size(neighborSpots); i++) {
+                auto neigh = neighborSpots[i];
+                int nx = x + neigh.x;
+                int ny = y + neigh.y;
+                int nz = z + neigh.z;
+
+                BlockType neighBlock = (getBlock(nx, ny, nz) & BLOCK_ID_BITS);
+                bool neighTransparent = isBlockTransparent(nx, ny, nz);
+                bool neighborAir = neighBlock == AIR;
+                bool solidNeighboringTransparent = (neighTransparent && !blockHereTransparent);
+
+                if (neighborAir || solidNeighboringTransparent || (blockHereTransparent && (neighBlock != blockID) && neighTransparent)) {
+                    Side side = static_cast<Side>(i);
+                    IntTup ns = here + neighborSpots[(int)side];
+
+                    ColorPack blockBright = {};
+                    ColorPack ambientBright = {};
+                    {
+                        std::shared_lock<std::shared_mutex> lightLock;
+                        if(!locked) {
+                            lightLock = std::shared_lock<std::shared_mutex>(lightmapMutex);
+                        }
+                        if (lightmap.contains(ns)) {
+                            blockBright = lightmap.at(ns).sum();
+                        }
+                        if (ambientlightmap.contains(ns)) {
+                            ambientBright = ambientlightmap.at(ns).sum();
+                        }
+                    }
+                    auto blockAndAmbBright = getBlockAmbientLightVal(blockBright, ambientBright);
+
+                    if (blockID == WATER && side == Side::Top) {
+                        if (!ambOccl) {
+                            addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
+                                         side, mat, 1, mesh, index, tindex, -0.2f);
+                            addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y) + 1, static_cast<float>(here.z)),
+                                         Side::Bottom, mat, 1, mesh, index, tindex, -0.2f);
+                        } else {
+                            addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
+                                          side, mat, 1, mesh, index, tindex, -0.2f);
+                            calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
+                            addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y) + 1, static_cast<float>(here.z)),
+                                          Side::Bottom, mat, 1, mesh, index, tindex, -0.2f);
+                            calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
+                        }
+                    } else {
+                        if (!ambOccl) {
+                            addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
+                                         side, mat, 1, mesh, index, tindex);
+                        } else {
+                            addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
+                                          side, mat, 1, mesh, index, tindex);
+                            calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Queue implicated chunks (if lighting was performed)
+    if (doLight && queueimplics) {
+        for (const auto& spot2 : implicatedChunks) {
+            lightOverlapNotificationQueue.push(spot2);
         }
     }
 
 #ifdef MEASURE_CHUNKREB
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end - startt;
-
+    static size_t lookup_count = 0;
+    static std::chrono::duration<double> cumulative_lookup_time = std::chrono::duration<double>::zero();
     cumulative_lookup_time += elapsed;
     lookup_count++;
-
     if (lookup_count % 1000 == 0) {
         double average_lookup_time = cumulative_lookup_time.count() / lookup_count;
-
     }
 #endif
 
     return mesh;
 }
-
 ///Call this with an external index and UsableMesh to mutate them
 template<bool doBrightness>
 __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, PxU32& index, PxU32& tindex, float offsety)
