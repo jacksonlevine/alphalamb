@@ -105,6 +105,7 @@ struct Scene
     MaterialName blockFeetInLower = AIR;
     MaterialName blockFeetIn = AIR;
     MaterialName blockHeadIn = AIR;
+    GLuint worldtex = 0;
 
     void saveSettings()
     {

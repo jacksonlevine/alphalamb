@@ -13,6 +13,11 @@
 
 void dgDrawSky(const glm::vec3& pos, GLuint lutTexture, World& world, float timeOfDay) {
         Atmosphere currAtmos = skyAndFogColor(theScene.currentPlanetType);
+        auto ambb = ambBrightFromTimeOfDay(timeOfDay, theScene.dayLength);
+        if (liquids.test(theScene.blockHeadIn)) {
+            currAtmos.skyTop = glm::vec3(0.f, 0.f, 1.f) * ambb;
+            currAtmos.skyBottom = glm::vec3(0.f, 0.f, .2f) * ambb;
+        }
 
         IntTup itspot(
             pos.x,
@@ -26,6 +31,6 @@ void dgDrawSky(const glm::vec3& pos, GLuint lutTexture, World& world, float time
 
         drawSky(glm::vec4(currAtmos.skyTop, 1.0),
                 glm::vec4(currAtmos.skyBottom, 1.0),
-                ambBrightFromTimeOfDay(timeOfDay, theScene.dayLength), theScene.guiCamera,
+                ambb, &theScene.our<jl::Camera>(),
                 lutTexture, currAtmos.fogColor, dewyFogFactorAtCam);
 }

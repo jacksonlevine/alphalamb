@@ -184,10 +184,10 @@ extern tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare> litChunks
 class WorldRenderer {
 public:
     static constexpr int chunkSize = 16;
-    static constexpr int renderDistance = 17;
+    static constexpr int maxRenderDistance = 64;
     int currentRenderDistance = 17;
-    static constexpr int maxChunks = ((renderDistance*2) * (renderDistance*2));
-    int MIN_DISTANCE = renderDistance + 1;
+    static constexpr int maxChunks = ((maxRenderDistance*2) * (maxRenderDistance*2));
+    int MIN_DISTANCE = maxRenderDistance + 1;
     int lastMaxChunks = maxChunks;
 
 
@@ -202,7 +202,7 @@ public:
 
 
 
-    std::array<SmallChunkGLInfo, maxChunks> chunkPool;
+    std::vector<SmallChunkGLInfo> chunkPool = {};
 
     std::atomic<size_t> chunkPoolSize = {0};
 
@@ -243,6 +243,7 @@ public:
     {
         mbtActiveChunks.reserve(maxChunks);
         activeChunks.reserve(maxChunks);
+        chunkPool.resize(maxChunks);
         //Generate them all at the beginning so we know the buffer names for sure
         std::ranges::for_each(std::views::iota(0, maxChunks), [](auto) {
             genCGLBuffers();

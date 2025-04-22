@@ -815,6 +815,8 @@ int main()
 
     entt::monostate<entt::hashed_string{"activeHand"}>{} = true;
 
+    theScene.worldtex = worldTex.id;
+
     while (!glfwWindowShouldClose(window)) {
 
         {
@@ -1023,12 +1025,7 @@ int main()
                     {
                         camera.interpTowardTargetYP(deltaTime*0.35f);
                     }
-
-                    if(id != theScene.myPlayerIndex)
-                    {
-                        billboards.push_back(billboard);
-                        animStates.push_back(animation_state);
-                    }
+                    profiler.checkTime("Interp toward target yp");
 
 
                     float wantedAnim = IDLE;
@@ -1055,21 +1052,31 @@ int main()
                                         wantedAnim = RUN;
                                     }
                     }
-
+                    profiler.checkTime("Branch and set anim");
+                       
+                    float glfwtime = static_cast<float>(glfwGetTime());
                     auto existinganim = &animation_state;
                     AnimationState newState{
                         wantedAnim,
-                        static_cast<float>(glfwGetTime()),
+                        glfwtime,
                         static_cast<AnimationName>(wantedAnim) == JUMP ? 0.5f : 1.0f
                     };
 
-                    bool jumpinprogress = (static_cast<AnimationName>(existinganim->actionNum) == JUMP) && (glfwGetTime() - existinganim->timestarted < 0.75f);
+                    bool jumpinprogress = (static_cast<AnimationName>(existinganim->actionNum) == JUMP) && (glfwtime - existinganim->timestarted < 0.75f);
                     if(existinganim->actionNum != wantedAnim && !jumpinprogress)
                     {
                         animation_state = newState;
                     }
 
                     profiler.checkTime("Set some more stuff");
+
+
+                    if (id != theScene.myPlayerIndex)
+                    {
+                        billboards.push_back(billboard);
+                        animStates.push_back(animation_state);
+                    }
+                    profiler.checkTime("pushback billboards");
 
                     PlayerUpdate(deltaTime, &world, particles, renderComponent, physicsComponent, movementComponent, controls, camera, particleComponent, inventory);
                     profiler.checkTime("PlayerUpdate for a player");
@@ -1430,10 +1437,9 @@ int main()
                 auto theintspot = IntTup(thespot.x, thespot.y, thespot.z);
                 theScene.bulkPlaceGizmo->corner2 = theintspot;
             }
-            if (theScene.blockHeadIn != WATER)
-            {
-                dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, theScene.timeOfDay);
-            }
+
+            dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, theScene.timeOfDay);
+            
 
 
             if (theScene.our<jl::Camera>().transform.position.y > 300.0f)
@@ -1623,7 +1629,7 @@ int main()
                 //
                 // } else
                 // {
-                drawHandledBlock(camera.transform.position, invComp.currentHeldBlock, mainShader.shaderID, invComp.lastHeldBlock, renderComp.handledBlockMeshInfo);
+                //drawHandledBlock(camera.transform.position, invComp.currentHeldBlock, mainShader.shaderID, invComp.lastHeldBlock, renderComp.handledBlockMeshInfo);
 
                 //}
 

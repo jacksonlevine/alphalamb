@@ -401,6 +401,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
     NUM_THREADS_RUNNING.fetch_add(1);  // Atomic increment
     //std::cout << "Mesh incremented NUM_THREADS_RUNNING. Current value: " << NUM_THREADS_RUNNING.load() << "\n";
 
+ 
+
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         freedChangeBuffers.push(i);
     }
@@ -427,6 +429,13 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         if (currentRenderDistance != lastRendDist) {
             lastRendDist = currentRenderDistance;
             checkspots.reserve((currentRenderDistance * 2) * (currentRenderDistance * 2));
+        }
+
+        static int lastMaxChunks = maxChunks;
+        int cmc = currentMaxChunks();
+        if (cmc != lastMaxChunks) {
+            lastMaxChunks = cmc;
+            chunkPool.resize(cmc);
         }
 
 
@@ -594,7 +603,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                         //IF we havent reached the max chunks yet, we can just make a new one for this spot.
                         //ELSE, we reuse the furthest one from the player, ONLY IF the new distance will be shorter than the last distance!
-                        if (chunkPoolSize.load() < currentMaxChunks())
+                            if (chunkPoolSize.load() < (static_cast<unsigned long long>(currentMaxChunks()) - 4))
                         {
                             size_t changeBufferIndex = -1;
                             {

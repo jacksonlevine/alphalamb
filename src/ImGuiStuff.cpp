@@ -13,7 +13,7 @@
 //#include "TextEditor.h"
 #include "TextEditor.h"
 #include "Texture.h"
-
+#include "TextureFace.h"
 ImGuiIO* imguiio = nullptr;
 bool guiShowing = true;
 GuiScreen currentGuiScreen = GuiScreen::MainMenu;
@@ -464,7 +464,7 @@ void renderImGui()
                     theScene.saveSettings();
                 }
 
-                if(ImGui::SliderInt("Render Distance", &theScene.rendDistSelection, 2, 128))
+                if(ImGui::SliderInt("Render Distance", &theScene.rendDistSelection, 2, 64))
                 {
 
                     theScene.saveSettings();
@@ -676,6 +676,28 @@ void renderImGui()
 
 
             ImVec2 screenSize = ImGui::GetIO().DisplaySize;
+
+            ImVec2 startInvRow = ImVec2(screenSize.x / 2, screenSize.y - (screenSize.y / 20.0f));
+
+            ImVec2 prevPos = ImGui::GetCursorPos();
+
+            for (int i = 0; i < 5; i++) {
+                ImVec2 start = startInvRow + ImVec2(i * (screenSize.x / 50.0f), 0);
+                ImGui::SetCursorPos(start);
+                // Define UV coordinates for cropping (0.0 to 1.0)
+// Example: Crop to show only the center quarter of the image
+                ImVec2 uv_min = ImVec2(0.25f, 0.25f); // Top-left corner
+                ImVec2 uv_max = ImVec2(0.75f, 0.75f); // Bottom-right corner
+
+
+                // Display cropped texture
+                ImVec2 display_size = ImVec2((screenSize.x / 50.0f), (screenSize.x / 50.0f)); // Size of displayed image
+                TextureFace face(1, 0);
+                ImGui::Image((ImTextureID)theScene.worldtex, display_size, ImVec2(face.bl.x, face.bl.y), ImVec2(face.tr.x, face.tr.y));
+
+            }
+
+            ImGui::SetCursorPos(prevPos);
 
 
             if (!theScene.bulkPlaceGizmo->active && !theScene.vmStampGizmo->active)
