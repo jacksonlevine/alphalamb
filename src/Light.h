@@ -103,8 +103,8 @@ private:
 extern boost::sync_queue<TwoIntTup> lightOverlapNotificationQueue;
 
 
-constexpr ColorPack SKYLIGHTVAL = ColorPack(12, 12, 12);
-constexpr ColorPack TORCHLIGHTVAL = ColorPack(0, 0, 10);
+constexpr ColorPack SKYLIGHTVAL = ColorPack(15, 15, 15);
+constexpr ColorPack TORCHLIGHTVAL = ColorPack(0, 0, 15);
 
 struct LightRay
 {
