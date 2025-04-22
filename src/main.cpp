@@ -1438,13 +1438,13 @@ int main()
                 theScene.bulkPlaceGizmo->corner2 = theintspot;
             }
 
-            dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, theScene.timeOfDay);
+            dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, theScene.timeOfDay, &theScene.our<jl::Camera>());
             
 
 
             if (theScene.our<jl::Camera>().transform.position.y > 300.0f)
             {
-                dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, 900.0f);
+                dgDrawSky(theScene.our<jl::Camera>().transform.position, lutTexture, world, 900.0f, &theScene.our<jl::Camera>());
                 //
                 // glUseProgram(gltfShader.shaderID);
                 //

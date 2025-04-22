@@ -9,7 +9,7 @@
 
 
 class World;
-void dgDrawSky(const glm::vec3& pos, GLuint lutTexture, World& world, float timeOfDay);
+void dgDrawSky(const glm::vec3& pos, GLuint lutTexture, World& world, float timeOfDay, jl::Camera* cam);
 
 
 

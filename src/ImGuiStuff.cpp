@@ -544,7 +544,7 @@ void renderImGui()
         case GuiScreen::MainMenu:
             //drawFullscreenKaleidoscope();
 
-            dgDrawSky(glm::vec3(0.0), luttexture, *theScene.world, 700.0f);
+            //dgDrawSky(glm::vec3(0.0), luttexture, *theScene.world, 700.0f, );
             drawSunAndMoon(theScene.menuCamera, 340.0f, 900.0f, glm::vec3(0.0f));
 
             {

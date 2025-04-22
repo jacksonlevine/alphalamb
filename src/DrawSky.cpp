@@ -11,7 +11,7 @@
 #include "TimeOfDay.h"
 
 
-void dgDrawSky(const glm::vec3& pos, GLuint lutTexture, World& world, float timeOfDay) {
+void dgDrawSky(const glm::vec3& pos, GLuint lutTexture, World& world, float timeOfDay, jl::Camera* cam) {
         Atmosphere currAtmos = skyAndFogColor(theScene.currentPlanetType);
         auto ambb = ambBrightFromTimeOfDay(timeOfDay, theScene.dayLength);
         if (liquids.test(theScene.blockHeadIn)) {
@@ -31,6 +31,6 @@ void dgDrawSky(const glm::vec3& pos, GLuint lutTexture, World& world, float time
 
         drawSky(glm::vec4(currAtmos.skyTop, 1.0),
                 glm::vec4(currAtmos.skyBottom, 1.0),
-                ambb, &theScene.our<jl::Camera>(),
+                ambb, cam,
                 lutTexture, currAtmos.fogColor, dewyFogFactorAtCam);
 }
