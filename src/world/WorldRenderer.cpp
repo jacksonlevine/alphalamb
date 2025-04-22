@@ -475,7 +475,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         for (auto & spotHere : checkspots)
         {
             int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
-            if(dist <= currentMinDistance())
+            //Do a lightpass for all of the nearby ones within 6 dist
+            if(dist <= 6)
             {
                 auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor();
                 if(!litChunks.find(acc, spotHere))
