@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cmath>
 
+template<bool enable = true>
 class StepTimerProfiler {
 public:
     StepTimerProfiler(int reportEveryNFrames = 50000, double spikeMultiplier = 2.0)
@@ -22,27 +23,31 @@ public:
     }
 
     void checkTime(const std::string& stepName) {
-        using namespace std::chrono;
 
-        auto now = high_resolution_clock::now();
-        double deltaMs = duration<double, std::milli>(now - lastTimePoint).count();
-        lastTimePoint = now;
+        if constexpr (enable) {
+            using namespace std::chrono;
 
-        StepStats& stats = steps[stepName];
-        stats.totalTime += deltaMs;
-        stats.count++;
-        stats.maxTime = std::max(stats.maxTime, deltaMs);
+            auto now = high_resolution_clock::now();
+            double deltaMs = duration<double, std::milli>(now - lastTimePoint).count();
+            lastTimePoint = now;
 
-        double avg = stats.totalTime / stats.count;
-        if (deltaMs > avg * spikeThresholdMultiplier && stats.count > 5) {
-            stats.spikeCount++;
+            StepStats& stats = steps[stepName];
+            stats.totalTime += deltaMs;
+            stats.count++;
+            stats.maxTime = std::max(stats.maxTime, deltaMs);
+
+            double avg = stats.totalTime / stats.count;
+            if (deltaMs > avg * spikeThresholdMultiplier && stats.count > 5) {
+                stats.spikeCount++;
+            }
+
+            frameStepCount++;
+            if (frameStepCount >= reportInterval) {
+                printReport();
+                reset();
+            }
         }
-
-        frameStepCount++;
-        if (frameStepCount >= reportInterval) {
-            printReport();
-            reset();
-        }
+        
     }
 
 private:

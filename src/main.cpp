@@ -646,7 +646,7 @@ static void onPhysicsComponentAdded(entt::registry& reg, entt::entity entity) {
 int main()
 {
 
-    StepTimerProfiler profiler;
+    StepTimerProfiler<false> profiler;
 
     glfwInit();
     GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
