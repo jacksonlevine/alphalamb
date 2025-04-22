@@ -472,22 +472,23 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                 }
             }
         }
-        //for (auto & spotHere : checkspots)
-        //{
-        //    int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
-        //    if(dist <= currentMinDistance())
-        //    {
-        //        if(!litChunks.contains(spotHere))
-        //        {
+        for (auto & spotHere : checkspots)
+        {
+            int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
+            if(dist <= currentMinDistance())
+            {
+                auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor();
+                if(!litChunks.find(acc, spotHere))
+                {
 
-        //            lightPassOnChunk<false>(world, spotHere, chunkSize, 250, false);
-        //            litChunks.insert(spotHere);
-        //            //std::cout << "GAfter" << std::endl;
+                    lightPassOnChunk<false>(world, spotHere, chunkSize, 250, false);
+                    litChunks.insert({spotHere, true});
+                    //std::cout << "GAfter" << std::endl;
 
 
-        //        }
-        //    }
-        //}
+                }
+            }
+        }
 
 
         for (auto & spotHere : checkspots)
@@ -767,10 +768,10 @@ void WorldRenderer::rebuildThreadFunction(World* world)
             //std::cout << "Popped one: " << request.chunkPos.x << " " << request.chunkPos.z << " \n";
 
             auto lightpass = (request.changeTo != std::nullopt) || request.doLightPass;
-            if (lightpass)
+      /*      if (lightpass)
             {
                 request.rebuild = true;
-            }
+            }*/
             if (request.isArea)
             {
                 std::vector<IntTup> spotsToEraseInUDM;

@@ -1305,23 +1305,23 @@ int main()
                                 if(xmod == scene->worldRenderer->chunkSize - 1)
                                 {
                                     scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                        IntTup(spot.x+1, spot.y, spot.z), std::nullopt, true, glm::vec3(0.f), true, false);
+                                        IntTup(spot.x+1, spot.y, spot.z), std::nullopt, true, glm::vec3(0.f), true, true);
 
                                 } else if(xmod == 0)
                                 {
                                     scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                        IntTup(spot.x-1, spot.y, spot.z), std::nullopt, true, glm::vec3(0.f), true, false);
+                                        IntTup(spot.x-1, spot.y, spot.z), std::nullopt, true, glm::vec3(0.f), true, true);
                                 }
 
                                 if(zmod == scene->worldRenderer->chunkSize - 1)
                                 {
                                     scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                        IntTup(spot.x, spot.y, spot.z+1), std::nullopt, true, glm::vec3(0.f), true, false);
+                                        IntTup(spot.x, spot.y, spot.z+1), std::nullopt, true, glm::vec3(0.f), true, true);
 
                                 } else if(zmod == 0)
                                 {
                                     scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                        IntTup(spot.x, spot.y, spot.z-1), std::nullopt, true, glm::vec3(0.f), true, false);
+                                        IntTup(spot.x, spot.y, spot.z-1), std::nullopt, true, glm::vec3(0.f), true, true);
                                 }
                                 scene->worldRenderer->requestChunkRebuildFromMainThread(
                                     spot, std::nullopt, true, glm::vec3(0.f), true, false
