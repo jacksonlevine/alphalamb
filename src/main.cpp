@@ -685,7 +685,7 @@ int main()
     glFrontFace(GL_CCW);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
     //glEnable(GL_MULTISAMPLE); // Enable MSAA in OpenGL
 
     initOpenAL();

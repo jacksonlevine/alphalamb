@@ -31,9 +31,9 @@ ChunkLightSources getChunkLightSourcesBlockAndAmbient(
         {
             bool foundground = false;
             bool hitsolid = false;
-            for (int j = chunkh-1; j > -1; j--)
+            for (int j = chunkh - 1; j > -1; j--)
             {
-                auto spott = startspot + IntTup(i,j,k);
+                auto spott = startspot + IntTup(i, j, k);
                 auto h = world->getLocked(spott);
                 auto originhash = IntTupHash{}(spott, true);
                 if (h == LIGHT)
@@ -44,7 +44,7 @@ ChunkLightSources getChunkLightSourcesBlockAndAmbient(
                 if (lightspot != ambientlightmap.end())
                 {
                     //std::cout << "rays count: " << lightspot->second.rays.size() << std::endl;
-                    for (const auto & ray : lightspot->second.rays)
+                    for (const auto& ray : lightspot->second.rays)
                     {
                         if (originhash == ray.originhash)
                         {
@@ -55,7 +55,7 @@ ChunkLightSources getChunkLightSourcesBlockAndAmbient(
                 auto lightspot2 = lightmap.find(spott);
                 if (lightspot2 != lightmap.end())
                 {
-                    for (const auto & ray : lightspot2->second.rays)
+                    for (const auto& ray : lightspot2->second.rays)
                     {
                         if (originhash == ray.originhash)
                         {
@@ -63,20 +63,21 @@ ChunkLightSources getChunkLightSourcesBlockAndAmbient(
                         }
                     }
                 }
-                if (h != AIR )
+                if (h != AIR)
                 {
                     if (!foundground)
                     {
-                        newAmbientLightSources.push_back(std::make_pair(spott + IntTup(0,1,0), SKYLIGHTVAL));
+                        newAmbientLightSources.push_back(std::make_pair(spott + IntTup(0, 1, 0), SKYLIGHTVAL));
                         foundground = true;
                     }
                     hitsolid = true;
-                } else
+                }
+                else
                 {
 
                     if (!hitsolid)
                     {
-                        for (auto & neighb : neighbs4)
+                        for (auto& neighb : neighbs4)
                         {
                             if (world->getLocked(neighb + spott) != AIR)
                             {
@@ -98,11 +99,11 @@ ChunkLightSources getChunkLightSourcesBlockAndAmbient(
     };
 }
 void propagateAllLightsLayered(World* world,
-                               const std::vector<std::pair<IntTup, ColorPack>>& lightSources,
-                               LightMapType& lightmap,
-                               TwoIntTup chunkOrigin,
-                               std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks,
-                               bool locked) {
+    const std::vector<std::pair<IntTup, ColorPack>>& lightSources,
+    LightMapType& lightmap,
+    TwoIntTup chunkOrigin,
+    std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks,
+    bool locked) {
     constexpr int maxLightLevel = 15; // Max value of any RGB component (0-15)
     constexpr int chunkWidth = 16, chunkHeight = 250, chunkDepth = 16;
     constexpr int pad = 16;
@@ -128,8 +129,8 @@ void propagateAllLightsLayered(World* world,
         visited[idx] = true;
 
         // Use max(R,G,B) as the layer index
-        int layer = std::max({color.r(), color.g(), color.b()});
-        layers[layer].push_back({pos, pos, color});
+        int layer = std::max({ color.r(), color.g(), color.b() });
+        layers[layer].push_back({ pos, pos, color });
         setLightLevelFromOriginHere<true>(pos, pos, color, lightmap);
 
         if (implicatedChunks) {
@@ -164,8 +165,8 @@ void propagateAllLightsLayered(World* world,
                 ColorPack newColor = color - 1;
                 // Only propagate if newColor has non-zero components
                 if (newColor.r() > 0 || newColor.g() > 0 || newColor.b() > 0) {
-                    int newLayer = std::max({newColor.r(), newColor.g(), newColor.b()});
-                    layers[newLayer].push_back({neighbor, source, newColor});
+                    int newLayer = std::max({ newColor.r(), newColor.g(), newColor.b() });
+                    layers[newLayer].push_back({ neighbor, source, newColor });
                     setLightLevelFromOriginHere<true>(neighbor, source, newColor, lightmap);
 
                     if (implicatedChunks) {
@@ -184,10 +185,10 @@ void propagateAllLightsLayered(World* world,
 
 
 void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, ColorPack>>& lightSourcesToRemove,
-                                 LightMapType& lightmap,
-                                 TwoIntTup chunkOrigin,
-                                 std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks,
-                                 bool locked) {
+    LightMapType& lightmap,
+    TwoIntTup chunkOrigin,
+    std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks,
+    bool locked) {
     constexpr int chunkWidth = 16, chunkHeight = 250, chunkDepth = 16;
     constexpr int pad = 16;
     constexpr size_t width = chunkWidth + 2 * pad;
@@ -213,8 +214,8 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, ColorPack>>
         if (idx >= volume) continue;
         if (visited[idx]) continue;
         visited[idx] = true;
-        toProcess.push({pos, pos});
-        setLightLevelFromOriginHere(pos, pos, ColorPack(0,0,0), lightmap);
+        toProcess.push({ pos, pos });
+        setLightLevelFromOriginHere(pos, pos, ColorPack(0, 0, 0), lightmap);
         if (implicatedChunks) {
             TwoIntTup chunkPos = WorldRenderer::worldToChunkPos(TwoIntTup(pos.x, pos.z));
             if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
@@ -243,14 +244,15 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, ColorPack>>
                     if (it->originhash == originhash) {
                         hasRay = true;
                         it = rays.erase(it);
-                    } else {
+                    }
+                    else {
                         ++it;
                     }
                 }
                 if (hasRay) {
                     visited[idx] = true;
-                    toProcess.push({neighbor, origin});
-                    setLightLevelFromOriginHere(neighbor, origin, ColorPack(0,0,0), lightmap);
+                    toProcess.push({ neighbor, origin });
+                    setLightLevelFromOriginHere(neighbor, origin, ColorPack(0, 0, 0), lightmap);
                     // if (rays.empty()) {
                     //     lightmap.erase(lmentry);
                     // }

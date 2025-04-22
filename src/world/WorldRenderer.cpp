@@ -711,11 +711,11 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                             mbtActiveChunks.erase(oldSpot);
                                             generatedChunks.erase(oldSpot);
                                             litChunks.erase(oldSpot);
-                                            {
+                /*                            {
                                                 auto lmlock = std::unique_lock<std::shared_mutex>(lightmapMutex);
                                                 ambientlightmap.eraseChunk(oldSpot);
                                                 lightmap.eraseChunk(oldSpot);
-                                            }
+                                            }*/
 
                                             world->nonUserDataMap->erase(oldSpot);
                                             mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
