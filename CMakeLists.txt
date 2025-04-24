@@ -136,7 +136,6 @@ add_executable(DistantGarden
         src/HandledBlock.h
         src/world/gizmos/BulkPlaceGizmo.cpp
         src/world/gizmos/BulkPlaceGizmo.h
-        src/AtomicRWInt.h
         src/IndexOptimization.h
         src/OpenALStuff.cpp
         src/OpenALStuff.h

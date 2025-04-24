@@ -452,8 +452,9 @@ private:
                     {
                         //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
 
-                        auto lock = serverWorld.nonUserDataMap->getUniqueLock();
+
                         std::shared_lock<std::shared_mutex> udmRL(serverWorld.userDataMap->mutex());
+                        auto lock = serverWorld.nonUserDataMap->getUniqueLock();
 
                         IntTup offset = IntTup(vm.dimensions.x/-2, 0, vm.dimensions.z/-2) + m.spot;
                         for ( auto & p : vm.points)

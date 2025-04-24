@@ -747,9 +747,9 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
                 {
                     //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
-
-                    auto lock = world->nonUserDataMap->getUniqueLock();
                     std::shared_lock<std::shared_mutex> udmRL(world->userDataMap->mutex());
+                    auto lock = world->nonUserDataMap->getUniqueLock();
+
                     auto m = request.area;
                     int minX = std::min(m.corner1.x, m.corner2.x);
                     int maxX = std::max(m.corner1.x, m.corner2.x);
@@ -806,8 +806,9 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                     {
                         //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
                         std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
-                        auto lock = world->nonUserDataMap->getUniqueLock();
                         std::shared_lock<std::shared_mutex> udmRL(world->userDataMap->mutex());
+                        auto lock = world->nonUserDataMap->getUniqueLock();
+
 
                         IntTup offset = IntTup(vm.dimensions.x/-2, 0, vm.dimensions.z/-2) + request.vm.spot;
                         for ( auto & p : vm.points)
@@ -1066,14 +1067,14 @@ UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize, b
 void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, bool locked, BlockType blockType, UsableMesh& mesh, float
                                blockandambbright)
 {
-    float baseBrightness;
-    switch(side) {
-        case Side::Top:    baseBrightness = 1.0f * (blockandambbright / 16.0f); break;
-        case Side::Left:   baseBrightness = 0.7f * (blockandambbright / 16.0f); break;
-        case Side::Bottom: baseBrightness = 0.4f * (blockandambbright / 16.0f); break;
-        case Side::Right:  baseBrightness = 0.8f * (blockandambbright / 16.0f); break;
-        default:           baseBrightness = 0.9f * (blockandambbright / 16.0f); break;
-    }
+    // float baseBrightness;
+    // switch(side) {
+    //     case Side::Top:    baseBrightness = 1.0f * (blockandambbright / 16.0f); break;
+    //     case Side::Left:   baseBrightness = 0.7f * (blockandambbright / 16.0f); break;
+    //     case Side::Bottom: baseBrightness = 0.4f * (blockandambbright / 16.0f); break;
+    //     case Side::Right:  baseBrightness = 0.8f * (blockandambbright / 16.0f); break;
+    //     default:           baseBrightness = 0.9f * (blockandambbright / 16.0f); break;
+    // }
 
     float isGrass = blockType == GRASS ? 1.0f : 0.0f;
 
@@ -1105,7 +1106,7 @@ void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, 
 
         occlusion[v] = occlusionValue;
     }
-    auto packonocclbits = [](int occlusion, float blockandambbright)
+    static auto packonocclbits = [](int occlusion, float blockandambbright)
     {
         uint32_t packed;
         memcpy(&packed, &blockandambbright, sizeof(float));

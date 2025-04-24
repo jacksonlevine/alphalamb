@@ -175,9 +175,10 @@ bool loadDM(std::string filename, World* outWorld, entt::registry& reg, BlockAre
         spotsToEraseInUDM.reserve(500);
 
         {
+            std::shared_lock<std::shared_mutex> udmRL(outWorld->userDataMap->mutex());
             auto lock = outWorld->nonUserDataMap->getUniqueLock();
 
-            std::shared_lock<std::shared_mutex> udmRL(outWorld->userDataMap->mutex());
+
             for (auto & pvm : vms)
             {
                 auto & realvm = voxelModels[pvm.name];
