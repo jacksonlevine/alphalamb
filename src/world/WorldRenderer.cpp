@@ -274,27 +274,38 @@ double WorldRenderer::getDewyFogFactor(float temperature_noise, float humidity_n
 //MAIN THREAD COROUTINE
 void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod, float deltaTime, bool actuallyDraw)
 {
+    TwoIntTup playerChunkPosition = worldToChunkPos(
+        TwoIntTup(std::floor(playerCamera->transform.position.x),
+            std::floor(playerCamera->transform.position.z)));
+
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         auto& buffer = changeBuffers[i];
         //std::cout << "Buffer state: Ready: " << buffer.ready << " in use: " << buffer.in_use << std::endl;
         if(buffer.ready.load() && !buffer.in_use.load()) {
             //std::cout << "Mesh buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
-            modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
+
+                modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
 
 
-            if (buffer.from == std::nullopt)
-            {
-                activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
-            } else
-            {
-                activeChunks.erase(buffer.from.value());
-                activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
-            }
-            confirmedActiveChunksQueue.push(buffer.to);
+                if (buffer.from == std::nullopt)
+                {
+                    activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+                }
+                else
+                {
+                    activeChunks.erase(buffer.from.value());
+                    activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+                }
+                confirmedActiveChunksQueue.push(buffer.to);
+            
+            
             buffer.ready.store(false);
             freedChangeBuffers.push(i);  // Return to free list
             mbtBufferCV.notify_one();
-            break; //Only do one per frame
+
+                break; //Only do one per frame
+            
+            
         }
     }
 
@@ -304,29 +315,40 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
         //std::cout << "User Buffer state: Ready: " << buffer.ready << " in use: " << buffer.in_use << std::endl;
         if(buffer.ready.load() && !buffer.in_use.load()) {
             //std::cout << "Buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
-            modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
 
-            if (buffer.from == std::nullopt)
-            {
-                activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+            auto destdistfrompcp = glm::abs(buffer.to.x - playerChunkPosition.x) + glm::abs(buffer.to.z - playerChunkPosition.z);
 
-            } else
-            {
-                // activeChunks.erase(buffer.from.value());
-                // activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+            bool validchange = buffer.chunkIndex < chunkPool.size();
+            validchange = validchange && destdistfrompcp < currentMinDistance();
+
+            if (validchange) {
+                modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
+                if (buffer.from == std::nullopt)
+                {
+                    activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+
+                }
+                else
+                {
+                    // activeChunks.erase(buffer.from.value());
+                    // activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+                }
             }
+            
+
+            
             //Dont need to do this cause these user-requested chunk rebuilds never involve moving the chunk
             //confirmedActiveChunksQueue.push(buffer.to);
             buffer.ready.store(false);
             freedUserChangeMeshBuffers.push(i);  // Return to free list
             notifyBufferFreed();
 
-            break; //Only do one per frame
+            if (validchange) {
+                break; //Only do one per frame
+            }
         }
     }
-    TwoIntTup playerChunkPosition = worldToChunkPos(
-        TwoIntTup(std::floor(playerCamera->transform.position.x),
-            std::floor(playerCamera->transform.position.z)));
+
 
     static GLint grassRedChangeLoc = glGetUniformLocation(shader, "grassRedChange");
     static GLint timeRenderedLoc = glGetUniformLocation(shader, "timeRendered");
@@ -472,94 +494,42 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                 }
             }
         }
-        //for (auto & spotHere : checkspots)
-        //{
-        //    int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
-        //    //Do a lightpass for all of the nearby ones within 6 dist
-        //    if(dist <= 6)
-        //    {
-        //        auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor();
-        //        if(!litChunks.find(acc, spotHere))
-        //        {
-
-        //            lightPassOnChunk<false>(world, spotHere, chunkSize, 250, false);
-        //            litChunks.insert({spotHere, true});
-        //            //std::cout << "GAfter" << std::endl;
-
-
-        //        }
-        //    }
-        //}
-
 
         for (auto & spotHere : checkspots)
         {
-            // {
-            //     TwoIntTup chunk;
-            //     if (lightOverlapNotificationQueue.try_pull(chunk) == boost::queue_op_status::success)
-            //     {
-            //         if (mbtActiveChunks.contains(chunk))
-            //         {
-            //             auto & uci = mbtActiveChunks.at(chunk);
-            //
-            //             UsableMesh mesh;
-            //             {
-            //
-            //
-            //                 mesh = fromChunk(chunk, world, chunkSize, false);
-            //
-            //
-            //             }
-            //
-            //             size_t changeBufferIndex = -1;
-            //             {
-            //                 std::unique_lock<std::mutex> lock(mbtBufferMutex);
-            //                 mbtBufferCV.wait(lock, [&]() {
-            //                     return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
-            //                 });
-            //
-            //                 if (!meshBuildingThreadRunning) break;
-            //             }
-            //
-            //             if (changeBufferIndex != -1)
-            //             {
-            //                 auto& buffer = changeBuffers[changeBufferIndex];
-            //                 buffer.in_use.store(true);
-            //                 buffer.mesh = mesh;
-            //                 buffer.chunkIndex = uci.chunkIndex;
-            //                 buffer.from = chunk;
-            //                 buffer.to = chunk;
-            //                 buffer.ready.store(true);
-            //                 buffer.in_use.store(false);
-            //             }
-            //
-            //
-            //         }
-            //     }
-            // }
 
+            TwoIntTup cpcp = worldToChunkPos(
+                TwoIntTup(std::floor(playerCamera->transform.position.x),
+                    std::floor(playerCamera->transform.position.z)));
             for (auto & chunk : implicatedChunks)
             {
                 if (mbtActiveChunks.contains(chunk))
                 {
-                    auto & uci = mbtActiveChunks.at(chunk);
-
-                    UsableMesh mesh;
-                    {
 
 
-                                mesh = fromChunk(chunk, world, chunkSize, false, true);
-                                //I think have to do light pass for generation implicated chunks because they put new blocks there
+                    auto destdistfromcpcp = glm::abs(chunk.x - cpcp.x) + glm::abs(chunk.z - cpcp.z);
+
+                    bool validchange = destdistfromcpcp < currentMinDistance();
+
+                    if (validchange) {
+                        auto& uci = mbtActiveChunks.at(chunk);
+
+                        UsableMesh mesh;
+                        {
 
 
-                    }
+                            mesh = fromChunk(chunk, world, chunkSize, false, true);
+                            //I think have to do light pass for generation implicated chunks because they put new blocks there
+
+
+                        }
 
                         size_t changeBufferIndex = -1;
                         {
                             std::unique_lock<std::mutex> lock(mbtBufferMutex);
                             mbtBufferCV.wait(lock, [&]() {
                                 return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
-                            });
+                                });
 
                             if (!meshBuildingThreadRunning) break;
                         }
@@ -574,7 +544,9 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                             buffer.to = chunk;
                             buffer.ready.store(true);
                             buffer.in_use.store(false);
-                        }
+                        } 
+                    }
+                    
 
 
                 }
@@ -592,7 +564,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                 }
 
-                    int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
+                    int dist = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
                     if(dist <= currentMinDistance())
                     {
                         if (!mbtActiveChunks.contains(spotHere))

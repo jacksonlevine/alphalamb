@@ -452,7 +452,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         {
 
             auto & pos = scene->our<jl::Camera>().transform.position;
-            scene->worldRenderer->printMemoryFootprint();
+            //scene->worldRenderer->printMemoryFootprint();
 
         } else
         if (key == GLFW_KEY_H)
@@ -698,7 +698,6 @@ int main()
     theScene.playSong(sounds.at((int)SoundBuffers::SONG1), true);
     
     renderer->currentRenderDistance = theScene.rendDistSelection;
-    renderer->MIN_DISTANCE = renderer->currentRenderDistance + 1;
 
     initializePhysX();
 
