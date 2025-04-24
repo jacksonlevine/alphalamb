@@ -316,24 +316,19 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
         if(buffer.ready.load() && !buffer.in_use.load()) {
             //std::cout << "Buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
 
-            auto destdistfrompcp = glm::abs(buffer.to.x - playerChunkPosition.x) + glm::abs(buffer.to.z - playerChunkPosition.z);
 
-            bool validchange = buffer.chunkIndex < chunkPool.size();
-            validchange = validchange && destdistfrompcp < currentMinDistance();
+            modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
+            if (buffer.from == std::nullopt)
+            {
+                activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
 
-            if (validchange) {
-                modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
-                if (buffer.from == std::nullopt)
-                {
-                    activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
-
-                }
-                else
-                {
-                    // activeChunks.erase(buffer.from.value());
-                    // activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
-                }
             }
+            else
+            {
+                // activeChunks.erase(buffer.from.value());
+                // activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+            }
+            
             
 
             
@@ -343,9 +338,8 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
             freedUserChangeMeshBuffers.push(i);  // Return to free list
             notifyBufferFreed();
 
-            if (validchange) {
-                break; //Only do one per frame
-            }
+            break; //Only do one per frame
+            
         }
     }
 
