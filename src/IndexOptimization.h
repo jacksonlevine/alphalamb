@@ -34,12 +34,12 @@ public:
 
 constexpr GLuint vaoNameOfChunkIndex(int chunkIndex, IndexOptimization::Vao vao)
 {
-    return startingChunkVbo + chunkIndex*2 + vao;
+    return startingChunkVbo + ((GLuint)chunkIndex) * 2 + (GLuint)vao;
 }
 
 constexpr GLuint bufferNameOfChunkIndex(int chunkIndex, IndexOptimization::Buffer buffer)
 {
-    return startingChunkVbo + chunkIndex*8 + buffer;
+    return startingChunkVbo + ((GLuint)chunkIndex) *8 + buffer;
 }
 
 #endif //INDEXOPTIMIZATION_H

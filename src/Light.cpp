@@ -98,6 +98,9 @@ ChunkLightSources getChunkLightSourcesBlockAndAmbient(
         .ambientNewSources = newAmbientLightSources,
     };
 }
+
+
+
 void propagateAllLightsLayered(World* world,
     const std::vector<std::pair<IntTup, ColorPack>>& lightSources,
     LightMapType& lightmap,
@@ -183,7 +186,6 @@ void propagateAllLightsLayered(World* world,
 }
 
 
-
 void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, ColorPack>>& lightSourcesToRemove,
     LightMapType& lightmap,
     TwoIntTup chunkOrigin,
@@ -195,26 +197,28 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, ColorPack>>
     constexpr size_t height = chunkHeight + 2 * pad;
     constexpr size_t depth = chunkDepth + 2 * pad;
     constexpr size_t volume = width * height * depth;
+    constexpr int maxLightLevel = 15; // Max value of any RGB component (0-15)
 
     int minX = chunkOrigin.x * chunkWidth - pad;
     int minY = 0 - pad;
     int minZ = chunkOrigin.z * chunkDepth - pad;
 
     std::bitset<volume> visited;
-    std::queue<std::tuple<IntTup, IntTup>> toProcess; // Queue of {position, origin}
+    // Layers indexed by distance from source (0 to maxLightLevel)
+    std::vector<std::vector<std::pair<IntTup, IntTup>>> layers(maxLightLevel + 1);
 
     std::unique_lock<std::shared_mutex> lock;
     if (!locked) {
         lock = std::unique_lock<std::shared_mutex>(lightmapMutex);
     }
 
-    // Initialize removal of light sources
+    // Initialize removal of light sources (layer 0)
     for (const auto& [pos, level] : lightSourcesToRemove) {
         size_t idx = (pos.x - minX) + (pos.z - minZ) * width + (pos.y - minY) * width * depth;
         if (idx >= volume) continue;
         if (visited[idx]) continue;
         visited[idx] = true;
-        toProcess.push({ pos, pos });
+        layers[0].push_back({ pos, pos });
         setLightLevelFromOriginHere(pos, pos, ColorPack(0, 0, 0), lightmap);
         if (implicatedChunks) {
             TwoIntTup chunkPos = WorldRenderer::worldToChunkPos(TwoIntTup(pos.x, pos.z));
@@ -224,46 +228,43 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, ColorPack>>
         }
     }
 
-    // Process all affected cells
-    while (!toProcess.empty()) {
-        auto [spot, origin] = toProcess.front();
-        auto originhash = IntTupHash{}(origin, true);
-        toProcess.pop();
+    // Process layers outward (distance-based)
+    for (int level = 0; level < maxLightLevel; ++level) {
+        for (const auto& [spot, origin] : layers[level]) {
+            auto originhash = IntTupHash{}(origin, true);
+            for (const auto& offset : neighbs) {
+                IntTup neighbor = spot + offset;
+                size_t idx = (neighbor.x - minX) + (neighbor.z - minZ) * width + (neighbor.y - minY) * width * depth;
+                if (idx >= volume) continue;
+                if (visited[idx]) continue;
 
-        for (const auto& offset : neighbs) {
-            IntTup neighbor = spot + offset;
-            size_t idx = (neighbor.x - minX) + (neighbor.z - minZ) * width + (neighbor.y - minY) * width * depth;
-            if (idx >= volume) continue;
-            if (visited[idx]) continue;
-
-            auto lmentry = lightmap.find(neighbor);
-            if (lmentry != lightmap.end()) {
-                auto& rays = lmentry->second.rays;
-                bool hasRay = false;
-                for (auto it = rays.begin(); it != rays.end();) {
-                    if (it->originhash == originhash) {
-                        hasRay = true;
-                        it = rays.erase(it);
+                auto lmentry = lightmap.find(neighbor);
+                if (lmentry != lightmap.end()) {
+                    auto& rays = lmentry->second.rays;
+                    bool hasRay = false;
+                    for (auto it = rays.begin(); it != rays.end();) {
+                        if (it->originhash == originhash) {
+                            hasRay = true;
+                            it = rays.erase(it);
+                        }
+                        else {
+                            ++it;
+                        }
                     }
-                    else {
-                        ++it;
-                    }
-                }
-                if (hasRay) {
-                    visited[idx] = true;
-                    toProcess.push({ neighbor, origin });
-                    setLightLevelFromOriginHere(neighbor, origin, ColorPack(0, 0, 0), lightmap);
-                    // if (rays.empty()) {
-                    //     lightmap.erase(lmentry);
-                    // }
-                    if (implicatedChunks) {
-                        TwoIntTup chunkPos = WorldRenderer::worldToChunkPos(TwoIntTup(neighbor.x, neighbor.z));
-                        if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
-                            implicatedChunks->insert(chunkPos);
+                    if (hasRay) {
+                        visited[idx] = true;
+                        layers[level + 1].push_back({ neighbor, origin });
+                        setLightLevelFromOriginHere(neighbor, origin, ColorPack(0, 0, 0), lightmap);
+                        if (implicatedChunks) {
+                            TwoIntTup chunkPos = WorldRenderer::worldToChunkPos(TwoIntTup(neighbor.x, neighbor.z));
+                            if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
+                                implicatedChunks->insert(chunkPos);
+                            }
                         }
                     }
                 }
             }
         }
+        layers[level].clear();
     }
 }
