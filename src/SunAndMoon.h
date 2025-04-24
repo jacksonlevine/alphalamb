@@ -5,8 +5,6 @@
 #ifndef SUNANDMOON_H
 #define SUNANDMOON_H
 
-#include "AtomicRWInt.h"
-#include "AtomicRWInt.h"
 #include "PrecompHeader.h"
 #include "Shader.h"
 #include "Camera.h"

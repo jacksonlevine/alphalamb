@@ -4,8 +4,6 @@
 
 #ifndef DRAWSKY_H
 #define DRAWSKY_H
-#include "AtomicRWInt.h"
-#include "AtomicRWInt.h"
 #include "Camera.h"
 
 
