@@ -524,7 +524,11 @@ void cursorPosCallback(GLFWwindow* window, double xpos, double ypos)
             // print(cout, "xOffset: {}, yOffset: {} \n", xOffset, yOffset);
             auto & camera = scene->our<jl::Camera>();
 
-            camera.updateYPIndirect(camera.targetYaw + static_cast<float>(xOffset), camera.targetPitch + static_cast<float>(yOffset));
+            //camera.updateYPIndirect(camera.targetYaw + static_cast<float>(xOffset), camera.targetPitch + static_cast<float>(yOffset));
+
+            camera.transform.yaw += static_cast<float>(xOffset);
+            camera.transform.pitch += static_cast<float>(yOffset);
+
             //scene->guiCamera->updateWithYawPitch(scene->guiCamera->transform.yaw + static_cast<float>(xOffset), scene->guiCamera->transform.pitch + static_cast<float>(yOffset));
         }
 
@@ -1017,13 +1021,7 @@ int main()
                     profiler.checkTime("Update collcage for a player");
                     camera.updateWithYawPitch(camera.transform.yaw, camera.transform.pitch);
                     profiler.checkTime("Update yp for a player");
-                    if (id == theScene.myPlayerIndex)
-                    {
-                        camera.interpTowardTargetYP(deltaTime);
-                    } else
-                    {
-                        camera.interpTowardTargetYP(deltaTime*0.35f);
-                    }
+
                     profiler.checkTime("Interp toward target yp");
 
 
@@ -1167,7 +1165,9 @@ int main()
                         {
                             theScene.addPlayerWithIndex(m.myPlayerIndex, m.id);
                         }
-                        theScene.REG.get<jl::Camera>(m.myPlayerIndex).updateYPIndirect(m.newYaw, m.newPitch);
+                        auto & playcam = theScene.REG.get<jl::Camera>(m.myPlayerIndex);
+                        playcam.transform.yaw = m.newYaw;
+                        playcam.transform.pitch = m.newPitch;
 
                     }
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>)

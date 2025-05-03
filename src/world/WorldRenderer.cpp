@@ -476,7 +476,10 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
         for (auto & spotHere : checkspots)
         {
-            int dist = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
+            TwoIntTup cpcp = worldToChunkPos(
+                TwoIntTup(std::floor(playerCamera->transform.position.x),
+                    std::floor(playerCamera->transform.position.z)));
+            int dist = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
             if(dist <= currentMinDistance())
             {
                 auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor();
@@ -499,13 +502,14 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
             {
                 if (mbtActiveChunks.contains(chunk))
                 {
+                    //if(mbtActiveChunks.)
 
 
-                    auto destdistfromcpcp = glm::abs(chunk.x - cpcp.x) + glm::abs(chunk.z - cpcp.z);
+                    /*auto destdistfromcpcp = glm::abs(chunk.x - cpcp.x) + glm::abs(chunk.z - cpcp.z);
 
-                    bool validchange = destdistfromcpcp < currentMinDistance();
+                    bool validchange = destdistfromcpcp < currentMinDistance();*/
 
-                    if (validchange) {
+                    //if (validchange) {
                         auto& uci = mbtActiveChunks.at(chunk);
 
                         UsableMesh mesh;
@@ -539,7 +543,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                             buffer.ready.store(true);
                             buffer.in_use.store(false);
                         } 
-                    }
+                    //}
                     
 
 
@@ -553,6 +557,9 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                     if (mbtActiveChunks.contains(confirmedChunk))
                     {
                         mbtActiveChunks.at(confirmedChunk).confirmedByMainThread = true;
+                    }
+                    else {
+                        std::cerr << "Why was a chunk not in mbtActiveChunks confirmed as being in activeChunks" << std::endl;
                     }
 
 
@@ -591,6 +598,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                 buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
 
                                 buffer.chunkIndex = addUninitializedChunkBuffer();
+                                std::cout << "Giving new buffer " << buffer.chunkIndex << std::endl;
                                 buffer.from = std::nullopt;
                                 buffer.to = spotHere;
 
@@ -620,7 +628,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                 }
 
                                 // Calculate distance to yourPosition
-                                int distance = abs(chunkPos.x - playerChunkPosition.x) + abs(chunkPos.z - playerChunkPosition.z);
+                                int distance = abs(chunkPos.x - cpcp.x) + abs(chunkPos.z - cpcp.z);
 
 
                                 // Filter out chunks closer than MIN_DISTANCE
@@ -645,7 +653,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                 {
                                     //If the place we're going will afford a shorter distance from player, choose this one.
 
-                                    int newDistance = abs(spotHere.x - playerChunkPosition.x) + abs(spotHere.z - playerChunkPosition.z);
+                                    int newDistance = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
 
                                     if (newDistance < oldDistance)
                                     {
