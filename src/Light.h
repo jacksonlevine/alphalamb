@@ -123,7 +123,7 @@ struct LightSpot {
         return res;
     }
 };
-using LightMapType = boost::unordered_flat_map<IntTup, LightSpot, IntTupHash>;
+using LightMapType = boost::unordered_map<IntTup, LightSpot, IntTupHash>;
 
 constexpr auto neighbs = std::to_array({
     IntTup(-1,0,0), IntTup(1,0,0),

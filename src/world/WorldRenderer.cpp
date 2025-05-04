@@ -569,149 +569,149 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                     if(dist <= currentMinDistance())
                     {
                         if (!mbtActiveChunks.contains(spotHere))
-                    {
-                            // if(!generatedChunks.contains(spotHere))
-                            // {
-                            //     generateChunk(world, spotHere, implicatedChunks);
-                            // }
-                        //std::cout << "Spot " << i << " " << j << std::endl;
+                        {
+                                // if(!generatedChunks.contains(spotHere))
+                                // {
+                                //     generateChunk(world, spotHere, implicatedChunks);
+                                // }
+                            //std::cout << "Spot " << i << " " << j << std::endl;
 
-                        //IF we havent reached the max chunks yet, we can just make a new one for this spot.
-                        //ELSE, we reuse the furthest one from the player, ONLY IF the new distance will be shorter than the last distance!
+                            //IF we havent reached the max chunks yet, we can just make a new one for this spot.
+                            //ELSE, we reuse the furthest one from the player, ONLY IF the new distance will be shorter than the last distance!
                             if (chunkPoolSize.load() < (static_cast<unsigned long long>(currentMaxChunks()) - 4))
-                        {
-                            size_t changeBufferIndex = -1;
                             {
-                                std::unique_lock<std::mutex> lock(mbtBufferMutex);
-                                mbtBufferCV.wait(lock, [&]() {
-                                    return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
-                                });
-
-                                if (!meshBuildingThreadRunning) break;
-                            }
-                            if (changeBufferIndex != -1)
-                            {
-                                //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
-
-                                auto& buffer = changeBuffers[changeBufferIndex];
-                                buffer.in_use.store(true);
-                                buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
-
-                                buffer.chunkIndex = addUninitializedChunkBuffer();
-                                std::cout << "Giving new buffer " << buffer.chunkIndex << std::endl;
-                                buffer.from = std::nullopt;
-                                buffer.to = spotHere;
-
-
-                                mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(buffer.chunkIndex));
-
-
-                                buffer.ready.store(true);   // Signal that data is ready
-                                buffer.in_use.store(false);
-                            }
-
-
-
-
-                        } else
-                        {
-
-
-                            std::vector<std::pair<int,TwoIntTup>> chunksWithDistances;
-
-                            for (const auto& [chunkPos, usedChunkInfo] : mbtActiveChunks) {
-
-                                if (!usedChunkInfo.confirmedByMainThread)
+                                size_t changeBufferIndex = -1;
                                 {
-                                    //We only want ones confirmed by main thread, we know we can repurpose those
-                                    continue;
+                                    std::unique_lock<std::mutex> lock(mbtBufferMutex);
+                                    mbtBufferCV.wait(lock, [&]() {
+                                        return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
+                                    });
+
+                                    if (!meshBuildingThreadRunning) break;
+                                }
+                                if (changeBufferIndex != -1)
+                                {
+                                    //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
+
+                                    auto& buffer = changeBuffers[changeBufferIndex];
+                                    buffer.in_use.store(true);
+                                    buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
+
+                                    buffer.chunkIndex = addUninitializedChunkBuffer();
+                                    std::cout << "Giving new buffer " << buffer.chunkIndex << std::endl;
+                                    buffer.from = std::nullopt;
+                                    buffer.to = spotHere;
+
+
+                                    mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(buffer.chunkIndex));
+
+
+                                    buffer.ready.store(true);   // Signal that data is ready
+                                    buffer.in_use.store(false);
                                 }
 
-                                // Calculate distance to yourPosition
-                                int distance = abs(chunkPos.x - cpcp.x) + abs(chunkPos.z - cpcp.z);
-                                // int betterdistance = glm::round(glm::distance(glm::vec2(chunkPos.x, chunkPos.z), glm::vec2(cpcp.x, cpcp.z)));
-
-                                // Filter out chunks closer than MIN_DISTANCE
-                                if (distance > currentMinDistance()) {
-                                    chunksWithDistances.emplace_back(distance, chunkPos);
-                                }
-
-                            }
 
 
 
-                            //If any still matching the criteria
-                            if(!chunksWithDistances.empty())
+                            } else
                             {
-                                // Sort chunks by distance
-                                std::ranges::sort(chunksWithDistances,
-                                                  [](const std::pair<int, TwoIntTup>& a, const std::pair<int, TwoIntTup>& b) {
-                                                      return a.first > b.first;
-                                                  });
 
-                                for (const auto& [oldDistance, oldSpot] : chunksWithDistances)
-                                {
-                                    //If the place we're going will afford a shorter distance from player, choose this one.
 
-                                    int newDistance = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
+                                std::vector<std::pair<int,TwoIntTup>> chunksWithDistances;
 
-                                    if (newDistance < (oldDistance-2)) //add some epsilon or range so it stops grabbing chunks from the edge of valid-chunk-range & leaving holes
+                                for (const auto& [chunkPos, usedChunkInfo] : mbtActiveChunks) {
+
+                                    if (!usedChunkInfo.confirmedByMainThread)
                                     {
-                                        size_t chunkIndex = mbtActiveChunks.at(oldSpot).chunkIndex;
+                                        //We only want ones confirmed by main thread, we know we can repurpose those
+                                        continue;
+                                    }
 
-                                        size_t changeBufferIndex = -1;
-                                        {
-                                            std::unique_lock<std::mutex> lock(mbtBufferMutex);
-                                            mbtBufferCV.wait(lock, [&]() {
-                                                return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
-                                            });
+                                    // Calculate distance to yourPosition
+                                    int distance = abs(chunkPos.x - cpcp.x) + abs(chunkPos.z - cpcp.z);
+                                    // int betterdistance = glm::round(glm::distance(glm::vec2(chunkPos.x, chunkPos.z), glm::vec2(cpcp.x, cpcp.z)));
 
-                                            if (!meshBuildingThreadRunning) break;
-                                        }
-
-                                        if (changeBufferIndex != -1)
-                                        {
-                                            //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
-
-                                            auto& buffer = changeBuffers[changeBufferIndex];
-                                            buffer.in_use.store(true);
-                                            buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
-
-                                            buffer.chunkIndex = chunkIndex;
-                                            buffer.from = oldSpot;
-                                            buffer.to = spotHere;
-
-
-
-                                            mbtActiveChunks.erase(oldSpot);
-                                            generatedChunks.erase(oldSpot);
-                                            litChunks.erase(oldSpot);
-                /*                            {
-                                                auto lmlock = std::unique_lock<std::shared_mutex>(lightmapMutex);
-                                                ambientlightmap.eraseChunk(oldSpot);
-                                                lightmap.eraseChunk(oldSpot);
-                                            }*/
-
-                                            world->nonUserDataMap->erase(oldSpot);
-                                            mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
-
-                                            buffer.ready.store(true);   // Signal that data is ready
-                                            buffer.in_use.store(false);
-                                        }
-
-
-
-                                        break;
+                                    // Filter out chunks closer than MIN_DISTANCE
+                                    if (distance > currentMinDistance()) {
+                                        chunksWithDistances.emplace_back(distance, chunkPos);
                                     }
 
                                 }
+
+
+
+                                //If any still matching the criteria
+                                if(!chunksWithDistances.empty())
+                                {
+                                    // Sort chunks by distance
+                                    std::ranges::sort(chunksWithDistances,
+                                                      [](const std::pair<int, TwoIntTup>& a, const std::pair<int, TwoIntTup>& b) {
+                                                          return a.first > b.first;
+                                                      });
+
+                                    for (const auto& [oldDistance, oldSpot] : chunksWithDistances)
+                                    {
+                                        //If the place we're going will afford a shorter distance from player, choose this one.
+
+                                        int newDistance = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
+
+                                        if (newDistance < (oldDistance-2)) //add some epsilon or range so it stops grabbing chunks from the edge of valid-chunk-range & leaving holes
+                                        {
+                                            size_t chunkIndex = mbtActiveChunks.at(oldSpot).chunkIndex;
+
+                                            size_t changeBufferIndex = -1;
+                                            {
+                                                std::unique_lock<std::mutex> lock(mbtBufferMutex);
+                                                mbtBufferCV.wait(lock, [&]() {
+                                                    return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
+                                                });
+
+                                                if (!meshBuildingThreadRunning) break;
+                                            }
+
+                                            if (changeBufferIndex != -1)
+                                            {
+                                                //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
+
+                                                auto& buffer = changeBuffers[changeBufferIndex];
+                                                buffer.in_use.store(true);
+                                                buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
+
+                                                buffer.chunkIndex = chunkIndex;
+                                                buffer.from = oldSpot;
+                                                buffer.to = spotHere;
+
+
+
+                                                mbtActiveChunks.erase(oldSpot);
+                                                generatedChunks.erase(oldSpot);
+                                                litChunks.erase(oldSpot);
+                    /*                            {
+                                                    auto lmlock = std::unique_lock<std::shared_mutex>(lightmapMutex);
+                                                    ambientlightmap.eraseChunk(oldSpot);
+                                                    lightmap.eraseChunk(oldSpot);
+                                                }*/
+
+                                                world->nonUserDataMap->erase(oldSpot);
+                                                mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
+
+                                                buffer.ready.store(true);   // Signal that data is ready
+                                                buffer.in_use.store(false);
+                                            }
+
+
+
+                                            break;
+                                        }
+
+                                    }
+                                }
+
+
+
                             }
 
-
-
                         }
-
-                    }
                     }
 
 
