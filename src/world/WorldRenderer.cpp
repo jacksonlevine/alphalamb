@@ -629,7 +629,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                                 // Calculate distance to yourPosition
                                 int distance = abs(chunkPos.x - cpcp.x) + abs(chunkPos.z - cpcp.z);
-
+                                // int betterdistance = glm::round(glm::distance(glm::vec2(chunkPos.x, chunkPos.z), glm::vec2(cpcp.x, cpcp.z)));
 
                                 // Filter out chunks closer than MIN_DISTANCE
                                 if (distance > currentMinDistance()) {
@@ -655,7 +655,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                                     int newDistance = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
 
-                                    if (newDistance < oldDistance)
+                                    if (newDistance < (oldDistance-2)) //add some epsilon or range so it stops grabbing chunks from the edge of valid-chunk-range & leaving holes
                                     {
                                         size_t chunkIndex = mbtActiveChunks.at(oldSpot).chunkIndex;
 
