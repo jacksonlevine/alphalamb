@@ -589,6 +589,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                                     if (!meshBuildingThreadRunning) break;
                                 }
+
                                 if (changeBufferIndex != -1)
                                 {
                                     //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
@@ -602,16 +603,11 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                     buffer.from = std::nullopt;
                                     buffer.to = spotHere;
 
-
                                     mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(buffer.chunkIndex));
-
 
                                     buffer.ready.store(true);   // Signal that data is ready
                                     buffer.in_use.store(false);
                                 }
-
-
-
 
                             } else
                             {
@@ -631,7 +627,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                     int distance = abs(chunkPos.x - cpcp.x) + abs(chunkPos.z - cpcp.z);
                                     // int betterdistance = glm::round(glm::distance(glm::vec2(chunkPos.x, chunkPos.z), glm::vec2(cpcp.x, cpcp.z)));
 
-                                    // Filter out chunks closer than MIN_DISTANCE
+                                    // Filter out chunks closer than MIN_DISTANCE (We only want to repurpose chunks outside of currentMinDistance
                                     if (distance > currentMinDistance()) {
                                         chunksWithDistances.emplace_back(distance, chunkPos);
                                     }
