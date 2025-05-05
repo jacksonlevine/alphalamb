@@ -599,7 +599,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                     buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
 
                                     buffer.chunkIndex = addUninitializedChunkBuffer();
-                                    std::cout << "Giving new buffer " << buffer.chunkIndex << std::endl;
+                                   // std::cout << "Giving new buffer " << buffer.chunkIndex << std::endl;
                                     buffer.from = std::nullopt;
                                     buffer.to = spotHere;
 
