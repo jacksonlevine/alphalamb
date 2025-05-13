@@ -274,7 +274,7 @@ double WorldRenderer::getDewyFogFactor(float temperature_noise, float humidity_n
 //MAIN THREAD COROUTINE
 void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod, float deltaTime, bool actuallyDraw)
 {
-    TwoIntTup playerChunkPosition = worldToChunkPos(
+    TwoIntTup playerChunkPosition = stupidWorldRendererWorldToChunkPos(
         TwoIntTup(std::floor(playerCamera->transform.position.x),
             std::floor(playerCamera->transform.position.z)));
 
@@ -435,7 +435,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
 
 
-        TwoIntTup playerChunkPosition = worldToChunkPos(
+        TwoIntTup playerChunkPosition = stupidWorldRendererWorldToChunkPos(
         TwoIntTup(std::floor(playerCamera->transform.position.x),
                      std::floor(playerCamera->transform.position.z)));
 
@@ -476,7 +476,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
         for (auto & spotHere : checkspots)
         {
-            TwoIntTup cpcp = worldToChunkPos(
+            TwoIntTup cpcp = stupidWorldRendererWorldToChunkPos(
                 TwoIntTup(std::floor(playerCamera->transform.position.x),
                     std::floor(playerCamera->transform.position.z)));
             int dist = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
@@ -495,7 +495,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         for (auto & spotHere : checkspots)
         {
 
-            TwoIntTup cpcp = worldToChunkPos(
+            TwoIntTup cpcp = stupidWorldRendererWorldToChunkPos(
                 TwoIntTup(std::floor(playerCamera->transform.position.x),
                     std::floor(playerCamera->transform.position.z)));
             for (auto & chunk : implicatedChunks)
@@ -681,14 +681,14 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                                                 mbtActiveChunks.erase(oldSpot);
                                                 generatedChunks.erase(oldSpot);
-                                                litChunks.erase(oldSpot);
-                    /*                            {
-                                                    auto lmlock = std::unique_lock<std::shared_mutex>(lightmapMutex);
-                                                    ambientlightmap.eraseChunk(oldSpot);
-                                                    lightmap.eraseChunk(oldSpot);
-                                                }*/
-
-                                                world->nonUserDataMap->erase(oldSpot);
+                                              //   litChunks.erase(oldSpot);
+                                              // {
+                                              //       auto lmlock = std::unique_lock<std::shared_mutex>(lightmapMutex);
+                                              //       ambientlightmap.deleteChunk(oldSpot);
+                                              //       lightmap.deleteChunk(oldSpot);
+                                              //   }
+                                              //
+                                              //   world->nonUserDataMap.erase(oldSpot);
                                                 mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
 
                                                 buffer.ready.store(true);   // Signal that data is ready
@@ -751,8 +751,8 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
                 {
                     //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
-                    std::shared_lock<std::shared_mutex> udmRL(world->userDataMap->mutex());
-                    auto lock = world->nonUserDataMap->getUniqueLock();
+                    std::shared_lock<std::shared_mutex> udmRL(world->userDataMap.mutex());
+                    auto lock = world->nonUserDataMap.getUniqueLock();
 
                     auto m = request.area;
                     int minX = std::min(m.corner1.x, m.corner2.x);
@@ -771,7 +771,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
                                 if (isBoundary || !m.hollow) {
                                     world->setNUDMLocked(IntTup{x, y, z}, m.block);
-                                    if (world->userDataMap->getUnsafe(IntTup{x, y, z}) != std::nullopt)
+                                    if (world->userDataMap.getUnsafe(IntTup{x, y, z}) != std::nullopt)
                                     {
                                         spotsToEraseInUDM.emplace_back(x, y, z);
                                     }
@@ -783,10 +783,10 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                 }
 
                 {
-                    auto lock = world->userDataMap->getUniqueLock();
+                    auto lock = world->userDataMap.getUniqueLock();
                     for (auto & spot : spotsToEraseInUDM)
                     {
-                        world->userDataMap->erase(spot, true);
+                        world->userDataMap.erase(spot, true);
                     }
                 }
 
@@ -810,15 +810,15 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                     {
                         //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
                         std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
-                        std::shared_lock<std::shared_mutex> udmRL(world->userDataMap->mutex());
-                        auto lock = world->nonUserDataMap->getUniqueLock();
+                        std::shared_lock<std::shared_mutex> udmRL(world->userDataMap.mutex());
+                        auto lock = world->nonUserDataMap.getUniqueLock();
 
 
                         IntTup offset = IntTup(vm.dimensions.x/-2, 0, vm.dimensions.z/-2) + request.vm.spot;
                         for ( auto & p : vm.points)
                         {
                             world->setNUDMLocked(offset+p.localSpot, p.colorIndex);
-                            if (world->userDataMap->getUnsafe(offset+p.localSpot) != std::nullopt)
+                            if (world->userDataMap.getUnsafe(offset+p.localSpot) != std::nullopt)
                             {
                                 spotsToEraseInUDM.emplace_back(offset+p.localSpot);
                             }
@@ -829,10 +829,10 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
                     }
                     {
-                        auto lock = world->userDataMap->getUniqueLock();
+                        auto lock = world->userDataMap.getUniqueLock();
                         for (auto & spot : spotsToEraseInUDM)
                         {
-                            world->userDataMap->erase(spot, true);
+                            world->userDataMap.erase(spot, true);
                         }
                     }
                     if (rebuildToMainAreaNotifications.write_available() > 0)
@@ -1002,7 +1002,7 @@ void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std:
                     if(point.colorIndex != AIR)
                     {
                         auto finalspot = realSpot + point.localSpot + offset;
-                        auto chunkhere = WorldRenderer::worldToChunkPos(TwoIntTup(finalspot.x, finalspot.z));
+                        auto chunkhere = WorldRenderer::stupidWorldRendererWorldToChunkPos(TwoIntTup(finalspot.x, finalspot.z));
                         if (implicatedChunks && chunkhere != chunkSpot)
                         {
                             implicatedChunks->insert(chunkhere);

@@ -59,8 +59,8 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
 
     // SCollect block data, light sources (if doLight), and blocks to mesh
     if (!locked) {
-        std::shared_lock<std::shared_mutex> url(world->userDataMap->mutex());
-        std::shared_lock<std::shared_mutex> nrl(world->nonUserDataMap->mutex());
+        std::shared_lock<std::shared_mutex> url(world->userDataMap.mutex());
+        std::shared_lock<std::shared_mutex> nrl(world->nonUserDataMap.mutex());
         std::shared_lock<std::shared_mutex> lightLock;
         if(doLight) {
             lightLock = std::shared_lock<std::shared_mutex>(lightmapMutex);
@@ -88,9 +88,9 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         }
 
                         // Check ambient lightmap
-                        auto ambientSpot = ambientlightmap.find(here);
-                        if (ambientSpot != ambientlightmap.end()) {
-                            for (const auto& ray : ambientSpot->second.rays) {
+                        auto ambientSpot = ambientlightmap.get(here);
+                        if (ambientSpot != std::nullopt) {
+                            for (const auto& ray : ambientSpot.value()->rays) {
                                 if (originhash == ray.originhash) {
                                     oldAmbientSources.push_back(std::make_pair(here, SKYLIGHTVAL));
                                 }
@@ -98,9 +98,9 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         }
 
                         // Check block lightmap
-                        auto blockSpot = lightmap.find(here);
-                        if (blockSpot != lightmap.end()) {
-                            for (const auto& ray : blockSpot->second.rays) {
+                        auto blockSpot = lightmap.get(here);
+                        if (blockSpot != std::nullopt) {
+                            for (const auto& ray : blockSpot.value()->rays) {
                                 if (originhash == ray.originhash) {
                                     oldBlockSources.push_back(std::make_pair(here, TORCHLIGHTVAL));
                                 }
@@ -168,9 +168,9 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         }
 
                         // Check ambient lightmap
-                        auto ambientSpot = ambientlightmap.find(here);
-                        if (ambientSpot != ambientlightmap.end()) {
-                            for (const auto& ray : ambientSpot->second.rays) {
+                        auto ambientSpot = ambientlightmap.get(here);
+                        if (ambientSpot != std::nullopt) {
+                            for (const auto& ray : ambientSpot.value()->rays) {
                                 if (originhash == ray.originhash) {
                                     oldAmbientSources.push_back(std::make_pair(here, SKYLIGHTVAL));
                                 }
@@ -178,9 +178,9 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         }
 
                         // Check block lightmap
-                        auto blockSpot = lightmap.find(here);
-                        if (blockSpot != lightmap.end()) {
-                            for (const auto& ray : blockSpot->second.rays) {
+                        auto blockSpot = lightmap.get(here);
+                        if (blockSpot != std::nullopt) {
+                            for (const auto& ray : blockSpot.value()->rays) {
                                 if (originhash == ray.originhash) {
                                     oldBlockSources.push_back(std::make_pair(here, TORCHLIGHTVAL));
                                 }
@@ -230,8 +230,8 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
     if (doLight) {
         if(!locked)
         {
-            std::shared_lock<std::shared_mutex> url(world->userDataMap->mutex());
-            std::shared_lock<std::shared_mutex> nrl(world->nonUserDataMap->mutex());
+            std::shared_lock<std::shared_mutex> url(world->userDataMap.mutex());
+            std::shared_lock<std::shared_mutex> nrl(world->nonUserDataMap.mutex());
             auto lightlock = std::unique_lock<std::shared_mutex>(lightmapMutex);
 
             unpropagateAllLightsLayered(oldBlockSources, lightmap, spot, &implicatedChunks, true);
@@ -298,11 +298,11 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         if(!locked) {
                             lightLock = std::shared_lock<std::shared_mutex>(lightmapMutex);
                         }
-                        if (lightmap.contains(ns)) {
-                            blockBright = lightmap.at(ns).sum();
+                        if (lightmap.get(ns) != std::nullopt) {
+                            blockBright = lightmap.get(ns).value()->sum();
                         }
-                        if (ambientlightmap.contains(ns)) {
-                            ambientBright = ambientlightmap.at(ns).sum();
+                        if (ambientlightmap.get(ns) != std::nullopt) {
+                            ambientBright = ambientlightmap.get(ns).value()->sum();
                         }
                     }
                     auto blockAndAmbBright = getBlockAmbientLightVal(blockBright, ambientBright);

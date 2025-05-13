@@ -15,6 +15,6 @@ std::shared_mutex clientsMutex;
 // PlacedVoxModelRegistry serverWorld.placedVoxModels;
 // DataMap* serverWorld.userDataMap = new HashMapDataMap();
 
-World serverWorld{new HashMapDataMap(), new OverworldWorldGenMethod(), new HashMapDataMap()};
+World serverWorld{new HashMapDataMap(), new OverworldWorldGenMethod()};
 InvMapKeyedByUID invMapKeyedByUID = {};
 entt::registry serverReg = {};

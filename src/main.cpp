@@ -647,10 +647,16 @@ static void onPhysicsComponentAdded(entt::registry& reg, entt::entity entity) {
 
 }
 
+const PxU32 scratchMemorySize = 16 * 1024;
+
+void* scratchMemory = nullptr;
+
 int main()
 {
 
-    StepTimerProfiler<true> profiler;
+    scratchMemory = _aligned_malloc(scratchMemorySize, 16);
+
+    StepTimerProfiler<false> profiler;
 
     glfwInit();
     GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
@@ -689,7 +695,7 @@ int main()
     glFrontFace(GL_CCW);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     //glEnable(GL_MULTISAMPLE); // Enable MSAA in OpenGL
 
     initOpenAL();
@@ -769,8 +775,7 @@ int main()
 
     World world(
         new HashMapDataMap(),
-        new OverworldWorldGenMethod(),
-        new HashMapDataMap());
+        new OverworldWorldGenMethod());
 
     theScene.world = &world;
     // VoxModel swcModel = loadSwc("resources/swctest.txt");
@@ -1374,7 +1379,11 @@ int main()
 
             if (simscene)
             {
-                gScene->simulate(deltaTime);
+                if (deltaTime > 0.0f)
+                {
+                    gScene->simulate(glm::min(0.5f, deltaTime), nullptr, scratchMemory, scratchMemorySize);
+                }
+
                 //std::cout << "Simming scene with seed " <<
             }
             profiler.checkTime("Start simulate");
@@ -1404,7 +1413,7 @@ int main()
 
                 for (int x = minX; x <= maxX; x++) {
                     for (int z = minZ; z <= maxZ; z++) {
-                        TwoIntTup cposhere = theScene.worldRenderer->worldToChunkPos(TwoIntTup(x, z));
+                        TwoIntTup cposhere = theScene.worldRenderer->stupidWorldRendererWorldToChunkPos(TwoIntTup(x, z));
                         if (theScene.worldRenderer->activeChunks.contains(cposhere))
                         {
                             implicated.insert(cposhere);
@@ -1699,7 +1708,7 @@ int main()
             //     }
             // }
 
-            if (simscene)
+            if (simscene && deltaTime > 0.0f)
             {
                 gScene->fetchResults(true);
             }

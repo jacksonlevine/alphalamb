@@ -161,7 +161,7 @@ private:
 
         //Now the players inv will exist in the world they download
 
-        auto string = saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "serversnap.bin");
+        auto string = saveDM("serverworld.txt", &serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "serversnap.bin");
         if (string.has_value())
         {
 
@@ -278,23 +278,25 @@ private:
                         //     clients.at(m_playerIndex).camera.transform.updateWithYawPitch(m.startYawPitch.x, m.startYawPitch.y);
                         //     //std::cout << "Got clients lock \n";
                         // }
-                        if (auto g = generatedChunks.lock(); g)
-                        {
-                            auto concerningChunkPos = TwoIntTup(m.startPos.x, m.startPos.z);
-                            for (int x = -1; x < 2; x++)
-                            {
-                                for (int z = -1; z < 2; z++)
-                                {
-                                    auto resultantspot = concerningChunkPos + TwoIntTup(x, z);
-                                    if (!g->contains(resultantspot))
-                                    {
-                                        WorldRenderer::generateChunk(&serverWorld, resultantspot);
-                                        g->insert(resultantspot);
-                                    }
 
-                                }
-                            }
-                        }
+                        //Generate the trees etc serverside. Turned off for now because I don't think it's worth it.
+                        // if (auto g = generatedChunks.lock(); g)
+                        // {
+                        //     auto concerningChunkPos = TwoIntTup(m.startPos.x, m.startPos.z);
+                        //     for (int x = -1; x < 2; x++)
+                        //     {
+                        //         for (int z = -1; z < 2; z++)
+                        //         {
+                        //             auto resultantspot = concerningChunkPos + TwoIntTup(x, z);
+                        //             if (!g->contains(resultantspot))
+                        //             {
+                        //                 WorldRenderer::generateChunk(&serverWorld, resultantspot);
+                        //                 g->insert(resultantspot);
+                        //             }
+                        //
+                        //         }
+                        //     }
+                        // }
 
                         {
                             std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
@@ -404,7 +406,7 @@ private:
 
                         } else
                         {
-                            serverWorld.userDataMap->set(m.spot, m.block);
+                            serverWorld.userDataMap.set(m.spot, m.block);
                         }
 
                         if (blockThere != AIR && (blockThere != (MaterialName)(m.block & BLOCK_ID_BITS)))
@@ -453,14 +455,14 @@ private:
                         //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
 
 
-                        std::shared_lock<std::shared_mutex> udmRL(serverWorld.userDataMap->mutex());
-                        auto lock = serverWorld.nonUserDataMap->getUniqueLock();
+                        std::shared_lock<std::shared_mutex> udmRL(serverWorld.userDataMap.mutex());
+                        auto lock = serverWorld.nonUserDataMap.getUniqueLock();
 
                         IntTup offset = IntTup(vm.dimensions.x/-2, 0, vm.dimensions.z/-2) + m.spot;
                         for ( auto & p : vm.points)
                         {
                             serverWorld.setNUDMLocked(offset+p.localSpot, p.colorIndex);
-                            if (serverWorld.userDataMap->getUnsafe(offset+p.localSpot) != std::nullopt)
+                            if (serverWorld.userDataMap.getUnsafe(offset+p.localSpot) != std::nullopt)
                             {
                                 spotsToEraseInUDM.emplace_back(offset+p.localSpot);
                             }
@@ -471,10 +473,10 @@ private:
 
                     }
                     {
-                        auto lock = serverWorld.userDataMap->getUniqueLock();
+                        auto lock = serverWorld.userDataMap.getUniqueLock();
                         for (auto & spot : spotsToEraseInUDM)
                         {
-                            serverWorld.userDataMap->erase(spot, true);
+                            serverWorld.userDataMap.erase(spot, true);
                         }
                     }
 
@@ -504,8 +506,8 @@ private:
                            {
 
                     //             std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
-                    // auto lock = world->nonUserDataMap->getUniqueLock();
-                    // std::shared_lock<std::shared_mutex> udmRL(world->userDataMap->mutex());
+                    // auto lock = world->nonUserDataMap.getUniqueLock();
+                    // std::shared_lock<std::shared_mutex> udmRL(world->userDataMap.mutex());
                     // auto m = request.area;
                     // int minX = std::min(m.corner1.x, m.corner2.x);
                     // int maxX = std::max(m.corner1.x, m.corner2.x);
@@ -523,7 +525,7 @@ private:
                     //
                     //             if (isBoundary || !m.hollow) {
                     //                 world->setNUDMLocked(IntTup{x, y, z}, m.block);
-                    //                 if (world->userDataMap->getUnsafe(IntTup{x, y, z}) != std::nullopt)
+                    //                 if (world->userDataMap.getUnsafe(IntTup{x, y, z}) != std::nullopt)
                     //                 {
                     //                     spotsToEraseInUDM.emplace_back(x, y, z);
                     //                 }
@@ -533,8 +535,8 @@ private:
                     //     }
                     // }
 
-                               std::shared_lock<std::shared_mutex> udmRL(serverWorld.userDataMap->mutex());
-                                auto lock = serverWorld.nonUserDataMap->getUniqueLock();
+                               std::shared_lock<std::shared_mutex> udmRL(serverWorld.userDataMap.mutex());
+                                auto lock = serverWorld.nonUserDataMap.getUniqueLock();
                                auto hulk = b;
                                int minX = std::min(hulk.corner1.x, hulk.corner2.x);
                                int maxX = std::max(hulk.corner1.x, hulk.corner2.x);
@@ -554,7 +556,7 @@ private:
                                            if (isBoundary || !b.hollow)
                                            {
                                                serverWorld.setNUDMLocked(IntTup{x, y, z}, m.block);
-                                               if (serverWorld.userDataMap->getUnsafe(IntTup{x, y, z}) != std::nullopt)
+                                               if (serverWorld.userDataMap.getUnsafe(IntTup{x, y, z}) != std::nullopt)
                                                {
                                                    spotsToEraseInUDM.emplace_back(IntTup{x, y, z});
                                                }
@@ -566,10 +568,10 @@ private:
                            }
 
                            {
-                               auto lock = serverWorld.userDataMap->getUniqueLock();
+                               auto lock = serverWorld.userDataMap.getUniqueLock();
                                for (auto & spot : spotsToEraseInUDM)
                                {
-                                   serverWorld.userDataMap->erase(spot, true);
+                                   serverWorld.userDataMap.erase(spot, true);
                                }
                            }
 
@@ -616,7 +618,7 @@ private:
                     sendMessageToAllClients(pl, m_playerIndex, true);
 
                     //Save when a player leaves too
-                    saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "serversnap.bin");
+                    saveDM("serverworld.txt", &serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "serversnap.bin");
                 }
             }
         });
@@ -648,8 +650,8 @@ public:
 
     ~Server()
     {
-        saveDM("serverworld.txt", serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "savedReg.bin");
-        serverWorld.userDataMap->clear();
+        saveDM("serverworld.txt", &serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "savedReg.bin");
+        serverWorld.userDataMap.clear();
         serverWorld.blockAreas.baMutex.lock();
         serverWorld.blockAreas.blockAreas.clear();
         serverWorld.blockAreas.baMutex.unlock();

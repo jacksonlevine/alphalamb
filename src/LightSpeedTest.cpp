@@ -9,7 +9,7 @@
 void lighttest()
 {
 
-    World world(new HashMapDataMap(), new OverworldWorldGenMethod(), new HashMapDataMap());
+    World world(new HashMapDataMap(), new OverworldWorldGenMethod());
     auto lm = LightMapType();
 
     auto timebefore = std::chrono::high_resolution_clock::now();
@@ -24,8 +24,8 @@ void lighttest()
     int fake = 0;
     std::vector<std::pair<IntTup, ColorPack>>* lightSources = new std::vector<std::pair<IntTup, ColorPack>>();
     {
-        auto url = std::shared_lock<std::shared_mutex>(world.userDataMap->mutex());
-        auto nrl = std::shared_lock<std::shared_mutex>(world.nonUserDataMap->mutex());
+        auto url = std::shared_lock<std::shared_mutex>(world.userDataMap.mutex());
+        auto nrl = std::shared_lock<std::shared_mutex>(world.nonUserDataMap.mutex());
         auto lock3 = std::unique_lock<std::shared_mutex>(lightmapMutex);
 
         for (int i = 0; i < 16; i++) {

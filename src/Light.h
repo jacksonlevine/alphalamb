@@ -5,6 +5,7 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
+#include "Helpers.h"
 #include "IntTup.h"
 #include "PrecompHeader.h"
 #include "world/World.h"
@@ -123,7 +124,47 @@ struct LightSpot {
         return res;
     }
 };
-using LightMapType = boost::unordered_map<IntTup, LightSpot, IntTupHash>;
+
+
+class NewLightMapType
+{
+public:
+    boost::unordered_map<TwoIntTup, boost::unordered_map<IntTup, LightSpot, IntTupHash>, TwoIntTupHash> lm = {};
+    std::optional<LightSpot*> get(const IntTup& t)
+    {
+        if (lm.find(world3ToChunkPos(t)) != lm.end())
+        {
+            auto & map = lm.at(world3ToChunkPos(t));
+            if (map.find(t) != map.end())
+            {
+                return &map.at(t);
+            }
+        }
+        return std::nullopt;
+    }
+
+    void set(const IntTup& t, const LightSpot& spot)
+    {
+        if (lm.find(world3ToChunkPos(t)) == lm.end())
+        {
+            lm.insert({world3ToChunkPos(t), {}});
+        }
+        auto & map = lm.at(world3ToChunkPos(t));
+        map.insert_or_assign(t, spot);
+    }
+    void erase(const IntTup& t)
+    {
+        if (lm.find(world3ToChunkPos(t)) == lm.end()) return;
+        auto & map = lm.at(world3ToChunkPos(t));
+        map.erase(t);
+    }
+
+    void deleteChunk(const TwoIntTup& c)
+    {
+        lm.erase(c);
+    }
+};
+using LightMapType = NewLightMapType;
 
 constexpr auto neighbs = std::to_array({
     IntTup(-1,0,0), IntTup(1,0,0),
@@ -141,10 +182,10 @@ template<bool ifHigher = false>
 void setLightLevelFromOriginHere(IntTup spot, IntTup origin, ColorPack value,
     LightMapType& lightmap)
 {
-    auto lmentry = lightmap.find(spot);
+    auto lmentry = lightmap.get(spot);
     auto originhash = IntTupHash{}(origin, true);
-    if (lmentry != lightmap.end()) {
-        auto& rays = lmentry->second.rays;
+    if (lmentry != std::nullopt) {
+        auto& rays = lmentry.value()->rays;
 
         if (value != 0) {
             bool originfound = false;
@@ -179,13 +220,13 @@ void setLightLevelFromOriginHere(IntTup spot, IntTup origin, ColorPack value,
                 rays.end()
             );
             if (rays.empty()) {
-                lightmap.erase(lmentry);
+                lightmap.erase(spot);
             }
         }
     }
     else if (value != 0) { // Only add new entry if value != 0
-        lightmap.insert({ spot, LightSpot{} });
-        auto & vec = lightmap.at(spot).rays;
+        lightmap.set(spot, LightSpot{});
+        auto & vec = lightmap.get(spot).value()->rays;
         vec.push_back(LightRay{
             .originhash = originhash, .level = value
             });

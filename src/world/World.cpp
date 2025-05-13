@@ -8,7 +8,7 @@
 #include "../BlockType.h"
 
 
-std::optional<std::shared_lock<std::shared_mutex>> tryToGetReadLockOnDM(DataMap* map)
+std::optional<std::shared_lock<std::shared_mutex>> tryToGetReadLockOnDM(HashMapDataMapTemplate<BlockType>* map)
 {
     std::shared_lock<std::shared_mutex> lock1(map->mutex(), std::try_to_lock);
     if (!lock1.owns_lock()) {
@@ -129,7 +129,7 @@ bool loadDM(std::string filename, World* outWorld, entt::registry& reg, BlockAre
         }
 
         {
-            auto lock = outWorld->nonUserDataMap->getUniqueLock();
+            auto lock = outWorld->nonUserDataMap.getUniqueLock();
             for (auto & m : ba)
             {
                 int minX = std::min(m.corner1.x, m.corner2.x);
@@ -175,8 +175,8 @@ bool loadDM(std::string filename, World* outWorld, entt::registry& reg, BlockAre
         spotsToEraseInUDM.reserve(500);
 
         {
-            std::shared_lock<std::shared_mutex> udmRL(outWorld->userDataMap->mutex());
-            auto lock = outWorld->nonUserDataMap->getUniqueLock();
+            std::shared_lock<std::shared_mutex> udmRL(outWorld->userDataMap.mutex());
+            auto lock = outWorld->nonUserDataMap.getUniqueLock();
 
 
             for (auto & pvm : vms)
@@ -186,7 +186,7 @@ bool loadDM(std::string filename, World* outWorld, entt::registry& reg, BlockAre
                 {
                     IntTup offset = IntTup(realvm.dimensions.x/-2, 0, realvm.dimensions.z/-2) + pvm.spot;
                     outWorld->setNUDMLocked(p.localSpot + offset, p.colorIndex);
-                    auto bh = outWorld->userDataMap->getUnsafe(p.localSpot + offset);
+                    auto bh = outWorld->userDataMap.getUnsafe(p.localSpot + offset);
                     if (bh != std::nullopt && bh.value() == 0)
                     {
                         spotsToEraseInUDM.push_back(p.localSpot + offset);
@@ -199,10 +199,10 @@ bool loadDM(std::string filename, World* outWorld, entt::registry& reg, BlockAre
         }
 
         {
-            auto lock = outWorld->userDataMap->getUniqueLock();
+            auto lock = outWorld->userDataMap.getUniqueLock();
             for (auto & spot : spotsToEraseInUDM)
             {
-                outWorld->userDataMap->erase(spot);
+                outWorld->userDataMap.erase(spot);
             }
         }
 
@@ -245,11 +245,11 @@ BlockType World::getRaw(IntTup spot)
     // {
     //     return mem.value();
     // }
-
-    auto id = userDataMap->get(spot);
+    if (spot.y > 250) return 0;
+    auto id = userDataMap.get(spot);
     if (id == std::nullopt)
     {
-        auto nid = nonUserDataMap->get(spot);
+        auto nid = nonUserDataMap.get(spot);
         if (nid == std::nullopt)
         {
             return worldGenMethod->get(spot);
@@ -270,10 +270,10 @@ BlockType World::getRawLocked(IntTup spot)
     //     return mem.value();
     // }
 
-    auto id = userDataMap->getUnsafe(spot);
+    auto id = userDataMap.getUnsafe(spot);
     if (id == std::nullopt)
     {
-        auto nid = nonUserDataMap->getUnsafe(spot);
+        auto nid = nonUserDataMap.getUnsafe(spot);
         if (nid == std::nullopt)
         {
             return worldGenMethod->get(spot);
@@ -289,18 +289,18 @@ BlockType World::getRawLocked(IntTup spot)
 void World::set(IntTup spot, const BlockType val)
 {
 
-    userDataMap->set(spot, val);
+    userDataMap.set(spot, val);
     //blockMemo->set(spot, val);
 }
 
 void World::setNUDM(const IntTup& spot, const BlockType val)
 {
-    nonUserDataMap->set(spot, val);
+    nonUserDataMap.set(spot, val);
     //blockMemo->set(spot, val);
 }
 void World::setNUDMLocked(const IntTup& spot, const BlockType val)
 {
-    nonUserDataMap->setUnsafe(spot, val);
+    nonUserDataMap.setUnsafe(spot, val);
     //blockMemo->set(spot, val);
 }
 
@@ -308,12 +308,12 @@ std::optional<std::pair<std::shared_lock<std::shared_mutex>, std::pair<std::shar
 shared_lock<std::shared_mutex>>>> World::tryToGetReadLockOnDMs()
 {
 
-    std::shared_lock<std::shared_mutex> lock1(userDataMap->mutex(), std::try_to_lock);
+    std::shared_lock<std::shared_mutex> lock1(userDataMap.mutex(), std::try_to_lock);
     if (!lock1.owns_lock()) {
         return std::nullopt;
     }
 
-    std::shared_lock<std::shared_mutex> lock2(nonUserDataMap->mutex(), std::try_to_lock);
+    std::shared_lock<std::shared_mutex> lock2(nonUserDataMap.mutex(), std::try_to_lock);
     if (!lock2.owns_lock()) {
         return std::nullopt;
     }
@@ -330,12 +330,12 @@ shared_lock<std::shared_mutex>>>> World::tryToGetReadLockOnDMs()
 std::optional<std::pair<std::shared_lock<std::shared_mutex>, std::shared_lock<std::shared_mutex>>> World::tryToGetReadLockOnDMsOnly()
 {
 
-    std::shared_lock<std::shared_mutex> lock1(userDataMap->mutex(), std::try_to_lock);
+    std::shared_lock<std::shared_mutex> lock1(userDataMap.mutex(), std::try_to_lock);
     if (!lock1.owns_lock()) {
         return std::nullopt;
     }
 
-    std::shared_lock<std::shared_mutex> lock2(nonUserDataMap->mutex(), std::try_to_lock);
+    std::shared_lock<std::shared_mutex> lock2(nonUserDataMap.mutex(), std::try_to_lock);
     if (!lock2.owns_lock()) {
         return std::nullopt;
     }
@@ -349,12 +349,12 @@ std::optional<std::pair<std::shared_lock<std::shared_mutex>, std::pair<std::shar
 unique_lock<std::shared_mutex>>>> World::tryToGetReadLockOnDMsAndWriteLockOnLM()
 {
 
-    std::shared_lock<std::shared_mutex> lock1(userDataMap->mutex(), std::try_to_lock);
+    std::shared_lock<std::shared_mutex> lock1(userDataMap.mutex(), std::try_to_lock);
     if (!lock1.owns_lock()) {
         return std::nullopt;
     }
 
-    std::shared_lock<std::shared_mutex> lock2(nonUserDataMap->mutex(), std::try_to_lock);
+    std::shared_lock<std::shared_mutex> lock2(nonUserDataMap.mutex(), std::try_to_lock);
     if (!lock2.owns_lock()) {
         return std::nullopt;
     }

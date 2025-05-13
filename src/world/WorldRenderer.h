@@ -11,6 +11,7 @@
 #include "../IntTup.h"
 #include "../PrecompHeader.h"
 #include "RebuildQueue.h"
+#include "../Helpers.h"
 #include "../Light.h"
 
 
@@ -287,25 +288,25 @@ public:
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
-    std::array<ChangeBuffer, 1450> changeBuffers = {};
+    std::array<ChangeBuffer, 5> changeBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<1450>> freedChangeBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<5>> freedChangeBuffers = {};
 
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
-    std::array<ChangeBuffer, 1450> userChangeMeshBuffers = {};
+    std::array<ChangeBuffer, 5> userChangeMeshBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<1450>> freedUserChangeMeshBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<5>> freedUserChangeMeshBuffers = {};
 
     ///After being added to mbtActiveChunks, we await a confirmation back in this before we know we can reuse that chunk again
     ///One way queue, from main thread to mesh building thread, to notify of mbtActiveChunks entries that have been confirmed/entered into activeChunks.
-    boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<1450>> confirmedActiveChunksQueue = {};
+    boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<5>> confirmedActiveChunksQueue = {};
 
 
 
     //A way for the rebuild thread to ask the main thread "What chunks are active from this area?" so that the main thread can submit rebuild requests for them
-    boost::lockfree::spsc_queue<BlockArea, boost::lockfree::capacity<725>> rebuildToMainAreaNotifications = {};
+    boost::lockfree::spsc_queue<BlockArea, boost::lockfree::capacity<5>> rebuildToMainAreaNotifications = {};
 
 
     double getDewyFogFactor(float temperature_noise, float humidity_noise);
@@ -364,7 +365,7 @@ public:
     {
         //TwoIntTup version of spot
         auto titspot = TwoIntTup(spot.x, spot.z);
-        auto chunkspot = WorldRenderer::worldToChunkPos(titspot);
+        auto chunkspot = WorldRenderer::stupidWorldRendererWorldToChunkPos(titspot);
         if (activeChunks.contains(chunkspot))
         {
             //std::cout << "Requesting rebuild for spot: " << chunkspot.x << " " << chunkspot.z << std::endl;
@@ -420,12 +421,9 @@ public:
         }
     }
 
-    static TwoIntTup worldToChunkPos(const TwoIntTup& worldPos)
+    static TwoIntTup stupidWorldRendererWorldToChunkPos(const TwoIntTup& worldPos)
     {
-        return {
-            static_cast<int>(std::floor(static_cast<float>(worldPos.x) / chunkSize)),
-            static_cast<int>(std::floor(static_cast<float>(worldPos.z) / chunkSize))
-        };
+        return worldToChunkPos(worldPos);
     }
 
 };

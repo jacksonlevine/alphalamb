@@ -206,7 +206,9 @@ add_executable(DistantGarden
         src/LightSpeedTest.cpp
         src/LightSpeedTest.h
         src/StepTimerProfiler.h
-
+        src/Helpers.h
+        src/world/datamapmethods/HashMapDataMapTemplate.h
+        src/jl484_vec3.h
 )
 
 

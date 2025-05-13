@@ -52,7 +52,7 @@ inline void stampVoxelModelInWorld(World* world, VoxModel& model)
 {
     for(auto & point : model.points)
     {
-        world->nonUserDataMap->set(point.localSpot, point.colorIndex);
+        world->nonUserDataMap.set(point.localSpot, point.colorIndex);
     }
 }
 
@@ -68,7 +68,7 @@ inline void stampPyramidInWorld(World* world, int baseWidth, int x, int z)
         {
             for (int j = -width/2; j < width/2; j++)
             {
-                world->nonUserDataMap->set(IntTup(i+x, height, j+z), RED_STONE);
+                world->nonUserDataMap.set(IntTup(i+x, height, j+z), RED_STONE);
             }
         }
         width -= 2;

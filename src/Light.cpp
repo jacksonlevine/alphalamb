@@ -20,8 +20,8 @@ ChunkLightSources getChunkLightSourcesBlockAndAmbient(
     std::shared_lock<std::shared_mutex> lock3;
     if (!locked)
     {
-        url = std::shared_lock<std::shared_mutex>(world->userDataMap->mutex());
-        nrl = std::shared_lock<std::shared_mutex>(world->nonUserDataMap->mutex());
+        url = std::shared_lock<std::shared_mutex>(world->userDataMap.mutex());
+        nrl = std::shared_lock<std::shared_mutex>(world->nonUserDataMap.mutex());
         lock3 = std::shared_lock<std::shared_mutex>(lightmapMutex);
     }
     auto startspot = IntTup(spot.x * chunkw, 0, spot.z * chunkw);
@@ -40,11 +40,11 @@ ChunkLightSources getChunkLightSourcesBlockAndAmbient(
                 {
                     chunkLightSources.push_back(std::make_pair(spott, TORCHLIGHTVAL));
                 }
-                auto lightspot = ambientlightmap.find(spott);
-                if (lightspot != ambientlightmap.end())
+                auto lightspot = ambientlightmap.get(spott);
+                if (lightspot != std::nullopt)
                 {
                     //std::cout << "rays count: " << lightspot->second.rays.size() << std::endl;
-                    for (const auto& ray : lightspot->second.rays)
+                    for (const auto& ray : lightspot.value()->rays)
                     {
                         if (originhash == ray.originhash)
                         {
@@ -52,10 +52,10 @@ ChunkLightSources getChunkLightSourcesBlockAndAmbient(
                         }
                     }
                 }
-                auto lightspot2 = lightmap.find(spott);
-                if (lightspot2 != lightmap.end())
+                auto lightspot2 = lightmap.get(spott);
+                if (lightspot2 != std::nullopt)
                 {
-                    for (const auto& ray : lightspot2->second.rays)
+                    for (const auto& ray : lightspot2.value()->rays)
                     {
                         if (originhash == ray.originhash)
                         {
@@ -137,7 +137,7 @@ void propagateAllLightsLayered(World* world,
         setLightLevelFromOriginHere<true>(pos, pos, color, lightmap);
 
         if (implicatedChunks) {
-            TwoIntTup chunkPos = WorldRenderer::worldToChunkPos(TwoIntTup(pos.x, pos.z));
+            TwoIntTup chunkPos = WorldRenderer::stupidWorldRendererWorldToChunkPos(TwoIntTup(pos.x, pos.z));
             if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
                 implicatedChunks->insert(chunkPos);
             }
@@ -148,8 +148,8 @@ void propagateAllLightsLayered(World* world,
     std::shared_lock<std::shared_mutex> nrl;
     std::unique_lock<std::shared_mutex> lock3;
     if (!locked) {
-        url = std::shared_lock<std::shared_mutex>(world->userDataMap->mutex());
-        nrl = std::shared_lock<std::shared_mutex>(world->nonUserDataMap->mutex());
+        url = std::shared_lock<std::shared_mutex>(world->userDataMap.mutex());
+        nrl = std::shared_lock<std::shared_mutex>(world->nonUserDataMap.mutex());
         lock3 = std::unique_lock<std::shared_mutex>(lightmapMutex);
     }
 
@@ -173,7 +173,7 @@ void propagateAllLightsLayered(World* world,
                     setLightLevelFromOriginHere<true>(neighbor, source, newColor, lightmap);
 
                     if (implicatedChunks) {
-                        TwoIntTup chunkPos = WorldRenderer::worldToChunkPos(TwoIntTup(neighbor.x, neighbor.z));
+                        TwoIntTup chunkPos = WorldRenderer::stupidWorldRendererWorldToChunkPos(TwoIntTup(neighbor.x, neighbor.z));
                         if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
                             implicatedChunks->insert(chunkPos);
                         }
@@ -221,7 +221,7 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, ColorPack>>
         layers[0].push_back({ pos, pos });
         setLightLevelFromOriginHere(pos, pos, ColorPack(0, 0, 0), lightmap);
         if (implicatedChunks) {
-            TwoIntTup chunkPos = WorldRenderer::worldToChunkPos(TwoIntTup(pos.x, pos.z));
+            TwoIntTup chunkPos = WorldRenderer::stupidWorldRendererWorldToChunkPos(TwoIntTup(pos.x, pos.z));
             if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
                 implicatedChunks->insert(chunkPos);
             }
@@ -238,9 +238,9 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, ColorPack>>
                 if (idx >= volume) continue;
                 if (visited[idx]) continue;
 
-                auto lmentry = lightmap.find(neighbor);
-                if (lmentry != lightmap.end()) {
-                    auto& rays = lmentry->second.rays;
+                auto lmentry = lightmap.get(neighbor);
+                if (lmentry != std::nullopt) {
+                    auto& rays = lmentry.value()->rays;
                     bool hasRay = false;
                     for (auto it = rays.begin(); it != rays.end();) {
                         if (it->originhash == originhash) {
@@ -256,7 +256,7 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, ColorPack>>
                         layers[level + 1].push_back({ neighbor, origin });
                         setLightLevelFromOriginHere(neighbor, origin, ColorPack(0, 0, 0), lightmap);
                         if (implicatedChunks) {
-                            TwoIntTup chunkPos = WorldRenderer::worldToChunkPos(TwoIntTup(neighbor.x, neighbor.z));
+                            TwoIntTup chunkPos = WorldRenderer::stupidWorldRendererWorldToChunkPos(TwoIntTup(neighbor.x, neighbor.z));
                             if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
                                 implicatedChunks->insert(chunkPos);
                             }

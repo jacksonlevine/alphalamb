@@ -11,6 +11,7 @@
 #include "../PlayerInfoMapKeyedByUID.h"
 #include "../SaveRegistry.h"
 #include "datamapmethods/HashMapDataMap.h"
+#include "datamapmethods/HashMapDataMapTemplate.h"
 
 
 class World;
@@ -39,7 +40,7 @@ constexpr void setDirectionBits(BlockType& inout, const BlockType& direction) {
 };
 
 
-std::optional<std::shared_lock<std::shared_mutex>> tryToGetReadLockOnDM(DataMap* map);
+std::optional<std::shared_lock<std::shared_mutex>> tryToGetReadLockOnDM(HashMapDataMapTemplate<BlockType>* map);
 
 struct BlockArea
 {
@@ -68,7 +69,7 @@ struct PlacedVoxModelRegistry
 };
 
 
-inline std::optional<std::string> saveDM(std::string filename, DataMap* map, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr, InvMapKeyedByUID& im, entt
+inline std::optional<std::string> saveDM(std::string filename, HashMapDataMapTemplate<BlockType>* map, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr, InvMapKeyedByUID& im, entt
                                          ::registry& reg, const char* regsnapshotfilename) {
     std::filesystem::path filePath(filename);
     if (!filePath.parent_path().empty()) {
@@ -92,7 +93,7 @@ inline std::optional<std::string> saveDM(std::string filename, DataMap* map, Blo
     bool gotlock = false;
     while (!gotlock) {
         if (auto lock = tryToGetReadLockOnDM(map)) {
-            const std::unique_ptr<DataMap::Iterator> it = map->createIterator();
+            const std::unique_ptr<HashMapDataMapTemplate<BlockType>::Iterator> it = map->createIterator();
             while (it->hasNext()) {
                 auto [key, value] = it->next();
                 // if((value & BLOCK_ID_BITS) == STONE_STAIRS)
@@ -211,16 +212,14 @@ inline std::optional<Inventory> loadInvFromFile(std::string filename, ClientUID 
 
 class World {
 public:
-    World(DataMap* udm, WorldGenMethod* wm, DataMap* nudm) :
-    userDataMap(udm), worldGenMethod(wm), nonUserDataMap(nudm) {};
+    World(DataMap* udm, WorldGenMethod* wm) :
+     worldGenMethod(wm){};
 
-    DataMap* userDataMap;
-    DataMap* nonUserDataMap;
+    HashMapDataMapTemplate<BlockType> userDataMap;
+    HashMapDataMapTemplate<uint8_t> nonUserDataMap;
 
     BlockAreaRegistry blockAreas = {};
     PlacedVoxModelRegistry placedVoxModels = {};
-
-    DataMap* blockMemo = new HashMapDataMap();
 
     WorldGenMethod* worldGenMethod;
 
@@ -252,8 +251,8 @@ public:
 
     void clearWorld()
     {
-        userDataMap->clear();
-        nonUserDataMap->clear();
+        userDataMap.clear();
+        nonUserDataMap.clear();
     }
     void setSeed(int seed)
     {
