@@ -263,6 +263,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                                         std::max(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z)
                                     };
 
+
                                     DGMessage bulkPlace = BulkBlockSet{
                                         .corner1 = minCorner, .corner2 = maxCorner, .block = scene->our<InventoryComponent>().currentHeldBlock, .hollow = true};
                                     pushToMainToNetworkQueue(bulkPlace);
@@ -1342,6 +1343,7 @@ int main()
 
                             }
                             else if constexpr (std::is_same_v<T, BulkBlockSet>) {
+
                                 theScene.worldRenderer->requestBlockBulkPlaceFromMainThread(
                                     BlockArea{.corner1 = m.corner1, .corner2 = m.corner2, .block = m.block, .hollow = m.hollow}
                                     );

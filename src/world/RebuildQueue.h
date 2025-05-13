@@ -64,35 +64,65 @@ private:
     std::priority_queue<ChunkRebuildRequest,
                         std::vector<ChunkRebuildRequest>,
                         RebuildRequestCompare> queue;
-    std::mutex mutex;
+
+    std::mutex cvmutex;
     std::condition_variable cv;
 
+    std::shared_mutex queueMutex;
+    std::mutex overallMutex;
 
 public:
     bool shouldExit = false;
     void push(const ChunkRebuildRequest& request) {
-        std::lock_guard<std::mutex> lock(mutex);
-        queue.push(request);
-        cv.notify_one();
+        {
+            auto ol = std::unique_lock<std::mutex>(overallMutex);
+            {
+                auto lock = std::unique_lock<std::shared_mutex>(queueMutex);
+                queue.push(request);
+            }
+            cv.notify_one();
+        }
     }
 
     bool pop(ChunkRebuildRequest& request) {
         //std::cout << "Trying to lock queue \n";
-        std::unique_lock<std::mutex> lock(mutex);
+
         //std::cout << "Locked queue \n";
-        while (queue.empty() && !shouldExit) {
-            cv.wait_for(lock, std::chrono::milliseconds(100));
+
+        std::unique_lock<std::mutex> cvlock(cvmutex);
+
+        bool nocontinue = false;
+        bool queueempty = false;
+        {
+            std::shared_lock<std::shared_mutex> qlock(queueMutex);
+            queueempty = queue.empty();
+            nocontinue = queueempty && !shouldExit;
         }
 
-        if (queue.empty()) return false;
+        while (nocontinue) {
+            {
+                std::shared_lock<std::shared_mutex> qlock(queueMutex);
+                queueempty = queue.empty();
+                nocontinue = queueempty && !shouldExit;
+            }
+            cv.wait_for(cvlock, std::chrono::milliseconds(100));
+        }
 
-        request = queue.top();
-        queue.pop();
+        if (queueempty) return false;
+
+        {
+            auto ol = std::unique_lock<std::mutex>(overallMutex);
+            {
+                std::shared_lock<std::shared_mutex> qlock(queueMutex);
+                request = queue.top();
+                queue.pop();
+            }
+        }
         return true;
     }
 
     void signalExit() {
-        std::lock_guard<std::mutex> lock(mutex);
+        std::lock_guard<std::mutex> lock(cvmutex);
         shouldExit = true;
         cv.notify_all();
     }

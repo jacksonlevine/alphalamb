@@ -54,7 +54,6 @@ foreach(TARGET ${TARGETS_LIST})
 endforeach()
 
 
-
 add_library(pocketpy STATIC
         thirdparty/pocketpy/pocketpy.c
 )
