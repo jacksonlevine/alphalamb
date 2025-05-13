@@ -3,7 +3,6 @@
 #include "TextEditor.h"
 
 
-// TODO
 // - multiline comments vs single-line: latter is blocking start of a ML
 
 template<class InputIt1, class InputIt2, class BinaryPredicate>

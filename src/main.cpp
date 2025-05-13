@@ -1274,7 +1274,7 @@ int main()
                             if (scene->particles)
                             {
                                 scene->particles->particleBurst(burstspot,
-                                                             12, (MaterialName)blockThere, 0.8, 0.0f);
+                                                             18, (MaterialName)blockThere, 0.8, 2.0f);
                             }
 
 
