@@ -126,10 +126,8 @@ void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo
 
 
 
-
-void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, UsableMesh& usable_mesh)
+void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, UsableMesh& usable_mesh, ChangeBufferWithSub& buffer)
 {
-
     GLuint vao = vaoNameOfChunkIndex(chunkIndex, IndexOptimization::Vao::VAO);
     GLuint tvao = vaoNameOfChunkIndex(chunkIndex, IndexOptimization::Vao::TVAO);
 
@@ -143,92 +141,119 @@ void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, Usable
     GLuint tbvbo = bufferNameOfChunkIndex(chunkIndex, IndexOptimization::Buffer::TBVBO);
     GLuint tebo = bufferNameOfChunkIndex(chunkIndex, IndexOptimization::Buffer::TEBO);
 
-    //This never happens because this is for the ones that we pregen
-    // if(vao == 0)
-    // {
-    //     glGenVertexArrays(1, &vao);
-    //     glBindVertexArray(vao);
-    //     glGenBuffers(1, &vvbo);
-    //     glGenBuffers(1, &uvvbo);
-    //     glGenBuffers(1, &ebo);
-    //     glGenBuffers(1, &bvbo);
-    //     glGenVertexArrays(1, &tvao);
-    //     glBindVertexArray(tvao);
-    //     glGenBuffers(1, &tvvbo);
-    //     glGenBuffers(1, &tuvvbo);
-    //     glGenBuffers(1, &tebo);
-    //     glGenBuffers(1, &tbvbo);
-    // }
-
     glBindVertexArray(vao);
 
+    // Handle regular mesh data
     glBindBuffer(GL_ARRAY_BUFFER, vvbo);
-    auto size1 = static_cast<GLsizeiptr>(std::size(usable_mesh.positions) * sizeof(PxVec3));
-    glBufferData(GL_ARRAY_BUFFER, size1, NULL, GL_STREAM_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, size1, usable_mesh.positions.data());
-
-
+    if (buffer.first) {
+        // First chunk - allocate full buffer
+        auto fullSize = buffer.totalVertexCount * sizeof(PxVec3);
+        glBufferData(GL_ARRAY_BUFFER, fullSize, NULL, GL_STREAM_DRAW);
+        info.indiceCount = 0;
+    }
+    // Upload partial data
+    auto vertexDataSize = buffer.vertexCount * sizeof(PxVec3);
+    glBufferSubData(GL_ARRAY_BUFFER, buffer.vertexStart * sizeof(PxVec3),
+                    vertexDataSize, usable_mesh.positions.data());
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), nullptr);
     glEnableVertexAttribArray(0);
 
-    auto size2 = static_cast<GLsizeiptr>(std::size(usable_mesh.brightness) * sizeof(float));
+    // Brightness data
     glBindBuffer(GL_ARRAY_BUFFER, bvbo);
-    glBufferData(GL_ARRAY_BUFFER, size2, NULL, GL_STREAM_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, size2, usable_mesh.brightness.data());
-
+    if (buffer.first) {
+        auto fullSize = buffer.totalVertexCount * sizeof(float) * 2; // Assuming brightness is float[2]
+        glBufferData(GL_ARRAY_BUFFER, fullSize, NULL, GL_STREAM_DRAW);
+    }
+    auto brightnessDataSize = buffer.vertexCount * sizeof(float) * 2;
+    glBufferSubData(GL_ARRAY_BUFFER, buffer.vertexStart * sizeof(float) * 2,
+                    brightnessDataSize, usable_mesh.brightness.data());
     glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, nullptr);
     glEnableVertexAttribArray(2);
-
-    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, static_cast<void*>(static_cast<char*>(nullptr) + 1*sizeof(float)));
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2,
+                         reinterpret_cast<void*>(sizeof(float)));
     glEnableVertexAttribArray(3);
 
+    // Texture coordinates
     glBindBuffer(GL_ARRAY_BUFFER, uvvbo);
-    auto size3 =  static_cast<GLsizeiptr>(std::size(usable_mesh.texcoords) * sizeof(glm::vec2));
-    glBufferData(GL_ARRAY_BUFFER, size3, NULL, GL_STREAM_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0,size3, usable_mesh.texcoords.data());
+    if (buffer.first) {
+        auto fullSize = buffer.totalVertexCount * sizeof(glm::vec2);
+        glBufferData(GL_ARRAY_BUFFER, fullSize, NULL, GL_STREAM_DRAW);
+    }
+    auto texCoordSize = buffer.vertexCount * sizeof(glm::vec2);
+    glBufferSubData(GL_ARRAY_BUFFER, buffer.vertexStart * sizeof(glm::vec2),
+                    texCoordSize, usable_mesh.texcoords.data());
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
     glEnableVertexAttribArray(1);
 
+    // Indices
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    auto size4 = static_cast<GLsizeiptr>(std::size(usable_mesh.indices) * sizeof(PxU32));
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size4, NULL, GL_STREAM_DRAW);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, size4, usable_mesh.indices.data());
+    if (buffer.first) {
+        auto fullSize = buffer.totalIndexCount * sizeof(PxU32);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, fullSize, NULL, GL_STREAM_DRAW);
+    }
+    auto indexDataSize = buffer.indexCount * sizeof(PxU32);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, buffer.indexStart * sizeof(PxU32),
+                    indexDataSize, usable_mesh.indices.data());
 
-    info.indiceCount = static_cast<int>(std::size(usable_mesh.indices));
 
+        info.indiceCount += static_cast<int>(buffer.indexCount);
+
+
+    // Handle transparent mesh data (similar pattern)
     glBindVertexArray(tvao);
 
     glBindBuffer(GL_ARRAY_BUFFER, tvvbo);
-    auto size5 = static_cast<GLsizeiptr>(std::size(usable_mesh.tpositions) * sizeof(PxVec3));
-    glBufferData(GL_ARRAY_BUFFER, size5, NULL, GL_STREAM_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, size5, usable_mesh.tpositions.data());
+    if (buffer.first) {
+        auto fullSize = buffer.totalTVertexCount * sizeof(PxVec3);
+        glBufferData(GL_ARRAY_BUFFER, fullSize, NULL, GL_STREAM_DRAW);
+        info.tindiceCount = 0;
+    }
+    auto tVertexDataSize = buffer.tVertexCount * sizeof(PxVec3);
+    glBufferSubData(GL_ARRAY_BUFFER, buffer.tVertexStart * sizeof(PxVec3),
+                    tVertexDataSize, usable_mesh.tpositions.data());
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), nullptr);
     glEnableVertexAttribArray(0);
 
+    // Transparent brightness
     glBindBuffer(GL_ARRAY_BUFFER, tbvbo);
-    auto size6 =  static_cast<GLsizeiptr>(std::size(usable_mesh.tbrightness) * sizeof(float));
-    glBufferData(GL_ARRAY_BUFFER, size6, NULL, GL_STREAM_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, size6, usable_mesh.tbrightness.data());
+    if (buffer.first) {
+        auto fullSize = buffer.totalTVertexCount * sizeof(float) * 2;
+        glBufferData(GL_ARRAY_BUFFER, fullSize, NULL, GL_STREAM_DRAW);
+    }
+    auto tBrightnessSize = buffer.tVertexCount * sizeof(float) * 2;
+    glBufferSubData(GL_ARRAY_BUFFER, buffer.tVertexStart * sizeof(float) * 2,
+                    tBrightnessSize, usable_mesh.tbrightness.data());
     glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, nullptr);
     glEnableVertexAttribArray(2);
-
-    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, static_cast<void*>(static_cast<char*>(nullptr) + 1*sizeof(float)));
+    glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2,
+                         reinterpret_cast<void*>(sizeof(float)));
     glEnableVertexAttribArray(3);
 
+    // Transparent texture coordinates
     glBindBuffer(GL_ARRAY_BUFFER, tuvvbo);
-    auto size7 = static_cast<GLsizeiptr>(std::size(usable_mesh.ttexcoords) * sizeof(glm::vec2));
-
-    glBufferData(GL_ARRAY_BUFFER, size7, NULL, GL_STREAM_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, size7, usable_mesh.ttexcoords.data());
+    if (buffer.first) {
+        auto fullSize = buffer.totalTVertexCount * sizeof(glm::vec2);
+        glBufferData(GL_ARRAY_BUFFER, fullSize, NULL, GL_STREAM_DRAW);
+    }
+    auto tTexCoordSize = buffer.tVertexCount * sizeof(glm::vec2);
+    glBufferSubData(GL_ARRAY_BUFFER, buffer.tVertexStart * sizeof(glm::vec2),
+                    tTexCoordSize, usable_mesh.ttexcoords.data());
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
     glEnableVertexAttribArray(1);
 
+    // Transparent indices
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tebo);
-    auto size8 = static_cast<GLsizeiptr>(std::size(usable_mesh.tindices) * sizeof(PxU32));
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size8, NULL, GL_STREAM_DRAW);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0 , size8, usable_mesh.tindices.data());
+    if (buffer.first) {
+        auto fullSize = buffer.totalTIndexCount * sizeof(PxU32);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, fullSize, NULL, GL_STREAM_DRAW);
+    }
+    auto tIndexDataSize = buffer.tIndexCount * sizeof(PxU32);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, buffer.tIndexStart * sizeof(PxU32),
+                    tIndexDataSize, usable_mesh.tindices.data());
 
-    info.tindiceCount = static_cast<int>(std::size(usable_mesh.tindices));
+
+    info.tindiceCount += static_cast<int>(buffer.tIndexCount);
+
 }
 
 ///This assumes shader is set up and uniforms are given values
@@ -305,7 +330,7 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
             //std::cout << "Mesh buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
             buffer.in_use.store(true);
 
-                modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
+                modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh, buffer);
 
 
                 if (buffer.from == std::nullopt)
@@ -338,7 +363,7 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
             //std::cout << "Buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
 
 
-            modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
+            modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh, buffer);
             if (buffer.from == std::nullopt)
             {
                 activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
@@ -533,42 +558,96 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                     //if (validchange) {
                         auto& uci = mbtActiveChunks.at(chunk);
 
-                        UsableMesh mesh;
-                        {
+                        auto meshes = fromChunk<false>(chunk, world, chunkSize, false, true);
+                        if (true) {
+                            // Pre-pass to calculate total sizes and validate
+                            size_t totalVertexCount = 0;
+                            size_t totalIndexCount = 0;
+                            size_t totalTVertexCount = 0;
+                            size_t totalTIndexCount = 0;
 
+                            for (const auto& mesh : meshes) {
+                                totalVertexCount += mesh.positions.size();
+                                totalIndexCount += mesh.indices.size();
+                                totalTVertexCount += mesh.tpositions.size();
+                                totalTIndexCount += mesh.tindices.size();
+                            }
 
-                            mesh = fromChunk(chunk, world, chunkSize, false, true);
-                            //I think have to do light pass for generation implicated chunks because they put new blocks there
+                            // Track running offsets for each mesh piece
+                            size_t runningVertexOffset = 0;
+                            size_t runningIndexOffset = 0;
+                            size_t runningTVertexOffset = 0;
+                            size_t runningTIndexOffset = 0;
 
+                            for (size_t i = 0; i < meshes.size(); i++) {
+                                auto& mesh = meshes[i];
 
+                                size_t changeBufferIndex = -1;
+                                {
+                                    std::unique_lock<std::mutex> lock(mbtBufferMutex);
+                                    mbtBufferCV.wait(lock, [&]() {
+                                        bool popped = freedChangeBuffers.pop(changeBufferIndex);
+                                        if (popped && changeBufferIndex < changeBuffers.size()) {
+                                            auto& cb = changeBuffers[changeBufferIndex];
+                                            cb.in_use.store(true);
+                                        }
+                                        return popped || !meshBuildingThreadRunning;
+                                    });
+
+                                    if (!meshBuildingThreadRunning) break;
+                                }
+
+                                if (changeBufferIndex != -1 && changeBufferIndex < changeBuffers.size()) {
+                                    auto& buffer = changeBuffers[changeBufferIndex];
+
+                                    // Move the mesh data
+                                    buffer.mesh = std::move(mesh);
+                                    buffer.chunkIndex = uci.chunkIndex;
+                                    buffer.from = chunk;
+                                    buffer.to = chunk;
+
+                                    // Set partial mesh metadata
+                                    buffer.first = (i == 0);
+                                    buffer.last = (i == meshes.size() - 1);
+
+                                    // Set vertex/index ranges
+                                    buffer.vertexStart = runningVertexOffset;
+                                    buffer.vertexCount = buffer.mesh.positions.size();
+                                    buffer.indexStart = runningIndexOffset;
+                                    buffer.indexCount = buffer.mesh.indices.size();
+
+                                    // Set transparent ranges
+                                    buffer.tVertexStart = runningTVertexOffset;
+                                    buffer.tVertexCount = buffer.mesh.tpositions.size();
+                                    buffer.tIndexStart = runningTIndexOffset;
+                                    buffer.tIndexCount = buffer.mesh.tindices.size();
+
+                                    // Set totals (same for all chunks in this batch)
+                                    buffer.totalVertexCount = totalVertexCount;
+                                    buffer.totalIndexCount = totalIndexCount;
+                                    buffer.totalTVertexCount = totalTVertexCount;
+                                    buffer.totalTIndexCount = totalTIndexCount;
+
+                                    // Update running offsets
+                                    runningVertexOffset += buffer.vertexCount;
+                                    runningIndexOffset += buffer.indexCount;
+                                    runningTVertexOffset += buffer.tVertexCount;
+                                    runningTIndexOffset += buffer.tIndexCount;
+
+                                    // Mark ready and release
+                                    buffer.ready.store(true);
+                                    buffer.in_use.store(false);
+
+                                    // Safety check
+                                    assert(buffer.vertexStart + buffer.vertexCount <= totalVertexCount);
+                                    assert(buffer.indexStart + buffer.indexCount <= totalIndexCount);
+                                    assert(buffer.tVertexStart + buffer.tVertexCount <= totalTVertexCount);
+                                    assert(buffer.tIndexStart + buffer.tIndexCount <= totalTIndexCount);
+                                    //This1
+                                }
+                            }
                         }
 
-                        size_t changeBufferIndex = -1;
-                        {
-                            std::unique_lock<std::mutex> lock(mbtBufferMutex);
-                            mbtBufferCV.wait(lock, [&]() {
-                                bool popped = freedChangeBuffers.pop(changeBufferIndex);
-                                                    if (popped)
-                                                    {
-                                                        auto & cb = changeBuffers[changeBufferIndex];
-                                                        cb.in_use.store(true);
-                                                    }
-                                                    return popped || !meshBuildingThreadRunning;
-                                });
-
-                            if (!meshBuildingThreadRunning) break;
-                        }
-
-                        if (changeBufferIndex != -1)
-                        {
-                            auto& buffer = changeBuffers[changeBufferIndex];
-                            buffer.mesh = std::move(mesh);
-                            buffer.chunkIndex = uci.chunkIndex;
-                            buffer.from = chunk;
-                            buffer.to = chunk;
-                            buffer.ready.store(true);
-                            buffer.in_use.store(false);
-                        } 
                     //}
                     
 
@@ -606,40 +685,106 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                             //ELSE, we reuse the furthest one from the player, ONLY IF the new distance will be shorter than the last distance!
                             if (chunkPoolSize.load() < (static_cast<unsigned long long>(currentMaxChunks()) - 4))
                             {
-                                size_t changeBufferIndex = -1;
-                                {
-                                    std::unique_lock<std::mutex> lock(mbtBufferMutex);
-                                    mbtBufferCV.wait(lock, [&]() {
-                                        bool popped = freedChangeBuffers.pop(changeBufferIndex);
-                                                    if (popped)
-                                                    {
-                                                        auto & cb = changeBuffers[changeBufferIndex];
-                                                        cb.in_use.store(true);
-                                                    }
-                                                    return popped || !meshBuildingThreadRunning;
-                                    });
 
-                                    if (!meshBuildingThreadRunning) break;
+                                auto meshes = fromChunk(spotHere, world, chunkSize, false);
+
+                                if (true) {
+                                    // Pre-pass to calculate total sizes and validate
+                                    size_t totalVertexCount = 0;
+                                    size_t totalIndexCount = 0;
+                                    size_t totalTVertexCount = 0;
+                                    size_t totalTIndexCount = 0;
+
+                                    for (const auto& mesh : meshes) {
+                                        totalVertexCount += mesh.positions.size();
+                                        totalIndexCount += mesh.indices.size();
+                                        totalTVertexCount += mesh.tpositions.size();
+                                        totalTIndexCount += mesh.tindices.size();
+                                    }
+
+                                    // Track running offsets for each mesh piece
+                                    size_t runningVertexOffset = 0;
+                                    size_t runningIndexOffset = 0;
+                                    size_t runningTVertexOffset = 0;
+                                    size_t runningTIndexOffset = 0;
+
+                                    bool sentsum = false;
+                                    auto chunkIndex = addUninitializedChunkBuffer();
+
+                                    for (size_t i = 0; i < meshes.size(); i++) {
+                                        auto& mesh = meshes[i];
+
+                                        size_t changeBufferIndex = -1;
+                                        {
+                                            std::unique_lock<std::mutex> lock(mbtBufferMutex);
+                                            mbtBufferCV.wait(lock, [&]() {
+                                                bool popped = freedChangeBuffers.pop(changeBufferIndex);
+                                                if (popped && changeBufferIndex < changeBuffers.size()) {
+                                                    auto& cb = changeBuffers[changeBufferIndex];
+                                                    cb.in_use.store(true);
+                                                }
+                                                return popped || !meshBuildingThreadRunning;
+                                            });
+
+                                            if (!meshBuildingThreadRunning) break;
+                                        }
+
+                                        if (changeBufferIndex != -1 && changeBufferIndex < changeBuffers.size()) {
+                                            auto& buffer = changeBuffers[changeBufferIndex];
+                                            sentsum = true;
+                                            // Move the mesh data
+                                            buffer.mesh = std::move(mesh);
+
+                                            buffer.chunkIndex =  chunkIndex;
+                                            buffer.from = std::nullopt;
+                                            buffer.to = spotHere;
+
+                                            // Set partial mesh metadata
+                                            buffer.first = (i == 0);
+                                            buffer.last = (i == meshes.size() - 1);
+
+                                            // Set vertex/index ranges
+                                            buffer.vertexStart = runningVertexOffset;
+                                            buffer.vertexCount = buffer.mesh.positions.size();
+                                            buffer.indexStart = runningIndexOffset;
+                                            buffer.indexCount = buffer.mesh.indices.size();
+
+                                            // Set transparent ranges
+                                            buffer.tVertexStart = runningTVertexOffset;
+                                            buffer.tVertexCount = buffer.mesh.tpositions.size();
+                                            buffer.tIndexStart = runningTIndexOffset;
+                                            buffer.tIndexCount = buffer.mesh.tindices.size();
+
+                                            // Set totals (same for all chunks in this batch)
+                                            buffer.totalVertexCount = totalVertexCount;
+                                            buffer.totalIndexCount = totalIndexCount;
+                                            buffer.totalTVertexCount = totalTVertexCount;
+                                            buffer.totalTIndexCount = totalTIndexCount;
+
+                                            // Update running offsets
+                                            runningVertexOffset += buffer.vertexCount;
+                                            runningIndexOffset += buffer.indexCount;
+                                            runningTVertexOffset += buffer.tVertexCount;
+                                            runningTIndexOffset += buffer.tIndexCount;
+
+                                            // Mark ready and release
+                                            buffer.ready.store(true);
+                                            buffer.in_use.store(false);
+
+                                            // Safety check
+                                            assert(buffer.vertexStart + buffer.vertexCount <= totalVertexCount);
+                                            assert(buffer.indexStart + buffer.indexCount <= totalIndexCount);
+                                            assert(buffer.tVertexStart + buffer.tVertexCount <= totalTVertexCount);
+                                            assert(buffer.tIndexStart + buffer.tIndexCount <= totalTIndexCount);
+                                            //This2
+                                        }
+                                    }
+                                    if (sentsum)
+                                    {
+                                        mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
+                                    }
                                 }
 
-                                if (changeBufferIndex != -1)
-                                {
-                                    //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
-
-                                    auto& buffer = changeBuffers[changeBufferIndex];
-                                    buffer.in_use.store(true);
-                                    buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
-
-                                    buffer.chunkIndex = addUninitializedChunkBuffer();
-                                   // std::cout << "Giving new buffer " << buffer.chunkIndex << std::endl;
-                                    buffer.from = std::nullopt;
-                                    buffer.to = spotHere;
-
-                                    mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(buffer.chunkIndex));
-
-                                    buffer.ready.store(true);   // Signal that data is ready
-                                    buffer.in_use.store(false);
-                                }
 
                             } else
                             {
@@ -688,56 +833,111 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                             size_t chunkIndex = mbtActiveChunks.at(oldSpot).chunkIndex;
                                             //
                                             // std::chrono::high_resolution_clock::time_point time = std::chrono::high_resolution_clock::now();
+                                            auto meshes = fromChunk(spotHere, world, chunkSize, false);
+                                            bool sentsum = false;
+                                            if (true) {
+                                                // Pre-pass to calculate total sizes and validate
+                                                size_t totalVertexCount = 0;
+                                                size_t totalIndexCount = 0;
+                                                size_t totalTVertexCount = 0;
+                                                size_t totalTIndexCount = 0;
 
-                                            size_t changeBufferIndex = -1;
-                                            {
-                                                std::unique_lock<std::mutex> lock(mbtBufferMutex);
-                                                mbtBufferCV.wait(lock, [&]() {
-                                                    bool popped = freedChangeBuffers.pop(changeBufferIndex);
-                                                    if (popped)
+                                                for (const auto& mesh : meshes) {
+                                                    totalVertexCount += mesh.positions.size();
+                                                    totalIndexCount += mesh.indices.size();
+                                                    totalTVertexCount += mesh.tpositions.size();
+                                                    totalTIndexCount += mesh.tindices.size();
+                                                }
+
+                                                // Track running offsets for each mesh piece
+                                                size_t runningVertexOffset = 0;
+                                                size_t runningIndexOffset = 0;
+                                                size_t runningTVertexOffset = 0;
+                                                size_t runningTIndexOffset = 0;
+
+                                                for (size_t i = 0; i < meshes.size(); i++) {
+                                                    auto& mesh = meshes[i];
+
+                                                    size_t changeBufferIndex = -1;
                                                     {
-                                                        auto & cb = changeBuffers[changeBufferIndex];
-                                                        cb.in_use.store(true);
+                                                        std::unique_lock<std::mutex> lock(mbtBufferMutex);
+                                                        mbtBufferCV.wait(lock, [&]() {
+                                                            bool popped = freedChangeBuffers.pop(changeBufferIndex);
+                                                            if (popped && changeBufferIndex < changeBuffers.size()) {
+                                                                auto& cb = changeBuffers[changeBufferIndex];
+                                                                cb.in_use.store(true);
+                                                            }
+                                                            return popped || !meshBuildingThreadRunning;
+                                                        });
+
+                                                        if (!meshBuildingThreadRunning) break;
                                                     }
-                                                    return popped || !meshBuildingThreadRunning;
-                                                });
 
-                                                if (!meshBuildingThreadRunning) break;
+                                                    if (changeBufferIndex != -1 && changeBufferIndex < changeBuffers.size()) {
+                                                        auto& buffer = changeBuffers[changeBufferIndex];
+
+                                                        // Move the mesh data
+                                                        buffer.mesh = std::move(mesh);
+                                                        buffer.chunkIndex =  chunkIndex;
+                                                        buffer.from = oldSpot;
+                                                        buffer.to = spotHere;
+
+                                                        // Set partial mesh metadata
+                                                        buffer.first = (i == 0);
+                                                        buffer.last = (i == meshes.size() - 1);
+
+                                                        // Set vertex/index ranges
+                                                        buffer.vertexStart = runningVertexOffset;
+                                                        buffer.vertexCount = buffer.mesh.positions.size();
+                                                        buffer.indexStart = runningIndexOffset;
+                                                        buffer.indexCount = buffer.mesh.indices.size();
+
+                                                        // Set transparent ranges
+                                                        buffer.tVertexStart = runningTVertexOffset;
+                                                        buffer.tVertexCount = buffer.mesh.tpositions.size();
+                                                        buffer.tIndexStart = runningTIndexOffset;
+                                                        buffer.tIndexCount = buffer.mesh.tindices.size();
+
+                                                        // Set totals (same for all chunks in this batch)
+                                                        buffer.totalVertexCount = totalVertexCount;
+                                                        buffer.totalIndexCount = totalIndexCount;
+                                                        buffer.totalTVertexCount = totalTVertexCount;
+                                                        buffer.totalTIndexCount = totalTIndexCount;
+
+                                                        // Update running offsets
+                                                        runningVertexOffset += buffer.vertexCount;
+                                                        runningIndexOffset += buffer.indexCount;
+                                                        runningTVertexOffset += buffer.tVertexCount;
+                                                        runningTIndexOffset += buffer.tIndexCount;
+
+                                                        // Mark ready and release
+                                                        buffer.ready.store(true);
+                                                        buffer.in_use.store(false);
+                                                        sentsum = true;
+                                                        // Safety check
+                                                        assert(buffer.vertexStart + buffer.vertexCount <= totalVertexCount);
+                                                        assert(buffer.indexStart + buffer.indexCount <= totalIndexCount);
+                                                        assert(buffer.tVertexStart + buffer.tVertexCount <= totalTVertexCount);
+                                                        assert(buffer.tIndexStart + buffer.tIndexCount <= totalTIndexCount);
+                                                        //This3
+                                                    }
+                                                }
+                                                if (sentsum)
+                                                {
+                                                    mbtActiveChunks.erase(oldSpot);
+                                                    //generatedChunks.erase(oldSpot);
+                                                    //   litChunks.erase(oldSpot);
+                                                    // {
+                                                    //       auto lmlock = std::unique_lock<std::shared_mutex>(lightmapMutex);
+                                                    //       ambientlightmap.deleteChunk(oldSpot);
+                                                    //       lightmap.deleteChunk(oldSpot);
+                                                    //   }
+                                                    //
+                                                    //   world->nonUserDataMap.erase(oldSpot);
+                                                    mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
+                                                }
                                             }
-                                            //
-                                            // std::chrono::high_resolution_clock::time_point time2 = std::chrono::high_resolution_clock::now();
-                                            // std::chrono::duration<float> elapsed = time2 - time;
-                                            // std::cout << "elapsed: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() << std::endl;
 
-                                            if (changeBufferIndex != -1)
-                                            {
-                                                //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
-
-                                                auto& buffer = changeBuffers[changeBufferIndex];
-
-                                                buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
-
-                                                buffer.chunkIndex = chunkIndex;
-                                                buffer.from = oldSpot;
-                                                buffer.to = spotHere;
-
-
-
-                                                mbtActiveChunks.erase(oldSpot);
-                                                generatedChunks.erase(oldSpot);
-                                              //   litChunks.erase(oldSpot);
-                                              // {
-                                              //       auto lmlock = std::unique_lock<std::shared_mutex>(lightmapMutex);
-                                              //       ambientlightmap.deleteChunk(oldSpot);
-                                              //       lightmap.deleteChunk(oldSpot);
-                                              //   }
-                                              //
-                                              //   world->nonUserDataMap.erase(oldSpot);
-                                                mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
-
-                                                buffer.ready.store(true);   // Signal that data is ready
-                                                buffer.in_use.store(false);
-                                            }
 
 
 
@@ -938,52 +1138,111 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                     }
                     if(request.rebuild)
                     {
-                        UsableMesh mesh;
+                        std::vector<UsableMesh> meshes;
 
                         {
 
                             if (request.queueLightpassImplicated)
                             {
-                                mesh = fromChunk(request.chunkPos, world, chunkSize, lightpass);
+                                meshes = fromChunk(request.chunkPos, world, chunkSize, lightpass);
                             } else
                             {
-                                mesh = fromChunk<false>(request.chunkPos, world, chunkSize, false, lightpass);
+                                meshes = fromChunk<false>(request.chunkPos, world, chunkSize, false, lightpass);
                             }
 
 
                         }
 
+                        if (true) {
+                                    // Pre-pass to calculate total sizes and validate
+                                    size_t totalVertexCount = 0;
+                                    size_t totalIndexCount = 0;
+                                    size_t totalTVertexCount = 0;
+                                    size_t totalTIndexCount = 0;
 
-                        // Wait for available buffer using condition variable
-                        size_t changeBufferIndex = -1;
-                        {
-                            std::unique_lock<std::mutex> lock(bufferMutex);
-                            bufferCV.wait(lock, [&]() {
+                                    for (const auto& mesh : meshes) {
+                                        totalVertexCount += mesh.positions.size();
+                                        totalIndexCount += mesh.indices.size();
+                                        totalTVertexCount += mesh.tpositions.size();
+                                        totalTIndexCount += mesh.tindices.size();
+                                    }
+
+                                    // Track running offsets for each mesh piece
+                                    size_t runningVertexOffset = 0;
+                                    size_t runningIndexOffset = 0;
+                                    size_t runningTVertexOffset = 0;
+                                    size_t runningTIndexOffset = 0;
+
+                                    for (size_t i = 0; i < meshes.size(); i++) {
+                                        auto& mesh = meshes[i];
+
+                                        size_t changeBufferIndex = -1;
+                                        {
+                                            std::unique_lock<std::mutex> lock(bufferMutex);
+                                            bufferCV.wait(lock, [&]() {
+                                                bool popped = freedUserChangeMeshBuffers.pop(changeBufferIndex);
+                                                if (popped && changeBufferIndex < userChangeMeshBuffers.size()) {
+                                                    auto& cb = userChangeMeshBuffers[changeBufferIndex];
+                                                    cb.in_use.store(true);
+                                                }
+                                                return popped || !rebuildThreadRunning;
+                                            });
+
+                                            if (!rebuildThreadRunning) break;
+                                        }
+
+                                        if (changeBufferIndex != -1 && changeBufferIndex < userChangeMeshBuffers.size()) {
+                                            auto& buffer = userChangeMeshBuffers[changeBufferIndex];
+
+                                            // Move the mesh data
+                                            buffer.mesh = std::move(mesh);
+                                            buffer.chunkIndex = request.chunkIndex;
+                                            buffer.from = request.chunkPos;
+                                            buffer.to = request.chunkPos;
+
+                                            // Set partial mesh metadata
+                                            buffer.first = (i == 0);
+                                            buffer.last = (i == meshes.size() - 1);
+
+                                            // Set vertex/index ranges
+                                            buffer.vertexStart = runningVertexOffset;
+                                            buffer.vertexCount = buffer.mesh.positions.size();
+                                            buffer.indexStart = runningIndexOffset;
+                                            buffer.indexCount = buffer.mesh.indices.size();
+
+                                            // Set transparent ranges
+                                            buffer.tVertexStart = runningTVertexOffset;
+                                            buffer.tVertexCount = buffer.mesh.tpositions.size();
+                                            buffer.tIndexStart = runningTIndexOffset;
+                                            buffer.tIndexCount = buffer.mesh.tindices.size();
+
+                                            // Set totals (same for all chunks in this batch)
+                                            buffer.totalVertexCount = totalVertexCount;
+                                            buffer.totalIndexCount = totalIndexCount;
+                                            buffer.totalTVertexCount = totalTVertexCount;
+                                            buffer.totalTIndexCount = totalTIndexCount;
+
+                                            // Update running offsets
+                                            runningVertexOffset += buffer.vertexCount;
+                                            runningIndexOffset += buffer.indexCount;
+                                            runningTVertexOffset += buffer.tVertexCount;
+                                            runningTIndexOffset += buffer.tIndexCount;
+
+                                            // Mark ready and release
+                                            buffer.ready.store(true);
+                                            buffer.in_use.store(false);
+
+                                            // Safety check
+                                            assert(buffer.vertexStart + buffer.vertexCount <= totalVertexCount);
+                                            assert(buffer.indexStart + buffer.indexCount <= totalIndexCount);
+                                            assert(buffer.tVertexStart + buffer.tVertexCount <= totalTVertexCount);
+                                            assert(buffer.tIndexStart + buffer.tIndexCount <= totalTIndexCount);
+                                            //This4
+                                        }
+                                    }
+                                }
 
 
-                                bool popped = freedUserChangeMeshBuffers.pop(changeBufferIndex);
-                                                    if (popped)
-                                                    {
-                                                        auto & cb = userChangeMeshBuffers[changeBufferIndex];
-                                                        cb.in_use.store(true);
-                                                    }
-                                                    return popped || !rebuildThreadRunning;
-                            });
-
-                            if (!rebuildThreadRunning) break;
-                        }
-
-                        if (changeBufferIndex != -1)
-                        {
-                            auto& buffer = userChangeMeshBuffers[changeBufferIndex];
-                            buffer.in_use.store(true);
-                            buffer.mesh = std::move(mesh);
-                            buffer.chunkIndex = request.chunkIndex;
-                            buffer.from = request.chunkPos;
-                            buffer.to = request.chunkPos;
-                            buffer.ready.store(true);
-                            buffer.in_use.store(false);
-                        }
                         //
                         // if (lightpass)
                         // {
@@ -1103,14 +1362,12 @@ void WorldRenderer::clearInFlightMeshUpdates()
 }
 
 
-
-
-
-UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool light)
+std::vector<UsableMesh> fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool light)
 {
     return fromChunk(spot, world, chunkSize, false, light);
 }
-UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize, bool light)
+
+std::vector<UsableMesh> fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize, bool light)
 {
     return fromChunk(spot, world, chunkSize, true, light);
 }

@@ -97,15 +97,25 @@ struct ChangeBufferWithSub
     bool first = false;              // Is this the first buffer chunk?
     bool last = false;               // Is this the last buffer chunk?
 
-    // Tracking positions for partial processing
+    // Regular geometry tracking
     size_t vertexStart = 0;          // Starting vertex index in the full mesh
     size_t vertexCount = 0;          // Number of vertices in this chunk
     size_t indexStart = 0;           // Starting index in the full mesh
     size_t indexCount = 0;           // Number of indices in this chunk
 
+    // Transparent geometry tracking
+    size_t tVertexStart = 0;         // Starting transparent vertex index
+    size_t tVertexCount = 0;         // Number of transparent vertices in this chunk
+    size_t tIndexStart = 0;          // Starting transparent index in the full mesh
+    size_t tIndexCount = 0;          // Number of transparent indices in this chunk
+
     // For allocating full buffers on first chunk
-    size_t totalVertexCount = 0;     // Total number of vertices in the complete mesh
-    size_t totalIndexCount = 0;      // Total number of indices in the complete mesh
+    size_t totalVertexCount = 0;     // Total vertices in complete mesh
+    size_t totalIndexCount = 0;      // Total indices in complete mesh
+    size_t totalTVertexCount = 0;    // Total transparent vertices
+    size_t totalTIndexCount = 0;     // Total transparent indices
+
+    bool wipefirst = true;
 };
 
 
@@ -115,7 +125,7 @@ inline void modifyOrInitializeChunkGLInfo(ChunkGLInfo& info, UsableMesh& mesh)
 {
     modifyOrInitializeDrawInstructions(info.vvbo, info.uvvbo, info.ebo, info.drawInstructions, mesh, info.bvbo, info.tvvbo, info.tuvvbo, info.tebo, info.tbvbo);
 }
-void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, UsableMesh& usable_mesh);
+void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, UsableMesh& usable_mesh, ChangeBufferWithSub& buffer);
 void drawTransparentsFromDrawInstructions(const DrawInstructions& drawInstructions);
 void drawFromDrawInstructions(const DrawInstructions& drawInstructions);
 
@@ -178,11 +188,11 @@ inline static IntTup neighborSpots[6] = {
     IntTup(0,-1,0)
 };
 template<bool queueimplics = true>
-UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked, bool light);
+std::vector<UsableMesh> fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked, bool light);
 
-UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool light = false);
+std::vector<UsableMesh> fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool light = false);
 
-UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize, bool light = false);
+std::vector<UsableMesh> fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize, bool light = false);
 
 struct UsedChunkInfo
 {
@@ -284,16 +294,16 @@ public:
 
         lastMaxChunks = currentMaxChunks();
         currentRenderDistance = newone;
-
-        if (lastMaxChunks > currentMaxChunks())
-        {
-            for (int i = lastMaxChunks-1; i > currentMaxChunks(); i--)
-            {
-                auto sgl = SmallChunkGLInfo{};
-                auto mesh = UsableMesh{};
-                modifyOrInitializeChunkIndex(i, sgl, mesh);
-            }
-        }
+        //
+        // if (lastMaxChunks > currentMaxChunks())
+        // {
+        //     for (int i = lastMaxChunks-1; i > currentMaxChunks(); i--)
+        //     {
+        //         auto sgl = SmallChunkGLInfo{};
+        //         auto mesh = UsableMesh{};
+        //         modifyOrInitializeChunkIndex(i, sgl, mesh, );
+        //     }
+        // }
         chunkPoolSize.store(0);
         activeChunks.clear();
         mbtActiveChunks.clear();

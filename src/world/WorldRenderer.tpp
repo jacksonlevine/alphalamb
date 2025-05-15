@@ -14,9 +14,8 @@
 ///Create a UsableMesh from the specified chunk spot
 ///This gets called in the mesh building coroutine and rebuild coroutine
 ///Queueimplics = default true, whether to queue chunks implicated by light pass for rebuild
-
 template<bool queueimplics>
-UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked, bool light)
+std::vector<UsableMesh> fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked, bool light)
 {
 #ifdef MEASURE_CHUNKREB
     auto startt = std::chrono::high_resolution_clock::now();
@@ -26,9 +25,14 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
     {
         std::cout << "Locked " << std::endl;
     }
-    UsableMesh mesh;
+
+    std::vector<UsableMesh> meshes;
+    meshes.emplace_back(); // Start with first mesh
+    UsableMesh* currentMesh = &meshes.back();
+
     PxU32 index = 0;
     PxU32 tindex = 0;
+    const size_t MAX_INDICES_PER_MESH = 64;
 
     IntTup start(spot.x * chunkSize, spot.z * chunkSize);
     int chunkHeight = 250;
@@ -57,7 +61,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
         }
     }
 
-    // SCollect block data, light sources (if doLight), and blocks to mesh
+    // Collect block data, light sources (if doLight), and blocks to mesh
     if (!locked) {
         std::shared_lock<std::shared_mutex> url(world->userDataMap.mutex());
         std::shared_lock<std::shared_mutex> nrl(world->nonUserDataMap.mutex());
@@ -143,7 +147,6 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                 }
             }
         }
-        // Locks released here (url, nrl, lightLock)
     } else {
         // Locked mode: No locks needed, access world directly
         for (int x = 0; x < chunkSize; x++) {
@@ -223,7 +226,6 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                 }
             }
         }
-        // lightLock released here (if doLight)
     }
 
     // Perform light propagation before meshing (if doLight)
@@ -239,7 +241,6 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
             unpropagateAllLightsLayered(oldAmbientSources, ambientlightmap, spot, &implicatedChunks, true);
             propagateAllLightsLayered(world, newAmbientSources, ambientlightmap, spot, &implicatedChunks, true);
         }
-
 
         litChunks.insert({spot, true});
     }
@@ -272,7 +273,15 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
         IntTup here = start + IntTup(x, y, z);
 
         if (auto specialFunc = findSpecialBlockMeshFunc(mat); specialFunc != std::nullopt) {
-            specialFunc.value()(mesh, rawBlockHere, here, index, tindex);
+            specialFunc.value()(*currentMesh, rawBlockHere, here, index, tindex);
+
+            // Check if we need a new mesh after special block
+            if (currentMesh->indices.size() >= MAX_INDICES_PER_MESH ||
+                currentMesh->tindices.size() >= MAX_INDICES_PER_MESH) {
+                meshes.emplace_back();
+                currentMesh = &meshes.back();
+                // DO NOT reset index/tindex - maintain continuity
+            }
         } else {
             bool blockHereTransparent = isTransparent[idx];
 
@@ -310,26 +319,34 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                     if (blockID == WATER && side == Side::Top) {
                         if (!ambOccl) {
                             addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                         side, mat, 1, mesh, index, tindex, -0.2f);
+                                         side, mat, 1, *currentMesh, index, tindex, -0.2f);
                             addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y) + 1, static_cast<float>(here.z)),
-                                         Side::Bottom, mat, 1, mesh, index, tindex, -0.2f);
+                                         Side::Bottom, mat, 1, *currentMesh, index, tindex, -0.2f);
                         } else {
                             addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                          side, mat, 1, mesh, index, tindex, -0.2f);
-                            calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
+                                          side, mat, 1, *currentMesh, index, tindex, -0.2f);
+                            calculateAmbientOcclusion(here, side, world, locked, blockID, *currentMesh, blockAndAmbBright);
                             addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y) + 1, static_cast<float>(here.z)),
-                                          Side::Bottom, mat, 1, mesh, index, tindex, -0.2f);
-                            calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
+                                          Side::Bottom, mat, 1, *currentMesh, index, tindex, -0.2f);
+                            calculateAmbientOcclusion(here, side, world, locked, blockID, *currentMesh, blockAndAmbBright);
                         }
                     } else {
                         if (!ambOccl) {
                             addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                         side, mat, 1, mesh, index, tindex);
+                                         side, mat, 1, *currentMesh, index, tindex);
                         } else {
                             addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                          side, mat, 1, mesh, index, tindex);
-                            calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
+                                          side, mat, 1, *currentMesh, index, tindex);
+                            calculateAmbientOcclusion(here, side, world, locked, blockID, *currentMesh, blockAndAmbBright);
                         }
+                    }
+
+                    // Check if we need a new mesh after adding faces
+                    if (currentMesh->indices.size() >= MAX_INDICES_PER_MESH ||
+                        currentMesh->tindices.size() >= MAX_INDICES_PER_MESH) {
+                        meshes.emplace_back();
+                        currentMesh = &meshes.back();
+                        // DO NOT reset index/tindex - maintain continuity
                     }
                 }
             }
@@ -355,7 +372,13 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
     }
 #endif
 
-    return mesh;
+    // Remove empty meshes if any
+    meshes.erase(std::remove_if(meshes.begin(), meshes.end(),
+        [](const UsableMesh& m) {
+            return m.indices.empty() && m.tindices.empty();
+        }), meshes.end());
+
+    return meshes;
 }
 ///Call this with an external index and UsableMesh to mutate them
 template<bool doBrightness>
