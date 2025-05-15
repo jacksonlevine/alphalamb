@@ -91,7 +91,7 @@ void main() {
     // Final position - this still allows rotation around origin while facing camera
     vec3 finalPosition = rotatedInstancePosition + offset;
 
-    gl_Position = mvp * vec4(finalPosition, 1.0);
+    gl_Position = mvp * vec4(finalPosition + camPos, 1.0);
 }
         )glsl",
         R"glsl(
@@ -155,8 +155,8 @@ void main() {
 
     }
 
-    float halfsize = 5.0f;
-    float vertices[32] = {
+    static float halfsize = 5.0f;
+    static float vertices[32] = {
         -halfsize,  0.0f, halfsize, 3.0f,
         halfsize,  0.0f, halfsize, 2.0f,
         halfsize, 0.0f, -halfsize, 1.0f,
@@ -201,10 +201,13 @@ void main() {
         glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(CelestialBody), (void*)(sizeof(glm::vec3)*2 + sizeof(float)));
         glVertexAttribDivisor(5, 1);
         glEnableVertexAttribArray(5);
+
+        glBindBuffer(GL_ARRAY_BUFFER, instvbo);
+        glBufferData(GL_ARRAY_BUFFER, positions.size() * (sizeof(CelestialBody)), positions.data(), GL_DYNAMIC_DRAW);
+
+
     }
 
-    glBindBuffer(GL_ARRAY_BUFFER, instvbo);
-    glBufferData(GL_ARRAY_BUFFER, positions.size() * (sizeof(CelestialBody)), positions.data(), GL_DYNAMIC_DRAW);
 
     glBindVertexArray(vao);
 
@@ -220,11 +223,8 @@ void main() {
     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera->mvp));
     glUniform1f(timeLoc, static_cast<float>(glfwGetTime()));
     glUniform1f(rotLoc, (std::fmod((timeOfDay - (dayLength/2.0f)), dayLength) / dayLength) * (2.0f * 3.1415926535897932384626433832795028841971693993751f));
-
     sunAndMoonTex.bind_to_unit(4);
 
     glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 8, positions.size());
 
-    glBindVertexArray(0);
-    glUseProgram(0);
 }

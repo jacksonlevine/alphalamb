@@ -109,7 +109,7 @@ private:
                       << " | Spikes: " << stats.spikeCount
                       << "\n";
         }
-        std::cout << "===========================\n";
+        std::cout << "===========================" << std::endl;
     }
 
     void reset() {
