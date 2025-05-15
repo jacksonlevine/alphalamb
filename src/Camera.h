@@ -27,10 +27,10 @@ namespace jl {
 
         {
             updateWithYawPitch(0.0, 0.0);
-            updateProjection(1280, 1024, 90.0f);
+            updateProjection(1280, 1024, 90.0f, 1024.0f);
         }
 
-        void updateProjection(int screenwidth, int screenheight, float fov);
+        void updateProjection(int screenwidth, int screenheight, float fov, float farr);
         void updateWithYawPitch(float nyaw, float npitch);
         void updateYPIndirect(float nyaw, float npitch);
         void setYawPitch(float nyaw, float npitch);

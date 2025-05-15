@@ -42,7 +42,7 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                         auto width = 0, height = 0;
                         //Get our cam ready before the first player update becasue of the "intro screen thing"
                         glfwGetWindowSize(theScene.window, &width, &height);
-                        theScene.REG.get<jl::Camera>(theScene.myPlayerIndex).updateProjection(width, height, 90.0f);
+                        theScene.REG.get<jl::Camera>(theScene.myPlayerIndex).updateProjection(width, height, 90.0f, theScene.worldRenderer->currentRenderDistance*16.0f);
 
                         /*//We could restore the cameras real stored rotatoin here by calling with the camera pitch & yaw but then the planet visual won't be facing us
                         //Who knows, just to keep in mind who cares etc

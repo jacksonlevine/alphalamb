@@ -8,7 +8,7 @@ namespace jl
 
     glm::mat4 Camera::model = glm::mat4(1.0f);
 
-    void Camera::updateProjection(int screenwidth, int screenheight, float fov)
+    void Camera::updateProjection(int screenwidth, int screenheight, float fov, float farr)
     {
         if(screenheight != 0)
         {
@@ -16,7 +16,7 @@ namespace jl
             glm::radians(fov),
             static_cast<float>(screenwidth) / static_cast<float>(screenheight),
             0.1f,
-            2048.0f
+            farr
             );
             mvp = projection * view * model;
         }

@@ -84,7 +84,29 @@ struct ChangeBuffer
     std::atomic<bool> in_use = false;
 };
 
+struct ChangeBufferWithSub
+{
+    UsableMesh mesh = {};
+    size_t chunkIndex = 0;
+    std::optional<TwoIntTup> from = std::nullopt;
+    TwoIntTup to = {};
+    std::atomic<bool> ready = false;
+    std::atomic<bool> in_use = false;
 
+    // For controlling the subdivision
+    bool first = false;              // Is this the first buffer chunk?
+    bool last = false;               // Is this the last buffer chunk?
+
+    // Tracking positions for partial processing
+    size_t vertexStart = 0;          // Starting vertex index in the full mesh
+    size_t vertexCount = 0;          // Number of vertices in this chunk
+    size_t indexStart = 0;           // Starting index in the full mesh
+    size_t indexCount = 0;           // Number of indices in this chunk
+
+    // For allocating full buffers on first chunk
+    size_t totalVertexCount = 0;     // Total number of vertices in the complete mesh
+    size_t totalIndexCount = 0;      // Total number of indices in the complete mesh
+};
 
 
 void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo, DrawInstructions& drawInstructions, UsableMesh& usable_mesh, GLuint& bvbo,
@@ -290,14 +312,14 @@ public:
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
-    std::array<ChangeBuffer, 5> changeBuffers = {};
+    std::array<ChangeBufferWithSub, 5> changeBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
     boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<5>> freedChangeBuffers = {};
 
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
-    std::array<ChangeBuffer, 5> userChangeMeshBuffers = {};
+    std::array<ChangeBufferWithSub, 5> userChangeMeshBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
     boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<5>> freedUserChangeMeshBuffers = {};
 

@@ -163,12 +163,19 @@ void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, Usable
     glBindVertexArray(vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, vvbo);
-    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.positions) * sizeof(PxVec3)), usable_mesh.positions.data(), GL_STATIC_DRAW);
+    auto size1 = static_cast<GLsizeiptr>(std::size(usable_mesh.positions) * sizeof(PxVec3));
+    glBufferData(GL_ARRAY_BUFFER, size1, NULL, GL_STREAM_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, size1, usable_mesh.positions.data());
+
+
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), nullptr);
     glEnableVertexAttribArray(0);
 
+    auto size2 = static_cast<GLsizeiptr>(std::size(usable_mesh.brightness) * sizeof(float));
     glBindBuffer(GL_ARRAY_BUFFER, bvbo);
-    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.brightness) * sizeof(float)), usable_mesh.brightness.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, size2, NULL, GL_STREAM_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, size2, usable_mesh.brightness.data());
+
     glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, nullptr);
     glEnableVertexAttribArray(2);
 
@@ -176,24 +183,32 @@ void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, Usable
     glEnableVertexAttribArray(3);
 
     glBindBuffer(GL_ARRAY_BUFFER, uvvbo);
-    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.texcoords) * sizeof(glm::vec2)), usable_mesh.texcoords.data(), GL_STATIC_DRAW);
+    auto size3 =  static_cast<GLsizeiptr>(std::size(usable_mesh.texcoords) * sizeof(glm::vec2));
+    glBufferData(GL_ARRAY_BUFFER, size3, NULL, GL_STREAM_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0,size3, usable_mesh.texcoords.data());
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.indices) * sizeof(PxU32)), usable_mesh.indices.data(), GL_STATIC_DRAW);
+    auto size4 = static_cast<GLsizeiptr>(std::size(usable_mesh.indices) * sizeof(PxU32));
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size4, NULL, GL_STREAM_DRAW);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, size4, usable_mesh.indices.data());
 
     info.indiceCount = static_cast<int>(std::size(usable_mesh.indices));
 
     glBindVertexArray(tvao);
 
     glBindBuffer(GL_ARRAY_BUFFER, tvvbo);
-    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.tpositions) * sizeof(PxVec3)), usable_mesh.tpositions.data(), GL_STATIC_DRAW);
+    auto size5 = static_cast<GLsizeiptr>(std::size(usable_mesh.tpositions) * sizeof(PxVec3));
+    glBufferData(GL_ARRAY_BUFFER, size5, NULL, GL_STREAM_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, size5, usable_mesh.tpositions.data());
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), nullptr);
     glEnableVertexAttribArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, tbvbo);
-    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.tbrightness) * sizeof(float)), usable_mesh.tbrightness.data(), GL_STATIC_DRAW);
+    auto size6 =  static_cast<GLsizeiptr>(std::size(usable_mesh.tbrightness) * sizeof(float));
+    glBufferData(GL_ARRAY_BUFFER, size6, NULL, GL_STREAM_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, size6, usable_mesh.tbrightness.data());
     glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(float)*2, nullptr);
     glEnableVertexAttribArray(2);
 
@@ -201,12 +216,17 @@ void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, Usable
     glEnableVertexAttribArray(3);
 
     glBindBuffer(GL_ARRAY_BUFFER, tuvvbo);
-    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.ttexcoords) * sizeof(glm::vec2)), usable_mesh.ttexcoords.data(), GL_STATIC_DRAW);
+    auto size7 = static_cast<GLsizeiptr>(std::size(usable_mesh.ttexcoords) * sizeof(glm::vec2));
+
+    glBufferData(GL_ARRAY_BUFFER, size7, NULL, GL_STREAM_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, size7, usable_mesh.ttexcoords.data());
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
     glEnableVertexAttribArray(1);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.tindices) * sizeof(PxU32)), usable_mesh.tindices.data(), GL_STATIC_DRAW);
+    auto size8 = static_cast<GLsizeiptr>(std::size(usable_mesh.tindices) * sizeof(PxU32));
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size8, NULL, GL_STREAM_DRAW);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0 , size8, usable_mesh.tindices.data());
 
     info.tindiceCount = static_cast<int>(std::size(usable_mesh.tindices));
 }
@@ -283,6 +303,7 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
         //std::cout << "Buffer state: Ready: " << buffer.ready << " in use: " << buffer.in_use << std::endl;
         if(buffer.ready.load() && !buffer.in_use.load()) {
             //std::cout << "Mesh buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
+            buffer.in_use.store(true);
 
                 modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
 

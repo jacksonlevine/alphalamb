@@ -545,9 +545,9 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
     if (scene->myPlayerIndex != entt::null)
     {
         auto & camera = scene->our<jl::Camera>();
-        camera.updateProjection(width, height, 90.0f);
-        scene->guiCamera->updateProjection(width, height, 60.0f);
-        scene->menuCamera->updateProjection(width, height, 60.0f);
+        camera.updateProjection(width, height, 90.0f, scene->worldRenderer->currentRenderDistance*16.0f);
+        scene->guiCamera->updateProjection(width, height, 60.0f, scene->worldRenderer->currentRenderDistance*16.0f);
+        scene->menuCamera->updateProjection(width, height, 60.0f, scene->worldRenderer->currentRenderDistance*16.0f);
     }
 
     entt::monostate<entt::hashed_string{"swidth"}>{} = width;
@@ -638,7 +638,7 @@ void enterWorld(Scene* s)
     {
 
         auto & camera = s->our<jl::Camera>();
-        camera.updateProjection(width, height, 90.0f);
+        camera.updateProjection(width, height, 90.0f, s->worldRenderer->currentRenderDistance*16.0f);
     }
 
     s->worldRenderer->launchThreads(&s->our<jl::Camera>(), s->world);
@@ -809,12 +809,12 @@ int main()
 
     theScene.guiCamera = new jl::Camera();
     //std::cout << "width:" << width << " height:" << height << std::endl;
-    theScene.guiCamera->updateProjection(width, height, 60.0f);
+    theScene.guiCamera->updateProjection(width, height, 60.0f, theScene.worldRenderer->currentRenderDistance*16.0f);
     theScene.guiCamera->updateWithYawPitch(0.0,0.0);
 
     theScene.menuCamera = new jl::Camera();
     theScene.menuCamera->transform.position = glm::vec3(0.0, 1700.0f, 0.0f);
-    theScene.menuCamera->updateProjection(width, height, 120.0f);
+    theScene.menuCamera->updateProjection(width, height, 120.0f, theScene.worldRenderer->currentRenderDistance*16.0f);
     theScene.menuCamera->updateWithYawPitch(0.0,-89.9);
 
     //
