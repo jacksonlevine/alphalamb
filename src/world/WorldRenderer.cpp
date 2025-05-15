@@ -526,7 +526,13 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                         {
                             std::unique_lock<std::mutex> lock(mbtBufferMutex);
                             mbtBufferCV.wait(lock, [&]() {
-                                return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
+                                bool popped = freedChangeBuffers.pop(changeBufferIndex);
+                                                    if (popped)
+                                                    {
+                                                        auto & cb = changeBuffers[changeBufferIndex];
+                                                        cb.in_use.store(true);
+                                                    }
+                                                    return popped || !meshBuildingThreadRunning;
                                 });
 
                             if (!meshBuildingThreadRunning) break;
@@ -535,7 +541,6 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                         if (changeBufferIndex != -1)
                         {
                             auto& buffer = changeBuffers[changeBufferIndex];
-                            buffer.in_use.store(true);
                             buffer.mesh = std::move(mesh);
                             buffer.chunkIndex = uci.chunkIndex;
                             buffer.from = chunk;
@@ -584,7 +589,13 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                 {
                                     std::unique_lock<std::mutex> lock(mbtBufferMutex);
                                     mbtBufferCV.wait(lock, [&]() {
-                                        return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
+                                        bool popped = freedChangeBuffers.pop(changeBufferIndex);
+                                                    if (popped)
+                                                    {
+                                                        auto & cb = changeBuffers[changeBufferIndex];
+                                                        cb.in_use.store(true);
+                                                    }
+                                                    return popped || !meshBuildingThreadRunning;
                                     });
 
                                     if (!meshBuildingThreadRunning) break;
@@ -654,23 +665,35 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                         if (newDistance < (oldDistance-2)) //add some epsilon or range so it stops grabbing chunks from the edge of valid-chunk-range & leaving holes
                                         {
                                             size_t chunkIndex = mbtActiveChunks.at(oldSpot).chunkIndex;
+                                            //
+                                            // std::chrono::high_resolution_clock::time_point time = std::chrono::high_resolution_clock::now();
 
                                             size_t changeBufferIndex = -1;
                                             {
                                                 std::unique_lock<std::mutex> lock(mbtBufferMutex);
                                                 mbtBufferCV.wait(lock, [&]() {
-                                                    return freedChangeBuffers.pop(changeBufferIndex) || !meshBuildingThreadRunning;
+                                                    bool popped = freedChangeBuffers.pop(changeBufferIndex);
+                                                    if (popped)
+                                                    {
+                                                        auto & cb = changeBuffers[changeBufferIndex];
+                                                        cb.in_use.store(true);
+                                                    }
+                                                    return popped || !meshBuildingThreadRunning;
                                                 });
 
                                                 if (!meshBuildingThreadRunning) break;
                                             }
+                                            //
+                                            // std::chrono::high_resolution_clock::time_point time2 = std::chrono::high_resolution_clock::now();
+                                            // std::chrono::duration<float> elapsed = time2 - time;
+                                            // std::cout << "elapsed: " << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() << std::endl;
 
                                             if (changeBufferIndex != -1)
                                             {
                                                 //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
 
                                                 auto& buffer = changeBuffers[changeBufferIndex];
-                                                buffer.in_use.store(true);
+
                                                 buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
 
                                                 buffer.chunkIndex = chunkIndex;
@@ -915,7 +938,15 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         {
                             std::unique_lock<std::mutex> lock(bufferMutex);
                             bufferCV.wait(lock, [&]() {
-                                return freedUserChangeMeshBuffers.pop(changeBufferIndex) || !rebuildThreadRunning;
+
+
+                                bool popped = freedUserChangeMeshBuffers.pop(changeBufferIndex);
+                                                    if (popped)
+                                                    {
+                                                        auto & cb = userChangeMeshBuffers[changeBufferIndex];
+                                                        cb.in_use.store(true);
+                                                    }
+                                                    return popped || !rebuildThreadRunning;
                             });
 
                             if (!rebuildThreadRunning) break;

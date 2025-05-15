@@ -238,6 +238,8 @@ public:
     ///Chunks that have had their terrain features generated already.
     tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare> generatedChunks;
 
+
+
     static void generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr);
 
     WorldRenderer()

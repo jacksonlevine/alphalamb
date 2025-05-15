@@ -6,7 +6,6 @@
 #define LUTLOADER_H
 #include "PrecompHeader.h"
 
-extern GLuint luttexture;
 
 GLuint load3DLUT(const char* filename);
 #endif //LUTLOADER_H

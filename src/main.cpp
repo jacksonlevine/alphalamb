@@ -67,7 +67,7 @@ Scene theScene = {};
 
 constexpr double J_PI = 3.1415926535897932384626433832;
 constexpr double DEG_TO_RAD = J_PI / 180.0;
-
+GLuint lutTexture = 0;
 __inline float gaussian(float x, float peak, float radius) {
     float stdDev = radius / 3.0;
     float variance = stdDev * stdDev;
@@ -719,7 +719,10 @@ int main()
         std::cout << "GLSL version: " << version << std::endl;
     }
 
-    GLuint lutTexture = load3DLUT("resources/film_default.png");
+    GLuint colorlut = load3DLUT("resources/film_default.png");
+    GLuint beginninglut = load3DLUT("resources/film_beginning.png");
+
+    lutTexture = colorlut;
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
@@ -1541,6 +1544,31 @@ int main()
             static GLuint odffLoc = glGetUniformLocation(mainShader.shaderID, "overridingDewyFogFactor");
             static GLuint wcaLoc = glGetUniformLocation(mainShader.shaderID, "worldCurveAmount");
             static GLuint uwloc = glGetUniformLocation(mainShader.shaderID, "underwater");
+            //static GLuint wsloc = glGetUniformLocation(mainShader.shaderID, "worldStage");
+
+
+
+
+            //Set the world stage indicated by a singleton component.
+            auto v = theScene.REG.view<WorldState>();
+            for (auto e : v)
+            {
+                auto & ws = v.get<WorldState>(e);
+                switch (ws.currentChapter)
+                {
+                case WorldState::BEGINNING:
+                    lutTexture = beginninglut;
+                    break;
+                case WorldState::WORLDCOLOR:
+                    lutTexture = colorlut;
+                    break;
+                case WorldState::FOGEND:
+                    lutTexture = colorlut;
+                    break;
+                }
+            }
+
+
             glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(camera.mvp));
             glActiveTexture(GL_TEXTURE0);
             glUniform1i(texture1Loc, 0);
@@ -1553,6 +1581,8 @@ int main()
             glUniform1f(scaleLoc, 1.0f);
             glUniform1f( wcaLoc, campos.y > 230.f ? glm::max(0.f, std::min(50.f, campos.y - 230.f)) / 50.f : 0.f );
             glUniform1f(uwloc, theScene.blockHeadIn == WATER ? 1.0f : 0.0f);
+
+
             auto ourCam = theScene.our<jl::Camera>().transform.position;
             IntTup itspot(
                 ourCam.x,

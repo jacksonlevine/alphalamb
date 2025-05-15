@@ -44,7 +44,9 @@ public:
             frameStepCount++;
             if (frameStepCount >= reportInterval) {
                 printReport();
+
                 reset();
+                lastTimePoint = std::chrono::high_resolution_clock::now();
             }
         }
         
@@ -70,13 +72,15 @@ private:
     double spikeThresholdMultiplier;
 
     void printReport() {
+
+
         if (steps.empty()) return;
 
-        std::vector<std::pair<std::string, StepStats>> sortedSteps(steps.begin(), steps.end());
-        std::sort(sortedSteps.begin(), sortedSteps.end(),
-                  [](const auto& a, const auto& b) {
-                      return a.second.avgTime() > b.second.avgTime();
-                  });
+        // std::vector<std::pair<std::string, StepStats>> sortedSteps(steps.begin(), steps.end());
+        // std::sort(sortedSteps.begin(), sortedSteps.end(),
+        //           [](const auto& a, const auto& b) {
+        //               return a.second.avgTime() > b.second.avgTime();
+        //           });
 
         std::vector<std::pair<std::string, StepStats>> sortedMaxs(steps.begin(), steps.end());
         std::sort(sortedMaxs.begin(), sortedMaxs.end(),
@@ -84,16 +88,16 @@ private:
                       return a.second.maxTime > b.second.maxTime;
                   });
 
-        std::cout << "\n=== Step Timing Report ===\n";
-        std::cout << std::fixed << std::setprecision(2);
-
-        for (const auto& [name, stats] : sortedSteps) {
-            std::cout << "Step: " << name
-                      << " | Avg: " << stats.avgTime() << " ms"
-                      << " | Max: " << stats.maxTime << " ms"
-                      << " | Spikes: " << stats.spikeCount
-                      << "\n";
-        }
+        // std::cout << "\n=== Step Timing Report ===\n";
+        // std::cout << std::fixed << std::setprecision(2);
+        //
+        // for (const auto& [name, stats] : sortedSteps) {
+        //     std::cout << "Step: " << name
+        //               << " | Avg: " << stats.avgTime() << " ms"
+        //               << " | Max: " << stats.maxTime << " ms"
+        //               << " | Spikes: " << stats.spikeCount
+        //               << "\n";
+        // }
 
         std::cout << "\n=== Maxes: ===\n";
         std::cout << std::fixed << std::setprecision(2);

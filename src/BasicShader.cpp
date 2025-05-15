@@ -57,6 +57,8 @@ jl::Shader getBasicShader()
             uniform vec3 fogCol;
             uniform float underwater;
 
+
+
             float mDist(float x1, float y1, float x2, float y2) {
                 return floor(abs(x2 - x1) + abs(y2-y1));
             }

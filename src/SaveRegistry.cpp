@@ -5,6 +5,7 @@
 #include "FileArchives.h"
 #include "components/ComputerComponent.h"
 #include "components/PlayerEmplacer.h"
+#include "components/WorldStateComponent.h"
 
 void saveRegistry(entt::registry & reg, const char* filename)
 {
@@ -24,7 +25,9 @@ void saveRegistry(entt::registry & reg, const char* filename)
     .get<ParticleEffectComponent>(outputArchive)
     .get<UUIDComponent>(outputArchive)
     .get<ComputerComponent>(outputArchive)
-    .get<NPPositionComponent>(outputArchive);
+    .get<NPPositionComponent>(outputArchive)
+    .get<WorldState>(outputArchive)
+    ;
 }
 
 
@@ -51,7 +54,10 @@ void loadRegistry(entt::registry & reg, const char* filename)
         .get<ParticleEffectComponent>(inputArchive)
         .get<UUIDComponent>(inputArchive)
         .get<ComputerComponent>(inputArchive)
-        .get<NPPositionComponent>(inputArchive);
+        .get<NPPositionComponent>(inputArchive)
+        .get<WorldState>(inputArchive)
+        .orphans()
+        ;
     }
 
 }

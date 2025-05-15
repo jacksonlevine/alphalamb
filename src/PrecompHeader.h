@@ -59,6 +59,7 @@
 #include <tbb/concurrent_unordered_set.h>
 
 
+extern GLuint lutTexture;
 
 
 #endif //PRECOMPHEADER_H

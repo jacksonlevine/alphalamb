@@ -12,6 +12,7 @@
 #include "PlayerInfoMapKeyedByUID.h"
 #include "components/PlayerEmplacer.h"
 #include "components/UUIDComponent.h"
+#include "components/WorldStateComponent.h"
 #include "specialblocks/FindEntityCreateFunc.h"
 #include "specialblocks/FindSpecialBlock.h"
 #include "world/DataMap.h"
@@ -643,6 +644,11 @@ public:
         serverWorld.setSeed(DGSEEDSEED);
         loadDM("serverworld.txt", &serverWorld, serverReg, serverWorld.blockAreas, serverWorld.placedVoxModels, nullptr, nullptr, "savedReg.bin");
 
+        if (serverReg.view<WorldState>().empty())
+        {
+            auto e= serverReg.create();
+            serverReg.emplace<WorldState>(e, WorldState::BEGINNING);
+        }
         // now we call do_accept() where we wait for clients
 
         do_accept();
