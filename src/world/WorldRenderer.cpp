@@ -301,9 +301,9 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         auto& buffer = changeBuffers[i];
         //std::cout << "Buffer state: Ready: " << buffer.ready << " in use: " << buffer.in_use << std::endl;
-        if(buffer.ready.load() && !buffer.in_use.load()) {
+        if(buffer.ready.load(std::memory_order_acquire) && !buffer.in_use.load(std::memory_order_acquire)) {
             //std::cout << "Mesh buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
-            buffer.in_use.store(true);
+            buffer.in_use.store(true, std::memory_order_release);
 
                 modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
 
@@ -320,7 +320,7 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
                 confirmedActiveChunksQueue.push(buffer.to);
             
             
-            buffer.ready.store(false);
+            buffer.ready.store(false, std::memory_order_release);
             freedChangeBuffers.push(i);  // Return to free list
             mbtBufferCV.notify_one();
 
@@ -334,7 +334,7 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
     for(size_t i = 0; i < userChangeMeshBuffers.size(); i++) {
         auto& buffer = userChangeMeshBuffers[i];
         //std::cout << "User Buffer state: Ready: " << buffer.ready << " in use: " << buffer.in_use << std::endl;
-        if(buffer.ready.load() && !buffer.in_use.load()) {
+        if(buffer.ready.load(std::memory_order_acquire) && !buffer.in_use.load(std::memory_order_acquire)) {
             //std::cout << "Buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
 
 
@@ -355,7 +355,7 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
             
             //Dont need to do this cause these user-requested chunk rebuilds never involve moving the chunk
             //confirmedActiveChunksQueue.push(buffer.to);
-            buffer.ready.store(false);
+            buffer.ready.store(false, std::memory_order_release);
             freedUserChangeMeshBuffers.push(i);  // Return to free list
             notifyBufferFreed();
 
@@ -551,7 +551,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                                     if (popped)
                                                     {
                                                         auto & cb = changeBuffers[changeBufferIndex];
-                                                        cb.in_use.store(true);
+                                                        cb.in_use.store(true, std::memory_order_release);
                                                     }
                                                     return popped || !meshBuildingThreadRunning;
                                 });
@@ -566,8 +566,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                             buffer.chunkIndex = uci.chunkIndex;
                             buffer.from = chunk;
                             buffer.to = chunk;
-                            buffer.ready.store(true);
-                            buffer.in_use.store(false);
+                            buffer.ready.store(true, std::memory_order_release);
+                            buffer.in_use.store(false, std::memory_order_release);
                         } 
                     //}
                     
@@ -604,7 +604,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                             //IF we havent reached the max chunks yet, we can just make a new one for this spot.
                             //ELSE, we reuse the furthest one from the player, ONLY IF the new distance will be shorter than the last distance!
-                            if (chunkPoolSize.load() < (static_cast<unsigned long long>(currentMaxChunks()) - 4))
+                            if (chunkPoolSize.load(std::memory_order_acquire) < (static_cast<unsigned long long>(currentMaxChunks()) - 4))
                             {
                                 size_t changeBufferIndex = -1;
                                 {
@@ -614,7 +614,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                                     if (popped)
                                                     {
                                                         auto & cb = changeBuffers[changeBufferIndex];
-                                                        cb.in_use.store(true);
+                                                        cb.in_use.store(true, std::memory_order_release);
                                                     }
                                                     return popped || !meshBuildingThreadRunning;
                                     });
@@ -627,7 +627,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                     //Add the mesh, in full form, to our reserved Change Buffer (The main thread coroutine will make GL calls and free this slot to be reused)
 
                                     auto& buffer = changeBuffers[changeBufferIndex];
-                                    buffer.in_use.store(true);
+                                    buffer.in_use.store(true, std::memory_order_release);
                                     buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
 
                                     buffer.chunkIndex = addUninitializedChunkBuffer();
@@ -637,8 +637,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                                     mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(buffer.chunkIndex));
 
-                                    buffer.ready.store(true);   // Signal that data is ready
-                                    buffer.in_use.store(false);
+                                    buffer.ready.store(true, std::memory_order_release);   // Signal that data is ready
+                                    buffer.in_use.store(false, std::memory_order_release);
                                 }
 
                             } else
@@ -697,7 +697,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                                     if (popped)
                                                     {
                                                         auto & cb = changeBuffers[changeBufferIndex];
-                                                        cb.in_use.store(true);
+                                                        cb.in_use.store(true, std::memory_order_release);
                                                     }
                                                     return popped || !meshBuildingThreadRunning;
                                                 });
@@ -735,8 +735,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                               //   world->nonUserDataMap.erase(oldSpot);
                                                 mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
 
-                                                buffer.ready.store(true);   // Signal that data is ready
-                                                buffer.in_use.store(false);
+                                                buffer.ready.store(true, std::memory_order_release);   // Signal that data is ready
+                                                buffer.in_use.store(false, std::memory_order_release);
                                             }
 
 
@@ -965,7 +965,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                                                     if (popped)
                                                     {
                                                         auto & cb = userChangeMeshBuffers[changeBufferIndex];
-                                                        cb.in_use.store(true);
+                                                        cb.in_use.store(true, std::memory_order_release);
                                                     }
                                                     return popped || !rebuildThreadRunning;
                             });
@@ -976,13 +976,13 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         if (changeBufferIndex != -1)
                         {
                             auto& buffer = userChangeMeshBuffers[changeBufferIndex];
-                            buffer.in_use.store(true);
+                            buffer.in_use.store(true, std::memory_order_release);
                             buffer.mesh = std::move(mesh);
                             buffer.chunkIndex = request.chunkIndex;
                             buffer.from = request.chunkPos;
                             buffer.to = request.chunkPos;
-                            buffer.ready.store(true);
-                            buffer.in_use.store(false);
+                            buffer.ready.store(true, std::memory_order_release);
+                            buffer.in_use.store(false, std::memory_order_release);
                         }
                         //
                         // if (lightpass)

@@ -294,7 +294,7 @@ public:
                 modifyOrInitializeChunkIndex(i, sgl, mesh);
             }
         }
-        chunkPoolSize.store(0);
+        chunkPoolSize.store(0, std::memory_order_release);
         activeChunks.clear();
         mbtActiveChunks.clear();
 
@@ -341,9 +341,9 @@ public:
     ///Returns the index in chunkPool of the new chunk.
     size_t addUninitializedChunkBuffer()
     {
-        size_t val = chunkPoolSize.load();
+        size_t val = chunkPoolSize.load(std::memory_order_acquire);
         size_t ret = val;
-        chunkPoolSize.store(val+1);
+        chunkPoolSize.store(val+1, std::memory_order_release);
         return ret;
     }
 
