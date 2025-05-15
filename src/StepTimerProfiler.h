@@ -103,11 +103,12 @@ private:
         std::cout << std::fixed << std::setprecision(2);
 
         for (const auto& [name, stats] : sortedMaxs) {
-            std::cout << "Step: " << name
-                      << " | Avg: " << stats.avgTime() << " ms"
-                      << " | Max: " << stats.maxTime << " ms"
+            std::cout << "Step: "
+                << " | Max: " << stats.maxTime << "ms \n" <<
+                         " | Avg: " << stats.avgTime() << " ms"
+
                       << " | Spikes: " << stats.spikeCount
-                      << "\n";
+            << "\n" << name << "\n";
         }
         std::cout << "===========================" << std::endl;
     }

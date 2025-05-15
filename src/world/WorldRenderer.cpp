@@ -342,7 +342,10 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
                     activeChunks.erase(buffer.from.value());
                     activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
                 }
-                confirmedActiveChunksQueue.push(buffer.to);
+                if (buffer.last) {
+                    confirmedActiveChunksQueue.push(buffer.to);
+                }
+                
             
             
             buffer.ready.store(false);

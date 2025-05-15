@@ -657,7 +657,7 @@ int main()
 
     scratchMemory = _aligned_malloc(scratchMemorySize, 16);
 
-    StepTimerProfiler<false> profiler;
+    StepTimerProfiler<true> profiler;
 
     glfwInit();
     GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
