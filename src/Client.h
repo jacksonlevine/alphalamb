@@ -76,7 +76,7 @@ inline void pushToMainToNetworkQueue(const DGMessage& m)
         networkCV.notify_one();
     } else
     {
-
+        std::cerr << "Write was not available it didnt write it \n";
     }
 
 }

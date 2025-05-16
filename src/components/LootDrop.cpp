@@ -28,30 +28,14 @@ void renderLootDrops(entt::registry& reg, Scene* scene)
 
             layout(location = 2) in vec3 instancePos;
 
-            // Function to create a rotation matrix for yaw (around Y-axis)
-            mat4 getYawRotationMatrix(float yaw) {
-                float rad = radians(yaw); // Convert degrees to radians
-                return mat4(
-                    cos(rad), 0.0, sin(rad), 0.0,
-                    0.0,      1.0, 0.0,      0.0,
-                    -sin(rad), 0.0, cos(rad), 0.0,
-                    0.0,      0.0, 0.0,      1.0
-                );
-            }
-
-            uniform float rot; // Yaw rotation in degrees (0-360)
-
             out vec2 TexCoord;
 
-            uniform mat4 mvp; // Model-View-Projection matrix
-            uniform vec3 pos;  // Translation in world space
+            uniform mat4 mvp;
             out vec3 vertPos;
             void main()
             {
-                vec4 rotatedPosition = vec4(inPosition, 1.0);
-
                 // Translate the rotated position by `pos`
-                vec4 worldPosition = vec4(rotatedPosition.xyz + pos + instancePos, 1.0);
+                vec4 worldPosition = vec4(inPosition + instancePos, 1.0);
 
                 // Transform to clip space using the MVP matrix
                 gl_Position = mvp * worldPosition;
@@ -77,16 +61,16 @@ void renderLootDrops(entt::registry& reg, Scene* scene)
             {
                 FragColor = texture(texture1, TexCoord);
                 if (hideClose > 0.4) {
-        float radius = 200.0;
-        float fadeStart = 190.0;  // Start fading at 40 units
-        float dist = distance(vertPos, camPos);
+                float radius = 200.0;
+                float fadeStart = 190.0;  // Start fading at 40 units
+                float dist = distance(vertPos, camPos);
 
-        // Ensure alpha is 1.0 if beyond radius, and smoothly fades inside
-        float alphaFactor = clamp((dist - fadeStart) / (radius - fadeStart), 0.0, 1.0);
-        FragColor.a *= alphaFactor;
-        if(FragColor.a < 0.1) {
-            discard;
-        }
+                // Ensure alpha is 1.0 if beyond radius, and smoothly fades inside
+                float alphaFactor = clamp((dist - fadeStart) / (radius - fadeStart), 0.0, 1.0);
+                FragColor.a *= alphaFactor;
+                if(FragColor.a < 0.1) {
+                    discard;
+                }
     }
             }
         )glsl",
@@ -113,9 +97,6 @@ void renderLootDrops(entt::registry& reg, Scene* scene)
 
     auto & camera = scene->our<jl::Camera>();
 
-
-    glUniform3f(glGetUniformLocation(shader.shaderID, "pos"), 0.f, 0.f, 0.f);
-    glUniform1f(glGetUniformLocation(shader.shaderID, "rot"), 0);
     glUniform1f(glGetUniformLocation(shader.shaderID, "hideClose"), 0.0f);
     glUniform3f(glGetUniformLocation(shader.shaderID, "camPos"),0.f, 0.f, 0.f);
     glUniformMatrix4fv(glGetUniformLocation(shader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
@@ -124,6 +105,7 @@ void renderLootDrops(entt::registry& reg, Scene* scene)
     lootDisplayInstances.clear();
     for (auto entity : view)
     {
+        //std::cout << "entity: "  << (int)entity << std::endl;
         auto [pos] = view.get<NPPositionComponent>(entity);
         lootDisplayInstances.emplace_back(pos);
     }
@@ -133,7 +115,7 @@ void renderLootDrops(entt::registry& reg, Scene* scene)
     auto  &mglo = basemodeltex.modelGLObjects.at(0);
 
         glBindVertexArray(mglo.vao);
-        //Indent operations on this vertex array object
+
         if (instancevbo == 0 )
         {
             glGenBuffers(1, &instancevbo);
@@ -149,13 +131,6 @@ void renderLootDrops(entt::registry& reg, Scene* scene)
 
 
         glDrawElementsInstanced(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr, lootDisplayInstances.size());
-
-
-
-
-
-
-
 
 }
 

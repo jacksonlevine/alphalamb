@@ -489,6 +489,7 @@ private:
                     else if constexpr (std::is_same_v<T, AddLootDrop>)
                     {
                         clientsMutex.lock();
+                        std::cout << "Adding loot drop on server at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
                         auto newe = makeLootDrop(serverReg, m.lootDrop, m.spot);
                         clientsMutex.unlock();
                         redistrib = true;
