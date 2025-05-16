@@ -4,6 +4,7 @@
 #include "SaveRegistry.h"
 #include "FileArchives.h"
 #include "components/ComputerComponent.h"
+#include "components/LootDrop.h"
 #include "components/PlayerEmplacer.h"
 #include "components/WorldStateComponent.h"
 
@@ -27,6 +28,7 @@ void saveRegistry(entt::registry & reg, const char* filename)
     .get<ComputerComponent>(outputArchive)
     .get<NPPositionComponent>(outputArchive)
     .get<WorldState>(outputArchive)
+    .get<LootDrop>(outputArchive)
     ;
 }
 
@@ -56,6 +58,7 @@ void loadRegistry(entt::registry & reg, const char* filename)
         .get<ComputerComponent>(inputArchive)
         .get<NPPositionComponent>(inputArchive)
         .get<WorldState>(inputArchive)
+        .get<LootDrop>(inputArchive)
         .orphans()
         ;
     }

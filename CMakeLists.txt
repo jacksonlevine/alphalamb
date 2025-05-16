@@ -209,6 +209,10 @@ add_executable(DistantGarden
         src/world/datamapmethods/HashMapDataMapTemplate.h
         src/jl484_vec3.h
         src/components/WorldStateComponent.h
+        src/components/LootDrop.h
+        src/components/LootDrop.cpp
+        src/components/Factories.cpp
+        src/components/Factories.h
 )
 
 

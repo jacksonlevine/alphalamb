@@ -10,6 +10,7 @@
 #include "PrecompHeader.h"
 #include "NetworkTypes.h"
 #include "PlayerInfoMapKeyedByUID.h"
+#include "components/Factories.h"
 #include "components/PlayerEmplacer.h"
 #include "components/UUIDComponent.h"
 #include "components/WorldStateComponent.h"
@@ -484,6 +485,33 @@ private:
                         //auto & vm = voxelModels[(int)m.name];
 
                         redistrib = true;
+                    }
+                    else if constexpr (std::is_same_v<T, AddLootDrop>)
+                    {
+                        clientsMutex.lock();
+                        auto newe = makeLootDrop(serverReg, m.lootDrop, m.spot);
+                        clientsMutex.unlock();
+                        redistrib = true;
+                    }
+                    else if constexpr (std::is_same_v<T, PickUpLootDrop>)
+                    {
+                        clientsMutex.lock();
+                        if (serverReg.valid(m.lootDrop) && serverReg.valid(m.myPlayerIndex))
+                        {
+                            if (serverReg.all_of<LootDrop>(m.lootDrop))
+                            {
+                                auto loot = serverReg.get<LootDrop>(m.lootDrop);
+                                InventoryComponent & playerInv = serverReg.get<InventoryComponent>(m.myPlayerIndex);
+
+                                if (playerInv.add(loot))
+                                {
+                                    serverReg.destroy(m.lootDrop);
+                                    redistrib = true;
+                                }
+
+                            }
+                        }
+                        clientsMutex.unlock();
                     }
                     else if constexpr (std::is_same_v<T, BulkBlockSet>) {
                         auto b = BlockArea{m.corner1, m.corner2, m.block, m.hollow

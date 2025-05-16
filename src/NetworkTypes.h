@@ -14,7 +14,7 @@
 #include "world/MaterialName.h"
 #include "world/VoxelModels.h"
 #include "Inventory.h"
-
+#include "components/LootDrop.h"
 
 
 struct PlayerPresent
@@ -132,6 +132,18 @@ struct RequestTextChunkResend
     size_t sequenceNumber;
 };
 
+struct AddLootDrop
+{
+    LootDrop lootDrop;
+    glm::vec3 spot;
+};
+
+struct PickUpLootDrop
+{
+    entt::entity myPlayerIndex;
+    entt::entity lootDrop;
+};
+
 
 // struct EquippedItemsUpdate
 // {
@@ -139,7 +151,7 @@ struct RequestTextChunkResend
 //     std::array<InventorySlot, INVHEIGHT> equipped;
 // };
 
-using DGMessage = std::variant<TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting>;
+using DGMessage = std::variant<TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
 
 
 

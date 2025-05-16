@@ -954,16 +954,14 @@ int main()
                             auto & cam = theScene.our<jl::Camera>();
 
 
+                            auto & spot = theScene.blockSelectGizmo->selectedSpot;
+                            //std::cout << "Senfing blokc chagne \n";
+                            pushToMainToNetworkQueue(BlockSet{
+                               .spot = spot, .block = AIR, .pp = glm::vec3(0.f)
+                            });
+                            pushToMainToNetworkQueue(AddLootDrop{LootDrop{theScene.lastBlockAtCursor, 1}, glm::vec3(spot.x,spot.y,spot.z) + glm::vec3(0.5)});
 
-                            if (theScene.multiplayer)
-                            {
-                                auto & spot = theScene.blockSelectGizmo->selectedSpot;
-                                //std::cout << "Senfing blokc chagne \n";
-                                pushToMainToNetworkQueue(BlockSet{
-                                   .spot = spot, .block = AIR, .pp = glm::vec3(0.f)
-                                });
 
-                            }
                         }
                     }
 
@@ -1141,6 +1139,27 @@ int main()
                         //
                         // //Dont do this yet, receive the file first
                         // //theScene.worldReceived = true;
+                    }
+                    else if constexpr (std::is_same_v<T, AddLootDrop>)
+                    {
+                        auto newe = makeLootDrop(theScene.REG, m.lootDrop, m.spot);
+                    }
+                    else if constexpr (std::is_same_v<T, PickUpLootDrop>)
+                    {
+                        if (theScene.REG.valid(m.lootDrop) && theScene.REG.valid(m.myPlayerIndex))
+                        {
+                            if (theScene.REG.all_of<LootDrop>(m.lootDrop))
+                            {
+                                auto loot = theScene.REG.get<LootDrop>(m.lootDrop);
+                                InventoryComponent & playerInv = theScene.REG.get<InventoryComponent>(m.myPlayerIndex);
+
+                                if (playerInv.add(loot))
+                                {
+                                    theScene.REG.destroy(m.lootDrop);
+                                }
+
+                            }
+                        }
                     }
                     else if constexpr (std::is_same_v<T, ControlsUpdate>) {
                         // std::cout << "Got a controls update from " << m.myPlayerIndex << "\n";
