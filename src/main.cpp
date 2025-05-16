@@ -1674,7 +1674,6 @@ int main()
                 //     glUniform3f(camPosLoc, 0, 0, 0);
                 // } else
                 {
-
                     glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(theScene.our<jl::Camera>().mvp));
                     glUniform3f(posLoc, pos.x, pos.y, pos.z);
                 }
@@ -1699,7 +1698,7 @@ int main()
                     {
                         glUseProgram(gltfShader.shaderID);
 
-                        //glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
+                        glUniformMatrix4fv(glGetUniformLocation(gltfShader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
                         //glActiveTexture(GL_TEXTURE0);
 
                         if (controls.secondary1)
@@ -1843,6 +1842,8 @@ int main()
             drawComputerScreensInReg(&world, theScene.REG, camera);
 
             profiler.checkTime("Draw sun and moon and computers");
+
+            renderLootDrops(theScene.REG, &theScene);
 
             renderImGui();
 
