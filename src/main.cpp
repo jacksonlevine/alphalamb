@@ -657,7 +657,7 @@ int main()
 
     scratchMemory = _aligned_malloc(scratchMemorySize, 16);
 
-    StepTimerProfiler<true> profiler;
+    StepTimerProfiler<false> profiler;
 
     glfwInit();
     GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
@@ -1851,6 +1851,8 @@ int main()
         glfwSwapBuffers(window);
 
         profiler.checkTime("Swapbuffers");
+        glFlush();
+        profiler.checkTime("Glflush");
     }
 
 
