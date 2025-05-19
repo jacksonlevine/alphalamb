@@ -818,10 +818,10 @@ int main()
     theScene.menuCamera->updateWithYawPitch(0.0,-89.9);
 
     //
-    // static jl::ModelAndTextures clouds = jl::ModelLoader::loadModel("resources/models/clouds.glb", false);
-    static jl::ModelAndTextures jp = jl::ModelLoader::loadModel("resources/models/jetpack.glb", false);
-    static jl::ModelAndTextures jplit = jl::ModelLoader::loadModel("resources/models/jetpack2.glb", false);
-    static jl::ModelAndTextures planet = jl::ModelLoader::loadModel("resources/models/planet.glb", false);
+    // static jl::ModelAndTextures clouds = jl::loadModel("resources/models/clouds.glb", false);
+    static jl::ModelAndTextures jp = jl::loadModel("resources/models/jetpack.glb", false);
+    static jl::ModelAndTextures jplit = jl::loadModel("resources/models/jetpack2.glb", false);
+    static jl::ModelAndTextures planet = jl::loadModel("resources/models/planet.glb", false);
 
     //SetImGuiScaling(window);
 
@@ -1845,7 +1845,7 @@ int main()
 
             profiler.checkTime("Draw sun and moon and computers");
 
-            renderLootDrops(theScene.REG, &theScene);
+            renderLootDrops(theScene.REG, &theScene, deltaTime);
 
             renderImGui();
 

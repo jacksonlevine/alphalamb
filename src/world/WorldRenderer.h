@@ -127,14 +127,26 @@ enum class Side
 {
     Front = 0,Right,Back,Left,Top,Bottom
 };
-// inline static IntTup neighborSpots[6] = {
-//     IntTup(0,0,-1),
-//     IntTup(1, 0,0),
-//     IntTup(0,0,1),
-//     IntTup(-1,0,0),
-//     IntTup(0,1,0),
-//     IntTup(0,-1,0)
-// };
+
+
+inline static IntTup neighborSpots[6] = {
+    IntTup(0,0,-1),
+    IntTup(1, 0,0),
+    IntTup(0,0,1),
+    IntTup(-1,0,0),
+    IntTup(0,1,0),
+    IntTup(0,-1,0)
+};
+
+inline static boost::unordered_map<IntTup, Side, IntTupHash> neigh2Side = {
+    {neighborSpots[0], (Side)0},
+    {neighborSpots[1], (Side)1},
+    {neighborSpots[2], (Side)2},
+    {neighborSpots[3], (Side)3},
+    {neighborSpots[4], (Side)4},
+    {neighborSpots[5], (Side)5},
+};
+
 
 template<bool doBrightness = true>
 __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex, float offsety = 0.0f);
@@ -169,14 +181,7 @@ inline static PxU32 cwindices[6] = {
     0, 3, 2, 2, 1, 0
 };
 
-inline static IntTup neighborSpots[6] = {
-    IntTup(0,0,-1),
-    IntTup(1, 0,0),
-    IntTup(0,0,1),
-    IntTup(-1,0,0),
-    IntTup(0,1,0),
-    IntTup(0,-1,0)
-};
+
 template<bool queueimplics = true>
 UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked, bool light);
 

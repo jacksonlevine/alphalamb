@@ -12,7 +12,7 @@ physx::PxController* getCont();
 
 class PhysicsComponent {
 public:
-    CollisionCage collisionCage = {};
+    CollisionCage<5> collisionCage = {};
     physx::PxController* controller = getCont();
     bool isGrounded = false;
     float originalStepHeight = 0.5f;

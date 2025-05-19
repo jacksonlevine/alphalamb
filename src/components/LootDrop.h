@@ -18,7 +18,8 @@ struct LootDrop
 };
 
 struct Scene;
+struct World;
 
-void renderLootDrops(entt::registry& reg, Scene* scene);
+void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime);
 
 #endif //LOOTDROP_H
