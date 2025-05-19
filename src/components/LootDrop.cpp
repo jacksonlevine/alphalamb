@@ -8,9 +8,14 @@
 #include "../ModelLoader.h"
 #include "../Shader.h"
 #include "../Scene.h"
-
+#include "../PhysXStuff.h"
 void renderLootDrops(entt::registry& reg, Scene* scene)
 {
+    static bool oddFrame = false; //for deleting the bodies once they arent in the reg. Temporary.
+    oddFrame = !oddFrame;
+    static std::unordered_map<entt::entity, std::pair<PxRigidDynamic*, bool>> bodies;
+
+
 
     struct LootDisplayInstance
     {
@@ -106,8 +111,40 @@ void renderLootDrops(entt::registry& reg, Scene* scene)
     for (auto entity : view)
     {
         //std::cout << "entity: "  << (int)entity << std::endl;
-        auto [pos] = view.get<NPPositionComponent>(entity);
-        lootDisplayInstances.emplace_back(pos);
+        auto & pos = view.get<NPPositionComponent>(entity);
+
+
+        if(bodies.contains(entity))
+        {
+            auto newpos = bodies.at(entity).first->getGlobalPose().p;
+            pos.position = glm::vec3(newpos.x, newpos.y, newpos.z);
+            bodies.at(entity).second = oddFrame;
+        } else
+        {
+
+            PxMaterial* material = gPhysics->createMaterial(0.5f, 0.5f, 0.6f);
+
+            // Create sphere geometry (radius = 0.25m for 0.5m diameter)
+            PxSphereGeometry sphereGeom(0.25f);
+
+            // Create rigid dynamic at origin
+            PxRigidDynamic* sphere = gPhysics->createRigidDynamic(PxTransform(PxVec3(pos.position.x, pos.position.y, pos.position.z)));
+
+            // Create and attach shape
+            PxShape* shape = gPhysics->createShape(sphereGeom, *material);
+            sphere->attachShape(*shape);
+            shape->release(); // Release our reference, actor holds it now
+
+            // Set mass properties for the sphere
+            PxRigidBodyExt::updateMassAndInertia(*sphere, 1.0f); // 1 kg/m³ density
+
+            // Add to scene
+            gScene->addActor(*sphere);
+
+            bodies.insert_or_assign(entity, std::make_pair(sphere, oddFrame));
+        }
+
+        lootDisplayInstances.emplace_back(pos.position);
     }
 
     static GLuint instancevbo = 0;
@@ -131,6 +168,16 @@ void renderLootDrops(entt::registry& reg, Scene* scene)
 
 
         glDrawElementsInstanced(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr, lootDisplayInstances.size());
+        for(auto & body : bodies)
+        {
+            if(body.second.second != oddFrame)
+            {
+                body.second.first->release();
+            }
+        }
+        std::erase_if(bodies, [&](const auto& pair) {
+            return pair.second.second != oddFrame; 
+        });
 
 }
 

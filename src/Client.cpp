@@ -78,6 +78,14 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                         //std::cout << "Got yawpitch update \n";
                         pushToNetworkToMainQueue(m);
                     }
+                    else if constexpr (std::is_same_v<T, AddLootDrop>) {
+                        //std::cout << "Got yawpitch update \n";
+                        pushToNetworkToMainQueue(m);
+                    }
+                    else if constexpr (std::is_same_v<T, PickUpLootDrop>) {
+                        //std::cout << "Got yawpitch update \n";
+                        pushToNetworkToMainQueue(m);
+                    }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
 
                         pushToNetworkToMainQueue(m);

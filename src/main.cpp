@@ -947,14 +947,12 @@ int main()
                 {
                     theScene.blockSelectGizmo->hitProgress = 0.0f;
 
-                    if (theScene.blockSelectGizmo)
-                    {
                         if (theScene.blockSelectGizmo->isDrawing)
                         {
-                            auto & cam = theScene.our<jl::Camera>();
+                            const auto & cam = theScene.our<jl::Camera>();
 
 
-                            auto & spot = theScene.blockSelectGizmo->selectedSpot;
+                            const auto & spot = theScene.blockSelectGizmo->selectedSpot;
                             //std::cout << "Senfing blokc chagne \n";
                             pushToMainToNetworkQueue(BlockSet{
                                .spot = spot, .block = AIR, .pp = glm::vec3(0.f)
@@ -967,7 +965,6 @@ int main()
 
 
                         }
-                    }
 
                 }
             }

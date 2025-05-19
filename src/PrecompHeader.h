@@ -57,7 +57,7 @@
 #include <boost/thread/concurrent_queues/sync_queue.hpp>
 #include <tbb/tbb.h>
 #include <tbb/concurrent_unordered_set.h>
-
+#include <tuple>
 
 extern GLuint lutTexture;
 

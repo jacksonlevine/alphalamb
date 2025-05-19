@@ -70,9 +70,7 @@ inline void sendToServer(tcp::socket* socket, std::atomic<bool>* shouldRun)
 
 inline void pushToMainToNetworkQueue(const DGMessage& m)
 {
-    if (mainToNetworkBlockChangeQueue.write_available() > 0)
-    {
-        mainToNetworkBlockChangeQueue.push(m);
+    if (mainToNetworkBlockChangeQueue.push(m)) {
         networkCV.notify_one();
     } else
     {
@@ -83,13 +81,11 @@ inline void pushToMainToNetworkQueue(const DGMessage& m)
 
 inline void pushToNetworkToMainQueue(const DGMessage& m)
 {
-    if (networkToMainBlockChangeQueue.write_available() > 0)
-    {
-        networkToMainBlockChangeQueue.push(m);
-        //networkCV.notify_one();
+    if (networkToMainBlockChangeQueue.push(m)) {
+        //networkCV.notify_one(); It always pulls
     } else
     {
-
+        std::cerr << "Big uh oh. We got a hashtag NetworkToMainQueue push failed!! That's a zoinks. Alright, well anyway, time to pack it up! See you later. \n";
     }
 }
 
