@@ -56,49 +56,51 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
 
 
 
-    MaterialName floorBlock = getFloorBlockInClimate(getClimate(spot));
+    const MaterialName floorBlock = getFloorBlockInClimate(getClimate(spot));
 
-    MaterialName underDirt = STONE;
-    MaterialName surface = floorBlock;
-    MaterialName underSurface = DIRT;
-    MaterialName liquid = WATER;
-    MaterialName beach = SAND;
+    static const MaterialName underDirt = STONE;
+    static const MaterialName surface = floorBlock;
+    static const MaterialName underSurface = DIRT;
+    static const MaterialName liquid = WATER;
+    static const MaterialName beach = SAND;
 
-    static float WL = 60.0f;
+    static const float WL = 60.0f;
 
-    float notype = std::min(0.01f, std::max(0.003f, noise.GetNoise(
+    const float distfromorigin = 1.0f - (glm::abs(spot.x + spot.z) / 8'000.f);
+
+    const float notype = std::min(0.01f, std::max(0.003f, noise.GetNoise(
         spot.x * 0.25f,
         spot.z * 0.25f) * 0.2f));
     //
     // notype = 0.0f;
 
-    float yoff = 60.0f;
+    static const float yoff = 60.0f;
 
-    float no = getNoiseMix(
+    const float no = distfromorigin * (getNoiseMix(
         spot.x * blockScaleInPerlin,
         spot.y * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-    - ((spot.y - yoff) * notype);
+    - ((spot.y - yoff) * notype));
 
-    float noabove = getNoiseMix(
+    const float noabove = distfromorigin * (getNoiseMix(
         spot.x * blockScaleInPerlin,
         (spot.y + 1) * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-    - ((spot.y + 1 - yoff) * notype);
+    - ((spot.y + 1 - yoff) * notype));
 
-    float no5up = getNoiseMix(
+    const float no5up = distfromorigin * (getNoiseMix(
         spot.x * blockScaleInPerlin,
         (spot.y + 6) * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-    - ((spot.y + 6 - yoff) * notype);
+    - ((spot.y + 6 - yoff) * notype));
 
-    float no10up = getNoiseMix(
+    const float no10up = distfromorigin * (getNoiseMix(
         spot.x * blockScaleInPerlin,
         (spot.y + 12) * blockScaleInPerlin,
         spot.z * blockScaleInPerlin)
-    - ((spot.y + 12 - yoff) * notype);
+    - ((spot.y + 12 - yoff) * notype));
 
-    static float THRESHOLD = 0.02f;
+    static const float THRESHOLD = 0.02f;
 
     if (no > THRESHOLD)
     {
