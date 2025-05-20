@@ -5,6 +5,7 @@
 #include "LootDrop.h"
 
 #include "NPPositionComponent.h"
+#include "../Client.h"
 #include "../ModelLoader.h"
 #include "../Shader.h"
 #include "../Scene.h"
@@ -55,6 +56,9 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
         }
     };
 
+    static std::unordered_map<TwoIntTup, std::vector<entt::entity>, TwoIntTupHash> dropsatspots;
+
+
 
     static std::unordered_map<entt::entity, LootPhysicsBody> physicsbodies;
 
@@ -66,6 +70,8 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
         glm::vec4 quat;
         glm::vec2 uvoffset;
     };
+
+
 
     static std::vector<LootDisplayInstance> lootDisplayInstances;
 
@@ -183,6 +189,24 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
 
         auto loot = view.get<LootDrop>(entity);
 
+        const auto oldblockspot = TwoIntTup(glm::floor(pos.position.x), glm::floor(pos.position.z));
+
+        //Remove old dropsatspots entry if there
+        if(dropsatspots.contains(oldblockspot))
+        {
+            auto & there = dropsatspots.at(oldblockspot);
+            auto it = std::find(there.begin(), there.end(), entity);
+            if(it != there.end())
+            {
+                there.erase(it);
+            }
+            if(there.empty())
+            {
+                dropsatspots.erase(oldblockspot);
+            }
+        }
+
+        //Update item to physics body spot
         if(physicsbodies.contains(entity))
         {
             const auto pose = physicsbodies.at(entity).body->getGlobalPose();
@@ -196,7 +220,22 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
             physicsbodies.insert_or_assign(entity, LootPhysicsBody(pos.position));
         }
 
-        auto tex = TEXS[(int)loot.block].at(0);
+
+        //Re-add to dropsatspots
+        const auto newblockspot = TwoIntTup(glm::floor(pos.position.x), glm::floor(pos.position.z));
+        if(!dropsatspots.contains(newblockspot))
+        {
+            dropsatspots.insert({newblockspot, std::vector<entt::entity>{ {entity} }});
+        } else
+        {
+            auto & bp = dropsatspots.at(newblockspot);
+
+            if(std::find(bp.begin(), bp.end(), entity) == bp.end())
+            {
+                bp.push_back(entity);
+            }
+        }
+        const auto & tex = TEXS[(int)loot.block].at(0);
 
         physicsbodies.at(entity).collisionCage.updateToSpot(theScene.world, pos.position, deltaTime);
         lootDisplayInstances.emplace_back(pos.position, quat, glm::vec2((float)tex.first * texSlotWidth, (float)tex.second * -texSlotWidth));
@@ -238,6 +277,30 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
         std::erase_if(physicsbodies, [&](const auto& pair) {
             return !reg.valid(pair.first);
         });
+
+    const auto pview = reg.view<InventoryComponent, jl::Camera>();
+    for(auto entity : pview)
+    {
+
+        auto campos = pview.get<jl::Camera>(entity).transform.position;
+        auto blockspot = TwoIntTup(glm::floor(campos.x), glm::floor(campos.z));
+        if(dropsatspots.contains(blockspot))
+        {
+            auto & bp = dropsatspots.at(blockspot);
+            std::erase_if(bp, [&](entt::entity ent)
+            {
+                return !reg.valid(ent);
+            });
+            for(auto ent : bp)
+            {
+                auto thepos = reg.get<NPPositionComponent>(ent).position;
+                if(glm::distance(thepos, campos) < 1.5f)
+                {
+                    pushToMainToNetworkQueue(PickUpLootDrop{entity, ent});
+                }
+            }
+        }
+    }
 
 }
 
