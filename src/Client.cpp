@@ -66,6 +66,10 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                     {
                         pushToNetworkToMainQueue(m);
                     }
+                    else if constexpr (std::is_same_v<T, DepleteInventorySlot>)
+                    {
+                        pushToNetworkToMainQueue(m);
+                    }
                     else if constexpr (std::is_same_v<T, PlayerLeave>) {
 
                         pushToNetworkToMainQueue(m);

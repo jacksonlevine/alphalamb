@@ -50,28 +50,30 @@ inline void sendTextInChunks(tcp::socket* socket, const std::string& text)
 inline void sendToServer(tcp::socket* socket, std::atomic<bool>* shouldRun)
 {
     while (shouldRun->load()) {
-
         {
             std::unique_lock<std::mutex> lock(networkMutex);
-            if (mainToNetworkBlockChangeQueue.empty()) {
-
-                networkCV.wait(lock);
-            }
+            networkCV.wait(lock, [] {
+                return !mainToNetworkBlockChangeQueue.empty();
+            });
         }
 
 
-        DGMessage m = WorldInfo{};
-        while (mainToNetworkBlockChangeQueue.pop(&m))
-        {
+        while (!mainToNetworkBlockChangeQueue.empty()) {
+            DGMessage m;
+            mainToNetworkBlockChangeQueue.pop(m);
             boost::asio::write(*socket, boost::asio::buffer(&m, sizeof(DGMessage)));
         }
     }
 }
 
+template<bool notify = true>
 inline void pushToMainToNetworkQueue(const DGMessage& m)
 {
     if (mainToNetworkBlockChangeQueue.push(m)) {
-        networkCV.notify_one();
+        if constexpr (notify)
+        {
+            networkCV.notify_one();
+        }
     } else
     {
         std::cerr << "Write was not available it didnt write it \n";

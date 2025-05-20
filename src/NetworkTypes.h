@@ -144,6 +144,13 @@ struct PickUpLootDrop
     entt::entity lootDrop;
 };
 
+struct DepleteInventorySlot
+{
+    entt::entity playerIndex;
+    int slot;
+    int depletion;
+};
+
 
 // struct EquippedItemsUpdate
 // {
@@ -151,8 +158,7 @@ struct PickUpLootDrop
 //     std::array<InventorySlot, INVHEIGHT> equipped;
 // };
 
-using DGMessage = std::variant<TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
-
+using DGMessage = std::variant<DepleteInventorySlot, TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
 
 
 

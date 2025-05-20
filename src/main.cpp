@@ -221,9 +221,19 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                                 {
                                     //std::cout << "Senfing blokc place \n";
                                     auto & inv = scene->our<InventoryComponent>();
+
+                                    pushToMainToNetworkQueue<false>(DepleteInventorySlot{
+                                        .playerIndex = theScene.myPlayerIndex,
+                                        .slot = (int)inv.currentHeldInvIndex,
+                                        .depletion = 1});
+
                                     pushToMainToNetworkQueue(BlockSet{
-                                        .spot = placeSpot, .block = inv.inventory.inventory.at((int)inv.currentHeldInvIndex).block , .pp = cam.transform.position
+                                        .spot = placeSpot,
+                                        .block = inv.inventory.inventory.at((int)inv.currentHeldInvIndex).block,
+                                        .pp = cam.transform.position
                                     });
+                                    std::cout << "Pushing deplete \n";
+
                                 }
                             }
 
@@ -1132,7 +1142,7 @@ int main()
 
             DGMessage msg = {};
 
-            while (networkToMainBlockChangeQueue.pop(&msg))
+            if (networkToMainBlockChangeQueue.pop(&msg))
             {
 
 
@@ -1375,6 +1385,35 @@ int main()
                             else if constexpr (std::is_same_v<T, FileTransferInit>) {
 
                             }
+                            else if constexpr (std::is_same_v<T, DepleteInventorySlot>) {
+                                {
+                                    if(theScene.REG.valid(m.playerIndex))
+                                    {
+                                        std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+                                        theScene.REG.patch<InventoryComponent>(m.playerIndex, [&](InventoryComponent & inv)
+                                        {
+                                            try
+                                            {
+                                                auto & slot = inv.inventory.inventory.at(m.slot);
+                                                if(slot.count - m.depletion > 0)
+                                                {
+                                                    slot.count -= m.depletion;
+                                                } else
+                                                {
+                                                    slot.count = 0;
+                                                    slot.block = 0;
+                                                }
+
+                                            } catch (std::exception&e)
+                                            {
+                                                std::cerr << "slot " << m.slot << " didnt exist " << (int)m.playerIndex << " dumbass" << std::endl;
+                                            }
+
+                                        });
+                                    }
+
+                                }
+                            }
                             else if constexpr (std::is_same_v<T, BulkBlockSet>) {
 
                                 theScene.worldRenderer->requestBlockBulkPlaceFromMainThread(
@@ -1403,8 +1442,6 @@ int main()
                         }, msg);
 
 
-
-                break; //Only do one per frame
             }
             profiler.checkTime("Popped a network message");
 
@@ -1437,7 +1474,7 @@ int main()
 
             BlockArea m = {};
 
-            while (theScene.worldRenderer->rebuildToMainAreaNotifications.pop(&m))
+            if (theScene.worldRenderer->rebuildToMainAreaNotifications.pop(&m))
             {
                 int minX = std::min(m.corner1.x, m.corner2.x);
                 int maxX = std::max(m.corner1.x, m.corner2.x);
@@ -1460,7 +1497,6 @@ int main()
                     theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(i);
                 }
 
-                break; //Only do oen per frame
             }
 
             profiler.checkTime("Rebuild area notifs");

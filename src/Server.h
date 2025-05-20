@@ -214,15 +214,7 @@ private:
                         .index = id, .position = camera.transform.position, .direction = camera.transform.direction,
                         .id = myUID};
                     //We are notified of this person
-                    boost::asio::async_write(*m_socket, boost::asio::buffer(&playerPresent, sizeof(DGMessage)),
-                    [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
-                    {
-                        if (!ec) {
-
-                        } else {
-                            std::cerr << "Error writing to socket: " << ec.message() << std::endl;
-                        }
-                    });
+                    boost::asio::write(*m_socket, boost::asio::buffer(&playerPresent, sizeof(DGMessage)));
                     //And also notify this person we are here
                     if(!nc.socket.expired() && nc.receivedWorld)
                     {
@@ -231,15 +223,7 @@ private:
                             .direction = serverReg.get<jl::Camera>(m_playerIndex).transform.direction, .id = m_clientUID
                         };
 
-                        boost::asio::async_write(*nc.socket.lock(), boost::asio::buffer(&ourPlayerPresent, sizeof(DGMessage)),
-                        [this, self = shared_from_this()](const boost::system::error_code& ec, std::size_t bytes_transferred)
-                        {
-                            if (!ec) {
-
-                            } else {
-                                std::cerr << "Error writing to socket: " << ec.message() << std::endl;
-                            }
-                        });
+                        boost::asio::write(*nc.socket.lock(), boost::asio::buffer(&ourPlayerPresent, sizeof(DGMessage)));
                     }
                 }
             }
@@ -256,9 +240,10 @@ private:
 
 //std::cout << "now starting \n";
 
+            auto m_message = std::make_shared<DGMessage>();
 
-    boost::asio::async_read(*m_socket, boost::asio::buffer(&m_message, sizeof(DGMessage)),
-        [this, self](const boost::system::error_code& ec, std::size_t /*length*/) {
+    boost::asio::async_read(*m_socket, boost::asio::buffer(m_message.get(), sizeof(DGMessage)),
+        [this, self, m_message](const boost::system::error_code& ec, std::size_t /*length*/) {
             if (!ec) {
 
                 bool redistrib = false;
@@ -333,6 +318,34 @@ private:
                         }
                         redistrib = true;
                         excludeyou = true;
+                    }
+                    else if constexpr (std::is_same_v<T, DepleteInventorySlot>)
+                    {
+                        {
+                            std::cout << "Got Deplete on server" << std::endl;
+                            std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+                            serverReg.patch<InventoryComponent>(m.playerIndex, [&](InventoryComponent & inv)
+                            {
+                                try
+                                {
+                                    auto & slot = inv.inventory.inventory.at(m.slot);
+                                    if(slot.count - m.depletion > 0)
+                                    {
+                                        slot.count -= m.depletion;
+                                    } else
+                                    {
+                                        slot.count = 0;
+                                        slot.block = 0;
+                                    }
+
+                                } catch (std::exception&e)
+                                {
+                                    std::cerr << "slot " << m.slot << " didnt exist " << (int)m_playerIndex << " dumbass" << std::endl;
+                                }
+
+                            });
+                        }
+                        redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, RequestInventorySwap>)
                     {
@@ -614,12 +627,12 @@ private:
 
 
                     }
-                }, m_message);
+                }, *m_message);
 
 
                 if (redistrib)
                 {
-                   sendMessageToAllClients(m_message, m_playerIndex, excludeyou);
+                   sendMessageToAllClients(*m_message, m_playerIndex, excludeyou);
                 }
 
                 //Wait for next message
@@ -660,7 +673,6 @@ private:
 private:
     std::shared_ptr<tcp::socket> m_socket;
 
-    DGMessage m_message{};         // To store the header
     std::vector<char> m_body;       // To store the raw message body
     entt::entity m_playerIndex;
     ClientUID m_clientUID;
