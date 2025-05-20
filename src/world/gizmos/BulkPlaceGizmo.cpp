@@ -73,7 +73,7 @@ void BulkPlaceGizmo::draw(World* world, entt::entity playerIndex, entt::registry
                     {
                         for (int i = 0; i < 6; i++)
                         {
-                            addFace(PxVec3(x,y,z), static_cast<Side>(i), invComp.currentHeldBlock, 1, mesh, index, tindex);
+                            addFace(PxVec3(x,y,z), static_cast<Side>(i), (MaterialName)reg.get<InventoryComponent>(playerIndex).inventory.inventory.at((int)invComp.currentHeldInvIndex).block, 1, mesh, index, tindex);
                         }
                     }
 

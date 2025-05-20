@@ -7,6 +7,7 @@
 #include "Client.h"
 #include "ImGuiStuff.h"
 #include "Texture.h"
+#include "TextureFace.h"
 
 void imguiInventory(Inventory& inv)
 {
@@ -24,6 +25,7 @@ void imguiInventory(Inventory& inv)
 
     ImVec2 backgroundSize = ImVec2(screenSize.x * 0.75f, screenSize.y* 0.75f);
 
+    ImVec2 invTileDisplaySize = ImVec2((screenSize.x / 40.0f), (screenSize.x / 40.0f)); // Size of displayed image
 
 
     ImVec2 pos = ImVec2((screenSize.x - backgroundSize.x) * 0.5f, (screenSize.y - backgroundSize.y) * 0.5f);
@@ -142,11 +144,25 @@ void imguiInventory(Inventory& inv)
             ImGui::PushID(index);
             if (i > 0) ImGui::SameLine();
 
+
+            auto cursorspot = ImGui::GetCursorPos();
+
             auto& slot = inv.getSlot(i, j);
-            std::string label = slot.empty() ? std::string("##inv") + std::to_string(index)  :  std::to_string(slot.block) + " " + std::to_string(slot.count);
+            std::string label = slot.empty() ? std::string("##inv") + std::to_string(index)  : "  " + std::to_string(slot.count);
+
+            ImGui::SetCursorPos(cursorspot);
+
+            const auto tex = TEXS.at(inv.inventory[i].block).at(0);
+            TextureFace face(tex.first, tex.second);
+
+            ImGui::Image((ImTextureID)theScene.worldtex, invTileDisplaySize, ImVec2(face.bl.x, face.bl.y), ImVec2(face.tr.x, face.tr.y));
+
+            ImGui::SetCursorPos(cursorspot);
 
             bool isEquip = Inventory::isEquipSlot(i,j);
             bool mouseHeldItemEquippable = equippable(static_cast<ItemName>(inv.mouseHeldItem.block));
+
+
             //
             // if (isEquip)
             // {

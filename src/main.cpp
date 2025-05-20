@@ -220,9 +220,9 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                                 if (placeSpot != playerBlockSpot1 && placeSpot != playerBlockSpot2)
                                 {
                                     //std::cout << "Senfing blokc place \n";
-
+                                    auto & inv = scene->our<InventoryComponent>();
                                     pushToMainToNetworkQueue(BlockSet{
-                                        .spot = placeSpot, .block =  scene->our<InventoryComponent>().currentHeldBlock, .pp = cam.transform.position
+                                        .spot = placeSpot, .block = inv.inventory.inventory.at((int)inv.currentHeldInvIndex).block , .pp = cam.transform.position
                                     });
                                 }
                             }
@@ -245,8 +245,13 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                             {
                                 if (scene->bulkPlaceGizmo->placeMode == BulkPlaceGizmo::Solid)
                                 {
+                                    auto & inv = scene->our<InventoryComponent>();
                                     DGMessage bulkPlace = BulkBlockSet{
-                                        .corner1 = scene->bulkPlaceGizmo->corner1, .corner2 = scene->bulkPlaceGizmo->corner2, .block = scene->our<InventoryComponent>().currentHeldBlock, .hollow = false};
+                                        .corner1 = scene->bulkPlaceGizmo->corner1, .corner2 = scene->bulkPlaceGizmo->corner2,
+
+                                        .block = inv.inventory.inventory.at((int)inv.currentHeldInvIndex).block,
+
+                                        .hollow = false};
                                     pushToMainToNetworkQueue(bulkPlace);
                                     scene->bulkPlaceGizmo->active = false;
                                 } else
@@ -263,9 +268,9 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                                         std::max(scene->bulkPlaceGizmo->corner1.z, scene->bulkPlaceGizmo->corner2.z)
                                     };
 
-
+                                    auto & inv = scene->our<InventoryComponent>();
                                     DGMessage bulkPlace = BulkBlockSet{
-                                        .corner1 = minCorner, .corner2 = maxCorner, .block = scene->our<InventoryComponent>().currentHeldBlock, .hollow = true};
+                                        .corner1 = minCorner, .corner2 = maxCorner, .block = inv.inventory.inventory.at((int)inv.currentHeldInvIndex).block, .hollow = true};
                                     pushToMainToNetworkQueue(bulkPlace);
                                     // DGMessage bulkCutout = BulkBlockSet{
                                     //     minCorner + IntTup(1,1,1), maxCorner + IntTup(-1,-1,-1), AIR};
@@ -302,7 +307,11 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                     //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
                     BlockType blockThere = scene->world->get(spot);
                     //IntTup placeSpot = scene->blockSelectGizmo->selectedSpot + scene->blockSelectGizmo->hitNormal;
-                    scene->our<InventoryComponent>().currentHeldBlock = (MaterialName)blockThere;
+
+                    //might bring this back TODO
+                    //scene->our<InventoryComponent>().currentHeldBlock = (MaterialName)blockThere;
+
+
                     //scene->world->set(spot, AIR);
                     //std::cout << "Set the block "  << std::endl;;
                     // scene->worldRenderer->requestChunkRebuildFromMainThread(
@@ -312,7 +321,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
 
                 } else
                 {
-                    scene->our<InventoryComponent>().currentHeldBlock = AIR;
+                    //scene->our<InventoryComponent>().currentHeldBlock = AIR;
                 }
 
                 //std::cout << "Request filed " << std::endl;
@@ -577,23 +586,23 @@ void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
             {
                 if (yoffset > 0)
                 {
-                    scene->our<InventoryComponent>().currentHeldBlock = (MaterialName)(((int)scene->our<InventoryComponent>().currentHeldBlock + 1 ) % BLOCK_COUNT);
+                    scene->our<InventoryComponent>().currentHeldInvIndex = (MaterialName)(((int)scene->our<InventoryComponent>().currentHeldInvIndex + 1 ) % 5);
                 }
                 if (yoffset < 0)
                 {
-                    int newMat = (scene->our<InventoryComponent>().currentHeldBlock - 1);
+                    int newMat = (scene->our<InventoryComponent>().currentHeldInvIndex - 1);
                     if (newMat < 0)
                     {
-                        newMat = BLOCK_COUNT - 1;
+                        newMat = 4;
                     }
-                    scene->our<InventoryComponent>().currentHeldBlock = (MaterialName)newMat;
+                    scene->our<InventoryComponent>().currentHeldInvIndex = (MaterialName)newMat;
                 }
 
                 if (scene->multiplayer)
                 {
                     DGMessage sbu = PlayerSelectBlockChange{
                         scene->myPlayerIndex,
-                    scene->our<InventoryComponent>().currentHeldBlock};
+                    scene->our<InventoryComponent>().currentHeldInvIndex};
                     pushToMainToNetworkQueue(sbu);
                 }
             } else
@@ -1206,7 +1215,7 @@ int main()
                         {
                             theScene.REG.patch<InventoryComponent>(m.myPlayerIndex, [&](InventoryComponent & inv)
                             {
-                                inv.currentHeldBlock = m.newMaterial;
+                                inv.currentHeldInvIndex = m.newMaterial;
                             });
                         }
                     }

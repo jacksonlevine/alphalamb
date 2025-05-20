@@ -11,7 +11,7 @@
 
 struct InventoryComponent {
     MaterialName lastHeldBlock = AIR;
-    MaterialName currentHeldBlock = LIGHT;
+    MaterialName currentHeldInvIndex = AIR;
     Inventory inventory = {};
     bool add(LootDrop lootDrop)
     {
@@ -26,10 +26,24 @@ struct InventoryComponent {
         }
         return false;
     }
+    bool full()
+    {
+        bool add(LootDrop lootDrop);
+        {
+            for (auto & slot : inventory.inventory)
+            {
+                if (slot.block == AIR && slot.count == 0)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
     template<typename Archive>
     void serialize(Archive& archive)
     {
-        archive(lastHeldBlock, currentHeldBlock, inventory);
+        archive(lastHeldBlock, currentHeldInvIndex, inventory);
     }
 };
 

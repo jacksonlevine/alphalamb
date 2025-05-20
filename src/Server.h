@@ -328,7 +328,7 @@ private:
                             std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
                             serverReg.patch<InventoryComponent>(m_playerIndex, [&](InventoryComponent & inv)
                             {
-                                inv.currentHeldBlock = m.newMaterial;
+                                inv.currentHeldInvIndex = m.newMaterial;
                             });
                         }
                         redistrib = true;

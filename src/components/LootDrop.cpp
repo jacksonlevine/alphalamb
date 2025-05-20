@@ -278,29 +278,29 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
             return !reg.valid(pair.first);
         });
 
-    const auto pview = reg.view<InventoryComponent, jl::Camera>();
-    for(auto entity : pview)
-    {
 
-        auto campos = pview.get<jl::Camera>(entity).transform.position;
-        auto blockspot = TwoIntTup(glm::floor(campos.x), glm::floor(campos.z));
-        if(dropsatspots.contains(blockspot))
+    const auto & campos = scene->our<jl::Camera>().transform.position;
+    auto blockspot = TwoIntTup(glm::floor(campos.x), glm::floor(campos.z));
+    auto & inv = scene->our<InventoryComponent>();
+    if(dropsatspots.contains(blockspot))
+    {
+        auto & bp = dropsatspots.at(blockspot);
+        std::erase_if(bp, [&](entt::entity ent)
         {
-            auto & bp = dropsatspots.at(blockspot);
-            std::erase_if(bp, [&](entt::entity ent)
-            {
-                return !reg.valid(ent);
-            });
+            return !reg.valid(ent);
+        });
+        if(!inv.full())
+        {
             for(auto ent : bp)
             {
                 auto thepos = reg.get<NPPositionComponent>(ent).position;
+
                 if(glm::distance(thepos, campos) < 1.5f)
                 {
-                    pushToMainToNetworkQueue(PickUpLootDrop{entity, ent});
+                    pushToMainToNetworkQueue(PickUpLootDrop{scene->myPlayerIndex, ent});
                 }
             }
         }
     }
-
 }
 
