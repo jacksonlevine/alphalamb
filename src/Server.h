@@ -284,14 +284,15 @@ private:
                         //         }
                         //     }
                         // }
-
-                        {
-                            std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-                            auto & c = serverReg.get<jl::Camera>(m_playerIndex);
-                            c.transform.position = m.startPos;
-                            serverReg.get<Controls>(m_playerIndex) = m.myControls;
-                            c.transform.updateWithYawPitch(m.startYawPitch.x, m.startYawPitch.y);
-                        }
+                        boost::asio::post(localserver_threadpool, [m_playerIndex, m, &]{ 
+                            {
+                                std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+                                auto & c = serverReg.get<jl::Camera>(m_playerIndex);
+                                c.transform.position = m.startPos;
+                                serverReg.get<Controls>(m_playerIndex) = m.myControls;
+                                c.transform.updateWithYawPitch(m.startYawPitch.x, m.startYawPitch.y);
+                            }
+                        });
 
                         redistrib = true;
                         excludeyou = true;
