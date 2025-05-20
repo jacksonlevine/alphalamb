@@ -46,7 +46,6 @@ constexpr int DGSEEDSEED = 987654321;
 
 inline void sendMessageToAllClients(const DGMessage& message, entt::entity m_playerIndex, bool excludeMe)
 {
-
     std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
 
     auto view = serverReg.view<NetworkComponent>();
@@ -57,9 +56,7 @@ inline void sendMessageToAllClients(const DGMessage& message, entt::entity m_pla
         {
             boost::asio::write(*nc.socket.lock(), boost::asio::buffer(&message, sizeof(DGMessage)));
         }
-
     }
-
 }
 
 inline std::vector<char> loadBinaryFile(const std::string& filename) {
@@ -92,9 +89,6 @@ public:
 
     explicit Session(std::shared_ptr<tcp::socket> socket, std::shared_ptr<flatCposSet> generatedChunks)
     : m_socket(std::move(socket)), m_playerIndex(entt::null), generatedChunks(generatedChunks) { }
-
-
-
 
     void run() {
         sayInitialThings();
