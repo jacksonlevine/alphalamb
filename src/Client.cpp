@@ -74,6 +74,10 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
 
                         pushToNetworkToMainQueue(m);
                     }
+                    else if constexpr (std::is_same_v<T, BlockSetAndDepleteSlot>) {
+
+                        pushToNetworkToMainQueue(m);
+                    }
                     else if constexpr (std::is_same_v<T, BulkBlockSet>) {
 
                         pushToNetworkToMainQueue(m);

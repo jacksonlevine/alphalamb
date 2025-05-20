@@ -278,7 +278,7 @@ private:
                         //         }
                         //     }
                         // }
-                        boost::asio::post(localserver_io_context->get_executor(), [&, m_playerIndex = m_playerIndex, m](){
+                        boost::asio::post(localserver_threadpool, [&, m_playerIndex = m_playerIndex, m](){
                             {
                                 std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
                                 auto & c = serverReg.get<jl::Camera>(m_playerIndex);
@@ -302,10 +302,14 @@ private:
                         redistrib = true;
                         excludeyou = true;
                     }
+                    else if constexpr (std::is_same_v<T, BlockSetAndDepleteSlot>)
+                    {
+                        redistrib = true;
+                    }
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>) {
                         //std::cout << "Got selectblockchange \n";
 
-                        boost::asio::post(localserver_io_context->get_executor(), [&, m_playerIndex = m_playerIndex, m](){
+                        boost::asio::post(localserver_threadpool, [&, m_playerIndex = m_playerIndex, m](){
                             {
                                 std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
                                 serverReg.patch<InventoryComponent>(m_playerIndex, [&](InventoryComponent & inv)
@@ -321,7 +325,7 @@ private:
                     else if constexpr (std::is_same_v<T, DepleteInventorySlot>)
                     {
 
-                        boost::asio::post(localserver_io_context->get_executor(), [&, m_playerIndex = m_playerIndex, m](){
+                        boost::asio::post(localserver_threadpool, [&, m_playerIndex = m_playerIndex, m](){
                             {
                                 std::cout << "Got Deplete on server" << std::endl;
                                 std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
@@ -358,7 +362,7 @@ private:
 
                         //Swaps can only be done within ones own inventory
 
-                        boost::asio::post(localserver_io_context->get_executor(), [&, m_playerIndex = m_playerIndex, m](){
+                        boost::asio::post(localserver_threadpool, [&, m_playerIndex = m_playerIndex, m](){
                             if (m.sourceID == m.destinationID)
                             {
 
@@ -412,7 +416,7 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
 
-                        boost::asio::post(localserver_io_context->get_executor(), [&,m_playerIndex =  m_playerIndex, m](){
+                        boost::asio::post(localserver_threadpool, [&,m_playerIndex =  m_playerIndex, m](){
                             auto blockThere = serverWorld.get(m.spot);
 
                             if(auto func = findSpecialSetBits((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
@@ -457,7 +461,7 @@ private:
                     else if constexpr (std::is_same_v<T, VoxModelStamp>)
                     {
 
-                        boost::asio::post(localserver_io_context->get_executor(), [&,m_playerIndex =  m_playerIndex, m](){
+                        boost::asio::post(localserver_threadpool, [&,m_playerIndex =  m_playerIndex, m](){
 
 
                             auto v = PlacedVoxModel {
@@ -509,7 +513,7 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, AddLootDrop>)
                     {
-                        boost::asio::post(localserver_io_context->get_executor(), [&,m_playerIndex = m_playerIndex, m](){
+                        boost::asio::post(localserver_threadpool, [&,m_playerIndex = m_playerIndex, m](){
                             std::cout << "Adding loot drop on server at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
                             clientsMutex.lock();
 
@@ -523,7 +527,7 @@ private:
                     {
                         //We now, in the interest of freeing up this session to be always available, will not be able to decide here whether to redistrib.
                         //So we will redistrib no matter what, and do this simple validity check on the client as well
-                        boost::asio::post(localserver_io_context->get_executor(), [&, m_playerIndex = m_playerIndex, m](){
+                        boost::asio::post(localserver_threadpool, [&, m_playerIndex = m_playerIndex, m](){
                             clientsMutex.lock();
                             if (serverReg.valid(m.lootDrop) && serverReg.valid(m.myPlayerIndex))
                             {
@@ -544,7 +548,7 @@ private:
                         redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, BulkBlockSet>) {
-                        boost::asio::post(localserver_io_context->get_executor(), [&, m](){
+                        boost::asio::post(localserver_threadpool, [&, m](){
 
                             auto b = BlockArea{m.corner1, m.corner2, m.block, m.hollow};
 
@@ -808,7 +812,7 @@ inline void localServerThreadFun(int port)
     Server s(*localserver_io_context, port);
     localserver_io_context->run();
 
-    //localserver_threadpool.join();
+    localserver_threadpool.join();
 }
 
 inline void launchLocalServer(int port)

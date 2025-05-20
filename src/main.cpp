@@ -222,16 +222,19 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                                     //std::cout << "Senfing blokc place \n";
                                     auto & inv = scene->our<InventoryComponent>();
 
-                                    pushToMainToNetworkQueue<false>(DepleteInventorySlot{
+                                    auto deplete = DepleteInventorySlot{
                                         .playerIndex = theScene.myPlayerIndex,
                                         .slot = (int)inv.currentHeldInvIndex,
-                                        .depletion = 1});
-
-                                    pushToMainToNetworkQueue(BlockSet{
+                                        .depletion = 1};
+                                    auto setblock = BlockSet{
                                         .spot = placeSpot,
                                         .block = inv.inventory.inventory.at((int)inv.currentHeldInvIndex).block,
                                         .pp = cam.transform.position
-                                    });
+                                    };
+
+                                    pushToMainToNetworkQueue(BlockSetAndDepleteSlot{
+                                    .blockSet = setblock, .deplete = deplete});
+
                                     std::cout << "Pushing deplete \n";
 
                                 }
@@ -981,7 +984,7 @@ int main()
                             ald.lootDrop = LootDrop{theScene.lastBlockAtCursor, 1};
                             ald.spot = glm::vec3(spot.x,spot.y,spot.z) + glm::vec3(0.5, 0.5, 0.5);
                             pushToMainToNetworkQueue(ald);
-
+                            
 
                         }
 
@@ -1302,12 +1305,22 @@ int main()
                         theScene.REG.get<jl::Camera>(m.index).transform.position = m.position;
                         theScene.REG.get<jl::Camera>(m.index).transform.direction = m.direction;
                     }
-                    else if constexpr (std::is_same_v<T, BlockSet>) {
+
+                    if constexpr (std::is_same_v<T, BlockSet> || std::is_same_v<T, BlockSetAndDepleteSlot> ) {
                         //std::cout << "Processing network block change \n";
 
+                        auto msg = m;
+
+                        if constexpr( std::is_same_v<T, BlockSetAndDepleteSlot>)
+                        {
+                            msg = m.blockSet;
+                        }
+
                         Scene* scene = &theScene;
+
+
                         //std::cout << " Server Setting" << std::endl;
-                            auto & spot = m.spot;
+                            auto & spot = msg.spot;
                             //std::cout << "At Spot: " << spot.x << ", " << spot.y << ", " << spot.z << std::endl;
                             BlockType blockThere = scene->world->get(spot); //TODO why is it locking on it maybe we can do something better here
                             glm::vec3 burstspot = glm::vec3(
@@ -1327,26 +1340,26 @@ int main()
                                 if(auto f = findEntityRemoveFunc((MaterialName)blockThere); f != std::nullopt)
                                 {
 
-                                    f.value()(theScene.REG, m.spot);
+                                    f.value()(theScene.REG, msg.spot);
                                 }
 
                         //If adding block entity
-                            if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
+                            if(auto func = findEntityCreateFunc((MaterialName)(msg.block & BLOCK_ID_BITS)); func != std::nullopt)
                             {
 
-                                func.value()(theScene.REG, m.spot);
+                                func.value()(theScene.REG, msg.spot);
                             }
 
 
 
-                            if (m.block == AIR || findSpecialBlockMeshFunc((MaterialName)(m.block & BLOCK_ID_BITS)) != std::nullopt)
+                            if (msg.block == AIR || findSpecialBlockMeshFunc((MaterialName)(msg.block & BLOCK_ID_BITS)) != std::nullopt)
                             {
                                 auto cs = scene->worldRenderer->chunkSize;
                                 auto xmod = properMod(spot.x, cs);
                                 auto zmod = properMod(spot.z, cs);
 
                                 scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                    spot, m.block, false, m.pp
+                                    spot, msg.block, false, msg.pp
                                     );
 
 
@@ -1378,26 +1391,37 @@ int main()
                             } else
                             {
                                 scene->worldRenderer->requestChunkRebuildFromMainThread(
-                                    spot, m.block
+                                    spot, msg.block
                                     );
                             }
                             }
                             else if constexpr (std::is_same_v<T, FileTransferInit>) {
 
                             }
-                            else if constexpr (std::is_same_v<T, DepleteInventorySlot>) {
+
+                            if constexpr (std::is_same_v<T, DepleteInventorySlot> || std::is_same_v<T, BlockSetAndDepleteSlot> ) {
                                 {
-                                    if(theScene.REG.valid(m.playerIndex))
+
+                                    auto msg = m;
+
+                                    if constexpr( std::is_same_v<T, BlockSetAndDepleteSlot>)
+                                    {
+                                        msg = m.deplete;
+                                    }
+
+
+
+                                    if(theScene.REG.valid(msg.playerIndex))
                                     {
                                         std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-                                        theScene.REG.patch<InventoryComponent>(m.playerIndex, [&](InventoryComponent & inv)
+                                        theScene.REG.patch<InventoryComponent>(msg.playerIndex, [&](InventoryComponent & inv)
                                         {
                                             try
                                             {
-                                                auto & slot = inv.inventory.inventory.at(m.slot);
-                                                if(slot.count - m.depletion > 0)
+                                                auto & slot = inv.inventory.inventory.at(msg.slot);
+                                                if(slot.count - msg.depletion > 0)
                                                 {
-                                                    slot.count -= m.depletion;
+                                                    slot.count -= msg.depletion;
                                                 } else
                                                 {
                                                     slot.count = 0;
@@ -1406,7 +1430,7 @@ int main()
 
                                             } catch (std::exception&e)
                                             {
-                                                std::cerr << "slot " << m.slot << " didnt exist " << (int)m.playerIndex << " dumbass" << std::endl;
+                                                std::cerr << "slot " << msg.slot << " didnt exist " << (int)msg.playerIndex << " dumbass" << std::endl;
                                             }
 
                                         });

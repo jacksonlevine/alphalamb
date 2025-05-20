@@ -151,6 +151,12 @@ struct DepleteInventorySlot
     int depletion;
 };
 
+struct BlockSetAndDepleteSlot
+{
+    BlockSet blockSet;
+    DepleteInventorySlot deplete;
+};
+
 
 // struct EquippedItemsUpdate
 // {
@@ -158,7 +164,7 @@ struct DepleteInventorySlot
 //     std::array<InventorySlot, INVHEIGHT> equipped;
 // };
 
-using DGMessage = std::variant<DepleteInventorySlot, TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
+using DGMessage = std::variant<BlockSetAndDepleteSlot, DepleteInventorySlot, TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
 
 
 
