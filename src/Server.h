@@ -786,6 +786,8 @@ inline void localServerThreadFun(int port)
     localserver_io_context->restart();
     Server s(*localserver_io_context, port);
     localserver_io_context->run();
+
+    localserver_threadpool.join();
 }
 
 inline void launchLocalServer(int port)

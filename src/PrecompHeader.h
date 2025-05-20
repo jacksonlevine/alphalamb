@@ -58,6 +58,10 @@
 #include <tbb/tbb.h>
 #include <tbb/concurrent_unordered_set.h>
 #include <tuple>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/thread_pool.hpp>
+#include <boost/asio/thread_pool.hpp>
+#include <boost/asio/post.hpp>
 
 extern GLuint lutTexture;
 
