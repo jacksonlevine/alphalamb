@@ -720,7 +720,7 @@ int main()
     }
 
     GLuint colorlut = load3DLUT("resources/film_default.png");
-    GLuint beginninglut = load3DLUT("resources/film_beginning.png");
+    GLuint beginninglut = load3DLUT("resources/film_default.png");
 
     lutTexture = colorlut;
 

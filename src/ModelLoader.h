@@ -95,25 +95,25 @@ for (const tinygltf::Mesh& mesh : model.meshes) {
                 }
             }
 
-            if constexpr (INCLUDENORMALS)
-            {
-                // === Print Vertex Normals ===
-                if (primitive.attributes.find("NORMAL") != primitive.attributes.end()) {
-                    const tinygltf::Accessor& normalAccessor = model.accessors[primitive.attributes.at("NORMAL")];
-                    const tinygltf::BufferView& normalBufferView = model.bufferViews[normalAccessor.bufferView];
-                    const tinygltf::Buffer& normalBuffer = model.buffers[normalBufferView.buffer];
-
-                    const float* normals = reinterpret_cast<const float*>(&normalBuffer.data.at(0) + normalBufferView.byteOffset);
-                    std::cout << "Normals (Count: " << normalAccessor.count << "):" << std::endl;
-                    for (size_t i = 0; i < normalAccessor.count; ++i) {
-                        int components = getNumberOfComponents(normalAccessor.type);
-                        std::cout << "Normal " << i << ": ("
-                                  << normals[i * components + 0] << ", "
-                                  << normals[i * components + 1] << ", "
-                                  << normals[i * components + 2] << ")" << std::endl;
-                    }
-                }
-            }
+            // if constexpr (INCLUDENORMALS)
+            // {
+            //     // === Print Vertex Normals ===
+            //     if (primitive.attributes.find("NORMAL") != primitive.attributes.end()) {
+            //         const tinygltf::Accessor& normalAccessor = model.accessors[primitive.attributes.at("NORMAL")];
+            //         const tinygltf::BufferView& normalBufferView = model.bufferViews[normalAccessor.bufferView];
+            //         const tinygltf::Buffer& normalBuffer = model.buffers[normalBufferView.buffer];
+            //
+            //         const float* normals = reinterpret_cast<const float*>(&normalBuffer.data.at(0) + normalBufferView.byteOffset);
+            //         std::cout << "Normals (Count: " << normalAccessor.count << "):" << std::endl;
+            //         for (size_t i = 0; i < normalAccessor.count; ++i) {
+            //             int components = getNumberOfComponents(normalAccessor.type);
+            //             std::cout << "Normal " << i << ": ("
+            //                       << normals[i * components + 0] << ", "
+            //                       << normals[i * components + 1] << ", "
+            //                       << normals[i * components + 2] << ")" << std::endl;
+            //         }
+            //     }
+            // }
 
 
             // === Print Indices ===

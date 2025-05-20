@@ -9,6 +9,7 @@
 #include "../Shader.h"
 #include "../Scene.h"
 #include "../PhysXStuff.h"
+#include "../TextureFace.h"
 
 
 void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
@@ -80,8 +81,10 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
 
             layout(location = 4) in vec3 inNormal; // added on after excuse the weird ordering :>)
 
-            out vec2 TexCoord;
+            layout(location = 5) in vec2 instanceUVOffset;
 
+            out vec2 TexCoord;
+            uniform float time;
             uniform mat4 mvp;
             out vec3 vertPos;
             out float vbright;
@@ -115,7 +118,7 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
                 gl_Position = mvp * worldPosition;
                 vbright = getDirectionFactor(rotatedNorm);
 
-                TexCoord = inTexCoord;
+                TexCoord = inTexCoord + vec2(instanceUVOffset.x, instanceUVOffset.y) ;
                 vertPos = worldPosition.xyz;
             }
         )glsl",
@@ -169,7 +172,7 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
     glUniform1f(glGetUniformLocation(shader.shaderID, "hideClose"), 0.0f);
     glUniform3f(glGetUniformLocation(shader.shaderID, "camPos"),0.f, 0.f, 0.f);
     glUniformMatrix4fv(glGetUniformLocation(shader.shaderID, "mvp"), 1, GL_FALSE, glm::value_ptr(camera.mvp));
-
+    glUniform1f(glGetUniformLocation(shader.shaderID, "time"), glfwGetTime());
     const auto view = reg.view<LootDrop, NPPositionComponent>();
     lootDisplayInstances.clear();
     for (auto entity : view)
@@ -178,6 +181,7 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
         auto & pos = view.get<NPPositionComponent>(entity);
         glm::vec4 quat(0.0f, 0.0f, 0.0f, 1.0f); // Default identity quaternion
 
+        auto loot = view.get<LootDrop>(entity);
 
         if(physicsbodies.contains(entity))
         {
@@ -192,8 +196,10 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
             physicsbodies.insert_or_assign(entity, LootPhysicsBody(pos.position));
         }
 
+        auto tex = TEXS[(int)loot.block].at(0);
+
         physicsbodies.at(entity).collisionCage.updateToSpot(theScene.world, pos.position, deltaTime);
-        lootDisplayInstances.emplace_back(pos.position, quat);
+        lootDisplayInstances.emplace_back(pos.position, quat, glm::vec2((float)tex.first * texSlotWidth, (float)tex.second * -texSlotWidth));
     }
 
     static GLuint instancevbo = 0;
@@ -219,6 +225,11 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
             glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(LootDisplayInstance), (GLvoid*)(3 * sizeof(float)));
             glEnableVertexAttribArray(3);
             glVertexAttribDivisor(3, 1);
+
+            // UVOFFSET of instance (location 5)
+            glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, sizeof(LootDisplayInstance), (GLvoid*)(7 * sizeof(float)));
+            glEnableVertexAttribArray(5);
+            glVertexAttribDivisor(5, 1);
 
 
         glDrawElementsInstanced(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr, lootDisplayInstances.size());
