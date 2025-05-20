@@ -284,7 +284,7 @@ private:
                         //         }
                         //     }
                         // }
-                        boost::asio::post(localserver_threadpool, [m_playerIndex, m, &]{ 
+                        boost::asio::post(localserver_threadpool, [m_playerIndex, m, &](){ 
                             {
                                 std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
                                 auto & c = serverReg.get<jl::Camera>(m_playerIndex);
@@ -293,7 +293,7 @@ private:
                                 c.transform.updateWithYawPitch(m.startYawPitch.x, m.startYawPitch.y);
                             }
                         });
-
+                    
                         redistrib = true;
                         excludeyou = true;
                     }
@@ -310,42 +310,50 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>) {
                         //std::cout << "Got selectblockchange \n";
-                        {
-                            std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-                            serverReg.patch<InventoryComponent>(m_playerIndex, [&](InventoryComponent & inv)
+
+                        boost::asio::post(localserver_threadpool, [m_playerIndex, m, &](){
                             {
-                                inv.currentHeldInvIndex = m.newMaterial;
-                            });
-                        }
+                                std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+                                serverReg.patch<InventoryComponent>(m_playerIndex, [&](InventoryComponent & inv)
+                                {
+                                    inv.currentHeldInvIndex = m.newMaterial;
+                                });
+                            }
+                        });
+                        
                         redistrib = true;
                         excludeyou = true;
                     }
                     else if constexpr (std::is_same_v<T, DepleteInventorySlot>)
                     {
-                        {
-                            std::cout << "Got Deplete on server" << std::endl;
-                            std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-                            serverReg.patch<InventoryComponent>(m.playerIndex, [&](InventoryComponent & inv)
+
+                        boost::asio::post(localserver_threadpool, [m_playerIndex, m, &](){
                             {
-                                try
+                                std::cout << "Got Deplete on server" << std::endl;
+                                std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+                                serverReg.patch<InventoryComponent>(m.playerIndex, [&](InventoryComponent & inv)
                                 {
-                                    auto & slot = inv.inventory.inventory.at(m.slot);
-                                    if(slot.count - m.depletion > 0)
+                                    try
                                     {
-                                        slot.count -= m.depletion;
-                                    } else
+                                        auto & slot = inv.inventory.inventory.at(m.slot);
+                                        if(slot.count - m.depletion > 0)
+                                        {
+                                            slot.count -= m.depletion;
+                                        } else
+                                        {
+                                            slot.count = 0;
+                                            slot.block = 0;
+                                        }
+
+                                    } catch (std::exception&e)
                                     {
-                                        slot.count = 0;
-                                        slot.block = 0;
+                                        std::cerr << "slot " << m.slot << " didnt exist " << (int)m_playerIndex << " dumbass" << std::endl;
                                     }
 
-                                } catch (std::exception&e)
-                                {
-                                    std::cerr << "slot " << m.slot << " didnt exist " << (int)m_playerIndex << " dumbass" << std::endl;
-                                }
-
-                            });
-                        }
+                                });
+                            }
+                        });
+                        
                         redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, RequestInventorySwap>)
@@ -355,146 +363,151 @@ private:
                         // std::cout << "MouseSlotS: " << std::to_string(m.mouseSlotS) << " MouseSlotD: " << std::to_string(m.mouseSlotD) << "\n";
 
                         //Swaps can only be done within ones own inventory
-                        if (m.sourceID == m.destinationID)
-                        {
 
-                            std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-
-                            InventorySlot* source = nullptr;
-                            InventorySlot* destination = nullptr;
-
-                            auto view = serverReg.view<UUIDComponent, InventoryComponent>();
-
-                            for (auto entity : view)
+                        boost::asio::post(localserver_threadpool, [m_playerIndex, m, &](){
+                            if (m.sourceID == m.destinationID)
                             {
-                                auto & inventory = view.get<InventoryComponent>(entity);
-                                auto & uuid = view.get<UUIDComponent>(entity);
 
-                                if (uuid.uuid == m.destinationID)
+                                std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+
+                                InventorySlot* source = nullptr;
+                                InventorySlot* destination = nullptr;
+
+                                auto view = serverReg.view<UUIDComponent, InventoryComponent>();
+
+                                for (auto entity : view)
                                 {
-                                    if (m.mouseSlotD)
-                                    {
-                                        destination = &inventory.inventory.mouseHeldItem;
-                                    }
-                                    else
-                                    {
-                                        destination = &inventory.inventory.inventory.at(m.destinationIndex);
-                                    }
+                                    auto & inventory = view.get<InventoryComponent>(entity);
+                                    auto & uuid = view.get<UUIDComponent>(entity);
 
+                                    if (uuid.uuid == m.destinationID)
+                                    {
+                                        if (m.mouseSlotD)
+                                        {
+                                            destination = &inventory.inventory.mouseHeldItem;
+                                        }
+                                        else
+                                        {
+                                            destination = &inventory.inventory.inventory.at(m.destinationIndex);
+                                        }
+
+                                    }
+                                    if (uuid.uuid == m.sourceID)
+                                    {
+                                        if (m.mouseSlotS)
+                                        {
+                                            source = &inventory.inventory.mouseHeldItem;
+                                        } else
+                                        {
+                                            source = &inventory.inventory.inventory.at(m.sourceIndex);
+                                        }
+                                    }
                                 }
-                                if (uuid.uuid == m.sourceID)
+
+                                if (source && destination)
                                 {
-                                    if (m.mouseSlotS)
-                                    {
-                                        source = &inventory.inventory.mouseHeldItem;
-                                    } else
-                                    {
-                                        source = &inventory.inventory.inventory.at(m.sourceIndex);
-                                    }
+                                    InventorySlot srcCopy = *source;
+                                    *source = *destination;
+                                    *destination = srcCopy;
+                                    redistrib = true;
                                 }
-                            }
 
-                            if (source && destination)
-                            {
-                                InventorySlot srcCopy = *source;
-                                *source = *destination;
-                                *destination = srcCopy;
-                                redistrib = true;
                             }
-
-                        }
+                        });
 
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
 
+                        boost::asio::post(localserver_threadpool, [m_playerIndex, m, &](){
+                            auto blockThere = serverWorld.get(m.spot);
 
-
-
-
-
-                        auto blockThere = serverWorld.get(m.spot);
-
-                        if(auto func = findSpecialSetBits((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
-                        {
-
-                            auto campos = m.pp;
-                            func.value()(&serverWorld, m.spot, campos);
-
-                        } else
-                        {
-                            serverWorld.userDataMap.set(m.spot, m.block);
-                        }
-
-                        if (blockThere != AIR && (blockThere != (MaterialName)(m.block & BLOCK_ID_BITS)))
-                        {
-                            if (auto f = findSpecialRemoveBits((MaterialName)blockThere); f != std::nullopt)
+                            if(auto func = findSpecialSetBits((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
                             {
 
-                                f.value()(&serverWorld, m.spot);
+                                auto campos = m.pp;
+                                func.value()(&serverWorld, m.spot, campos);
+
+                            } else
+                            {
+                                serverWorld.userDataMap.set(m.spot, m.block);
                             }
-                        }
 
-                        //Removing block entity if there
+                            if (blockThere != AIR && (blockThere != (MaterialName)(m.block & BLOCK_ID_BITS)))
+                            {
+                                if (auto f = findSpecialRemoveBits((MaterialName)blockThere); f != std::nullopt)
+                                {
 
-                        if(auto f = findEntityRemoveFunc((MaterialName)(blockThere)); f != std::nullopt)
-                        {
+                                    f.value()(&serverWorld, m.spot);
+                                }
+                            }
 
-                            f.value()(serverReg, m.spot);
-                        }
+                            //Removing block entity if there
 
-                        //Adding block entity
-                        if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
-                        {
+                            if(auto f = findEntityRemoveFunc((MaterialName)(blockThere)); f != std::nullopt)
+                            {
 
-                            func.value()(serverReg, m.spot);
-                        }
+                                f.value()(serverReg, m.spot);
+                            }
 
+                            //Adding block entity
+                            if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
+                            {
 
+                                func.value()(serverReg, m.spot);
+                            }
 
+                        });
+                        
                         redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, VoxModelStamp>)
                     {
-                        auto v = PlacedVoxModel {
-                        m.name, m.spot};
-                        {
-                            std::unique_lock<std::shared_mutex> barlock(serverWorld.placedVoxModels.mutex);
-                            serverWorld.placedVoxModels.models.push_back(v);
-                        }
+
+                        boost::asio::post(localserver_threadpool, [m_playerIndex, m, &](){
 
 
-                        auto & vm = voxelModels[m.name];
-                    std::vector<IntTup> spotsToEraseInUDM;
-                    spotsToEraseInUDM.reserve(500);
-
-                    {
-                        //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
-
-
-                        std::shared_lock<std::shared_mutex> udmRL(serverWorld.userDataMap.mutex());
-                        auto lock = serverWorld.nonUserDataMap.getUniqueLock();
-
-                        IntTup offset = IntTup(vm.dimensions.x/-2, 0, vm.dimensions.z/-2) + m.spot;
-                        for ( auto & p : vm.points)
-                        {
-                            serverWorld.setNUDMLocked(offset+p.localSpot, p.colorIndex);
-                            if (serverWorld.userDataMap.getUnsafe(offset+p.localSpot) != std::nullopt)
+                            auto v = PlacedVoxModel {
+                            m.name, m.spot};
                             {
-                                spotsToEraseInUDM.emplace_back(offset+p.localSpot);
+                                std::unique_lock<std::shared_mutex> barlock(serverWorld.placedVoxModels.mutex);
+                                serverWorld.placedVoxModels.models.push_back(v);
                             }
 
-                        }
+
+                            auto & vm = voxelModels[m.name];
+                            std::vector<IntTup> spotsToEraseInUDM;
+                            spotsToEraseInUDM.reserve(500);
+
+                            {
+                                //We're gonna do the block placing, then ask main to request the rebuilds because we won't know what chunks are active when we're done.
+
+
+                                std::shared_lock<std::shared_mutex> udmRL(serverWorld.userDataMap.mutex());
+                                auto lock = serverWorld.nonUserDataMap.getUniqueLock();
+
+                                IntTup offset = IntTup(vm.dimensions.x/-2, 0, vm.dimensions.z/-2) + m.spot;
+                                for ( auto & p : vm.points)
+                                {
+                                    serverWorld.setNUDMLocked(offset+p.localSpot, p.colorIndex);
+                                    if (serverWorld.userDataMap.getUnsafe(offset+p.localSpot) != std::nullopt)
+                                    {
+                                        spotsToEraseInUDM.emplace_back(offset+p.localSpot);
+                                    }
+
+                                }
 
 
 
-                    }
-                    {
-                        auto lock = serverWorld.userDataMap.getUniqueLock();
-                        for (auto & spot : spotsToEraseInUDM)
-                        {
-                            serverWorld.userDataMap.erase(spot, true);
-                        }
-                    }
+                            }
+                            {
+                                auto lock = serverWorld.userDataMap.getUniqueLock();
+                                for (auto & spot : spotsToEraseInUDM)
+                                {
+                                    serverWorld.userDataMap.erase(spot, true);
+                                }
+                            }
+
+                        });
 
                         //auto & vm = voxelModels[(int)m.name];
 
@@ -502,125 +515,135 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, AddLootDrop>)
                     {
-                        std::cout << "Adding loot drop on server at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
-                        clientsMutex.lock();
+                        boost::asio::post(localserver_threadpool, [m_playerIndex, m, &](){
+                            std::cout << "Adding loot drop on server at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
+                            clientsMutex.lock();
 
-                        auto newe = makeLootDrop(serverReg, m.lootDrop, m.spot);
-                        clientsMutex.unlock();
+                            auto newe = makeLootDrop(serverReg, m.lootDrop, m.spot);
+                            clientsMutex.unlock();
+                        });
+
                         redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, PickUpLootDrop>)
                     {
-                        clientsMutex.lock();
-                        if (serverReg.valid(m.lootDrop) && serverReg.valid(m.myPlayerIndex))
-                        {
-                            if (serverReg.all_of<LootDrop>(m.lootDrop))
+                        //We now, in the interest of freeing up this session to be always available, will not be able to decide here whether to redistrib.
+                        //So we will redistrib no matter what, and do this simple validity check on the client as well
+                        boost::asio::post(localserver_threadpool, [m_playerIndex, m, &](){
+                            clientsMutex.lock();
+                            if (serverReg.valid(m.lootDrop) && serverReg.valid(m.myPlayerIndex))
                             {
-                                auto loot = serverReg.get<LootDrop>(m.lootDrop);
-                                InventoryComponent & playerInv = serverReg.get<InventoryComponent>(m.myPlayerIndex);
-
-                                if (playerInv.add(loot))
+                                if (serverReg.all_of<LootDrop>(m.lootDrop))
                                 {
-                                    serverReg.destroy(m.lootDrop);
-                                    redistrib = true;
+                                    auto loot = serverReg.get<LootDrop>(m.lootDrop);
+                                    InventoryComponent & playerInv = serverReg.get<InventoryComponent>(m.myPlayerIndex);
+
+                                    if (playerInv.add(loot))
+                                    {
+                                        serverReg.destroy(m.lootDrop);
+                                    }
+                                }
+                            }
+                            clientsMutex.unlock();
+                        });
+                        
+                        redistrib = true;
+                    }
+                    else if constexpr (std::is_same_v<T, BulkBlockSet>) {
+                        boost::asio::post(localserver_threadpool, [m, &](){
+
+                            auto b = BlockArea{m.corner1, m.corner2, m.block, m.hollow};
+
+                            {
+                                std::unique_lock<std::shared_mutex> barlock(serverWorld.blockAreas.baMutex);
+                                serverWorld.blockAreas.blockAreas.push_back(b);
+                                // if (b.hollow)
+                                // {
+                                //     serverWorld.blockAreas.blockAreas.push_back(BlockArea{
+                                //     m.corner1 + IntTup(1,1,1), m.corner2 + IntTup(-1,-1,-1), AIR, false});
+                                // }
+                            }
+
+                            {
+                                std::vector<IntTup> spotsToEraseInUDM;
+                                spotsToEraseInUDM.reserve(500);
+
+
+                                {
+
+                                    //             std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
+                                    // auto lock = world->nonUserDataMap.getUniqueLock();
+                                    // std::shared_lock<std::shared_mutex> udmRL(world->userDataMap.mutex());
+                                    // auto m = request.area;
+                                    // int minX = std::min(m.corner1.x, m.corner2.x);
+                                    // int maxX = std::max(m.corner1.x, m.corner2.x);
+                                    // int minY = std::min(m.corner1.y, m.corner2.y);
+                                    // int maxY = std::max(m.corner1.y, m.corner2.y);
+                                    // int minZ = std::min(m.corner1.z, m.corner2.z);
+                                    // int maxZ = std::max(m.corner1.z, m.corner2.z);
+                                    //
+                                    // for (int x = minX; x <= maxX; x++) {
+                                    //     for (int y = minY; y <= maxY; y++) {
+                                    //         for (int z = minZ; z <= maxZ; z++) {
+                                    //             bool isBoundary = (x == minX || x == maxX ||
+                                    //                 y == minY || y == maxY ||
+                                    //                 z == minZ || z == maxZ);
+                                    //
+                                    //             if (isBoundary || !m.hollow) {
+                                    //                 world->setNUDMLocked(IntTup{x, y, z}, m.block);
+                                    //                 if (world->userDataMap.getUnsafe(IntTup{x, y, z}) != std::nullopt)
+                                    //                 {
+                                    //                     spotsToEraseInUDM.emplace_back(x, y, z);
+                                    //                 }
+                                    //             }
+                                    //
+                                    //         }
+                                    //     }
+                                    // }
+
+                                    std::shared_lock<std::shared_mutex> udmRL(serverWorld.userDataMap.mutex());
+                                        auto lock = serverWorld.nonUserDataMap.getUniqueLock();
+                                    auto hulk = b;
+                                    int minX = std::min(hulk.corner1.x, hulk.corner2.x);
+                                    int maxX = std::max(hulk.corner1.x, hulk.corner2.x);
+                                    int minY = std::min(hulk.corner1.y, hulk.corner2.y);
+                                    int maxY = std::max(hulk.corner1.y, hulk.corner2.y);
+                                    int minZ = std::min(hulk.corner1.z, hulk.corner2.z);
+                                    int maxZ = std::max(hulk.corner1.z, hulk.corner2.z);
+
+                                    for (int x = minX; x <= maxX; x++) {
+                                        for (int y = minY; y <= maxY; y++) {
+                                            for (int z = minZ; z <= maxZ; z++) {
+
+                                                bool isBoundary = (x == minX || x == maxX ||
+                                                            y == minY || y == maxY ||
+                                                            z == minZ || z == maxZ);
+
+                                                if (isBoundary || !b.hollow)
+                                                {
+                                                    serverWorld.setNUDMLocked(IntTup{x, y, z}, m.block);
+                                                    if (serverWorld.userDataMap.getUnsafe(IntTup{x, y, z}) != std::nullopt)
+                                                    {
+                                                        spotsToEraseInUDM.emplace_back(IntTup{x, y, z});
+                                                    }
+                                                }
+
+                                            }
+                                        }
+                                    }
+                                }
+
+                                {
+                                    auto lock = serverWorld.userDataMap.getUniqueLock();
+                                    for (auto & spot : spotsToEraseInUDM)
+                                    {
+                                        serverWorld.userDataMap.erase(spot, true);
+                                    }
                                 }
 
                             }
-                        }
-                        clientsMutex.unlock();
-                    }
-                    else if constexpr (std::is_same_v<T, BulkBlockSet>) {
-                        auto b = BlockArea{m.corner1, m.corner2, m.block, m.hollow
-                        };
 
-                        {
-                            std::unique_lock<std::shared_mutex> barlock(serverWorld.blockAreas.baMutex);
-                            serverWorld.blockAreas.blockAreas.push_back(b);
-                            // if (b.hollow)
-                            // {
-                            //     serverWorld.blockAreas.blockAreas.push_back(BlockArea{
-                            //     m.corner1 + IntTup(1,1,1), m.corner2 + IntTup(-1,-1,-1), AIR, false});
-                            // }
-                        }
-
-                        {
-                            std::vector<IntTup> spotsToEraseInUDM;
-                           spotsToEraseInUDM.reserve(500);
-
-
-                           {
-
-                    //             std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
-                    // auto lock = world->nonUserDataMap.getUniqueLock();
-                    // std::shared_lock<std::shared_mutex> udmRL(world->userDataMap.mutex());
-                    // auto m = request.area;
-                    // int minX = std::min(m.corner1.x, m.corner2.x);
-                    // int maxX = std::max(m.corner1.x, m.corner2.x);
-                    // int minY = std::min(m.corner1.y, m.corner2.y);
-                    // int maxY = std::max(m.corner1.y, m.corner2.y);
-                    // int minZ = std::min(m.corner1.z, m.corner2.z);
-                    // int maxZ = std::max(m.corner1.z, m.corner2.z);
-                    //
-                    // for (int x = minX; x <= maxX; x++) {
-                    //     for (int y = minY; y <= maxY; y++) {
-                    //         for (int z = minZ; z <= maxZ; z++) {
-                    //             bool isBoundary = (x == minX || x == maxX ||
-                    //                 y == minY || y == maxY ||
-                    //                 z == minZ || z == maxZ);
-                    //
-                    //             if (isBoundary || !m.hollow) {
-                    //                 world->setNUDMLocked(IntTup{x, y, z}, m.block);
-                    //                 if (world->userDataMap.getUnsafe(IntTup{x, y, z}) != std::nullopt)
-                    //                 {
-                    //                     spotsToEraseInUDM.emplace_back(x, y, z);
-                    //                 }
-                    //             }
-                    //
-                    //         }
-                    //     }
-                    // }
-
-                               std::shared_lock<std::shared_mutex> udmRL(serverWorld.userDataMap.mutex());
-                                auto lock = serverWorld.nonUserDataMap.getUniqueLock();
-                               auto hulk = b;
-                               int minX = std::min(hulk.corner1.x, hulk.corner2.x);
-                               int maxX = std::max(hulk.corner1.x, hulk.corner2.x);
-                               int minY = std::min(hulk.corner1.y, hulk.corner2.y);
-                               int maxY = std::max(hulk.corner1.y, hulk.corner2.y);
-                               int minZ = std::min(hulk.corner1.z, hulk.corner2.z);
-                               int maxZ = std::max(hulk.corner1.z, hulk.corner2.z);
-
-                               for (int x = minX; x <= maxX; x++) {
-                                   for (int y = minY; y <= maxY; y++) {
-                                       for (int z = minZ; z <= maxZ; z++) {
-
-                                           bool isBoundary = (x == minX || x == maxX ||
-                                                       y == minY || y == maxY ||
-                                                       z == minZ || z == maxZ);
-
-                                           if (isBoundary || !b.hollow)
-                                           {
-                                               serverWorld.setNUDMLocked(IntTup{x, y, z}, m.block);
-                                               if (serverWorld.userDataMap.getUnsafe(IntTup{x, y, z}) != std::nullopt)
-                                               {
-                                                   spotsToEraseInUDM.emplace_back(IntTup{x, y, z});
-                                               }
-                                           }
-
-                                       }
-                                   }
-                               }
-                           }
-
-                           {
-                               auto lock = serverWorld.userDataMap.getUniqueLock();
-                               for (auto & spot : spotsToEraseInUDM)
-                               {
-                                   serverWorld.userDataMap.erase(spot, true);
-                               }
-                           }
-
-                        }
+                        });
 
                         redistrib = true;
                     }
@@ -633,7 +656,10 @@ private:
 
                 if (redistrib)
                 {
-                   sendMessageToAllClients(*m_message, m_playerIndex, excludeyou);
+                    boost::asio::post(localserver_threadpool, [m_playerIndex, &](){
+                        sendMessageToAllClients(*m_message, m_playerIndex, excludeyou);
+                    });
+                   
                 }
 
                 //Wait for next message
