@@ -289,9 +289,11 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
         {
             return !reg.valid(ent);
         });
-        if(!inv.full())
+
+        for(auto ent : bp)
         {
-            for(auto ent : bp)
+            auto & drop = reg.get<LootDrop>(ent);
+            if(!inv.full(drop))
             {
                 auto thepos = reg.get<NPPositionComponent>(ent).position;
 
@@ -299,6 +301,7 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
                 {
                     pushToMainToNetworkQueue(PickUpLootDrop{scene->myPlayerIndex, ent});
                 }
+
             }
         }
     }

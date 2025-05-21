@@ -23,22 +23,28 @@ struct InventoryComponent {
                 slot.count = lootDrop.count;
                 return true;
             }
+            if(slot.block == lootDrop.block && slot.count + lootDrop.count < 99)
+            {
+                slot.count += lootDrop.count;
+                return true;
+            }
         }
         return false;
     }
-    bool full()
+    bool full(LootDrop lootDrop)
     {
-        bool add(LootDrop lootDrop);
+        for (auto & slot : inventory.inventory)
         {
-            for (auto & slot : inventory.inventory)
+            if (slot.block == AIR && slot.count == 0)
             {
-                if (slot.block == AIR && slot.count == 0)
-                {
-                    return false;
-                }
+                return false;
             }
-            return true;
+            if(slot.block == lootDrop.block && slot.count + lootDrop.count < 99)
+            {
+                return false;
+            }
         }
+        return true;
     }
     template<typename Archive>
     void serialize(Archive& archive)
