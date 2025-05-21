@@ -674,6 +674,22 @@ const PxU32 scratchMemorySize = 16 * 1024;
 
 void* scratchMemory = nullptr;
 
+const BlockSet& getBlockSet(const auto& m) {
+    if constexpr (std::is_same_v<std::decay_t<decltype(m)>, BlockSetAndDepleteSlot>) {
+        return m.blockSet;
+    } else {
+        return m;
+    }
+}
+
+const DepleteInventorySlot& getDepleteSlot(const auto& m) {
+    if constexpr (std::is_same_v<std::decay_t<decltype(m)>, BlockSetAndDepleteSlot>) {
+        return m.deplete;
+    } else {
+        return m;
+    }
+}
+
 int main()
 {
 
@@ -1309,11 +1325,14 @@ int main()
                     if constexpr (std::is_same_v<T, BlockSet> || std::is_same_v<T, BlockSetAndDepleteSlot> ) {
                         //std::cout << "Processing network block change \n";
 
-                        auto msg = m;
+                        BlockSet msg;
 
                         if constexpr( std::is_same_v<T, BlockSetAndDepleteSlot>)
                         {
-                            msg = m.blockSet;
+                            msg = getBlockSet(m);
+                        } else
+                        {
+                            msg = m;
                         }
 
                         Scene* scene = &theScene;
@@ -1402,11 +1421,14 @@ int main()
                             if constexpr (std::is_same_v<T, DepleteInventorySlot> || std::is_same_v<T, BlockSetAndDepleteSlot> ) {
                                 {
 
-                                    auto msg = m;
+                                    DepleteInventorySlot msg;
 
                                     if constexpr( std::is_same_v<T, BlockSetAndDepleteSlot>)
                                     {
-                                        msg = m.deplete;
+                                        msg = getDepleteSlot(m);
+                                    } else
+                                    {
+                                        msg = m;
                                     }
 
 
