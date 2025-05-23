@@ -705,11 +705,11 @@ void renderImGui()
                 }
                 ImGui::SetCursorPos(start);
 
-                ImGui::Text(std::to_string(inv.inventory.inventory[i].count));
+                ImGui::Text(std::to_string(inv.inventory.inventory[i].count) + std::string("##hudinvrow"));
 
                 ImGui::SetCursorPos(start);
 
-                DGCustomButton((std::string("##invslot") + std::to_string(i)).c_str(), DGButtonType::Good1, invTileDisplaySize)
+                DGCustomButton((std::string("##hudinvrowback") + std::to_string(i)).c_str(), DGButtonType::Good1, invTileDisplaySize)
 
                 const auto tex = TEXS.at(inv.inventory.inventory[i].block).at(0);
                 TextureFace face(tex.first, tex.second);
