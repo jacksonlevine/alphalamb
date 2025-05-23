@@ -687,20 +687,29 @@ void renderImGui()
             ImVec2 invTileDisplaySize = ImVec2((screenSize.x / 40.0f), (screenSize.x / 40.0f)); // Size of displayed image
 
 
-            ImVec2 startInvRow = ImVec2((screenSize.x / 2.f) - (invTileDisplaySize.x * 5.f)/2.f, screenSize.y - (screenSize.y / 20.0f));
+            ImVec2 startInvRow = ImVec2((screenSize.x / 2.f) - ((invTileDisplaySize.x + 20.0f) * 5.f)/2.f, screenSize.y - (screenSize.y / 20.0f));
 
             ImVec2 prevPos = ImGui::GetCursorPos();
 
             auto & inv = theScene.our<InventoryComponent>();
 
+            int highlightedSlot = (int)theScene.our<InventoryComponent>().currentHeldInvIndex;
+
             for (int i = 0; i < 5; i++) {
-                ImVec2 start = startInvRow + ImVec2(i * (screenSize.x / 40.0f), 0);
+                ImVec2 start = startInvRow + ImVec2(i * ((screenSize.x / 40.0f) + 20.0f), 0);
                 ImGui::SetCursorPos(start);
-                // Define UV coordinates for cropping (0.0 to 1.0)
-// Example: Crop to show only the center quarter of the image
 
+                if(i == highlightedSlot) {
+                    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(start.x - 10.0f, start.y - 10.0f), ImVec2(start.x + invTileDisplaySize.x + 10.0f,
+                         start.y + invTileDisplaySize.x + 10.0f), 10);
+                }
+                ImGui::SetCursorPos(start);
 
-                // Display cropped texture
+                ImGui::Text(std::to_string(inv.inventory.inventory[i].count));
+
+                ImGui::SetCursorPos(start);
+
+                DGCustomButton((std::string("##invslot") + std::to_string(i)).c_str(), DGButtonType::Good1, invTileDisplaySize)
 
                 const auto tex = TEXS.at(inv.inventory.inventory[i].block).at(0);
                 TextureFace face(tex.first, tex.second);
