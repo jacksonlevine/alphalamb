@@ -54,6 +54,11 @@ public:
     {
         return x == INVWIDTH-1;
     }
+
+    static constexpr bool isEquipSlot(int index)
+    {
+        return (index % INVWIDTH) == INVWIDTH-1;
+    }
     void setSlot(int x, int y, const InventorySlot& slot)
     {
         inventory[y * INVWIDTH + x] = slot;

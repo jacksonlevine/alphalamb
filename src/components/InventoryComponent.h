@@ -15,34 +15,43 @@ struct InventoryComponent {
     Inventory inventory = {};
     bool add(LootDrop lootDrop)
     {
+        int index = 0;
         for (auto & slot : inventory.inventory)
         {
-            if (slot.block == AIR && slot.count == 0)
-            {
-                slot.block = lootDrop.block;
-                slot.count = lootDrop.count;
-                return true;
+            if(!inventory.isEquipSlot(index)) {
+                if (slot.block == AIR && slot.count == 0)
+                {
+                    slot.block = lootDrop.block;
+                    slot.count = lootDrop.count;
+                    return true;
+                }
+                if(slot.block == lootDrop.block && slot.count + lootDrop.count < 99)
+                {
+                    slot.count += lootDrop.count;
+                    return true;
+                }
             }
-            if(slot.block == lootDrop.block && slot.count + lootDrop.count < 99)
-            {
-                slot.count += lootDrop.count;
-                return true;
-            }
+            
+            index++;
         }
         return false;
     }
     bool full(LootDrop lootDrop)
     {
+        int index = 0;
         for (auto & slot : inventory.inventory)
         {
-            if (slot.block == AIR && slot.count == 0)
-            {
-                return false;
+            if(!inventory.isEquipSlot(index)) {
+                if (slot.block == AIR && slot.count == 0)
+                {
+                    return false;
+                }
+                if(slot.block == lootDrop.block && slot.count + lootDrop.count < 99)
+                {
+                    return false;
+                }
             }
-            if(slot.block == lootDrop.block && slot.count + lootDrop.count < 99)
-            {
-                return false;
-            }
+            index++;
         }
         return true;
     }
