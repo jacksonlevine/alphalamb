@@ -362,7 +362,6 @@ private:
 
                         //Swaps can only be done within ones own inventory
 
-                        boost::asio::post(localserver_threadpool, [&, m_playerIndex = m_playerIndex, m](){
                             if (m.sourceID == m.destinationID)
                             {
 
@@ -411,7 +410,7 @@ private:
                                 }
 
                             }
-                        });
+
 
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {

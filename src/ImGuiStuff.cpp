@@ -701,20 +701,23 @@ void renderImGui()
 
                 if(i == highlightedSlot) {
                     ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(start.x - 10.0f, start.y - 10.0f), ImVec2(start.x + invTileDisplaySize.x + 10.0f,
-                         start.y + invTileDisplaySize.x + 10.0f), 10);
+                         start.y + invTileDisplaySize.x + 10.0f), IM_COL32_WHITE);
                 }
-                ImGui::SetCursorPos(start);
-
-                ImGui::Text(std::to_string(inv.inventory.inventory[i].count) + std::string("##hudinvrow"));
-
-                ImGui::SetCursorPos(start);
-
-                DGCustomButton((std::string("##hudinvrowback") + std::to_string(i)).c_str(), DGButtonType::Good1, invTileDisplaySize)
 
                 const auto tex = TEXS.at(inv.inventory.inventory[i].block).at(0);
                 TextureFace face(tex.first, tex.second);
 
                 ImGui::Image((ImTextureID)theScene.worldtex, invTileDisplaySize, ImVec2(face.bl.x, face.bl.y), ImVec2(face.tr.x, face.tr.y));
+
+
+                ImGui::SetCursorPos(start);
+
+                ImGui::Text(std::to_string(inv.inventory.inventory[i].count).c_str());
+
+                ImGui::SetCursorPos(start);
+
+                DGCustomButton((std::string("##hudinvrowback") + std::to_string(i)).c_str(), DGButtonType::Good1, invTileDisplaySize);
+
 
             }
 

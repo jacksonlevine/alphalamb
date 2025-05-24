@@ -152,7 +152,7 @@ void imguiInventory(Inventory& inv)
 
             ImGui::SetCursorPos(cursorspot);
 
-            const auto tex = TEXS.at(inv.inventory[i].block).at(0);
+            const auto tex = TEXS.at(inv.inventory[index].block).at(0);
             TextureFace face(tex.first, tex.second);
 
             ImGui::Image((ImTextureID)theScene.worldtex, invTileDisplaySize, ImVec2(face.bl.x, face.bl.y), ImVec2(face.tr.x, face.tr.y));
@@ -180,6 +180,7 @@ void imguiInventory(Inventory& inv)
                 }
                 if (validswap)
                 {
+                    //std::cout << "Heyoo" << std::endl;
                     pushToMainToNetworkQueue(RequestInventorySwap{
                     .sourceID = theScene.settings.clientUID, .destinationID = theScene.settings.clientUID, .myPlayerIndex = theScene.myPlayerIndex,
                     .sourceIndex = 0, .destinationIndex = (uint8_t)inv.getIndex(i, j), .mouseSlotS = true, .mouseSlotD = false});
