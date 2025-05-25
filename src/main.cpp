@@ -992,15 +992,17 @@ int main()
 
                             const auto & spot = theScene.blockSelectGizmo->selectedSpot;
                             //std::cout << "Senfing blokc chagne \n";
-                            pushToMainToNetworkQueue(BlockSet{
-                               .spot = spot, .block = AIR, .pp = glm::vec3(0.f)
-                            });
+                            auto bls = BlockSet{
+                                .spot = spot, .block = AIR, .pp = glm::vec3(0.f)
+                             };
+
                             std::cout << "This happens" << std::endl;
                             auto ald = AddLootDrop{};
                             ald.lootDrop = LootDrop{theScene.lastBlockAtCursor, 1};
                             ald.spot = glm::vec3(spot.x,spot.y,spot.z) + glm::vec3(0.5, 0.5, 0.5);
                             ald.newEntityName = entt::null; //The server fucking decides
-                            pushToMainToNetworkQueue(ald);
+                            bls.addLootDrop = ald;
+                            pushToMainToNetworkQueue(bls);
                             
 
                         }
@@ -1366,8 +1368,7 @@ int main()
                         //If adding block entity
                             if(auto func = findEntityCreateFunc((MaterialName)(msg.block & BLOCK_ID_BITS)); func != std::nullopt)
                             {
-
-                                func.value()(theScene.REG, msg.spot);
+                                func.value()(theScene.REG, msg.spot, msg.newEntityNameIfApplicable);
                             }
 
 
@@ -1414,6 +1415,15 @@ int main()
                                     spot, msg.block
                                     );
                             }
+                            if (msg.addLootDrop != std::nullopt)
+                            {
+                                auto m = msg.addLootDrop.value();
+                                std::cout << "Adding loot drop on client at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
+                                auto newe = makeLootDrop(theScene.REG, m.lootDrop, m.spot, m.newEntityName);
+                            }
+
+
+
                             }
                             else if constexpr (std::is_same_v<T, FileTransferInit>) {
 

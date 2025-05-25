@@ -10,12 +10,13 @@
 #include "../components/ComputerComponent.h"
 #include "../components/NPPositionComponent.h"
 
-inline void addComputerEntity(entt::registry& reg, IntTup spot, entt::entity useThisName = entt::null)
+inline entt::entity addComputerEntity(entt::registry& reg, IntTup spot, entt::entity useThisName = entt::null)
 {
     auto id = addEntityWithEnforcedName(reg, useThisName);
 
     reg.emplace<ComputerComponent>(id);
     reg.emplace<NPPositionComponent>(id, glm::vec3(spot.x, spot.y, spot.z));
+    return id;
 }
 
 inline void removeComputerEntity(entt::registry& reg, IntTup spot)

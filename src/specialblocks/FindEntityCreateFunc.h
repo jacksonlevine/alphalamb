@@ -8,7 +8,7 @@
 #include "Computer.h"
 #include "../PrecompHeader.h"
 
-using entityCreateFunc = std::function<void(entt::registry&, IntTup, entt::entity)>;
+using entityCreateFunc = std::function<entt::entity(entt::registry&, IntTup, entt::entity)>;
 using entityRemoveFunc = std::function<void(entt::registry&, IntTup)>;
 
 constexpr std::optional<entityCreateFunc> findEntityCreateFunc(MaterialName bt)

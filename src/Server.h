@@ -416,8 +416,7 @@ private:
 
                     }
                     else if constexpr (std::is_same_v<T, BlockSet>) {
-
-                        boost::asio::post(localserver_threadpool, [&,m_playerIndex =  m_playerIndex, m](){
+                            m.newEntityNameIfApplicable = entt::null;
                             auto blockThere = serverWorld.get(m.spot);
 
                             if(auto func = findSpecialSetBits((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
@@ -452,10 +451,23 @@ private:
                             if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
                             {
 
-                                func.value()(serverReg, m.spot);
+                                auto newe = func.value()(serverReg, m.spot, entt::null);
+                                m.newEntityNameIfApplicable = newe;
                             }
 
-                        });
+                        if (m.addLootDrop != std::nullopt)
+                        {
+                            auto & ald = m.addLootDrop.value();
+                            std::cout << "Adding loot drop on server at " << ald.spot.x << " " << ald.spot.y << " " << ald.spot.z << std::endl;
+                            clientsMutex.lock();
+
+                            auto newe = makeLootDrop(serverReg, ald.lootDrop, ald.spot);
+                            ald.newEntityName = newe;
+                            clientsMutex.unlock();
+
+
+                        }
+
                         
                         redistrib = true;
                     }
@@ -514,14 +526,13 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, AddLootDrop>)
                     {
-                        //boost::asio::post(localserver_threadpool, [&,m_playerIndex = m_playerIndex, m](){
-                            std::cout << "Adding loot drop on server at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
-                            clientsMutex.lock();
+                        std::cout << "Adding loot drop on server at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
+                        clientsMutex.lock();
 
-                            auto newe = makeLootDrop(serverReg, m.lootDrop, m.spot);
-                            m.newEntityName = newe;
-                            clientsMutex.unlock();
-                        //});
+                        auto newe = makeLootDrop(serverReg, m.lootDrop, m.spot);
+                        m.newEntityName = newe;
+                        clientsMutex.unlock();
+
 
                         redistrib = true;
                     }

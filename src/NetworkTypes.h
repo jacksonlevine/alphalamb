@@ -47,12 +47,21 @@ struct FileTransferInit
     size_t regFileSize = 0;
 };
 
+
+struct AddLootDrop
+{
+    LootDrop lootDrop;
+    glm::vec3 spot;
+    entt::entity newEntityName = entt::null;
+};
+
 struct BlockSet
 {
     IntTup spot;
     BlockType block;
     glm::vec3 pp;
-    entt::entity newEntityNameIfApplicable;
+    entt::entity newEntityNameIfApplicable = entt::null;
+    std::optional<AddLootDrop> addLootDrop = std::nullopt;
 };
 
 
@@ -133,12 +142,6 @@ struct RequestTextChunkResend
     size_t sequenceNumber;
 };
 
-struct AddLootDrop
-{
-    LootDrop lootDrop;
-    glm::vec3 spot;
-    entt::entity newEntityName;
-};
 
 struct PickUpLootDrop
 {
