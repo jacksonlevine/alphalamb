@@ -42,6 +42,8 @@ extern World serverWorld;
 extern InvMapKeyedByUID invMapKeyedByUID;
 extern entt::registry serverReg;
 
+
+
 constexpr int DGSEEDSEED = 987654321;
 
 inline void sendMessageToAllClients(const DGMessage& message, entt::entity m_playerIndex, bool excludeMe)
@@ -244,7 +246,7 @@ private:
                 bool excludeyou = false;
 
                 //std::cout << "got something, visiting \n";
-                visit([&](const auto& m) {
+                visit([&](auto& m) {
                     using T = std::decay_t<decltype(m)>;
                     if constexpr (std::is_same_v<T, WorldInfo>) {
 
@@ -512,13 +514,14 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, AddLootDrop>)
                     {
-                        boost::asio::post(localserver_threadpool, [&,m_playerIndex = m_playerIndex, m](){
+                        //boost::asio::post(localserver_threadpool, [&,m_playerIndex = m_playerIndex, m](){
                             std::cout << "Adding loot drop on server at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
                             clientsMutex.lock();
 
                             auto newe = makeLootDrop(serverReg, m.lootDrop, m.spot);
+                            m.newEntityName = newe;
                             clientsMutex.unlock();
-                        });
+                        //});
 
                         redistrib = true;
                     }

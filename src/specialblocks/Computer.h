@@ -6,12 +6,14 @@
 #define DGCOMPUTER_H
 
 #include "SpecialBlockInfo.h"
+#include "../EntityWithNameAdder.h"
 #include "../components/ComputerComponent.h"
 #include "../components/NPPositionComponent.h"
 
-inline void addComputerEntity(entt::registry& reg, IntTup spot)
+inline void addComputerEntity(entt::registry& reg, IntTup spot, entt::entity useThisName = entt::null)
 {
-    auto id = reg.create();
+    auto id = addEntityWithEnforcedName(reg, useThisName);
+
     reg.emplace<ComputerComponent>(id);
     reg.emplace<NPPositionComponent>(id, glm::vec3(spot.x, spot.y, spot.z));
 }

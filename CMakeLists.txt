@@ -213,6 +213,7 @@ add_executable(DistantGarden
         src/components/LootDrop.cpp
         src/components/Factories.cpp
         src/components/Factories.h
+        src/EntityWithNameAdder.h
 )
 
 

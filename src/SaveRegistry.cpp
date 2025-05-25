@@ -61,7 +61,7 @@ void loadRegistry(entt::registry & reg, const char* filename)
         .get<LootDrop>(inputArchive)
         .orphans()
         ;
-        
+
     }
 
 }

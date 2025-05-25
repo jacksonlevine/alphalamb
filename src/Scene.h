@@ -61,7 +61,7 @@ struct Scene
 
     entt::entity addPlayerWithIndex(entt::entity index, ClientUID id)
     {
-        auto pers = REG.create(index);
+        auto pers = addEntityWithEnforcedName(REG, index);
 
         emplacePlayerParts(REG, pers, id);
 

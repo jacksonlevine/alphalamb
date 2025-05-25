@@ -52,6 +52,7 @@ struct BlockSet
     IntTup spot;
     BlockType block;
     glm::vec3 pp;
+    entt::entity newEntityNameIfApplicable;
 };
 
 
@@ -136,6 +137,7 @@ struct AddLootDrop
 {
     LootDrop lootDrop;
     glm::vec3 spot;
+    entt::entity newEntityName;
 };
 
 struct PickUpLootDrop
