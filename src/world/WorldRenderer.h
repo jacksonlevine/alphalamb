@@ -321,6 +321,7 @@ public:
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
     boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<5>> freedChangeBuffers = {};
 
+    boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<128>> removeTheseFromMBTAC = {};
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.

@@ -294,30 +294,52 @@ double WorldRenderer::getDewyFogFactor(float temperature_noise, float humidity_n
 //MAIN THREAD COROUTINE
 void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader, WorldGenMethod* worldGenMethod, float deltaTime, bool actuallyDraw)
 {
-    TwoIntTup playerChunkPosition = stupidWorldRendererWorldToChunkPos(
+    TwoIntTup playerChunkPosition = worldToChunkPos(
         TwoIntTup(std::floor(playerCamera->transform.position.x),
             std::floor(playerCamera->transform.position.z)));
 
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         auto& buffer = changeBuffers[i];
         //std::cout << "Buffer state: Ready: " << buffer.ready << " in use: " << buffer.in_use << std::endl;
-        if(buffer.ready.load(std::memory_order_acquire) && !buffer.in_use.load(std::memory_order_acquire)) {
+        if(buffer.ready.load(std::memory_order_acquire)) {
             //std::cout << "Mesh buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
-            buffer.in_use.store(true, std::memory_order_release);
-
-                modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
 
 
-                if (buffer.from == std::nullopt)
-                {
-                    activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
-                }
-                else
-                {
-                    activeChunks.erase(buffer.from.value());
-                    activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
-                }
-                confirmedActiveChunksQueue.push(buffer.to);
+
+                    modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
+                    bool confirm = true;
+                    if (buffer.from == std::nullopt)
+                    {
+
+                        activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+                    }
+                    else
+                    {
+
+
+
+                        auto todistfromplayer = std::abs(buffer.to.x - playerChunkPosition.x) + std::abs(buffer.to.z - playerChunkPosition.z);
+                        auto fromdistfromplayer = std::abs(buffer.from.value().x - playerChunkPosition.x) + std::abs(buffer.from.value().z - playerChunkPosition.z);
+
+                        if (todistfromplayer <= fromdistfromplayer)
+                        {
+                            activeChunks.erase(buffer.from.value());
+                            activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+                        } else
+                        {
+                            confirm = false;
+                            removeTheseFromMBTAC.push(buffer.to);
+                        }
+
+                    }
+                    if (confirm )
+                    {
+                        confirmedActiveChunksQueue.push(buffer.to);
+                    }
+
+
+
+
             
             
             buffer.ready.store(false, std::memory_order_release);
@@ -336,7 +358,6 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
         //std::cout << "User Buffer state: Ready: " << buffer.ready << " in use: " << buffer.in_use << std::endl;
         if(buffer.ready.load(std::memory_order_acquire) && !buffer.in_use.load(std::memory_order_acquire)) {
             //std::cout << "Buffer came through on main thread: " << buffer.to.x << " " << buffer.to.z << std::endl;
-
 
             modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
             if (buffer.from == std::nullopt)
@@ -456,7 +477,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
 
 
-        TwoIntTup playerChunkPosition = stupidWorldRendererWorldToChunkPos(
+        TwoIntTup playerChunkPosition = worldToChunkPos(
         TwoIntTup(std::floor(playerCamera->transform.position.x),
                      std::floor(playerCamera->transform.position.z)));
 
@@ -516,9 +537,16 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         for (auto & spotHere : checkspots)
         {
 
-            TwoIntTup cpcp = stupidWorldRendererWorldToChunkPos(
+            TwoIntTup cpcp = worldToChunkPos(
                 TwoIntTup(std::floor(playerCamera->transform.position.x),
                     std::floor(playerCamera->transform.position.z)));
+
+            TwoIntTup toRemove = {};
+            while (removeTheseFromMBTAC.pop(&toRemove) && meshBuildingThreadRunning)
+            {
+                mbtActiveChunks.erase(toRemove);
+            }
+
             for (auto & chunk : implicatedChunks)
             {
                 if (mbtActiveChunks.contains(chunk))
@@ -585,11 +613,12 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                         mbtActiveChunks.at(confirmedChunk).confirmedByMainThread = true;
                     }
                     else {
-                        std::cerr << "Why was a chunk not in mbtActiveChunks confirmed as being in activeChunks" << std::endl;
+                        std::cout << "Chunk not in mbtActiveChunks confirmed as being in activeChunks" << std::endl;
                     }
 
 
                 }
+
 
                     int dist = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
                     if(dist <= currentMinDistance())
@@ -604,6 +633,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                             //IF we havent reached the max chunks yet, we can just make a new one for this spot.
                             //ELSE, we reuse the furthest one from the player, ONLY IF the new distance will be shorter than the last distance!
+
                             if (chunkPoolSize.load(std::memory_order_acquire) < (static_cast<unsigned long long>(currentMaxChunks()) - 4))
                             {
                                 size_t changeBufferIndex = -1;
@@ -725,14 +755,14 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                                                 mbtActiveChunks.erase(oldSpot);
                                                 generatedChunks.erase(oldSpot);
-                                              //   litChunks.erase(oldSpot);
-                                              // {
-                                              //       auto lmlock = std::unique_lock<std::shared_mutex>(lightmapMutex);
-                                              //       ambientlightmap.deleteChunk(oldSpot);
-                                              //       lightmap.deleteChunk(oldSpot);
-                                              //   }
-                                              //
-                                              //   world->nonUserDataMap.erase(oldSpot);
+                                                litChunks.erase(oldSpot);
+                                              {
+                                                    auto lmlock = std::unique_lock<std::shared_mutex>(lightmapMutex);
+                                                    ambientlightmap.deleteChunk(oldSpot);
+                                                    lightmap.deleteChunk(oldSpot);
+                                                }
+
+                                                 world->nonUserDataMap.erase(oldSpot);
                                                 mbtActiveChunks.insert_or_assign(spotHere, UsedChunkInfo(chunkIndex));
 
                                                 buffer.ready.store(true, std::memory_order_release);   // Signal that data is ready
