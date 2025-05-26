@@ -310,8 +310,12 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
                     bool confirm = true;
                     if (buffer.from == std::nullopt)
                     {
-
-                        activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+                        auto tbr = 0.0f;
+                        if (activeChunks.contains(buffer.to))
+                        {
+                            tbr = activeChunks.at(buffer.to).timeBeenRendered;
+                        }
+                        activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex, tbr));
                     }
                     else
                     {
@@ -328,6 +332,10 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
                         } else
                         {
                             confirm = false;
+                            std::cout << "Denying chunk rebuild wanting to move chunk to " << buffer.to.x << " " << buffer.to.z << " which is " << todistfromplayer <<
+                                " distance away, further than the " << fromdistfromplayer << " it had before. Therefore, buffer index " << buffer.chunkIndex << " at " << buffer.to.x <<
+                                    " " << buffer.to.z << " should be removed from meshbuildingthread's mbtActiveChunks as it is not scenically relevant and will not be reflected in mainthread's activeChunks."
+                            << " and we will keep buffer index " << buffer.chunkIndex << " at " << buffer.from.value().x<<  " " << buffer.from.value().z << " where it resides. " << std::endl;
                             removeTheseFromMBTAC.push(buffer.to);
                         }
 
@@ -474,6 +482,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
     while(meshBuildingThreadRunning)
     {
 
+        std::cout << "Restarting this process" << std::endl;
+
         std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
 
 
@@ -589,10 +599,10 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                         if (changeBufferIndex != -1)
                         {
-                            auto& buffer = changeBuffers[changeBufferIndex];
+                            auto & buffer = changeBuffers[changeBufferIndex];
                             buffer.mesh = std::move(mesh);
                             buffer.chunkIndex = uci.chunkIndex;
-                            buffer.from = chunk;
+                            buffer.from = std::nullopt;
                             buffer.to = chunk;
                             buffer.ready.store(true, std::memory_order_release);
                             buffer.in_use.store(false, std::memory_order_release);
@@ -619,6 +629,9 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                 }
 
+                    cpcp = stupidWorldRendererWorldToChunkPos(
+                TwoIntTup(std::floor(playerCamera->transform.position.x),
+                    std::floor(playerCamera->transform.position.z)));
 
                     int dist = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
                     if(dist <= currentMinDistance())
@@ -686,6 +699,10 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                     }
 
                                     // Calculate distance to yourPosition
+                                    cpcp = stupidWorldRendererWorldToChunkPos(
+                                        TwoIntTup(std::floor(playerCamera->transform.position.x),
+                                            std::floor(playerCamera->transform.position.z)));
+
                                     int distance = abs(chunkPos.x - cpcp.x) + abs(chunkPos.z - cpcp.z);
                                     // int betterdistance = glm::round(glm::distance(glm::vec2(chunkPos.x, chunkPos.z), glm::vec2(cpcp.x, cpcp.z)));
 
@@ -710,6 +727,9 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                     for (const auto& [oldDistance, oldSpot] : chunksWithDistances)
                                     {
                                         //If the place we're going will afford a shorter distance from player, choose this one.
+                                        cpcp = worldToChunkPos(
+                                        TwoIntTup(std::floor(playerCamera->transform.position.x),
+                                            std::floor(playerCamera->transform.position.z)));
 
                                         int newDistance = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
 

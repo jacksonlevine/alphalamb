@@ -1696,6 +1696,7 @@ int main()
             static GLuint fogColLoc = glGetUniformLocation(mainShader.shaderID, "fogCol");
             static GLuint odffLoc = glGetUniformLocation(mainShader.shaderID, "overridingDewyFogFactor");
             static GLuint wcaLoc = glGetUniformLocation(mainShader.shaderID, "worldCurveAmount");
+            static GLuint dewyFogAmountLoc = glGetUniformLocation(mainShader.shaderID, "dewyFogAmount");
             static GLuint uwloc = glGetUniformLocation(mainShader.shaderID, "underwater");
             //static GLuint wsloc = glGetUniformLocation(mainShader.shaderID, "worldStage");
 
@@ -1732,9 +1733,9 @@ int main()
             glUniform1f(rotLoc, 0.0f);
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
             glUniform1f(scaleLoc, 1.0f);
-            glUniform1f( wcaLoc, campos.y > 230.f ? glm::max(0.f, std::min(50.f, campos.y - 230.f)) / 50.f : 0.f );
+            glUniform1f( wcaLoc,0.0f );
             glUniform1f(uwloc, theScene.blockHeadIn == WATER ? 1.0f : 0.0f);
-
+            glUniform1f(dewyFogAmountLoc, theScene.world->worldGenMethod->getHumidityNoise(IntTup(glfwGetTime()*0.01f, 0.f, 0.f)));
 
             auto ourCam = theScene.our<jl::Camera>().transform.position;
             IntTup itspot(

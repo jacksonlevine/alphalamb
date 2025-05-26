@@ -201,6 +201,7 @@ struct ReadyToDrawChunkInfo
     size_t chunkIndex = 0;
     float timeBeenRendered = 0.0f;
     explicit ReadyToDrawChunkInfo(size_t index) : chunkIndex(index) {}
+    ReadyToDrawChunkInfo(size_t index, float tbr) : chunkIndex(index), timeBeenRendered(tbr) {}
 };
 extern std::atomic<int> NUM_THREADS_RUNNING;
 
@@ -317,17 +318,17 @@ public:
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
-    std::array<ChangeBufferWithSub, 5> changeBuffers = {};
+    std::array<ChangeBufferWithSub, 32> changeBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<5>> freedChangeBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<32>> freedChangeBuffers = {};
 
     boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<128>> removeTheseFromMBTAC = {};
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.
-    std::array<ChangeBufferWithSub, 5> userChangeMeshBuffers = {};
+    std::array<ChangeBufferWithSub, 16> userChangeMeshBuffers = {};
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
-    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<5>> freedUserChangeMeshBuffers = {};
+    boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<16>> freedUserChangeMeshBuffers = {};
 
     ///After being added to mbtActiveChunks, we await a confirmation back in this before we know we can reuse that chunk again
     ///One way queue, from main thread to mesh building thread, to notify of mbtActiveChunks entries that have been confirmed/entered into activeChunks.
