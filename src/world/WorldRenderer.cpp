@@ -310,12 +310,10 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
                     bool confirm = true;
                     if (buffer.from == std::nullopt)
                     {
-                        auto tbr = 0.0f;
-                        if (activeChunks.contains(buffer.to))
+                        if (!activeChunks.contains(buffer.to))
                         {
-                            tbr = activeChunks.at(buffer.to).timeBeenRendered;
+                            activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex, 0.f));
                         }
-                        activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex, tbr));
                     }
                     else
                     {
@@ -536,14 +534,16 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
             return distfroma < distfromb;
         });
 
+        TwoIntTup cpcp = worldToChunkPos(
+                TwoIntTup(std::floor(playerCamera->transform.position.x),
+                    std::floor(playerCamera->transform.position.z)));
+
         for (int iz = 0; iz < checkspotssize; iz++)
         {
 
             auto spotHere = checkspots.at(iz);
 
-            TwoIntTup cpcp = stupidWorldRendererWorldToChunkPos(
-                TwoIntTup(std::floor(playerCamera->transform.position.x),
-                    std::floor(playerCamera->transform.position.z)));
+
             int dist = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
             if(dist <= currentMinDistance()/persistenceDenominator)
             {
@@ -557,8 +557,11 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
             }
         }
 
+
         for (int iz = 0; iz < checkspotssize; iz++)
         {
+
+            //not for chunks, but for checking if  we need to change the persistence denominator and restart the process
             auto newcpos = worldToChunkPos(
             TwoIntTup(std::floor(playerCamera->transform.position.x),
                          std::floor(playerCamera->transform.position.z)));
@@ -568,7 +571,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                 auto distfromlast = std::abs(newcpos.x - lastplayercpos.x) + abs(newcpos.z - lastplayercpos.z);
                 if (distfromlast > currentRenderDistance / 8)
                 {
-                    persistenceDenominator = persistenceDenominatorDefault;
+                    persistenceDenominator = std::min(persistenceDenominator+1, persistenceDenominatorDefault);
                     break;
                 } else
                 {
@@ -576,9 +579,9 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                 }
 
             auto spotHere = checkspots.at(iz);
-            TwoIntTup cpcp = worldToChunkPos(
-                TwoIntTup(std::floor(playerCamera->transform.position.x),
-                    std::floor(playerCamera->transform.position.z)));
+
+
+
 
             TwoIntTup toRemove = {};
             while (removeTheseFromMBTAC.pop(&toRemove) && meshBuildingThreadRunning)
@@ -590,7 +593,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
             {
                 if (mbtActiveChunks.contains(chunk))
                 {
-                    //if(mbtActiveChunks.)
+                    mbtActiveChunks.at(chunk).dontRepurpose = true;
 
 
                     /*auto destdistfromcpcp = glm::abs(chunk.x - cpcp.x) + glm::abs(chunk.z - cpcp.z);
@@ -634,7 +637,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                 auto distfromlast = std::abs(newcpos.x - lastplayercpos.x) + abs(newcpos.z - lastplayercpos.z);
                                 if (distfromlast > currentRenderDistance / 8)
                                 {
-                                    persistenceDenominator = persistenceDenominatorDefault;
+                                    persistenceDenominator = std::min(persistenceDenominator+1, persistenceDenominatorDefault);
                                     break;
                                 } else
                                 {
@@ -651,8 +654,11 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                             buffer.to = chunk;
                             buffer.ready.store(true, std::memory_order_release);
                             buffer.in_use.store(false, std::memory_order_release);
-                        } 
+                        }
                     //}
+
+
+
                     
 
 
@@ -666,6 +672,8 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                     if (mbtActiveChunks.contains(confirmedChunk))
                     {
                         mbtActiveChunks.at(confirmedChunk).confirmedByMainThread = true;
+                        //If we're confirmed to be in activechunks, then we can be repurposed
+                        mbtActiveChunks.at(confirmedChunk).dontRepurpose = false;
                     }
                     else {
                         std::cout << "Chunk not in mbtActiveChunks confirmed as being in activeChunks" << std::endl;
@@ -674,11 +682,10 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                 }
 
-                    cpcp = stupidWorldRendererWorldToChunkPos(
-                TwoIntTup(std::floor(playerCamera->transform.position.x),
-                    std::floor(playerCamera->transform.position.z)));
-
-                    int dist = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
+                    newcpos = worldToChunkPos(
+                        TwoIntTup(std::floor(playerCamera->transform.position.x),
+                            std::floor(playerCamera->transform.position.z)));
+                    int dist = abs(spotHere.x - newcpos.x) + abs(spotHere.z - newcpos.z);
                     if(dist <= currentMinDistance()/persistenceDenominator)
                     {
                         if (!mbtActiveChunks.contains(spotHere))
@@ -718,7 +725,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                     auto distfromlast = std::abs(newcpos.x - lastplayercpos.x) + abs(newcpos.z - lastplayercpos.z);
                                     if (distfromlast > currentRenderDistance / 8)
                                     {
-                                        persistenceDenominator = persistenceDenominatorDefault;
+                                        persistenceDenominator = std::min(persistenceDenominator+1, persistenceDenominatorDefault);
                                         break;
                                     } else
                                     {
@@ -753,18 +760,19 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                                 for (const auto& [chunkPos, usedChunkInfo] : mbtActiveChunks) {
 
-                                    if (!usedChunkInfo.confirmedByMainThread)
+                                    if (!usedChunkInfo.confirmedByMainThread || usedChunkInfo.dontRepurpose)
                                     {
                                         //We only want ones confirmed by main thread, we know we can repurpose those
+                                        //Also if marked dontRepurpose of course
                                         continue;
                                     }
 
                                     // Calculate distance to yourPosition
-                                    cpcp = stupidWorldRendererWorldToChunkPos(
+                                    newcpos = stupidWorldRendererWorldToChunkPos(
                                         TwoIntTup(std::floor(playerCamera->transform.position.x),
                                             std::floor(playerCamera->transform.position.z)));
 
-                                    int distance = abs(chunkPos.x - cpcp.x) + abs(chunkPos.z - cpcp.z);
+                                    int distance = abs(chunkPos.x - newcpos.x) + abs(chunkPos.z - newcpos.z);
                                     // int betterdistance = glm::round(glm::distance(glm::vec2(chunkPos.x, chunkPos.z), glm::vec2(cpcp.x, cpcp.z)));
 
                                     // Filter out chunks closer than MIN_DISTANCE (We only want to repurpose chunks outside of currentMinDistance
@@ -788,10 +796,6 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                     for (const auto& [oldDistance, oldSpot] : chunksWithDistances)
                                     {
                                         //If the place we're going will afford a shorter distance from player, choose this one.
-                                        cpcp = worldToChunkPos(
-                                        TwoIntTup(std::floor(playerCamera->transform.position.x),
-                                            std::floor(playerCamera->transform.position.z)));
-
                                         int newDistance = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
 
                                         if (newDistance < (oldDistance-2)) //add some epsilon or range so it stops grabbing chunks from the edge of valid-chunk-range & leaving holes
@@ -824,7 +828,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                                 auto distfromlast = std::abs(newcpos.x - lastplayercpos.x) + abs(newcpos.z - lastplayercpos.z);
                                                 if (distfromlast > currentRenderDistance / 8)
                                                 {
-                                                    persistenceDenominator = persistenceDenominatorDefault;
+                                                    persistenceDenominator = std::min(persistenceDenominator+1, persistenceDenominatorDefault);
                                                     break;
                                                 } else
                                                 {
@@ -891,7 +895,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
 
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000 - std::min(1000, (int)std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count())));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500 - std::min(500, (int)std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count())));
         auto newcpos = worldToChunkPos(
         TwoIntTup(std::floor(playerCamera->transform.position.x),
                      std::floor(playerCamera->transform.position.z)));
@@ -901,7 +905,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         auto distfromlast = std::abs(newcpos.x - lastplayercpos.x) + abs(newcpos.z - lastplayercpos.z);
         if (distfromlast > currentRenderDistance / 8)
         {
-            persistenceDenominator = persistenceDenominatorDefault;
+            persistenceDenominator = std::min(persistenceDenominator+1, persistenceDenominatorDefault);
         } else
         {
             persistenceDenominator = std::max(1, persistenceDenominator - 1);

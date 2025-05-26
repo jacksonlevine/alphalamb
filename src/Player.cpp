@@ -745,12 +745,14 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
             jetpackMode = false;
             if (controls.sprint)
             {
-                displacement -= glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f)) * deltaTime * walkmult;
+                displacement -= glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f)) * deltaTime * walkmult * 15.0f;
             }
             if (controls.jump)
             {
-                displacement += glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f)) * deltaTime * walkmult;
+                displacement += glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f)) * deltaTime * walkmult * 15.0f;
             }
+            displacement.x *= 15.0f;
+            displacement.z *= 15.0f;
         } else
         {
             //Have to do this I guess, or else it won't detect if we're on the ground consistently.
