@@ -467,7 +467,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
     NUM_THREADS_RUNNING.fetch_add(1);  // Atomic increment
     //std::cout << "Mesh incremented NUM_THREADS_RUNNING. Current value: " << NUM_THREADS_RUNNING.load() << "\n";
 
- 
+    static bool abort = false;
 
     for(size_t i = 0; i < changeBuffers.size(); i++) {
         freedChangeBuffers.push(i);
@@ -482,10 +482,17 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
     while(meshBuildingThreadRunning)
     {
 
+        static int persistenceDenominatorDefault = 8;
+
+        static int persistenceDenominator = 8;
+
         std::cout << "Restarting this process" << std::endl;
 
         std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
 
+        static TwoIntTup lastplayercpos = TwoIntTup(0, 0);
+
+        std::chrono::time_point<std::chrono::system_clock> timeAtStart = std::chrono::system_clock::now();
 
         TwoIntTup playerChunkPosition = worldToChunkPos(
         TwoIntTup(std::floor(playerCamera->transform.position.x),
@@ -507,10 +514,13 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
         }
 
 
+        int checkspotssize = ((currentRenderDistance/persistenceDenominator)*2) * ((currentRenderDistance/persistenceDenominator)*2);
+
+
         int index = 0;
-        for (int i = -currentRenderDistance; i < currentRenderDistance; i++)
+        for (int i = -currentRenderDistance/persistenceDenominator; i < currentRenderDistance/persistenceDenominator; i++)
         {
-            for (int j = -currentRenderDistance; j < currentRenderDistance; j++)
+            for (int j = -currentRenderDistance/persistenceDenominator; j < currentRenderDistance/persistenceDenominator; j++)
             {
                 checkspots[index] = playerChunkPosition + TwoIntTup(i,j);
                 index+=1;
@@ -519,20 +529,23 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
 
 
-        std::ranges::sort(checkspots, [&playerChunkPosition](const TwoIntTup& a, const TwoIntTup& b)
+        std::ranges::sort(checkspots.begin(), checkspots.begin() + checkspotssize, [&playerChunkPosition](const TwoIntTup& a, const TwoIntTup& b)
         {
             int distfroma = abs(a.x - playerChunkPosition.x) + abs(a.z - playerChunkPosition.z);
             int distfromb = abs(b.x - playerChunkPosition.x) + abs(b.z - playerChunkPosition.z);
             return distfroma < distfromb;
         });
 
-        for (auto & spotHere : checkspots)
+        for (int iz = 0; iz < checkspotssize; iz++)
         {
+
+            auto spotHere = checkspots.at(iz);
+
             TwoIntTup cpcp = stupidWorldRendererWorldToChunkPos(
                 TwoIntTup(std::floor(playerCamera->transform.position.x),
                     std::floor(playerCamera->transform.position.z)));
             int dist = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
-            if(dist <= currentMinDistance())
+            if(dist <= currentMinDistance()/persistenceDenominator)
             {
                 auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor();
                 if(!generatedChunks.find(acc, spotHere))
@@ -544,9 +557,25 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
             }
         }
 
-        for (auto & spotHere : checkspots)
+        for (int iz = 0; iz < checkspotssize; iz++)
         {
+            auto newcpos = worldToChunkPos(
+            TwoIntTup(std::floor(playerCamera->transform.position.x),
+                         std::floor(playerCamera->transform.position.z)));
 
+
+
+                auto distfromlast = std::abs(newcpos.x - lastplayercpos.x) + abs(newcpos.z - lastplayercpos.z);
+                if (distfromlast > currentRenderDistance / 8)
+                {
+                    persistenceDenominator = persistenceDenominatorDefault;
+                    break;
+                } else
+                {
+                    persistenceDenominator = std::max(1, persistenceDenominator - 1);
+                }
+
+            auto spotHere = checkspots.at(iz);
             TwoIntTup cpcp = worldToChunkPos(
                 TwoIntTup(std::floor(playerCamera->transform.position.x),
                     std::floor(playerCamera->transform.position.z)));
@@ -595,6 +624,22 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                 });
 
                             if (!meshBuildingThreadRunning) break;
+
+                            auto newcpos = worldToChunkPos(
+                            TwoIntTup(std::floor(playerCamera->transform.position.x),
+                                         std::floor(playerCamera->transform.position.z)));
+
+
+
+                                auto distfromlast = std::abs(newcpos.x - lastplayercpos.x) + abs(newcpos.z - lastplayercpos.z);
+                                if (distfromlast > currentRenderDistance / 8)
+                                {
+                                    persistenceDenominator = persistenceDenominatorDefault;
+                                    break;
+                                } else
+                                {
+                                    persistenceDenominator = std::max(1, persistenceDenominator - 1);
+                                }
                         }
 
                         if (changeBufferIndex != -1)
@@ -634,7 +679,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                     std::floor(playerCamera->transform.position.z)));
 
                     int dist = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
-                    if(dist <= currentMinDistance())
+                    if(dist <= currentMinDistance()/persistenceDenominator)
                     {
                         if (!mbtActiveChunks.contains(spotHere))
                         {
@@ -663,6 +708,22 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                     });
 
                                     if (!meshBuildingThreadRunning) break;
+
+                                    auto newcpos = worldToChunkPos(
+                                    TwoIntTup(std::floor(playerCamera->transform.position.x),
+                                                 std::floor(playerCamera->transform.position.z)));
+
+
+
+                                    auto distfromlast = std::abs(newcpos.x - lastplayercpos.x) + abs(newcpos.z - lastplayercpos.z);
+                                    if (distfromlast > currentRenderDistance / 8)
+                                    {
+                                        persistenceDenominator = persistenceDenominatorDefault;
+                                        break;
+                                    } else
+                                    {
+                                        persistenceDenominator = std::max(1, persistenceDenominator - 1);
+                                    }
                                 }
 
                                 if (changeBufferIndex != -1)
@@ -707,7 +768,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                     // int betterdistance = glm::round(glm::distance(glm::vec2(chunkPos.x, chunkPos.z), glm::vec2(cpcp.x, cpcp.z)));
 
                                     // Filter out chunks closer than MIN_DISTANCE (We only want to repurpose chunks outside of currentMinDistance
-                                    if (distance > currentMinDistance()) {
+                                    if (distance > currentMinDistance()/persistenceDenominator) {
                                         chunksWithDistances.emplace_back(distance, chunkPos);
                                     }
 
@@ -753,6 +814,22 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                                 });
 
                                                 if (!meshBuildingThreadRunning) break;
+
+                                                auto newcpos = worldToChunkPos(
+                                                TwoIntTup(std::floor(playerCamera->transform.position.x),
+                                                             std::floor(playerCamera->transform.position.z)));
+
+
+
+                                                auto distfromlast = std::abs(newcpos.x - lastplayercpos.x) + abs(newcpos.z - lastplayercpos.z);
+                                                if (distfromlast > currentRenderDistance / 8)
+                                                {
+                                                    persistenceDenominator = persistenceDenominatorDefault;
+                                                    break;
+                                                } else
+                                                {
+                                                    persistenceDenominator = std::max(1, persistenceDenominator - 1);
+                                                }
                                             }
                                             //
                                             // std::chrono::high_resolution_clock::time_point time2 = std::chrono::high_resolution_clock::now();
@@ -808,9 +885,29 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
         }
 
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        auto timeAtEnd = std::chrono::system_clock::now();
+
+        auto elapsed = timeAtEnd - timeAtStart;
 
 
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000 - std::min(1000, (int)std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count())));
+        auto newcpos = worldToChunkPos(
+        TwoIntTup(std::floor(playerCamera->transform.position.x),
+                     std::floor(playerCamera->transform.position.z)));
+
+
+
+        auto distfromlast = std::abs(newcpos.x - lastplayercpos.x) + abs(newcpos.z - lastplayercpos.z);
+        if (distfromlast > currentRenderDistance / 8)
+        {
+            persistenceDenominator = persistenceDenominatorDefault;
+        } else
+        {
+            persistenceDenominator = std::max(1, persistenceDenominator - 1);
+        }
+
+        lastplayercpos = newcpos;
     }
 
     mbtActiveChunks.clear();
