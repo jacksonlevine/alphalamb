@@ -304,10 +304,6 @@ private:
                         redistrib = true;
                         excludeyou = true;
                     }
-                    else if constexpr (std::is_same_v<T, BlockSetAndDepleteSlot>)
-                    {
-                        redistrib = true;
-                    }
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>) {
                         //std::cout << "Got selectblockchange \n";
 
@@ -324,21 +320,31 @@ private:
                         redistrib = true;
                         excludeyou = true;
                     }
-                    else if constexpr (std::is_same_v<T, DepleteInventorySlot>)
+                    if constexpr (std::is_same_v<T, DepleteInventorySlot> || std::is_same_v<T, BlockSetAndDepleteSlot>)
                     {
 
-                        boost::asio::post(localserver_threadpool, [&, m_playerIndex = m_playerIndex, m](){
+                        DepleteInventorySlot msg;
+
+                        if constexpr( std::is_same_v<T, BlockSetAndDepleteSlot>)
+                        {
+                            msg = getDepleteSlot(m);
+                        } else
+                        {
+                            msg = m;
+                        }
+
+                        boost::asio::post(localserver_threadpool, [&, m_playerIndex = m_playerIndex, msg](){
                             {
                                 std::cout << "Got Deplete on server" << std::endl;
                                 std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-                                serverReg.patch<InventoryComponent>(m.playerIndex, [&](InventoryComponent & inv)
+                                serverReg.patch<InventoryComponent>(msg.playerIndex, [&](InventoryComponent & inv)
                                 {
                                     try
                                     {
-                                        auto & slot = inv.inventory.inventory.at(m.slot);
-                                        if(slot.count - m.depletion > 0)
+                                        auto & slot = inv.inventory.inventory.at(msg.slot);
+                                        if(slot.count - msg.depletion > 0)
                                         {
-                                            slot.count -= m.depletion;
+                                            slot.count -= msg.depletion;
                                         } else
                                         {
                                             slot.count = 0;
@@ -347,7 +353,7 @@ private:
 
                                     } catch (std::exception&e)
                                     {
-                                        std::cerr << "slot " << m.slot << " didnt exist " << (int)m_playerIndex << " dumbass" << std::endl;
+                                        std::cerr << "slot " << msg.slot << " didnt exist " << (int)m_playerIndex << " dumbass" << std::endl;
                                     }
 
                                 });
@@ -415,27 +421,103 @@ private:
 
 
                     }
-                    else if constexpr (std::is_same_v<T, BlockSet>) {
-                            m.newEntityNameIfApplicable = entt::null;
-                            auto blockThere = serverWorld.get(m.spot);
 
-                            if(auto func = findSpecialSetBits((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
+                    else if constexpr (std::is_same_v<T, RequestStackSlotsToDest>)
+                    {
+
+                        std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+
+                                InventorySlot* source = nullptr;
+                                InventorySlot* destination = nullptr;
+
+                                auto view = serverReg.view<UUIDComponent, InventoryComponent>();
+
+                                for (auto entity : view)
+                                {
+                                    auto & inventory = view.get<InventoryComponent>(entity);
+                                    auto & uuid = view.get<UUIDComponent>(entity);
+
+                                    if (uuid.uuid == m.destinationID)
+                                    {
+                                        if (m.mouseSlotD)
+                                        {
+                                            destination = &inventory.inventory.mouseHeldItem;
+                                        }
+                                        else
+                                        {
+                                            destination = &inventory.inventory.inventory.at(m.destinationIndex);
+                                        }
+
+                                    }
+                                    if (uuid.uuid == m.sourceID)
+                                    {
+                                        if (m.mouseSlotS)
+                                        {
+                                            source = &inventory.inventory.mouseHeldItem;
+                                        } else
+                                        {
+                                            source = &inventory.inventory.inventory.at(m.sourceIndex);
+                                        }
+                                    }
+                                }
+
+                                if (source && destination)
+                                {
+                                    if (source->block == destination->block)
+                                    {
+                                        auto amtDestCanTake = std::min((int)source->count, 99 - destination->count);
+
+                                        if (amtDestCanTake > 0)
+                                        {
+                                            destination->count += amtDestCanTake;
+
+                                           source->count -= amtDestCanTake;
+                                           if (source->count <= 0)
+                                           {
+                                               source->count = 0;
+                                               source->block = 0;
+                                           }
+                                           redistrib = true;
+                                        }
+
+
+                                    }
+
+                                }
+                    }
+
+                    if constexpr (std::is_same_v<T, BlockSet> || std::is_same_v<T, BlockSetAndDepleteSlot>) {
+
+                        BlockSet msg;
+
+                        if constexpr( std::is_same_v<T, BlockSetAndDepleteSlot>)
+                        {
+                            msg = getBlockSet(m);
+                        } else
+                        {
+                            msg = m;
+                        }
+                        
+                            msg.newEntityNameIfApplicable = entt::null;
+                            auto blockThere = serverWorld.get(msg.spot);
+
+                            if(auto func = findSpecialSetBits((MaterialName)(msg.block & BLOCK_ID_BITS)); func != std::nullopt)
                             {
 
-                                auto campos = m.pp;
-                                func.value()(&serverWorld, m.spot, campos);
+                                auto campos = msg.pp;
+                                func.value()(&serverWorld, msg.spot, campos);
 
                             } else
                             {
-                                serverWorld.userDataMap.set(m.spot, m.block);
+                                serverWorld.userDataMap.set(msg.spot, msg.block);
                             }
 
-                            if (blockThere != AIR && (blockThere != (MaterialName)(m.block & BLOCK_ID_BITS)))
+                            if (blockThere != AIR && (blockThere != (MaterialName)(msg.block & BLOCK_ID_BITS)))
                             {
                                 if (auto f = findSpecialRemoveBits((MaterialName)blockThere); f != std::nullopt)
                                 {
 
-                                    f.value()(&serverWorld, m.spot);
+                                    f.value()(&serverWorld, msg.spot);
                                 }
                             }
 
@@ -444,20 +526,20 @@ private:
                             if(auto f = findEntityRemoveFunc((MaterialName)(blockThere)); f != std::nullopt)
                             {
 
-                                f.value()(serverReg, m.spot);
+                                f.value()(serverReg, msg.spot);
                             }
 
                             //Adding block entity
-                            if(auto func = findEntityCreateFunc((MaterialName)(m.block & BLOCK_ID_BITS)); func != std::nullopt)
+                            if(auto func = findEntityCreateFunc((MaterialName)(msg.block & BLOCK_ID_BITS)); func != std::nullopt)
                             {
 
-                                auto newe = func.value()(serverReg, m.spot, entt::null);
-                                m.newEntityNameIfApplicable = newe;
+                                auto newe = func.value()(serverReg, msg.spot, entt::null);
+                                msg.newEntityNameIfApplicable = newe;
                             }
 
-                        if (m.addLootDrop != std::nullopt)
+                        if (msg.addLootDrop != std::nullopt)
                         {
-                            auto & ald = m.addLootDrop.value();
+                            auto & ald = msg.addLootDrop.value();
                             std::cout << "Adding loot drop on server at " << ald.spot.x << " " << ald.spot.y << " " << ald.spot.z << std::endl;
                             clientsMutex.lock();
 

@@ -126,6 +126,19 @@ struct RequestInventorySwap
     bool mouseSlotD;
 };
 
+
+
+struct RequestStackSlotsToDest
+{
+    ClientUID sourceID;
+    ClientUID destinationID;
+    entt::entity myPlayerIndex;
+    uint8_t sourceIndex;
+    uint8_t destinationIndex;
+    bool mouseSlotS;
+    bool mouseSlotD;
+};
+
 struct TextChunkHeader
 {
     size_t numChunks;
@@ -169,8 +182,24 @@ struct BlockSetAndDepleteSlot
 //     std::array<InventorySlot, INVHEIGHT> equipped;
 // };
 
-using DGMessage = std::variant<BlockSetAndDepleteSlot, DepleteInventorySlot, TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
+using DGMessage = std::variant<RequestStackSlotsToDest, BlockSetAndDepleteSlot, DepleteInventorySlot, TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
 
+
+inline const BlockSet& getBlockSet(const auto& m) {
+    if constexpr (std::is_same_v<std::decay_t<decltype(m)>, BlockSetAndDepleteSlot>) {
+        return m.blockSet;
+    } else {
+        return m;
+    }
+}
+
+inline const DepleteInventorySlot& getDepleteSlot(const auto& m) {
+    if constexpr (std::is_same_v<std::decay_t<decltype(m)>, BlockSetAndDepleteSlot>) {
+        return m.deplete;
+    } else {
+        return m;
+    }
+}
 
 
 #endif //NETWORKTYPES_H

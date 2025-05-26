@@ -12,6 +12,7 @@ inline entt::entity addEntityWithEnforcedName(entt::registry& reg, entt::entity 
     if (reg.valid(useThisName))
     {
         std::cerr << "Tried to create entity that already was existing. " << std::endl;
+        throw std::runtime_error("Tried to create entity that already was existing. Fatal fucking error.");
     }
     entt::entity id;
     if (useThisName == entt::null)

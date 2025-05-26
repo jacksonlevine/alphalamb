@@ -173,22 +173,32 @@ void imguiInventory(Inventory& inv)
 
             if (DGCustomButton(label.c_str(), bt, ImVec2(50,50)))
             {
-                bool validswap = true;
-                if (isEquip && !mouseHeldItemEquippable)
+                if (slot.block == inv.mouseHeldItem.block && slot.block != 0 && inv.mouseHeldItem.block != 0)
                 {
-                    validswap = false;
-                }
-                if (validswap)
-                {
-                    //std::cout << "Heyoo" << std::endl;
-                    pushToMainToNetworkQueue(RequestInventorySwap{
-                    .sourceID = theScene.settings.clientUID, .destinationID = theScene.settings.clientUID, .myPlayerIndex = theScene.myPlayerIndex,
-                    .sourceIndex = 0, .destinationIndex = (uint8_t)inv.getIndex(i, j), .mouseSlotS = true, .mouseSlotD = false});
+                    pushToMainToNetworkQueue(RequestStackSlotsToDest{
+                        .sourceID = theScene.settings.clientUID, .destinationID = theScene.settings.clientUID, .myPlayerIndex = theScene.myPlayerIndex,
+                        .sourceIndex = 0, .destinationIndex = (uint8_t)inv.getIndex(i, j), .mouseSlotS = true, .mouseSlotD = false});
 
-                    // auto mouseslot = inv.mouseHeldItem;
-                    // inv.mouseHeldItem = slot;
-                    // slot = mouseslot;
+                } else
+                {
+                    bool validswap = true;
+                    if (isEquip && !mouseHeldItemEquippable)
+                    {
+                        validswap = false;
+                    }
+                    if (validswap)
+                    {
+                        //std::cout << "Heyoo" << std::endl;
+                        pushToMainToNetworkQueue(RequestInventorySwap{
+                        .sourceID = theScene.settings.clientUID, .destinationID = theScene.settings.clientUID, .myPlayerIndex = theScene.myPlayerIndex,
+                        .sourceIndex = 0, .destinationIndex = (uint8_t)inv.getIndex(i, j), .mouseSlotS = true, .mouseSlotD = false});
+
+                        // auto mouseslot = inv.mouseHeldItem;
+                        // inv.mouseHeldItem = slot;
+                        // slot = mouseslot;
+                    }
                 }
+
             }
 
             if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))

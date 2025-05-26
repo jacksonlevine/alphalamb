@@ -674,21 +674,7 @@ const PxU32 scratchMemorySize = 16 * 1024;
 
 void* scratchMemory = nullptr;
 
-const BlockSet& getBlockSet(const auto& m) {
-    if constexpr (std::is_same_v<std::decay_t<decltype(m)>, BlockSetAndDepleteSlot>) {
-        return m.blockSet;
-    } else {
-        return m;
-    }
-}
 
-const DepleteInventorySlot& getDepleteSlot(const auto& m) {
-    if constexpr (std::is_same_v<std::decay_t<decltype(m)>, BlockSetAndDepleteSlot>) {
-        return m.deplete;
-    } else {
-        return m;
-    }
-}
 
 int main()
 {
@@ -1286,6 +1272,50 @@ int main()
                             InventorySlot srcCopy = *source;
                             *source = *destination;
                             *destination = srcCopy;
+                        }
+                    }
+                    else if constexpr (std::is_same_v<T, RequestStackSlotsToDest>)
+                    {
+                        InventorySlot* source = nullptr;
+                        InventorySlot* destination = nullptr;
+
+                        if (m.mouseSlotS)
+                        {
+                            source = &(theScene.REG.get<InventoryComponent>(m.myPlayerIndex).inventory.mouseHeldItem);
+                        } else
+                        {
+                            source = &(theScene.REG.get<InventoryComponent>(m.myPlayerIndex).inventory.inventory.at(m.sourceIndex));
+                        }
+
+                        if (m.mouseSlotD)
+                        {
+                            destination = &(theScene.REG.get<InventoryComponent>(m.myPlayerIndex).inventory.mouseHeldItem);
+                        } else
+                        {
+                            destination = &(theScene.REG.get<InventoryComponent>(m.myPlayerIndex).inventory.inventory.at(m.destinationIndex));
+                        }
+
+                        if (source && destination)
+                        {
+                            if (source->block == destination->block)
+                            {
+                                auto amtDestCanTake = std::min((int)source->count, 99 - destination->count);
+
+                                if (amtDestCanTake > 0)
+                                {
+                                    destination->count += amtDestCanTake;
+
+                                   source->count -= amtDestCanTake;
+                                   if (source->count <= 0)
+                                   {
+                                       source->count = 0;
+                                       source->block = 0;
+                                   }
+                                }
+
+
+                            }
+
                         }
                     }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
