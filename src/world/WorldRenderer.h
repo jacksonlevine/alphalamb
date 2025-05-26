@@ -215,7 +215,7 @@ public:
     static constexpr int maxRenderDistance = 64;
     static constexpr int defaultRenderDistance = 17; 
     int currentRenderDistance = defaultRenderDistance;
-    static constexpr int maxChunks = ((defaultRenderDistance *2) * (defaultRenderDistance *2));
+    static constexpr int maxChunks = ((maxRenderDistance *2) * (maxRenderDistance *2));
     int lastMaxChunks = maxChunks;
 
 
