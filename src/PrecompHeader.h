@@ -62,7 +62,7 @@
 #include <boost/thread/thread_pool.hpp>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
-
+#include <boost/pool/pool_alloc.hpp>
 extern GLuint lutTexture;
 
 

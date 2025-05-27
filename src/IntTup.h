@@ -32,16 +32,16 @@ IntTup operator-(IntTup first, const IntTup& second);
 
 struct IntTupHash {
     std::size_t operator()(const IntTup& tup) const;
-    std::uint32_t operator()(const IntTup& tup, bool small) const noexcept {
-        std::uint32_t h = static_cast<std::uint32_t>(tup.x);
-        h = (h * 16777619) ^ static_cast<std::uint32_t>(tup.y);
-        h = (h * 16777619) ^ static_cast<std::uint32_t>(tup.z);
-        h ^= h >> 16;
-        h *= 0x85EBCA6B;
-        h ^= h >> 13;
-        h *= 0xC2B2AE35;
-        h ^= h >> 16;
-        return h;
+    std::uint16_t operator()(const IntTup& tup, bool small) const noexcept {
+        std::uint16_t hash = static_cast<std::uint16_t>(tup.x);
+        hash ^= static_cast<std::uint16_t>(tup.y << 5);
+        hash ^= static_cast<std::uint16_t>(tup.z << 10);
+
+        // One multiply for final mixing
+        hash = static_cast<std::uint16_t>(hash * 0x9E37);
+        hash ^= hash >> 8;
+
+        return hash;
     }
 };
 

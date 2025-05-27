@@ -10,6 +10,10 @@
 
 inline void draw2DBillboard(ImVec2 size, float xCropping = 0.0f)
 {
+
+    ImVec2 windowStart = ImGui::GetWindowPos();
+    ImVec2 windowSize = ImGui::GetWindowSize();
+
     static jl::Shader shader(
         R"glsl(
             #version 330 core
@@ -62,11 +66,18 @@ inline void draw2DBillboard(ImVec2 size, float xCropping = 0.0f)
             uniform float animationIndex;
             uniform float hidden;
 
+            uniform vec2 ndcMin;
+            uniform vec2 ndcMax;
+
             void main()
             {
                 vec4 texColor = texture(ourTexture, vec3(tcoord, animationIndex));
                 FragColor = texColor;
                 if(texColor.a < 0.1 || hidden > 0.2f) {
+                    discard;
+                }
+                if (gl_FragCoord.x < ndcMin.x || gl_FragCoord.x > ndcMax.x ||
+                    gl_FragCoord.y > ndcMax.y || gl_FragCoord.y < ndcMin.y) {
                     discard;
                 }
             }
@@ -158,6 +169,9 @@ inline void draw2DBillboard(ImVec2 size, float xCropping = 0.0f)
     static GLint hiddenUniform = glGetUniformLocation(shader.shaderID, "hidden");
     static GLint textureUniform = glGetUniformLocation(shader.shaderID, "ourTexture");
 
+    static GLint ndcm = glGetUniformLocation(shader.shaderID, "ndcMin");
+    static GLint ndcma = glGetUniformLocation(shader.shaderID, "ndcMax");
+
     glUniform2f(posUniform, ndcPos.x, ndcPos.y);
     glUniform2f(sizeUniform, ndcSize.x, ndcSize.y);
     glUniform1f(timeUniform, static_cast<float>(glfwGetTime()));
@@ -165,12 +179,34 @@ inline void draw2DBillboard(ImVec2 size, float xCropping = 0.0f)
     glUniform1f(animationIndexUniform, animation_state.actionNum);
     glUniform1f(startTimeUniform, animation_state.timestarted);
     glUniform1f(timeScaleUniform, animation_state.timescale);
-    glUniform3f(instanceDirectionUniform, billboard.direction.x, billboard.direction.y, billboard.direction.z);
-    glUniform3f(camPosUniform, camera.transform.position.x, camera.transform.position.y, camera.transform.position.z);
+    auto normd = glm::vec3(0.f, 0.f, 1.f);
+    normd = glm::normalize(normd);
+    glUniform3f(instanceDirectionUniform, normd.x, normd.y, normd.z);
+
+    auto fakecampos = glm::vec3(billboard.position.x, billboard.position.y, billboard.position.z);
+    double xp = 0., yp = 0.;
+    glfwGetCursorPos(theScene.window, &xp, &yp);
+    fakecampos.x +=  (renderPos.x + xCropping + xCropping + (croppedSize.x/2)) - xp;
+    fakecampos.y += (renderPos.y + (croppedSize.y / 2)) - yp;
+    fakecampos.z += 100.0f;
+
+    glUniform3f(camPosUniform, fakecampos.x, fakecampos.y, fakecampos.z);
+
+
     glUniform3f(instancePositionUniform, billboard.position.x, billboard.position.y, billboard.position.z);
     glUniform1f(hiddenUniform, billboard.hidden);
 
     glUniform1i(textureUniform, 2);
+
+
+    // Convert your windowStart and windowSize to pixel coordinates for clipping
+    ImVec2 clipMin = windowStart;
+    ImVec2 clipMax = ImVec2(windowStart.x + windowSize.x, windowStart.y + windowSize.y);
+
+    // Then pass these to the shader
+    glUniform2f(ndcma, clipMax.x, clipMax.y);
+    glUniform2f(ndcm, clipMin.x, clipMin.y);
+
 
     // Draw the quad
     glDrawArrays(GL_TRIANGLES, 0, 6);

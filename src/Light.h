@@ -109,9 +109,16 @@ constexpr ColorPack TORCHLIGHTVAL = ColorPack(0, 0, 15);
 
 struct LightRay
 {
-    uint32_t originhash;
+    uint16_t originhash;
     ColorPack level;
 };
+
+using LightRayPoolAlloc = boost::pool_allocator<
+    LightRay,
+    boost::default_user_allocator_new_delete,
+    boost::details::pool::default_mutex,
+    64
+>;
 
 struct LightSpot {
     boost::container::vector<LightRay> rays;
@@ -126,18 +133,43 @@ struct LightSpot {
 };
 
 
+using InnerPoolAlloc = boost::pool_allocator<
+    std::pair<const jl484_vec3, LightSpot>,
+    boost::default_user_allocator_new_delete,
+    boost::details::pool::default_mutex,
+    256,
+    0
+>;
+
+using InnerMapType = boost::unordered_map<jl484_vec3, LightSpot, jl484_vec3_hash, std::equal_to<>, InnerPoolAlloc>;
+
+using OuterPoolAlloc = boost::pool_allocator<
+    std::pair<const TwoIntTup, InnerMapType>,
+    boost::default_user_allocator_new_delete,
+    boost::details::pool::default_mutex,
+    64,
+    0
+>;
+
+using OuterMapType = boost::unordered_map<TwoIntTup, InnerMapType, TwoIntTupHash, std::equal_to<>, OuterPoolAlloc>;
+
 class NewLightMapType
 {
+
 public:
-    boost::unordered_map<TwoIntTup, boost::unordered_map<IntTup, LightSpot, IntTupHash>, TwoIntTupHash> lm = {};
+    OuterMapType lm;
     std::optional<LightSpot*> get(const IntTup& t)
     {
-        if (lm.find(world3ToChunkPos(t)) != lm.end())
+        auto loc = worldToChunkLocalPos(t);
+        auto chunkPos = world3ToChunkPos(t);
+
+        auto outerIt = lm.find(chunkPos);
+        if (outerIt != lm.end())
         {
-            auto & map = lm.at(world3ToChunkPos(t));
-            if (map.find(t) != map.end())
+            auto innerIt = outerIt->second.find(loc);
+            if (innerIt != outerIt->second.end())
             {
-                return &map.at(t);
+                return &innerIt->second;
             }
         }
         return std::nullopt;
@@ -145,23 +177,44 @@ public:
 
     void set(const IntTup& t, const LightSpot& spot)
     {
-        if (lm.find(world3ToChunkPos(t)) == lm.end())
-        {
-            lm.insert({world3ToChunkPos(t), {}});
-        }
-        auto & map = lm.at(world3ToChunkPos(t));
-        map.insert_or_assign(t, spot);
+        auto loc = worldToChunkLocalPos(t);
+        auto chunkPos = world3ToChunkPos(t);
+
+        lm[chunkPos].insert_or_assign(loc, spot);
     }
+
     void erase(const IntTup& t)
     {
-        if (lm.find(world3ToChunkPos(t)) == lm.end()) return;
-        auto & map = lm.at(world3ToChunkPos(t));
-        map.erase(t);
+        auto loc = worldToChunkLocalPos(t);
+        auto chunkPos = world3ToChunkPos(t);
+
+        auto outerIt = lm.find(chunkPos);
+        if (outerIt != lm.end())
+        {
+            outerIt->second.erase(loc);
+            // Optionally clean up empty chunks
+            if (outerIt->second.empty())
+            {
+                lm.erase(outerIt);
+            }
+        }
     }
 
     void deleteChunk(const TwoIntTup& c)
     {
         lm.erase(c);
+    }
+
+    // Useful for debugging memory usage
+    size_t getChunkCount() const { return lm.size(); }
+    size_t getTotalLightCount() const
+    {
+        size_t total = 0;
+        for (const auto& [chunk, innerMap] : lm)
+        {
+            total += innerMap.size();
+        }
+        return total;
     }
 };
 using LightMapType = NewLightMapType;

@@ -262,6 +262,7 @@ void main()
     static GLint texPos = glGetUniformLocation(shader.shaderID, "texture1");
     glUniform1i(texPos, 4);
 
+
     // Convert your windowStart and windowSize to pixel coordinates for clipping
     ImVec2 clipMin = windowStart;
     ImVec2 clipMax = ImVec2(windowStart.x + windowSize.x, windowStart.y + windowSize.y);

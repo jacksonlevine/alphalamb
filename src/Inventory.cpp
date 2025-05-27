@@ -130,6 +130,7 @@ void imguiInventory(Inventory& inv)
 
     ImGui::SetNextWindowPos(ImVec2(pos.x + backgroundSize.x*0.2f, pos.y + backgroundSize.y*0.2f));
     ImGui::SetNextWindowSize(ImVec2(backgroundSize.x - (backgroundSize.x*0.4f), backgroundSize.y - (backgroundSize.y*0.4f)));
+
     //ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
 
@@ -232,12 +233,15 @@ void imguiInventory(Inventory& inv)
         ImGui::SameLine(0.0f, 0.0f);
 
         ImGui::BeginGroup();
-            auto curspos = ImGui::GetCursorPos();
-            ImGui::SetCursorPos(curspos);
+            auto curspos = ImGui::GetCursorScreenPos();
+            auto curspos2 = ImGui::GetCursorPos();
+
+            ImGui::GetWindowDrawList()->AddRect(curspos, curspos + ImVec2(160, 300), ImColor(ImVec4(0.f, 0.f, 0.f, 1.0)), 3, ImDrawFlags_RoundCornersAll, 2);
+            ImGui::Dummy(ImVec2(160, 300));
+            ImGui::SetCursorPos(curspos2);
             draw2DBillboard(ImVec2(300, 300), 70.0f);
 
         ImGui::EndGroup();
-
 
 
     ImGui::End();

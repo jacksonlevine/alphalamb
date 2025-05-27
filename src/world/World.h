@@ -47,7 +47,7 @@ struct BlockArea
     IntTup corner1;
     IntTup corner2;
     BlockType block;
-    bool hollow = false;
+    bool hollow : 1 = false;
 };
 
 struct BlockAreaRegistry

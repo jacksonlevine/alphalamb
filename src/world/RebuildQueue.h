@@ -12,23 +12,28 @@
 // Add these to WorldRenderer.h class definition
 struct ChunkRebuildRequest {
     TwoIntTup chunkPos;
-    size_t chunkIndex = 0;
-    bool isHighPriority;
-    bool rebuild = true;
+
     IntTup changeSpot = IntTup(0,0,0);
 
-    bool isArea = false;
+
     BlockArea area;
 
-    bool isVoxelModel = false;
+
     PlacedVoxModel vm = {};
-    bool doLightPass = false;
-    bool queueLightpassImplicated = true;
+
 
     glm::vec3 playerPosAtPlaceTime = glm::vec3(0.f);
 
     std::optional<BlockType> changeTo = std::nullopt;
     std::chrono::steady_clock::time_point timestamp;
+    uint16_t chunkIndex : 14 = 0;
+    bool isHighPriority : 1;
+    bool rebuild : 1 = true;
+    bool isArea : 1  = false;
+    bool isVoxelModel : 1  = false;
+    bool doLightPass : 1  = false;
+    bool queueLightpassImplicated : 1  = true;
+
     ChunkRebuildRequest(TwoIntTup pos, size_t index, bool priority)
         : chunkPos(pos), chunkIndex(index), isHighPriority(priority),
           timestamp(std::chrono::steady_clock::now()) {}
