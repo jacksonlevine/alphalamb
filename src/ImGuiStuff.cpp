@@ -740,7 +740,7 @@ void renderImGui()
 
                 ImGui::SetCursorPos(start);
 
-                DGCustomButton((std::string("##hudinvrowback") + std::to_string(i)).c_str(), DGButtonType::Good1, invTileDisplaySize, 2.f, i == highlightedSlot );
+                DGCustomButton((std::string("##hudinvrowback") + std::to_string(i)).c_str(), DGButtonType::Good1, invTileDisplaySize, 1.f, i == highlightedSlot );
 
 
             }

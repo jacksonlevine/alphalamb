@@ -1991,8 +1991,11 @@ int main()
             particles->cleanUpOldParticles(deltaTime);
 
             profiler.checkTime("Cleanup old particles");
+            if (currentGuiScreen == GuiScreen::InGame)
+            {
+                theScene.hud->draw();
+            }
 
-            theScene.hud->draw();
             profiler.checkTime("Draw hud");
 
         } else

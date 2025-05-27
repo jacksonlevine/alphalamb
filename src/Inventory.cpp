@@ -132,10 +132,12 @@ void imguiInventory(Inventory& inv)
     ImGui::SetNextWindowSize(ImVec2(backgroundSize.x - (backgroundSize.x*0.4f), backgroundSize.y - (backgroundSize.y*0.4f)));
     //ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
+
+
     ImGui::Begin("Background", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar
                                         | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar );
 
-        ImGui::BeginChild("##invinlay");
+        ImGui::BeginGroup();
             for (int j = 0; j < INVHEIGHT; j++)
             {
                 for (int i = 0; i < INVWIDTH; i++)
@@ -223,11 +225,20 @@ void imguiInventory(Inventory& inv)
                 }
                 ImGui::NewLine();
             }
-        ImGui::EndChild();
+        ImGui::EndGroup();
+
+
+
         ImGui::SameLine(0.0f, 0.0f);
-        ImGui::BeginChild("##playerview");
-            ImGui::Text("Player View");
+
+        ImGui::BeginGroup();
+            auto curspos = ImGui::GetCursorPos();
+            ImGui::SetCursorPos(curspos);
             draw2DBillboard(ImVec2(300, 300), 70.0f);
-        ImGui::EndChild();
+
+        ImGui::EndGroup();
+
+
+
     ImGui::End();
 }
