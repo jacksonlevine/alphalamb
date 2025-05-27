@@ -95,7 +95,7 @@ std::vector<float> generateSubdividedQuad(int divisions)
     return vertices;
 }
 
-void DrawCustomButtonBackground(ImVec2& pos, const ImVec2& size, DGButtonType type)
+void DrawCustomButtonBackground(const ImVec2& pos, const ImVec2& size, DGButtonType type, float scaleFromCenter, bool forceHighlight)
 {
 
     ImVec2 windowStart = ImGui::GetWindowPos();
@@ -209,14 +209,23 @@ void main()
     // Get the screen dimensions (in pixels)
     ImVec2 screenSize = ImGui::GetIO().DisplaySize;
 
+    // Apply scaling to size
+    ImVec2 scaledSize = ImVec2(size.x * scaleFromCenter, size.y * scaleFromCenter);
+
+    // Calculate the size difference for centering adjustment
+    ImVec2 sizeDiff = ImVec2(scaledSize.x - size.x, scaledSize.y - size.y);
+
+    // Adjust position to center the scaling
+    ImVec2 adjustedPos = ImVec2(pos.x - sizeDiff.x * 0.5f, pos.y - sizeDiff.y * 0.5f);
+
     // Convert ImGui pixel coordinates to NDC
     ImVec2 ndcPos;
-    ndcPos.x = (pos.x / screenSize.x) * 2.0f - 1.0f; // Convert X to NDC
-    ndcPos.y = 1.0f - (pos.y / screenSize.y) * 2.0f; // Convert Y to NDC (flip Y-axis)
+    ndcPos.x = (adjustedPos.x / screenSize.x) * 2.0f - 1.0f; // Convert X to NDC
+    ndcPos.y = 1.0f - (adjustedPos.y / screenSize.y) * 2.0f; // Convert Y to NDC (flip Y-axis)
 
     ImVec2 ndcSize;
-    ndcSize.x = (size.x / screenSize.x) * 2.0f; // Convert width to NDC
-    ndcSize.y = (size.y / screenSize.y) * 2.0f; // Convert height to NDC
+    ndcSize.x = (scaledSize.x / screenSize.x) * 2.0f; // Convert width to NDC
+    ndcSize.y = (scaledSize.y / screenSize.y) * 2.0f; // Convert height to NDC
 
     ndcPos.y -= ndcSize.y;
 
@@ -231,10 +240,16 @@ void main()
     glUniform2f(posUniform, ndcPos.x, ndcPos.y);
     glUniform2f(sizeUniform, ndcSize.x, ndcSize.y);
 
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) || forceHighlight)
     {
         glUniform1f(timeUni, glfwGetTime() * 8.0f);
-        glUniform1f(brightUni, 1.1f);
+
+        if (forceHighlight)
+        {
+            glUniform1f(brightUni, 1.6f);
+        } else {
+            glUniform1f(brightUni, 1.1f);
+        }
     } else
     {
 
@@ -262,7 +277,8 @@ void main()
         glDisable(GL_DEPTH_TEST);
 }
 
-bool DGCustomButton(const char* label, DGButtonType type, const ImVec2& size_arg)
+bool DGCustomButton(const char* label, DGButtonType type, const ImVec2& size_arg, float scaleFromCenter, bool forceHighlight, bool
+                    noResizeForLabelLength)
 {
 
     ImGuiStyle& style = ImGui::GetStyle();
@@ -281,15 +297,22 @@ bool DGCustomButton(const char* label, DGButtonType type, const ImVec2& size_arg
 
     float scale = imguiio->FontGlobalScale;
 
-    if (size_arg.x * scale < label_size.x)
-        realsizex = (label_size.x + 100) / scale;
+    if (!noResizeForLabelLength)
+    {
+        if (size_arg.x * scale < label_size.x)
+            realsizex = (label_size.x + 100) / scale;
+    }
+
 
 
     // Calculate button size (respecting FramePadding)
+
     ImVec2 size = ImVec2(
         realsizex > 0.0f ? realsizex : label_size.x + style.FramePadding.x * 2.0f,
         size_arg.y > 0.0f ? size_arg.y : label_size.y + style.FramePadding.y * 2.0f
     );
+
+
 
     size = ImVec2(size.x * scale, size.y * scale);
 
@@ -300,9 +323,8 @@ bool DGCustomButton(const char* label, DGButtonType type, const ImVec2& size_arg
     ImGui::InvisibleButton(label, size);
 
     bool clicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
-
     // Draw your custom background
-    DrawCustomButtonBackground(pos, size, type);
+    DrawCustomButtonBackground(pos, size, type, scaleFromCenter, forceHighlight);
 
     // Position text CORRECTLY (match standard Button alignment)
     ImVec2 text_pos = ImVec2(
@@ -684,7 +706,7 @@ void renderImGui()
 
             ImVec2 screenSize = ImGui::GetIO().DisplaySize;
 
-            ImVec2 invTileDisplaySize = ImVec2((screenSize.x / 40.0f), (screenSize.x / 40.0f)); // Size of displayed image
+            ImVec2 invTileDisplaySize = ImVec2(50, 50); // Size of displayed image
 
 
             ImVec2 startInvRow = ImVec2((screenSize.x / 2.f) - ((invTileDisplaySize.x + 20.0f) * 5.f)/2.f, screenSize.y - (screenSize.y / 20.0f));
@@ -696,27 +718,29 @@ void renderImGui()
             int highlightedSlot = (int)theScene.our<InventoryComponent>().currentHeldInvIndex;
 
             for (int i = 0; i < 5; i++) {
-                ImVec2 start = startInvRow + ImVec2(i * ((screenSize.x / 40.0f) + 20.0f), 0);
+                ImVec2 start = startInvRow + ImVec2(i * (invTileDisplaySize.x + 20.0f), 0);
                 ImGui::SetCursorPos(start);
 
-                if(i == highlightedSlot) {
-                    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(start.x - 10.0f, start.y - 10.0f), ImVec2(start.x + invTileDisplaySize.x + 10.0f,
-                         start.y + invTileDisplaySize.x + 10.0f), IM_COL32_WHITE);
-                }
+                // if(i == highlightedSlot) {
+                //     ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(start.x - 5.0f, start.y - 5.0f), ImVec2(start.x + invTileDisplaySize.x + 5.0f,
+                //          start.y + invTileDisplaySize.x + 5.0f), ImColor(ImVec4(1.0, 1.0, 1.0, 0.2)));
+                // }
 
                 const auto tex = TEXS.at(inv.inventory.inventory[i].block).at(0);
                 TextureFace face(tex.first, tex.second);
 
                 ImGui::Image((ImTextureID)theScene.worldtex, invTileDisplaySize, ImVec2(face.bl.x, face.bl.y), ImVec2(face.tr.x, face.tr.y));
 
+                if (inv.inventory.inventory[i].count > 0)
+                {
+                    ImGui::SetCursorPos(start);
+
+                    ImGui::Text(std::to_string(inv.inventory.inventory[i].count).c_str());
+                }
 
                 ImGui::SetCursorPos(start);
 
-                ImGui::Text(std::to_string(inv.inventory.inventory[i].count).c_str());
-
-                ImGui::SetCursorPos(start);
-
-                DGCustomButton((std::string("##hudinvrowback") + std::to_string(i)).c_str(), DGButtonType::Good1, invTileDisplaySize);
+                DGCustomButton((std::string("##hudinvrowback") + std::to_string(i)).c_str(), DGButtonType::Good1, invTileDisplaySize, 2.f, i == highlightedSlot );
 
 
             }

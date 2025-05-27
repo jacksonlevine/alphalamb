@@ -56,7 +56,7 @@ jl::Shader getBasicShader()
             uniform float dewyFogFactor;
             uniform vec3 fogCol;
             uniform float underwater;
-
+            uniform float dewyFogAmount;
 
 
             float mDist(float x1, float y1, float x2, float y2) {
@@ -147,11 +147,11 @@ jl::Shader getBasicShader()
                 // Override fog with clearFactor (fog-free radius)
                 fogFactor *= clearFactor;
 
-                float dff = max(overridingDewyFogFactor, dewyFogFactor);
+                float dff = max(overridingDewyFogFactor, dewyFogFactor) * dewyFogAmount;
                 fogFactor *= dff;
 
                 // Set fog color
-                fogColor = vec4(fogCol.xyz, 1.0);
+                fogColor = vec4(fogCol.xyz  * ambientBrightness, 1.0);
                 if(underwater > 0.5f) {
                     fogColor = vec4(vec3(0.2, 0.2, 0.8) * ambientBrightness, 1.0);
                     fogFactor = smoothstep(1.0, 15.0, horizDist);

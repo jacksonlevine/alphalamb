@@ -48,9 +48,10 @@ constexpr int BUTTONDIVS = 10;
 
 std::vector<float> generateSubdividedQuad(int divisions);
 
-void DrawCustomButtonBackground(ImVec2& pos, const ImVec2& size, DGButtonType type);
+void DrawCustomButtonBackground(const ImVec2& pos, const ImVec2& size, DGButtonType type, float scaleFromCenter, bool forceHighlight);
 
-bool DGCustomButton(const char* label, DGButtonType type = DGButtonType::Good1, const ImVec2& size_arg = ImVec2(300, 70));
+bool DGCustomButton(const char* label, DGButtonType type = DGButtonType::Good1, const ImVec2& size_arg = ImVec2(300, 70), float
+                    scaleFromCenter = 1.0, bool forceHighlight = false, bool noResizeForLabelLength = false);
 
 void initializeImGui(GLFWwindow* window);
 

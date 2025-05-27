@@ -8,7 +8,7 @@
 #include "ImGuiStuff.h"
 #include "Texture.h"
 #include "TextureFace.h"
-
+#include "DrawBillboard2D.h"
 void imguiInventory(Inventory& inv)
 {
     // static bool testset = false;
@@ -25,7 +25,7 @@ void imguiInventory(Inventory& inv)
 
     ImVec2 backgroundSize = ImVec2(screenSize.x * 0.75f, screenSize.y* 0.75f);
 
-    ImVec2 invTileDisplaySize = ImVec2((screenSize.x / 40.0f), (screenSize.x / 40.0f)); // Size of displayed image
+    ImVec2 invTileDisplaySize = ImVec2(50, 50); // Size of displayed image
 
 
     ImVec2 pos = ImVec2((screenSize.x - backgroundSize.x) * 0.5f, (screenSize.y - backgroundSize.y) * 0.5f);
@@ -135,93 +135,99 @@ void imguiInventory(Inventory& inv)
     ImGui::Begin("Background", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar
                                         | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar );
 
-
-    for (int j = 0; j < INVHEIGHT; j++)
-    {
-        for (int i = 0; i < INVWIDTH; i++)
-        {
-            int index = j*INVWIDTH + i;
-            ImGui::PushID(index);
-            if (i > 0) ImGui::SameLine();
-
-
-            auto cursorspot = ImGui::GetCursorPos();
-
-            auto& slot = inv.getSlot(i, j);
-            std::string label = slot.empty() ? std::string("##inv") + std::to_string(index)  : "  " + std::to_string(slot.count);
-
-            ImGui::SetCursorPos(cursorspot);
-
-            const auto tex = TEXS.at(inv.inventory[index].block).at(0);
-            TextureFace face(tex.first, tex.second);
-
-            ImGui::Image((ImTextureID)theScene.worldtex, invTileDisplaySize, ImVec2(face.bl.x, face.bl.y), ImVec2(face.tr.x, face.tr.y));
-
-            ImGui::SetCursorPos(cursorspot);
-
-            bool isEquip = Inventory::isEquipSlot(i,j);
-            bool mouseHeldItemEquippable = equippable(static_cast<ItemName>(inv.mouseHeldItem.block));
-
-
-            //
-            // if (isEquip)
-            // {
-            //     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0,0.3,0.3,0.7));
-            // }
-
-            auto bt = isEquip ? DGButtonType::Bad1 : DGButtonType::Good1;
-
-            if (DGCustomButton(label.c_str(), bt, ImVec2(50,50)))
+        ImGui::BeginChild("##invinlay");
+            for (int j = 0; j < INVHEIGHT; j++)
             {
-                if (slot.block == inv.mouseHeldItem.block && slot.block != 0 && inv.mouseHeldItem.block != 0)
+                for (int i = 0; i < INVWIDTH; i++)
                 {
-                    pushToMainToNetworkQueue(RequestStackSlotsToDest{
-                        .sourceID = theScene.settings.clientUID, .destinationID = theScene.settings.clientUID, .myPlayerIndex = theScene.myPlayerIndex,
-                        .sourceIndex = 0, .destinationIndex = (uint8_t)inv.getIndex(i, j), .mouseSlotS = true, .mouseSlotD = false});
+                    int index = j*INVWIDTH + i;
+                    ImGui::PushID(index);
+                    if (i > 0) ImGui::SameLine(0.f, 0.f);
 
-                } else
-                {
-                    bool validswap = true;
-                    if (isEquip && !mouseHeldItemEquippable)
+
+                    auto cursorspot = ImGui::GetCursorPos();
+
+                    auto& slot = inv.getSlot(i, j);
+                    std::string label = slot.empty() ? std::string("##inv") + std::to_string(index)  : "  " + std::to_string(slot.count);
+
+                    ImGui::SetCursorPos(cursorspot);
+
+                    const auto tex = TEXS.at(inv.inventory[index].block).at(0);
+                    TextureFace face(tex.first, tex.second);
+
+                    ImGui::Image((ImTextureID)theScene.worldtex, invTileDisplaySize, ImVec2(face.bl.x, face.bl.y), ImVec2(face.tr.x, face.tr.y));
+
+                    ImGui::SetCursorPos(cursorspot);
+
+                    bool isEquip = Inventory::isEquipSlot(i,j);
+                    bool mouseHeldItemEquippable = equippable(static_cast<ItemName>(inv.mouseHeldItem.block));
+
+
+                    //
+                    // if (isEquip)
+                    // {
+                    //     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0,0.3,0.3,0.7));
+                    // }
+
+                    auto bt = isEquip ? DGButtonType::Bad1 : DGButtonType::Good1;
+
+                    if (DGCustomButton(label.c_str(), bt, invTileDisplaySize, 1.f, false, true))
                     {
-                        validswap = false;
+                        if (slot.block == inv.mouseHeldItem.block && slot.block != 0 && inv.mouseHeldItem.block != 0)
+                        {
+                            pushToMainToNetworkQueue(RequestStackSlotsToDest{
+                                .sourceID = theScene.settings.clientUID, .destinationID = theScene.settings.clientUID, .myPlayerIndex = theScene.myPlayerIndex,
+                                .sourceIndex = 0, .destinationIndex = (uint8_t)inv.getIndex(i, j), .mouseSlotS = true, .mouseSlotD = false});
+
+                        } else
+                        {
+                            bool validswap = true;
+                            if (isEquip && !mouseHeldItemEquippable)
+                            {
+                                validswap = false;
+                            }
+                            if (validswap)
+                            {
+                                //std::cout << "Heyoo" << std::endl;
+                                pushToMainToNetworkQueue(RequestInventorySwap{
+                                .sourceID = theScene.settings.clientUID, .destinationID = theScene.settings.clientUID, .myPlayerIndex = theScene.myPlayerIndex,
+                                .sourceIndex = 0, .destinationIndex = (uint8_t)inv.getIndex(i, j), .mouseSlotS = true, .mouseSlotD = false});
+
+                                // auto mouseslot = inv.mouseHeldItem;
+                                // inv.mouseHeldItem = slot;
+                                // slot = mouseslot;
+                            }
+                        }
+
                     }
-                    if (validswap)
+
+                    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
                     {
-                        //std::cout << "Heyoo" << std::endl;
-                        pushToMainToNetworkQueue(RequestInventorySwap{
-                        .sourceID = theScene.settings.clientUID, .destinationID = theScene.settings.clientUID, .myPlayerIndex = theScene.myPlayerIndex,
-                        .sourceIndex = 0, .destinationIndex = (uint8_t)inv.getIndex(i, j), .mouseSlotS = true, .mouseSlotD = false});
-
-                        // auto mouseslot = inv.mouseHeldItem;
-                        // inv.mouseHeldItem = slot;
-                        // slot = mouseslot;
+                        if (isEquip && !mouseHeldItemEquippable) {
+                            ImGui::SetTooltip("Cannot equip this item.");
+                        } else if (isEquip && mouseHeldItemEquippable && inv.mouseHeldItem.block != 0) {
+                            ImGui::SetTooltip("Equip this item.");
+                        } else if (!slot.empty()) {
+                            if (slot.isItem) {
+                                ImGui::SetTooltip(ToString(static_cast<ItemName>(slot.block)));
+                            } else {
+                                ImGui::SetTooltip(ToString(static_cast<MaterialName>(slot.block)));
+                            }
+                        }
                     }
+                    // if (isEquip)
+                    // {
+                    //     ImGui::PopStyleColor();
+                    // }
+                    ImGui::PopID();
                 }
-
+                ImGui::NewLine();
             }
-
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-            {
-                if (isEquip && !mouseHeldItemEquippable) {
-                    ImGui::SetTooltip("Cannot equip this item.");
-                } else if (isEquip && mouseHeldItemEquippable && inv.mouseHeldItem.block != 0) {
-                    ImGui::SetTooltip("Equip this item.");
-                } else if (!slot.empty()) {
-                    if (slot.isItem) {
-                        ImGui::SetTooltip(ToString(static_cast<ItemName>(slot.block)));
-                    } else {
-                        ImGui::SetTooltip(ToString(static_cast<MaterialName>(slot.block)));
-                    }
-                }
-            }
-            // if (isEquip)
-            // {
-            //     ImGui::PopStyleColor();
-            // }
-            ImGui::PopID();
-        }
-        ImGui::NewLine();
-    }
+        ImGui::EndChild();
+        ImGui::SameLine(0.0f, 0.0f);
+        ImGui::BeginChild("##playerview");
+            ImGui::Text("Player View");
+            draw2DBillboard(ImVec2(300, 300), 70.0f);
+        ImGui::EndChild();
     ImGui::End();
 }
