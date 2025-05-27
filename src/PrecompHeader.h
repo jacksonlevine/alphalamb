@@ -63,6 +63,10 @@
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
 #include <boost/pool/pool_alloc.hpp>
+#include <boost/container/pmr/memory_resource.hpp>
+#include <boost/container/pmr/monotonic_buffer_resource.hpp>
+#include <boost/container/pmr/unsynchronized_pool_resource.hpp>
+#include <boost/container/pmr/polymorphic_allocator.hpp>
 extern GLuint lutTexture;
 
 

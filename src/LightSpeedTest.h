@@ -10,5 +10,4 @@
 #include "Light.h"
 #include "world/worldgenmethods/OverworldWorldGenMethod.h"
 
-void lighttest();
 #endif //LIGHTSPEEDTEST_H

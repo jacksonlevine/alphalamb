@@ -133,31 +133,51 @@ struct LightSpot {
 };
 
 
-using InnerPoolAlloc = boost::pool_allocator<
-    std::pair<const jl484_vec3, LightSpot>,
-    boost::default_user_allocator_new_delete,
-    boost::details::pool::default_mutex,
-    256,
-    0
->;
+extern std::unique_ptr<std::vector<std::byte>> lmbuffer;
+extern std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> lmpool;
 
-using InnerMapType = boost::unordered_map<jl484_vec3, LightSpot, jl484_vec3_hash, std::equal_to<>, InnerPoolAlloc>;
+extern std::unique_ptr<std::vector<std::byte>> generatedChunksOnServerBuffer;
+extern std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> gcspool;
 
-using OuterPoolAlloc = boost::pool_allocator<
-    std::pair<const TwoIntTup, InnerMapType>,
-    boost::default_user_allocator_new_delete,
-    boost::details::pool::default_mutex,
-    64,
-    0
->;
+extern std::unique_ptr<std::vector<std::byte>> almbuffer;
+extern std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> almpool;
+inline void initialize_buffers() {
+    lmbuffer = std::make_unique<std::vector<std::byte>>((size_t)2000 * 1024 * 1024);
+    lmpool = std::make_unique<boost::container::pmr::monotonic_buffer_resource>(
+        lmbuffer->data(), lmbuffer->size());
 
-using OuterMapType = boost::unordered_map<TwoIntTup, InnerMapType, TwoIntTupHash, std::equal_to<>, OuterPoolAlloc>;
+    almbuffer = std::make_unique<std::vector<std::byte>>((size_t)3000 * 1024 * 1024);
+    almpool = std::make_unique<boost::container::pmr::monotonic_buffer_resource>(
+        almbuffer->data(), almbuffer->size());
+
+    generatedChunksOnServerBuffer = std::make_unique<std::vector<std::byte>>((size_t)1000 * 1024 * 1024);
+    gcspool = std::make_unique<boost::container::pmr::monotonic_buffer_resource>(
+        generatedChunksOnServerBuffer->data(), generatedChunksOnServerBuffer->size());
+}
+using pmrthingtype = boost::container::pmr::polymorphic_allocator<std::pair<const jl484_vec3, LightSpot>>;
+
+
+
+using InnerMapType = boost::unordered_map<jl484_vec3, LightSpot, jl484_vec3_hash, std::equal_to<>, pmrthingtype>;
+using OuterMapType = boost::unordered_map<TwoIntTup, InnerMapType, TwoIntTupHash>;
+
+
+
+
+
+
 
 class NewLightMapType
 {
 
+private:
+    boost::container::pmr::memory_resource* resource;
 public:
     OuterMapType lm;
+
+    NewLightMapType(boost::container::pmr::memory_resource* res)
+    : resource(res) {}
+
     std::optional<LightSpot*> get(const IntTup& t)
     {
         auto loc = worldToChunkLocalPos(t);

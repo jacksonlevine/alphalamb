@@ -7,6 +7,21 @@
 #include "world/WorldRenderer.h"
 boost::sync_queue<TwoIntTup> lightOverlapNotificationQueue = {};
 
+
+
+std::unique_ptr<std::vector<std::byte>> lmbuffer;
+std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> lmpool;
+
+
+std::unique_ptr<std::vector<std::byte>> almbuffer;
+std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> almpool;
+
+
+std::unique_ptr<std::vector<std::byte>> generatedChunksOnServerBuffer;
+std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> gcspool;
+
+
+
 ChunkLightSources getChunkLightSourcesBlockAndAmbient(
     const TwoIntTup& spot, World* world, int chunkw, int chunkh,
     bool locked)

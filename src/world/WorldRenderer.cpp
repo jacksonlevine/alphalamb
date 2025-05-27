@@ -14,8 +14,8 @@
 std::atomic<int> NUM_THREADS_RUNNING = 0;
 
 
-LightMapType ambientlightmap = {};
-LightMapType lightmap = {};
+LightMapType ambientlightmap = {almpool.get()};
+LightMapType lightmap = {lmpool.get()};
 std::shared_mutex lightmapMutex = {};
 tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare> litChunks;
 

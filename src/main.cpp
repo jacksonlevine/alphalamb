@@ -680,6 +680,7 @@ int main()
 {
 
     scratchMemory = _aligned_malloc(scratchMemorySize, 16);
+    initialize_buffers();
 
     StepTimerProfiler<false> profiler;
 
@@ -791,8 +792,6 @@ int main()
     theScene.vmStampGizmo = vms;
 
     //theScene.gizmos.push_back(vms);
-
-    lighttest();
 
     for(auto & gizmo : theScene.gizmos)
     {
