@@ -851,7 +851,16 @@ int main()
     theScene.worldtex = worldTex.id;
 
     while (!glfwWindowShouldClose(window)) {
-
+        static float THINGTIMER = 0.f;
+        if (THINGTIMER >= 10.f)
+        {
+            std::cout << "Activechunks bcount: " << theScene.worldRenderer->activeChunks.bucket_count() << std::endl;
+            //std::cout << "MBTactivechunks bcount: " << theScene.worldRenderer->mbtActiveChunks.bucket_count() << std::endl;
+            THINGTIMER -= 10.f;
+        } else
+        {
+            THINGTIMER += deltaTime;
+        }
         {
             std::string temp;
             std::string output_str = theScene.pythonContext.g_output.str();

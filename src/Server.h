@@ -90,6 +90,8 @@ class Session : public std::enable_shared_from_this<Session>
 public:
     std::weak_ptr<flatCposSet> generatedChunks;
 
+
+
     explicit Session(std::shared_ptr<tcp::socket> socket, std::shared_ptr<flatCposSet> generatedChunks)
     : m_socket(std::move(socket)), m_playerIndex(entt::null), generatedChunks(generatedChunks) { }
 
@@ -97,6 +99,9 @@ public:
         sayInitialThings();
     }
 private:
+
+    std::pmr::synchronized_pool_resource m_pool;
+    std::pmr::polymorphic_allocator<DGMessage> m_alloc;
 
     void sayInitialThings()
     {
@@ -237,7 +242,7 @@ private:
 
 //std::cout << "now starting \n";
 
-            auto m_message = std::make_shared<DGMessage>();
+            auto m_message = std::allocate_shared<DGMessage>(m_alloc);
 
     boost::asio::async_read(*m_socket, boost::asio::buffer(m_message.get(), sizeof(DGMessage)),
         [this, self, m_message](const boost::system::error_code& ec, std::size_t /*length*/) {
