@@ -486,6 +486,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
         std::cout << "Restarting this process" << std::endl;
 
+
         std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
 
         static TwoIntTup lastplayercpos = TwoIntTup(0, 0);

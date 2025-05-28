@@ -17,8 +17,8 @@ std::unique_ptr<std::vector<std::byte>> almbuffer;
 std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> almpool;
 
 
-std::unique_ptr<std::vector<std::byte>> generatedChunksOnServerBuffer;
-std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> gcspool;
+std::shared_ptr<std::vector<std::byte>> generatedChunksOnServerBuffer;
+std::shared_ptr<boost::container::pmr::monotonic_buffer_resource> gcspool;
 
 
 

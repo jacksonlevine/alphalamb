@@ -802,11 +802,18 @@ private:
 class Server {
 public:
 
-    std::shared_ptr<flatCposSet> generatedChunks = std::make_shared<flatCposSet>(FlatCposSetPoolAllocator<TwoIntTup>{gcspool.get()});
+    FlatCposSetPoolAllocator<TwoIntTup> alloc = {gcspool.get()};
+
+    std::shared_ptr<flatCposSet> generatedChunks = std::make_shared<flatCposSet>();
+
+
+
+
+
     Server(boost::asio::io_context& io_context, short port) : m_acceptor(io_context, tcp::endpoint(tcp::v4(), port)) {
         serverWorld.setSeed(DGSEEDSEED);
         loadDM("serverworld.txt", &serverWorld, serverReg, serverWorld.blockAreas, serverWorld.placedVoxModels, nullptr, nullptr, "savedReg.bin");
-
+        auto g = gcspool.get();
         if (serverReg.view<WorldState>().empty())
         {
             auto e= serverReg.create();

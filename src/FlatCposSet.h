@@ -9,22 +9,46 @@
 
 template<typename T>
 class FlatCposSetPoolAllocator {
-    std::pmr::memory_resource* resource_;
 public:
     using value_type = T;
 
-    FlatCposSetPoolAllocator(std::pmr::memory_resource* r) : resource_(r) {}
+    FlatCposSetPoolAllocator() noexcept : resource_(nullptr) {}
 
-    T* allocate(size_t n) {
+    FlatCposSetPoolAllocator(boost::container::pmr::memory_resource* r) noexcept : resource_(r) {}
+
+    template <class U>
+    FlatCposSetPoolAllocator(const FlatCposSetPoolAllocator<U>& other) noexcept
+        : resource_(other.resource_) {}
+
+    T* allocate(std::size_t n) {
         return static_cast<T*>(resource_->allocate(n * sizeof(T), alignof(T)));
     }
 
-    void deallocate(T* p, size_t n) {
+    void deallocate(T* p, std::size_t n) noexcept {
         resource_->deallocate(p, n * sizeof(T), alignof(T));
     }
+
+    template <class U>
+    struct rebind {
+        using other = FlatCposSetPoolAllocator<U>;
+    };
+
+    // Required for TBB's allocator use
+    using is_always_equal = std::false_type;
+
+    boost::container::pmr::memory_resource* resource_ = nullptr;
 };
 
-using flatCposSet = tbb::concurrent_unordered_set<TwoIntTup, TwoIntTupHash, std::equal_to<TwoIntTup>, FlatCposSetPoolAllocator<TwoIntTup>>;
+// Comparison operators
+template <typename T, typename U>
+bool operator==(const FlatCposSetPoolAllocator<T>& a, const FlatCposSetPoolAllocator<U>& b) noexcept {
+    return a.resource_ == b.resource_;
+}
+template <typename T, typename U>
+bool operator!=(const FlatCposSetPoolAllocator<T>& a, const FlatCposSetPoolAllocator<U>& b) noexcept {
+    return !(a == b);
+}
 
+using flatCposSet = tbb::concurrent_unordered_set<TwoIntTup, TwoIntTupHash, std::equal_to<TwoIntTup>, FlatCposSetPoolAllocator<TwoIntTup>>;
 
 #endif //FLATCPOSSET_H

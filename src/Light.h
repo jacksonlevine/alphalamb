@@ -136,8 +136,8 @@ struct LightSpot {
 extern std::unique_ptr<std::vector<std::byte>> lmbuffer;
 extern std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> lmpool;
 
-extern std::unique_ptr<std::vector<std::byte>> generatedChunksOnServerBuffer;
-extern std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> gcspool;
+extern std::shared_ptr<std::vector<std::byte>> generatedChunksOnServerBuffer;
+extern std::shared_ptr<boost::container::pmr::monotonic_buffer_resource> gcspool;
 
 extern std::unique_ptr<std::vector<std::byte>> almbuffer;
 extern std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> almpool;
@@ -150,8 +150,8 @@ inline void initialize_buffers() {
     almpool = std::make_unique<boost::container::pmr::monotonic_buffer_resource>(
         almbuffer->data(), almbuffer->size());
 
-    generatedChunksOnServerBuffer = std::make_unique<std::vector<std::byte>>((size_t)1000 * 1024 * 1024);
-    gcspool = std::make_unique<boost::container::pmr::monotonic_buffer_resource>(
+    generatedChunksOnServerBuffer = std::make_shared<std::vector<std::byte>>((size_t)1000 * 1024 * 1024);
+    gcspool = std::make_shared<boost::container::pmr::monotonic_buffer_resource>(
         generatedChunksOnServerBuffer->data(), generatedChunksOnServerBuffer->size());
 }
 using pmrthingtype = boost::container::pmr::polymorphic_allocator<std::pair<const jl484_vec3, LightSpot>>;
