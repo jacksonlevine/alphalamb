@@ -682,6 +682,10 @@ int main()
     scratchMemory = _aligned_malloc(scratchMemorySize, 16);
     initialize_buffers();
 
+
+    ambientlightmap = {almpool.get(), almpoolouter.get()};
+    lightmap = {lmpool.get(), lmpoolouter.get()};
+
     StepTimerProfiler<false> profiler;
 
     glfwInit();

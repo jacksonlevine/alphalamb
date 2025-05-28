@@ -139,8 +139,17 @@ extern std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> lmpool;
 extern std::shared_ptr<std::vector<std::byte>> generatedChunksOnServerBuffer;
 extern std::shared_ptr<boost::container::pmr::monotonic_buffer_resource> gcspool;
 
+
+extern std::unique_ptr<std::vector<std::byte>> lmbufferouter;
+extern std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> lmpoolouter;
+
+
+extern std::unique_ptr<std::vector<std::byte>> almbufferouter;
+extern std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> almpoolouter;
+
 extern std::unique_ptr<std::vector<std::byte>> almbuffer;
 extern std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> almpool;
+
 inline void initialize_buffers() {
     lmbuffer = std::make_unique<std::vector<std::byte>>((size_t)2000 * 1024 * 1024);
     lmpool = std::make_unique<boost::container::pmr::monotonic_buffer_resource>(
@@ -150,16 +159,27 @@ inline void initialize_buffers() {
     almpool = std::make_unique<boost::container::pmr::monotonic_buffer_resource>(
         almbuffer->data(), almbuffer->size());
 
-    generatedChunksOnServerBuffer = std::make_shared<std::vector<std::byte>>((size_t)1000 * 1024 * 1024);
+    lmbufferouter = std::make_unique<std::vector<std::byte>>((size_t)2000 * 1024 * 1024);
+    lmpoolouter = std::make_unique<boost::container::pmr::monotonic_buffer_resource>(
+        lmbufferouter->data(), lmbufferouter->size());
+
+    almbufferouter = std::make_unique<std::vector<std::byte>>((size_t)3000 * 1024 * 1024);
+    almpoolouter = std::make_unique<boost::container::pmr::monotonic_buffer_resource>(
+        almbufferouter->data(), almbufferouter->size());
+
+    generatedChunksOnServerBuffer = std::make_shared<std::vector<std::byte>>((size_t)128 * 1024 * 1024);
     gcspool = std::make_shared<boost::container::pmr::monotonic_buffer_resource>(
         generatedChunksOnServerBuffer->data(), generatedChunksOnServerBuffer->size());
 }
-using pmrthingtype = boost::container::pmr::polymorphic_allocator<std::pair<const jl484_vec3, LightSpot>>;
+
+
+using InnerMapAlloc = boost::container::pmr::polymorphic_allocator<std::pair<const jl484_vec3, LightSpot>>;
+using InnerMapType = boost::unordered_map<jl484_vec3, LightSpot, jl484_vec3_hash, std::equal_to<>, InnerMapAlloc>;
 
 
 
-using InnerMapType = boost::unordered_map<jl484_vec3, LightSpot, jl484_vec3_hash, std::equal_to<>, pmrthingtype>;
-using OuterMapType = boost::unordered_map<TwoIntTup, InnerMapType, TwoIntTupHash>;
+using OuterMapAlloc = boost::container::pmr::polymorphic_allocator<std::pair<const TwoIntTup, InnerMapType>>;
+using OuterMapType = boost::unordered_map<TwoIntTup, InnerMapType, TwoIntTupHash, std::equal_to<>, OuterMapAlloc>;
 
 
 
@@ -171,12 +191,13 @@ class NewLightMapType
 {
 
 private:
+    boost::container::pmr::memory_resource* outerresource;
     boost::container::pmr::memory_resource* resource;
 public:
     OuterMapType lm;
-
-    NewLightMapType(boost::container::pmr::memory_resource* res)
-    : resource(res) {}
+    NewLightMapType() {}
+    NewLightMapType(boost::container::pmr::memory_resource* res, boost::container::pmr::memory_resource* res2)
+    : resource(res),  outerresource(res2), lm(OuterMapAlloc(outerresource)) {}
 
     std::optional<LightSpot*> get(const IntTup& t)
     {
@@ -200,7 +221,8 @@ public:
         auto loc = worldToChunkLocalPos(t);
         auto chunkPos = world3ToChunkPos(t);
 
-        lm[chunkPos].insert_or_assign(loc, spot);
+        auto [it, inserted] = lm.try_emplace(chunkPos, InnerMapType(InnerMapAlloc(resource)));
+        it->second.insert_or_assign(loc, spot);
     }
 
     void erase(const IntTup& t)
