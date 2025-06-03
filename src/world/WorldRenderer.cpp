@@ -368,7 +368,10 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
             modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
             if (buffer.from == std::nullopt)
             {
-                activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex));
+                if (!activeChunks.contains(buffer.to))
+                {
+                    activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex, 0.f));
+                }
 
             }
             else
@@ -484,7 +487,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
         static int persistenceDenominator = 8;
 
-        std::cout << "Restarting this process" << std::endl;
+        //std::cout << "Restarting this process" << std::endl;
 
 
         std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
@@ -608,7 +611,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                         {
 
 
-                            mesh = fromChunk(chunk, world, chunkSize, false, true);
+                            mesh = fromChunk(chunk, world, false, true);
                             //I think have to do light pass for generation implicated chunks because they put new blocks there
 
 
@@ -617,7 +620,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                         size_t changeBufferIndex = -1;
                         {
                             std::unique_lock<std::mutex> lock(mbtBufferMutex);
-                            mbtBufferCV.wait(lock, [&]() {
+                            mbtBufferCV.wait(lock, [this, &changeBufferIndex]() {
                                 bool popped = freedChangeBuffers.pop(changeBufferIndex);
                                                     if (popped)
                                                     {
@@ -705,7 +708,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                 size_t changeBufferIndex = -1;
                                 {
                                     std::unique_lock<std::mutex> lock(mbtBufferMutex);
-                                    mbtBufferCV.wait(lock, [&]() {
+                                    mbtBufferCV.wait(lock, [this, &changeBufferIndex]() {
                                         bool popped = freedChangeBuffers.pop(changeBufferIndex);
                                                     if (popped)
                                                     {
@@ -740,7 +743,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                                     auto& buffer = changeBuffers[changeBufferIndex];
                                     buffer.in_use.store(true, std::memory_order_release);
-                                    buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
+                                    buffer.mesh = fromChunk(spotHere, world, false);
 
                                     buffer.chunkIndex = addUninitializedChunkBuffer();
                                    // std::cout << "Giving new buffer " << buffer.chunkIndex << std::endl;
@@ -796,11 +799,11 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                                     for (const auto& [oldDistance, oldSpot] : chunksWithDistances)
                                     {
-                                        //If the place we're going will afford a shorter distance from player, choose this one.
-                                        int newDistance = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
-
-                                        if (newDistance < (oldDistance-2)) //add some epsilon or range so it stops grabbing chunks from the edge of valid-chunk-range & leaving holes
-                                        {
+                                        // //If the place we're going will afford a shorter distance from player, choose this one.
+                                        // int newDistance = abs(spotHere.x - cpcp.x) + abs(spotHere.z - cpcp.z);
+                                        //
+                                        // if (newDistance < (oldDistance-2)) //add some epsilon or range so it stops grabbing chunks from the edge of valid-chunk-range & leaving holes
+                                        // {
                                             size_t chunkIndex = mbtActiveChunks.at(oldSpot).chunkIndex;
                                             //
                                             // std::chrono::high_resolution_clock::time_point time = std::chrono::high_resolution_clock::now();
@@ -808,7 +811,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
                                             size_t changeBufferIndex = -1;
                                             {
                                                 std::unique_lock<std::mutex> lock(mbtBufferMutex);
-                                                mbtBufferCV.wait(lock, [&]() {
+                                                mbtBufferCV.wait(lock, [this, &changeBufferIndex]() {
                                                     bool popped = freedChangeBuffers.pop(changeBufferIndex);
                                                     if (popped)
                                                     {
@@ -847,7 +850,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
                                                 auto& buffer = changeBuffers[changeBufferIndex];
 
-                                                buffer.mesh = fromChunk(spotHere, world, chunkSize, false);
+                                                buffer.mesh = fromChunk(spotHere, world, false);
 
                                                 buffer.chunkIndex = chunkIndex;
                                                 buffer.from = oldSpot;
@@ -874,7 +877,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
 
                                             break;
-                                        }
+                                        //}
 
                                     }
                                 }
@@ -1096,10 +1099,10 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
                             if (request.queueLightpassImplicated)
                             {
-                                mesh = fromChunk(request.chunkPos, world, chunkSize, lightpass);
+                                mesh = fromChunk(request.chunkPos, world, lightpass);
                             } else
                             {
-                                mesh = fromChunk<false>(request.chunkPos, world, chunkSize, false, lightpass);
+                                mesh = fromChunk<false>(request.chunkPos, world, false, lightpass);
                             }
 
 
@@ -1110,7 +1113,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                         size_t changeBufferIndex = -1;
                         {
                             std::unique_lock<std::mutex> lock(bufferMutex);
-                            bufferCV.wait(lock, [&]() {
+                            bufferCV.wait(lock, [this, &changeBufferIndex]() {
 
 
                                 bool popped = freedUserChangeMeshBuffers.pop(changeBufferIndex);
@@ -1131,7 +1134,7 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                             buffer.in_use.store(true, std::memory_order_release);
                             buffer.mesh = std::move(mesh);
                             buffer.chunkIndex = request.chunkIndex;
-                            buffer.from = request.chunkPos;
+                            buffer.from = std::nullopt;
                             buffer.to = request.chunkPos;
                             buffer.ready.store(true, std::memory_order_release);
                             buffer.in_use.store(false, std::memory_order_release);
@@ -1243,6 +1246,9 @@ void WorldRenderer::clearInFlightMeshUpdates()
     freedUserChangeMeshBuffers.consume_all([](auto){});
     rebuildToMainAreaNotifications.consume_all([](auto){});
     confirmedActiveChunksQueue.consume_all([](auto){});
+    removeTheseFromMBTAC.consume_all([](auto){});
+    generatedChunks.clear();
+    litChunks.clear();
 
     // for (int i = 0; i < changeBuffers.size(); i++)
     // {
@@ -1258,13 +1264,13 @@ void WorldRenderer::clearInFlightMeshUpdates()
 
 
 
-UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool light)
+UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool light)
 {
-    return fromChunk(spot, world, chunkSize, false, light);
+    return fromChunk(spot, world, false, light);
 }
-UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize, bool light)
+UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, bool light)
 {
-    return fromChunk(spot, world, chunkSize, true, light);
+    return fromChunk(spot, world, true, light);
 }
 
 //#define MEASURE_CHUNKREB

@@ -855,16 +855,16 @@ int main()
     theScene.worldtex = worldTex.id;
 
     while (!glfwWindowShouldClose(window)) {
-        static float THINGTIMER = 0.f;
-        if (THINGTIMER >= 10.f)
-        {
-            std::cout << "Activechunks bcount: " << theScene.worldRenderer->activeChunks.bucket_count() << std::endl;
-            //std::cout << "MBTactivechunks bcount: " << theScene.worldRenderer->mbtActiveChunks.bucket_count() << std::endl;
-            THINGTIMER -= 10.f;
-        } else
-        {
-            THINGTIMER += deltaTime;
-        }
+        // static float THINGTIMER = 0.f;
+        // if (THINGTIMER >= 10.f)
+        // {
+        //     std::cout << "Activechunks bcount: " << theScene.worldRenderer->activeChunks.bucket_count() << std::endl;
+        //     //std::cout << "MBTactivechunks bcount: " << theScene.worldRenderer->mbtActiveChunks.bucket_count() << std::endl;
+        //     THINGTIMER -= 10.f;
+        // } else
+        // {
+        //     THINGTIMER += deltaTime;
+        // }
         {
             std::string temp;
             std::string output_str = theScene.pythonContext.g_output.str();
@@ -1165,7 +1165,7 @@ int main()
 
 
 
-                visit([&](const auto& m) {
+                visit([](const auto& m) {
                     using T = std::decay_t<decltype(m)>;
                     if constexpr (std::is_same_v<T, WorldInfo>) {
                         // std::cout << "Got world info " << m.seed << " \n"
@@ -1208,7 +1208,7 @@ int main()
                         {
                             theScene.addPlayerWithIndex(m.myPlayerIndex, m.id);
                         }
-                        theScene.REG.patch<Controls>(m.myPlayerIndex, [&](auto &cont){ cont = m.myControls; });
+                        theScene.REG.patch<Controls>(m.myPlayerIndex, [&m](auto &cont){ cont = m.myControls; });
                         //theScene.players.at(m.myPlayerIndex)->controls = m.myControls;
 
                         //theScene.players.at(m.myPlayerIndex)->camera.transform.position = m.startPos;
@@ -1241,7 +1241,7 @@ int main()
                     {
                         if(theScene.REG.valid(m.myPlayerIndex))
                         {
-                            theScene.REG.patch<InventoryComponent>(m.myPlayerIndex, [&](InventoryComponent & inv)
+                            theScene.REG.patch<InventoryComponent>(m.myPlayerIndex, [&m](InventoryComponent & inv)
                             {
                                 inv.currentHeldInvIndex = m.newMaterial;
                             });
@@ -1487,7 +1487,7 @@ int main()
                                     if(theScene.REG.valid(msg.playerIndex))
                                     {
                                         std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-                                        theScene.REG.patch<InventoryComponent>(msg.playerIndex, [&](InventoryComponent & inv)
+                                        theScene.REG.patch<InventoryComponent>(msg.playerIndex, [&msg](InventoryComponent & inv)
                                         {
                                             try
                                             {

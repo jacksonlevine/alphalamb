@@ -30,7 +30,7 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
 
                 //std::cout << " Got somethng \n";
 
-                visit([&](const auto& m) {
+                visit([&socket](const auto& m) {
                     using T = std::decay_t<decltype(m)>;
                     if constexpr (std::is_same_v<T, WorldInfo>) {
 

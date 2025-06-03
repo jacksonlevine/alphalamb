@@ -252,7 +252,7 @@ private:
                 bool excludeyou = false;
 
                 //std::cout << "got something, visiting \n";
-                visit([&](auto& m) {
+                visit([this, &redistrib, &excludeyou](auto& m) {
                     using T = std::decay_t<decltype(m)>;
                     if constexpr (std::is_same_v<T, WorldInfo>) {
 
@@ -286,7 +286,7 @@ private:
                         //         }
                         //     }
                         // }
-                        boost::asio::post(localserver_io_context->get_executor(), [&, m_playerIndex = m_playerIndex, m](){
+                        boost::asio::post(localserver_io_context->get_executor(), [m_playerIndex = m_playerIndex, m](){
                             {
                                 std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
                                 auto & c = serverReg.get<jl::Camera>(m_playerIndex);
@@ -313,10 +313,10 @@ private:
                     else if constexpr (std::is_same_v<T, PlayerSelectBlockChange>) {
                         //std::cout << "Got selectblockchange \n";
 
-                        boost::asio::post(localserver_io_context->get_executor(), [&, m_playerIndex = m_playerIndex, m](){
+                        boost::asio::post(localserver_io_context->get_executor(), [m_playerIndex = m_playerIndex, m](){
                             {
                                 std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-                                serverReg.patch<InventoryComponent>(m_playerIndex, [&](InventoryComponent & inv)
+                                serverReg.patch<InventoryComponent>(m_playerIndex, [&clientsLock, &m](InventoryComponent & inv)
                                 {
                                     inv.currentHeldInvIndex = m.newMaterial;
                                 });
@@ -339,11 +339,11 @@ private:
                             msg = m;
                         }
 
-                        boost::asio::post(localserver_io_context->get_executor(), [&, m_playerIndex = m_playerIndex, msg](){
+                        boost::asio::post(localserver_io_context->get_executor(), [m_playerIndex = m_playerIndex, msg](){
                             {
                                 std::cout << "Got Deplete on server" << std::endl;
                                 std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
-                                serverReg.patch<InventoryComponent>(msg.playerIndex, [&](InventoryComponent & inv)
+                                serverReg.patch<InventoryComponent>(msg.playerIndex, [&msg, m_playerIndex](InventoryComponent & inv)
                                 {
                                     try
                                     {
@@ -562,7 +562,7 @@ private:
                     else if constexpr (std::is_same_v<T, VoxModelStamp>)
                     {
 
-                        boost::asio::post(localserver_io_context->get_executor(), [&,m_playerIndex =  m_playerIndex, m](){
+                        boost::asio::post(localserver_io_context->get_executor(), [m_playerIndex =  m_playerIndex, m](){
 
 
                             auto v = PlacedVoxModel {
@@ -628,7 +628,7 @@ private:
                     {
                         //We now, in the interest of freeing up this session to be always available, will not be able to decide here whether to redistrib.
                         //So we will redistrib no matter what, and do this simple validity check on the client as well
-                        boost::asio::post(localserver_io_context->get_executor(), [&, m_playerIndex = m_playerIndex, m](){
+                        boost::asio::post(localserver_io_context->get_executor(), [m_playerIndex = m_playerIndex, m](){
                             clientsMutex.lock();
                             if (serverReg.valid(m.lootDrop) && serverReg.valid(m.myPlayerIndex))
                             {
@@ -649,7 +649,7 @@ private:
                         redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, BulkBlockSet>) {
-                        boost::asio::post(localserver_io_context->get_executor(), [&, m](){
+                        boost::asio::post(localserver_io_context->get_executor(), [m](){
 
                             auto b = BlockArea{m.corner1, m.corner2, m.block, m.hollow};
 

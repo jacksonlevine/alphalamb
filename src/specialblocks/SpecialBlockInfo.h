@@ -34,7 +34,7 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<f
 
     if (transparents.test(block))
     {
-        auto transformed =  cwtriangles | std::views::transform([&](const PxVec3& v) {
+        auto transformed =  cwtriangles | std::views::transform([&offset](const PxVec3& v) {
             auto newv = v;
             return newv + offset;
         }) | std::ranges::to<std::vector>();
@@ -70,7 +70,7 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<f
 
     } else
     {
-        auto transformed =  cwtriangles | std::views::transform([&](const PxVec3& v) {
+        auto transformed =  cwtriangles | std::views::transform([&offset](const PxVec3& v) {
              auto newv = v;
              return newv + offset;
          }) | std::ranges::to<std::vector>();

@@ -274,7 +274,7 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
         glDrawElementsInstanced(mglo.drawmode, mglo.indexcount, mglo.indextype, nullptr, lootDisplayInstances.size());
 
 
-        std::erase_if(physicsbodies, [&](const auto& pair) {
+        std::erase_if(physicsbodies, [&reg](const auto& pair) {
             return !reg.valid(pair.first);
         });
 
@@ -285,7 +285,7 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
     if(dropsatspots.contains(blockspot))
     {
         auto & bp = dropsatspots.at(blockspot);
-        std::erase_if(bp, [&](entt::entity ent)
+        std::erase_if(bp, [&reg](entt::entity ent)
         {
             return !reg.valid(ent);
         });

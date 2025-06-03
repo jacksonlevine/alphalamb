@@ -159,11 +159,11 @@ inline static PxU32 cwindices[6] = {
 
 
 template<bool queueimplics = true>
-UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked, bool light);
+UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool light);
 
-UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool light = false);
+UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool light = false);
 
-UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, int chunkSize, bool light = false);
+UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, bool light = false);
 
 
 struct UsedChunkInfo
@@ -283,20 +283,23 @@ public:
                 modifyOrInitializeChunkIndex(i, sgl, mesh);
             }
         }
+
         chunkPoolSize.store(0, std::memory_order_release);
         activeChunks.clear();
         mbtActiveChunks.clear();
+
+        lightmapMutex.lock();
+            lightmap.lm.clear();
+            ambientlightmap.lm.clear();
+        lightmapMutex.unlock();
+
 
         clearInFlightMeshUpdates();
 
 
         launchThreads(camera, world);
 
-
-
-
     }
-
 
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
@@ -305,7 +308,7 @@ public:
     ///One way queue, from main thread to mesh building thread, to notify of freed Change Buffers
     boost::lockfree::spsc_queue<size_t, boost::lockfree::capacity<32>> freedChangeBuffers = {};
 
-    boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<128>> removeTheseFromMBTAC = {};
+    boost::lockfree::spsc_queue<TwoIntTup, boost::lockfree::capacity<32>> removeTheseFromMBTAC = {};
 
     ///A limited list of atomic "Change Buffers" that the mesh building thread can reserve and write to, and the main thread will "check its mail", do the necessary GL calls, and re-free the Change Buffers
     ///by adding its index to freeChangeBuffers.

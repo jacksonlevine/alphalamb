@@ -16,7 +16,7 @@
 ///Queueimplics = default true, whether to queue chunks implicated by light pass for rebuild
 
 template<bool queueimplics>
-UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool locked, bool light)
+UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool light)
 {
 #ifdef MEASURE_CHUNKREB
     auto startt = std::chrono::high_resolution_clock::now();
@@ -29,9 +29,9 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
     UsableMesh mesh;
     PxU32 index = 0;
     PxU32 tindex = 0;
-
+    constexpr int chunkSize = 16;
     IntTup start(spot.x * chunkSize, spot.z * chunkSize);
-    int chunkHeight = 250;
+    constexpr int chunkHeight = 250;
 
     // Cache chunk data and transparency
     std::vector<BlockType> chunkData(chunkSize * chunkSize * chunkHeight, AIR);
@@ -247,7 +247,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
         litChunks.insert({spot, true});
     }
 
-    auto getBlock = [&](int x, int y, int z) -> BlockType {
+    auto getBlock = [&start,locked,&world, &chunkData](int x, int y, int z) -> BlockType {
         if (x < 0 || x >= chunkSize || y < 0 || y >= chunkHeight || z < 0 || z >= chunkSize) {
             IntTup pos = start + IntTup(x, y, z);
             return !locked ? world->getRaw(pos) : world->getRawLocked(pos);
@@ -256,7 +256,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
         return chunkData[idx];
     };
 
-    auto isBlockTransparent = [&](int x, int y, int z) -> bool {
+    auto isBlockTransparent = [&start, locked, &world, &isTransparent](int x, int y, int z) -> bool {
         if (x < 0 || x >= chunkSize || y < 0 || y >= chunkHeight || z < 0 || z >= chunkSize) {
             IntTup pos = start + IntTup(x, y, z);
             BlockType block = !locked ? world->getRaw(pos) : world->getRawLocked(pos);
