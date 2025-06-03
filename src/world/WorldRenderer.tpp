@@ -38,14 +38,10 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
     std::vector<bool> isTransparent(chunkSize * chunkSize * chunkHeight, true);
 
     // Light source collections (only used if light = true)
-    static std::vector<std::pair<IntTup, ColorPack>> oldBlockSources;
-    static std::vector<std::pair<IntTup, ColorPack>> newBlockSources;
-    static std::vector<std::pair<IntTup, ColorPack>> oldAmbientSources;
-    static std::vector<std::pair<IntTup, ColorPack>> newAmbientSources;
-    oldBlockSources.clear();
-    newBlockSources.clear();
-    oldAmbientSources.clear();
-    newAmbientSources.clear();
+    std::vector<std::pair<IntTup, ColorPack>> oldBlockSources;
+    std::vector<std::pair<IntTup, ColorPack>> newBlockSources;
+    std::vector<std::pair<IntTup, ColorPack>> oldAmbientSources;
+    std::vector<std::pair<IntTup, ColorPack>> newAmbientSources;
 
     // Track blocks to process for meshing
     std::vector<std::tuple<int, int, int>> blocksToMesh;

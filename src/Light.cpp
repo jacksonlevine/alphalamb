@@ -264,7 +264,7 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, ColorPack>>
                     if (val->deleteRay(originhash)) {
                         visited[idx] = true;
                         layers[level + 1].emplace_back( neighbor, origin );
-                        setLightLevelFromOriginHere(neighbor, origin, ColorPack(0, 0, 0), lightmap);
+                        //setLightLevelFromOriginHere(neighbor, origin, ColorPack(0, 0, 0), lightmap); Not needed?
                         if (implicatedChunks) {
                             TwoIntTup chunkPos = WorldRenderer::stupidWorldRendererWorldToChunkPos(TwoIntTup(neighbor.x, neighbor.z));
                             if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
