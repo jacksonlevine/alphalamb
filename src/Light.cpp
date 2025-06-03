@@ -183,21 +183,39 @@ void propagateAllLightsLayered(World* world,
                 if (!transparents.test(world->getLocked(neighbor))) continue;
 
                 visited[idx] = true;
-                // Reduce all RGB components by 1
-                ColorPack newColor = color - 1;
-                // Only propagate if newColor has non-zero components
-                if (newColor.r() > 0 || newColor.g() > 0 || newColor.b() > 0) {
-                    int newLayer = std::max({ newColor.r(), newColor.g(), newColor.b() });
-                    layers[newLayer].push_back({ neighbor, source, newColor });
-                    setLightLevelFromOriginHere<true>(neighbor, source, newColor, lightmap);
 
-                    if (implicatedChunks) {
-                        TwoIntTup chunkPos = WorldRenderer::stupidWorldRendererWorldToChunkPos(TwoIntTup(neighbor.x, neighbor.z));
-                        if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
-                            implicatedChunks->insert(chunkPos);
+                //IF THE NEIGHBOR HAS NO NON-AIR/NON-TRULYNOTHING NEIGHBORS FUCK IT
+                bool NEIGHBORHASATLEASTONESOLIDNEIGHBOR = false;
+                for(const auto& newneigh : neighbs)
+                {
+                    IntTup neighneigh = neighbor + newneigh;
+                    if (!trulynothing.test(world->getLocked(neighneigh)))
+                    {
+                        NEIGHBORHASATLEASTONESOLIDNEIGHBOR = true;
+                        break;
+                    }
+                }
+
+                if(NEIGHBORHASATLEASTONESOLIDNEIGHBOR)
+                {
+                    // Reduce all RGB components by 1
+                    ColorPack newColor = color - 1;
+                    // Only propagate if newColor has non-zero components
+                    if (newColor.r() > 0 || newColor.g() > 0 || newColor.b() > 0) {
+                        int newLayer = std::max({ newColor.r(), newColor.g(), newColor.b() });
+                        layers[newLayer].push_back({ neighbor, source, newColor });
+                        setLightLevelFromOriginHere<true>(neighbor, source, newColor, lightmap);
+
+                        if (implicatedChunks) {
+                            TwoIntTup chunkPos = WorldRenderer::stupidWorldRendererWorldToChunkPos(TwoIntTup(neighbor.x, neighbor.z));
+                            if (chunkPos != TwoIntTup(chunkOrigin.x, chunkOrigin.z)) {
+                                implicatedChunks->insert(chunkPos);
+                            }
                         }
                     }
                 }
+
+                
             }
         }
         layers[level].clear();

@@ -235,7 +235,7 @@ if(button == GLFW_MOUSE_BUTTON_RIGHT)
                                     pushToMainToNetworkQueue(BlockSetAndDepleteSlot{
                                     .blockSet = setblock, .deplete = deplete});
 
-                                    std::cout << "Pushing deplete \n";
+                                   // std::cout << "Pushing deplete \n";
 
                                 }
                             }
@@ -992,7 +992,7 @@ int main()
                                 .spot = spot, .block = AIR, .pp = glm::vec3(0.f)
                              };
 
-                            std::cout << "This happens" << std::endl;
+                            //std::cout << "This happens" << std::endl;
                             auto ald = AddLootDrop{};
                             ald.lootDrop = LootDrop{theScene.lastBlockAtCursor, 1};
                             ald.spot = glm::vec3(spot.x,spot.y,spot.z) + glm::vec3(0.5, 0.5, 0.5);
@@ -1180,7 +1180,7 @@ int main()
                     }
                     else if constexpr (std::is_same_v<T, AddLootDrop>)
                     {
-                        std::cout << "Adding loot drop on client at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
+                        //std::cout << "Adding loot drop on client at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
                         auto newe = makeLootDrop(theScene.REG, m.lootDrop, m.spot, m.newEntityName);
                     }
                     else if constexpr (std::is_same_v<T, PickUpLootDrop>)
@@ -1458,7 +1458,7 @@ int main()
                             if (msg.addLootDrop != std::nullopt)
                             {
                                 auto m = msg.addLootDrop.value();
-                                std::cout << "Adding loot drop on client at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
+                                //std::cout << "Adding loot drop on client at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
                                 auto newe = makeLootDrop(theScene.REG, m.lootDrop, m.spot, m.newEntityName);
                             }
 

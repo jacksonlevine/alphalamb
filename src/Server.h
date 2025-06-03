@@ -341,7 +341,7 @@ private:
 
                         boost::asio::post(localserver_io_context->get_executor(), [m_playerIndex = m_playerIndex, msg](){
                             {
-                                std::cout << "Got Deplete on server" << std::endl;
+                               // std::cout << "Got Deplete on server" << std::endl;
                                 std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
                                 serverReg.patch<InventoryComponent>(msg.playerIndex, [&msg, m_playerIndex](InventoryComponent & inv)
                                 {
@@ -546,7 +546,7 @@ private:
                         if (msg.addLootDrop != std::nullopt)
                         {
                             auto & ald = msg.addLootDrop.value();
-                            std::cout << "Adding loot drop on server at " << ald.spot.x << " " << ald.spot.y << " " << ald.spot.z << std::endl;
+                            //std::cout << "Adding loot drop on server at " << ald.spot.x << " " << ald.spot.y << " " << ald.spot.z << std::endl;
                             clientsMutex.lock();
 
                             auto newe = makeLootDrop(serverReg, ald.lootDrop, ald.spot);
@@ -614,7 +614,7 @@ private:
                     }
                     else if constexpr (std::is_same_v<T, AddLootDrop>)
                     {
-                        std::cout << "Adding loot drop on server at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
+                        //td::cout << "Adding loot drop on server at " << m.spot.x << " " << m.spot.y << " " << m.spot.z << std::endl;
                         clientsMutex.lock();
 
                         auto newe = makeLootDrop(serverReg, m.lootDrop, m.spot);

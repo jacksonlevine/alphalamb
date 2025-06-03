@@ -125,6 +125,8 @@ constexpr auto liquids = makeBitset({WATER});
 
 constexpr auto noColl = makeBitset({WATER});
 
+constexpr auto trulynothing = makeBitset({AIR});
+
 constexpr auto transparents = makeBitset({
     AIR,
     DG_COMPUTERBLOCK,
