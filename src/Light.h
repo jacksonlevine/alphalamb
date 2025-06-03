@@ -43,17 +43,17 @@ public:
 
     constexpr ColorPack operator+(const ColorPack& other) const {
         return ColorPack(
-            std::clamp<int>(r() + other.r(), 0, 15),
-            std::clamp<int>(g() + other.g(), 0, 15),
-            std::clamp<int>(b() + other.b(), 0, 15)
+            std::clamp<int>((int)r() + (int)other.r(), 0, 15),
+            std::clamp<int>((int)g() + (int)other.g(), 0, 15),
+            std::clamp<int>((int)b() + (int)other.b(), 0, 15)
         );
     }
 
     constexpr ColorPack operator-(const ColorPack& other) const {
         return ColorPack(
-            std::clamp<int>(r() - other.r(), 0, 15),
-            std::clamp<int>(g() - other.g(), 0, 15),
-            std::clamp<int>(b() - other.b(), 0, 15)
+            std::clamp<int>((int)r() - (int)other.r(), 0, 15),
+            std::clamp<int>((int)g() - (int)other.g(), 0, 15),
+            std::clamp<int>((int)b() - (int)other.b(), 0, 15)
         );
     }
 
@@ -69,17 +69,17 @@ public:
 
     constexpr ColorPack operator-(int value) const {
         return ColorPack(
-            std::clamp<int>(r() - value, 0, 15),
-            std::clamp<int>(g() - value, 0, 15),
-            std::clamp<int>(b() - value, 0, 15)
+            std::clamp<int>((int)r() - (int)value, 0, 15),
+            std::clamp<int>((int)g() - (int)value, 0, 15),
+            std::clamp<int>((int)b() - (int)value, 0, 15)
         );
     }
 
     constexpr ColorPack operator+(int value) const {
         return ColorPack(
-            std::clamp<int>(r() + value, 0, 15),
-            std::clamp<int>(g() + value, 0, 15),
-            std::clamp<int>(b() + value, 0, 15)
+            std::clamp<int>((int)r() + (int)value, 0, 15),
+            std::clamp<int>((int)g() + (int)value, 0, 15),
+            std::clamp<int>((int)b() + (int)value, 0, 15)
         );
     }
 
@@ -109,24 +109,51 @@ constexpr ColorPack TORCHLIGHTVAL = ColorPack(0, 0, 15);
 
 struct LightRay
 {
-    uint16_t originhash;
+    uint16_t originhash = 0;
     ColorPack level;
 };
 
-using LightRayPoolAlloc = boost::pool_allocator<
-    LightRay,
-    boost::default_user_allocator_new_delete,
-    boost::details::pool::default_mutex,
-    64
->;
 
-struct LightSpot {
-    boost::container::vector<LightRay> rays;
+struct LightSpot
+{
+    std::array<uint16_t, 16> originhashes = {};
+    std::array<ColorPack, 16> colorpacks = {};
+    uint8_t count : 5;
+    void push_back(const LightRay& ray)
+    {
+        if (count < 16)
+        {
+            originhashes[count] = ray.originhash;
+            colorpacks[count] = ray.level;
+            count++;
+        }
+        //silently do nothing if not, no change necessary, brightness is at full .
+    }
+    ///Returns true if it deleted anything
+    bool deleteRay(uint16_t originhash)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            if (originhashes[i] == originhash)
+            {
+                //Shift everything after position i one position to the left
+                for (int j = i; j < count - 1; j++)
+                {
+                    originhashes[j] = originhashes[j + 1];
+                    colorpacks[j] = colorpacks[j + 1];
+                }
+                count--;
+                return true; //Exit after finding and removing the first match
+            }
+        }
+        return false;
+    }
 
     ColorPack sum() {
         ColorPack res = {};
-        for (auto ray : rays) {
-            res += ray.level;
+        for (int i = 0; i < count; ++i)
+        {
+            res += colorpacks[i];
         }
         return res;
     }
@@ -151,23 +178,23 @@ extern std::unique_ptr<std::vector<std::byte>> almbuffer;
 extern std::unique_ptr<boost::container::pmr::monotonic_buffer_resource> almpool;
 
 inline void initialize_buffers() {
-    lmbuffer = std::make_unique<std::vector<std::byte>>((size_t)2000 * 1024 * 1024);
+    lmbuffer = std::make_unique<std::vector<std::byte>>((size_t)50 * 1024 * 1024);
     lmpool = std::make_unique<boost::container::pmr::monotonic_buffer_resource>(
         lmbuffer->data(), lmbuffer->size());
 
-    almbuffer = std::make_unique<std::vector<std::byte>>((size_t)3000 * 1024 * 1024);
+    almbuffer = std::make_unique<std::vector<std::byte>>((size_t)50 * 1024 * 1024);
     almpool = std::make_unique<boost::container::pmr::monotonic_buffer_resource>(
         almbuffer->data(), almbuffer->size());
 
-    lmbufferouter = std::make_unique<std::vector<std::byte>>((size_t)2000 * 1024 * 1024);
+    lmbufferouter = std::make_unique<std::vector<std::byte>>((size_t)50 * 1024 * 1024);
     lmpoolouter = std::make_unique<boost::container::pmr::monotonic_buffer_resource>(
         lmbufferouter->data(), lmbufferouter->size());
 
-    almbufferouter = std::make_unique<std::vector<std::byte>>((size_t)3000 * 1024 * 1024);
+    almbufferouter = std::make_unique<std::vector<std::byte>>((size_t)50 * 1024 * 1024);
     almpoolouter = std::make_unique<boost::container::pmr::monotonic_buffer_resource>(
         almbufferouter->data(), almbufferouter->size());
 
-    generatedChunksOnServerBuffer = std::make_shared<std::vector<std::byte>>((size_t)128 * 1024 * 1024);
+    generatedChunksOnServerBuffer = std::make_shared<std::vector<std::byte>>((size_t)5 * 1024 * 1024);
     gcspool = std::make_shared<boost::container::pmr::monotonic_buffer_resource>(
         generatedChunksOnServerBuffer->data(), generatedChunksOnServerBuffer->size());
 }
@@ -280,51 +307,45 @@ void setLightLevelFromOriginHere(IntTup spot, IntTup origin, ColorPack value,
     auto lmentry = lightmap.get(spot);
     auto originhash = IntTupHash{}(origin, true);
     if (lmentry != std::nullopt) {
-        auto& rays = lmentry.value()->rays;
+        auto& ls = lmentry.value();
 
         if (value != 0) {
             bool originfound = false;
 
-            for (auto& ray : rays) {
-                if (ray.originhash == originhash) {
+            for (int i = 0; i < ls->count; i++) {
+                const auto oh = ls->originhashes[i];
+                if (oh == originhash) {
                     originfound = true;
                     if constexpr (ifHigher) {
-                        if (ray.level < value) {
-                            ray.level = value;
+                        if (ls->colorpacks[i] < value) {
+                            ls->colorpacks[i] = value;
                         }
                     }
                     else {
-                        ray.level = value;
+                        ls->colorpacks[i] = value;
                     }
                     break;
                 }
             }
             if (!originfound) {
-                rays.push_back(LightRay{
+                ls->push_back(LightRay{
                     .originhash = originhash, .level = value
                     });
             }
         }
         else {
-            rays.erase(
-                std::remove_if(
-                    rays.begin(),
-                    rays.end(),
-                    [originhash](const auto& ray) { return ray.originhash == originhash; }
-                ),
-                rays.end()
-            );
-            if (rays.empty()) {
+            ls->deleteRay(originhash);
+            if (ls->count == 0) {
                 lightmap.erase(spot);
             }
         }
     }
     else if (value != 0) { // Only add new entry if value != 0
-        lightmap.set(spot, LightSpot{});
-        auto & vec = lightmap.get(spot).value()->rays;
-        vec.push_back(LightRay{
+        auto lspot = LightSpot{};
+        lspot.push_back(LightRay{
             .originhash = originhash, .level = value
             });
+        lightmap.set(spot, lspot);
     }
 }
 

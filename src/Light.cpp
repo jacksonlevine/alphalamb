@@ -62,26 +62,23 @@ ChunkLightSources getChunkLightSourcesBlockAndAmbient(
                 {
                     chunkLightSources.push_back(std::make_pair(spott, TORCHLIGHTVAL));
                 }
-                auto lightspot = ambientlightmap.get(spott);
-                if (lightspot != std::nullopt)
-                {
-                    //std::cout << "rays count: " << lightspot->second.rays.size() << std::endl;
-                    for (const auto& ray : lightspot.value()->rays)
-                    {
-                        if (originhash == ray.originhash)
-                        {
-                            oldAmbientLightSources.push_back(std::make_pair(spott, SKYLIGHTVAL));
+                auto ambientSpot = ambientlightmap.get(spott);
+                if (ambientSpot != std::nullopt) {
+                    auto& val = ambientSpot.value();
+                    for (int i = 0; i < val->count; i++) {
+                        if (originhash == val->originhashes[i]) {
+                            oldAmbientLightSources.emplace_back(spott, SKYLIGHTVAL);
                         }
                     }
                 }
-                auto lightspot2 = lightmap.get(spott);
-                if (lightspot2 != std::nullopt)
-                {
-                    for (const auto& ray : lightspot2.value()->rays)
-                    {
-                        if (originhash == ray.originhash)
-                        {
-                            oldChunkLightSources.push_back(std::make_pair(spott, TORCHLIGHTVAL));
+
+                // Check block lightmap
+                auto blockSpot = lightmap.get(spott);
+                if (blockSpot != std::nullopt) {
+                    auto& val = blockSpot.value();
+                    for (int i = 0; i < val->count; i++) {
+                        if (originhash == val->originhashes[i]) {
+                            oldChunkLightSources.emplace_back(spott, TORCHLIGHTVAL);
                         }
                     }
                 }
@@ -262,20 +259,11 @@ void unpropagateAllLightsLayered(const std::vector<std::pair<IntTup, ColorPack>>
 
                 auto lmentry = lightmap.get(neighbor);
                 if (lmentry != std::nullopt) {
-                    auto& rays = lmentry.value()->rays;
-                    bool hasRay = false;
-                    for (auto it = rays.begin(); it != rays.end();) {
-                        if (it->originhash == originhash) {
-                            hasRay = true;
-                            it = rays.erase(it);
-                        }
-                        else {
-                            ++it;
-                        }
-                    }
-                    if (hasRay) {
+                    auto& val = lmentry.value();
+
+                    if (val->deleteRay(originhash)) {
                         visited[idx] = true;
-                        layers[level + 1].push_back({ neighbor, origin });
+                        layers[level + 1].emplace_back( neighbor, origin );
                         setLightLevelFromOriginHere(neighbor, origin, ColorPack(0, 0, 0), lightmap);
                         if (implicatedChunks) {
                             TwoIntTup chunkPos = WorldRenderer::stupidWorldRendererWorldToChunkPos(TwoIntTup(neighbor.x, neighbor.z));

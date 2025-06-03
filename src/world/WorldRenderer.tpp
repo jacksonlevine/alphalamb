@@ -38,10 +38,14 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
     std::vector<bool> isTransparent(chunkSize * chunkSize * chunkHeight, true);
 
     // Light source collections (only used if light = true)
-    std::vector<std::pair<IntTup, ColorPack>> oldBlockSources;
-    std::vector<std::pair<IntTup, ColorPack>> newBlockSources;
-    std::vector<std::pair<IntTup, ColorPack>> oldAmbientSources;
-    std::vector<std::pair<IntTup, ColorPack>> newAmbientSources;
+    static std::vector<std::pair<IntTup, ColorPack>> oldBlockSources;
+    static std::vector<std::pair<IntTup, ColorPack>> newBlockSources;
+    static std::vector<std::pair<IntTup, ColorPack>> oldAmbientSources;
+    static std::vector<std::pair<IntTup, ColorPack>> newAmbientSources;
+    oldBlockSources.clear();
+    newBlockSources.clear();
+    oldAmbientSources.clear();
+    newAmbientSources.clear();
 
     // Track blocks to process for meshing
     std::vector<std::tuple<int, int, int>> blocksToMesh;
@@ -84,15 +88,16 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         BlockType h = chunkData[idx];
                         auto originhash = IntTupHash{}(here, true);
                         if (h == LIGHT) {
-                            newBlockSources.push_back(std::make_pair(here, TORCHLIGHTVAL));
+                            newBlockSources.emplace_back(here, TORCHLIGHTVAL);
                         }
 
                         // Check ambient lightmap
                         auto ambientSpot = ambientlightmap.get(here);
                         if (ambientSpot != std::nullopt) {
-                            for (const auto& ray : ambientSpot.value()->rays) {
-                                if (originhash == ray.originhash) {
-                                    oldAmbientSources.push_back(std::make_pair(here, SKYLIGHTVAL));
+                            auto& val = ambientSpot.value();
+                            for (int i = 0; i < val->count; i++) {
+                                if (originhash == val->originhashes[i]) {
+                                    oldAmbientSources.emplace_back(here, SKYLIGHTVAL);
                                 }
                             }
                         }
@@ -100,9 +105,10 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         // Check block lightmap
                         auto blockSpot = lightmap.get(here);
                         if (blockSpot != std::nullopt) {
-                            for (const auto& ray : blockSpot.value()->rays) {
-                                if (originhash == ray.originhash) {
-                                    oldBlockSources.push_back(std::make_pair(here, TORCHLIGHTVAL));
+                            auto& val = blockSpot.value();
+                            for (int i = 0; i < val->count; i++) {
+                                if (originhash == val->originhashes[i]) {
+                                    oldBlockSources.emplace_back(here, TORCHLIGHTVAL);
                                 }
                             }
                         }
@@ -170,9 +176,10 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         // Check ambient lightmap
                         auto ambientSpot = ambientlightmap.get(here);
                         if (ambientSpot != std::nullopt) {
-                            for (const auto& ray : ambientSpot.value()->rays) {
-                                if (originhash == ray.originhash) {
-                                    oldAmbientSources.push_back(std::make_pair(here, SKYLIGHTVAL));
+                            auto& val = ambientSpot.value();
+                            for (int i = 0; i < val->count; i++) {
+                                if (originhash == val->originhashes[i]) {
+                                    oldAmbientSources.emplace_back(here, SKYLIGHTVAL);
                                 }
                             }
                         }
@@ -180,13 +187,13 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, int chunkSize, bool lo
                         // Check block lightmap
                         auto blockSpot = lightmap.get(here);
                         if (blockSpot != std::nullopt) {
-                            for (const auto& ray : blockSpot.value()->rays) {
-                                if (originhash == ray.originhash) {
-                                    oldBlockSources.push_back(std::make_pair(here, TORCHLIGHTVAL));
+                            auto& val = blockSpot.value();
+                            for (int i = 0; i < val->count; i++) {
+                                if (originhash == val->originhashes[i]) {
+                                    oldBlockSources.emplace_back(here, TORCHLIGHTVAL);
                                 }
                             }
                         }
-
                         // Ambient light source detection
                         if (h != AIR) {
                             if (!foundGround) {
