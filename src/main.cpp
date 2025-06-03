@@ -1745,7 +1745,19 @@ int main()
             glUniform1f(scaleLoc, 1.0f);
             glUniform1f( wcaLoc,0.0f );
             glUniform1f(uwloc, theScene.blockHeadIn == WATER ? 1.0f : 0.0f);
-            glUniform1f(dewyFogAmountLoc, theScene.world->worldGenMethod->getHumidityNoise(IntTup(glfwGetTime(), 0.f, 0.f)));
+
+
+            //FUCKING AY
+            static FastNoiseLite* thisnoise = new FastNoiseLite();
+            static bool initted = false;
+            if(!initted)
+            {
+                thisnoise->SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+                initted = true;
+            }
+
+
+            glUniform1f(dewyFogAmountLoc, thisnoise->GetNoise((float)glfwGetTime(), 0.f ,0.f));
 
             auto ourCam = theScene.our<jl::Camera>().transform.position;
             IntTup itspot(
