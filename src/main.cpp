@@ -1591,7 +1591,12 @@ int main()
                 }
                 for (auto& i : implicated)
                 {
-                    theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(i);
+                    auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::accessor();
+                    if(!lightOverlapsQueued.find(acc, i)) //this is about to be more thoroughly remeshed by the pending relight/remesh so fuck it
+                    {
+                        theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(i);
+                    }
+                    
                 }
 
             }
