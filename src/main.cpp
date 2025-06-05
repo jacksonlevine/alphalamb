@@ -1601,6 +1601,11 @@ int main()
             TwoIntTup popped;
             if (lightOverlapNotificationQueue.try_pull(popped) == boost::queue_op_status::success)
             {
+                auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::accessor();
+                if(lightOverlapsQueued.find(acc, spotHere))
+                {
+                    lightOverlapsQueued.erase(spotHere);
+                }
                 theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(popped, false);
             }
             profiler.checkTime("Light overlap notifs");

@@ -338,11 +338,18 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
             }
         }
     }
+    auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::accessor();
 
     // Queue implicated chunks (if lighting was performed)
     if (doLight && queueimplics) {
         for (const auto& spot2 : implicatedChunks) {
-            lightOverlapNotificationQueue.push(spot2);
+            //only push if its not already queued! (this may save lots of work)
+            if(!lightOverlapsQueued.find(acc, spot2))
+            {
+                lightOverlapNotificationQueue.push(spot2);
+                lightOverlapsQueued.insert({spot2, true});
+            }
+            
         }
     }
 
