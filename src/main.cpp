@@ -1607,9 +1607,9 @@ int main()
             if (lightOverlapNotificationQueue.try_pull(popped) == boost::queue_op_status::success)
             {
                 auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::accessor();
-                if(lightOverlapsQueued.find(acc, spotHere))
+                if(lightOverlapsQueued.find(acc, popped))
                 {
-                    lightOverlapsQueued.erase(spotHere);
+                    lightOverlapsQueued.erase(popped);
                 }
                 theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(popped, false);
             }
