@@ -203,13 +203,14 @@ public:
     int lastMaxChunks = maxChunks;
 
 
-    int currentMinDistance()
+    int currentMinDistance() const
     {
-        return currentRenderDistance + 1;
+        return std::round((float)currentRenderDistance * 1.4f) + 1;
     }
-    int currentMaxChunks()
+    int currentMaxChunks() const
     {
-        return (currentRenderDistance*2) * (currentRenderDistance*2);
+        int r = currentMinDistance();
+        return std::round(J_PI * r * r);
     }
 
 

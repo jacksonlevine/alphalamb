@@ -65,7 +65,6 @@ boost::asio::ip::tcp::resolver resolver(io_context);
 
 Scene theScene = {};
 
-constexpr double J_PI = 3.1415926535897932384626433832;
 constexpr double DEG_TO_RAD = J_PI / 180.0;
 GLuint lutTexture = 0;
 __inline float gaussian(float x, float peak, float radius) {

@@ -67,6 +67,8 @@
 #include <boost/container/pmr/monotonic_buffer_resource.hpp>
 #include <boost/container/pmr/unsynchronized_pool_resource.hpp>
 #include <boost/container/pmr/polymorphic_allocator.hpp>
+
+constexpr double J_PI = 3.1415926535897932384626433832;
 extern GLuint lutTexture;
 
 
