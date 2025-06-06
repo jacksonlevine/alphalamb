@@ -1618,7 +1618,12 @@ int main()
                 {
                     lightOverlapsQueued.erase(popped);
                 }
-                theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(popped, false);
+                auto chunkpos = world3ToChunkPos(IntTup(camera.transform.position.x, camera.transform.position.y, camera.transform.position.z));
+                if (std::abs(chunkpos.x - popped.x) + std::abs(chunkpos.z - popped.z) < theScene.worldRenderer->currentRenderDistance * 1.27)
+                {
+                    theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(popped, false);
+                }
+
             }
             profiler.checkTime("Light overlap notifs");
 
