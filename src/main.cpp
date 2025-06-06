@@ -1591,7 +1591,12 @@ int main()
                 }
                 for (auto& i : implicated)
                 {
-                    theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(i);
+                    auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor();
+                    if(!lightOverlapsQueued.find(acc, i)) //this is about to be more thoroughly remeshed by the pending relight/remesh so fuck it
+                    {
+                        theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(i);
+                    }
+                    
                 }
 
             }
@@ -1601,7 +1606,24 @@ int main()
             TwoIntTup popped;
             if (lightOverlapNotificationQueue.try_pull(popped) == boost::queue_op_status::success)
             {
-                theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(popped, false);
+                bool foundinLOQ = false;
+                {
+                    auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor();
+                    if(lightOverlapsQueued.find(acc, popped))
+                    {
+                        foundinLOQ = true;
+                    }
+                }
+                if (foundinLOQ)
+                {
+                    lightOverlapsQueued.erase(popped);
+                }
+                auto chunkpos = world3ToChunkPos(IntTup(camera.transform.position.x, camera.transform.position.y, camera.transform.position.z));
+                if (std::abs(chunkpos.x - popped.x) + std::abs(chunkpos.z - popped.z) < theScene.worldRenderer->currentRenderDistance * 1.27)
+                {
+                    theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(popped, false);
+                }
+
             }
             profiler.checkTime("Light overlap notifs");
 

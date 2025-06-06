@@ -10,8 +10,9 @@
 #include "PrecompHeader.h"
 #include "world/World.h"
 
-
-
+//struct Light
+extern boost::sync_queue<TwoIntTup> lightOverlapNotificationQueue;
+extern tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare> lightOverlapsQueued;
 
 
 class ColorPack {
@@ -100,8 +101,7 @@ private:
 
 
 
-//struct Light
-extern boost::sync_queue<TwoIntTup> lightOverlapNotificationQueue;
+
 
 
 constexpr ColorPack SKYLIGHTVAL = ColorPack(15, 15, 15);
