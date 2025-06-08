@@ -58,7 +58,7 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
 
     const MaterialName floorBlock = getFloorBlockInClimate(getClimate(spot));
 
-    static const MaterialName underDirt = STONE;
+    static const MaterialName underDirt = COBBLESTONE;
     static const MaterialName surface = floorBlock;
     static const MaterialName underSurface = DIRT;
     static const MaterialName liquid = WATER;
@@ -198,7 +198,7 @@ float OverworldWorldGenMethod::getTemperatureNoise(const IntTup& spot)
 
 float OverworldWorldGenMethod::getNoiseMix(float x, float y, float z)
 {
-    return (noise.GetNoise(x,y-20,z)*0.5) + (noise.GetNoise(x*3.0f, y*3.0f, z*3.0f) * 0.5f);
+    return (noise.GetNoise(x*0.1f,y-40,z*0.1f)*0.7) + (noise.GetNoise(x*2.0f, y*3.0f, z*2.0f) * 0.3f);
 
 }
 

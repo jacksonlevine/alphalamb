@@ -1169,7 +1169,10 @@ void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std:
     {
         auto offset1 = ((float)rand() / RAND_MAX);
         auto offset2 = ((float)rand() / RAND_MAX);
-        if (rand() > 15000)
+        auto therand = rand();
+        auto thechange = world->worldGenMethod->getTemperatureNoise(IntTup(chunkSpot.x * 16, 60, chunkSpot.z * 16)) * -100000;
+        //std::cout << thechange << std::endl;
+        if (therand > 15000 + thechange)
         {
             int y = 50;
             float offsetNoise = world->worldGenMethod->getHumidityNoise(IntTup(chunkSpot.x, chunkSpot.z)) * 5.0f;

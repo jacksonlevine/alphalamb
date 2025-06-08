@@ -215,6 +215,7 @@ add_executable(DistantGarden
         src/components/Factories.h
         src/EntityWithNameAdder.h
         src/FlatCposSet.h
+        src/components/StormyCloud.h
 )
 
 

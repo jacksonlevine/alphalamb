@@ -6,6 +6,7 @@
 #define SKY_H
 #include "Camera.h"
 #include "Shader.h"
+
 inline void drawSky(glm::vec4 top, glm::vec4 bot, float ambBrightness, jl::Camera* camera, GLuint lut, glm::vec3 fogColor, float
                     dewyFogFactor) {
     // Sky
@@ -59,7 +60,9 @@ uniform vec3 fogColor;
 
                     vec4 botColor = mix(bot_color * vec4(brightMult, brightMult, brightMult, 1.0f), sunrisecol, (similarity(camDir, east)) * sunrise);
                     botColor = mix(botColor, sunsetcol, (similarity(camDir, west)) * sunset);
-                    frag_color = mix(botColor, top_color * vec4(brightMult, brightMult, brightMult, 1.0f), max(min(pow(v_uv.y-0.4, 1.0), 1.0), 0.0));
+                    float horizonOffset = clamp(camDir.y * 0.5, -0.5, 0.5);
+                    float blendY = clamp(v_uv.y + horizonOffset, 0.0, 1.0);
+                    frag_color = mix(botColor, top_color * vec4(brightMult), blendY);
 
                     // Calculate camHeightFog based on camera Y position
                     float maxFogHeight = 120.0; // Fog starts at y=120

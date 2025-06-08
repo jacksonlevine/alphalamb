@@ -9,6 +9,7 @@
 
 
 entt::entity makeLootDrop(entt::registry& registry, LootDrop drop, glm::vec3 position, entt::entity useThisName = entt::null);
+entt::entity makeStormyCloud(entt::registry& reg, glm::vec3 position, entt::entity useThisName = entt::null);
 
 
 
