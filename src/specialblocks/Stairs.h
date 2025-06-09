@@ -43,13 +43,13 @@ template <MaterialName stairMaterial>
 void addStairs(UsableMesh& mesh, BlockType block, IntTup position, PxU32& index, PxU32& tindex)
 {
     // Base half-slab vertices
-    static std::vector<float> baseHalfSlabBrightnesses = {
-        0.6f,
-        0.5f,
-        0.7f,
-        0.8f,
-        1.0f,
-        0.5f
+    static std::vector<ColorPack> baseHalfSlabBrightnesses = {
+        ColorPack((uint8_t)9u),
+        ColorPack((uint8_t)8u),
+        ColorPack((uint8_t)13u),
+        ColorPack((uint8_t)14u),
+        ColorPack((uint8_t)15u),
+        ColorPack((uint8_t)7u),
     };
     static std::vector<PxVec3> baseHalfSlab = {
         // Front
@@ -88,12 +88,15 @@ void addStairs(UsableMesh& mesh, BlockType block, IntTup position, PxU32& index,
         PxVec3(1.0f, 0.0f, 1.0f),
         PxVec3(0.0f, 0.0f, 1.0f),
     };
-    static std::vector<float> topBackXBrightnesses = {
-        0.6f,
-        0.7f,
-        0.6f,
-        0.8f,
-        1.0f
+    static std::vector<ColorPack> topBackXBrightnesses = {
+        ColorPack((uint8_t)8),
+    ColorPack((uint8_t)9),
+    ColorPack((uint8_t)7),
+
+    ColorPack((uint8_t)10),
+
+    ColorPack((uint8_t)15),
+
     };
     // Top back section for +X connection (faces east)
     static std::vector<PxVec3> topBackX = {

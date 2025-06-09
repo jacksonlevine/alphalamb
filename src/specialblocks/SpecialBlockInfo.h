@@ -14,7 +14,7 @@ using removeBitsFunc = std::function<void(World*, IntTup)>;
 
 
 
-inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<float> &brightnesses, MaterialName block, UsableMesh& outmesh, IntTup position, PxU32& index, PxU32& tindex)
+inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<ColorPack>& brightnesses, MaterialName block, UsableMesh& outmesh, IntTup position, PxU32& index, PxU32& tindex)
 {
 
     auto & tex = TEXS[(int)block];
@@ -60,11 +60,14 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<f
         }
 
 
-        float isGrass = block == GRASS ? 1.0f : 0.0f;
+        float isGrass = grasstypes.test(block) ? 1.0f : 0.0f;
 
         for (int i = 0; i < cwtriangles.size()/4; i++)
         {
-            outmesh.tbrightness.insert(outmesh.tbrightness.end(), {brightnesses[i], isGrass, brightnesses[i], isGrass, brightnesses[i], isGrass, brightnesses[i], isGrass});
+            outmesh.tbrightness.insert(outmesh.tbrightness.end(), {getBlockAmbientLightVal( ColorPack((uint8_t)0), brightnesses[i]) , isGrass,
+                                                                             getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass,
+                                                                            getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass,
+                                                                            getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass});
         }
 
 
@@ -96,11 +99,14 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<f
         }
 
 
-        float isGrass = block == GRASS ? 1.0f : 0.0f;
+        float isGrass = grasstypes.test(block) ? 1.0f : 0.0f;
 
         for (int i = 0; i < cwtriangles.size()/4; i++)
         {
-            outmesh.brightness.insert(outmesh.brightness.end(), {brightnesses[i], isGrass, brightnesses[i], isGrass, brightnesses[i], isGrass, brightnesses[i], isGrass});
+            outmesh.brightness.insert(outmesh.brightness.end(), {getBlockAmbientLightVal( ColorPack((uint8_t)0), brightnesses[i]) , isGrass,
+                                                                             getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass,
+                                                                            getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass,
+                                                                            getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass});
         }
 
     }

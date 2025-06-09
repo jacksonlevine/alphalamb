@@ -12,7 +12,7 @@
 #include "../PrecompHeader.h"
 #include "Computer.h"
 #include "Door.h"
-
+#include "Grassy.h"
 constexpr std::optional<addBlockFunc> findSpecialBlockMeshFunc(MaterialName bt)
 {
     switch (bt)
@@ -29,6 +29,8 @@ constexpr std::optional<addBlockFunc> findSpecialBlockMeshFunc(MaterialName bt)
         return addComputer;
     case CABLE:
         return addCable;
+    case TALL_GRASS:
+        return addGrassy;
     default:
         return std::nullopt;
     }

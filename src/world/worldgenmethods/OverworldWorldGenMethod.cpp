@@ -53,9 +53,6 @@ OverworldWorldGenMethod::OverworldWorldGenMethod()
 BlockType OverworldWorldGenMethod::get(IntTup spot)
 {
 
-
-
-
     const MaterialName floorBlock = getFloorBlockInClimate(getClimate(spot));
 
     static const MaterialName underDirt = COBBLESTONE;
@@ -75,6 +72,14 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
     // notype = 0.0f;
 
     static const float yoff = 60.0f;
+
+    const float nobelow = distfromorigin * (getNoiseMix(
+        spot.x * blockScaleInPerlin,
+        (spot.y - 1) * blockScaleInPerlin,
+        spot.z * blockScaleInPerlin)
+    - ((spot.y - 1 - yoff) * notype));
+
+    const float grassnoise = noise.GetNoise(spot.x * 15.5f, spot.z * 15.5f);
 
     const float no = distfromorigin * (getNoiseMix(
         spot.x * blockScaleInPerlin,
@@ -133,10 +138,15 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
         if (spot.y < WL)
         {
             return liquid;
-        } else
-        {
-            return AIR;
         }
+        if (nobelow > THRESHOLD && grassnoise > THRESHOLD)
+        {
+            return TALL_GRASS;
+        }
+
+        return AIR;
+
+
     }
 
 

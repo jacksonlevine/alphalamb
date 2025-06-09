@@ -115,18 +115,18 @@ constexpr std::bitset<BLOCK_COUNT> makeBitset(std::initializer_list<int> ids) {
     return bits;
 }
 
-constexpr auto noHeadBlock = makeBitset({DOOR});
+constexpr auto noHeadBlock = makeBitset({DOOR, TALL_GRASS});
 
-constexpr auto noAmbOccl = makeBitset({FENCE, GLASS, DG_COMPUTERBLOCK, DOOR, CABLE, LIGHT});
+constexpr auto noAmbOccl = makeBitset({FENCE, GLASS, DG_COMPUTERBLOCK, DOOR, CABLE, LIGHT, TALL_GRASS});
 
 constexpr auto noCustCollShape = makeBitset({DG_COMPUTERBLOCK});
 
 constexpr auto liquids = makeBitset({WATER});
 
-constexpr auto noColl = makeBitset({WATER});
+constexpr auto noColl = makeBitset({WATER, TALL_GRASS, BAMBOO});
 
 constexpr auto trulynothing = makeBitset({AIR});
-
+constexpr auto grasstypes = makeBitset({TALL_GRASS, GRASS});
 constexpr auto transparents = makeBitset({
     AIR,
     DG_COMPUTERBLOCK,
@@ -157,7 +157,9 @@ constexpr auto transparents = makeBitset({
     WATER,
     GLASS,
     TORCH,
-    FENCE
+    FENCE,
+    TALL_GRASS,
+    ARTIC_WILLOW_DWARF_SHRUB
 });
 
 using TexCoord = std::pair<uint8_t, uint8_t>;

@@ -19,6 +19,8 @@ class ColorPack {
 public:
     constexpr ColorPack() : packed(0) {}
 
+    constexpr explicit ColorPack(uint8_t rgb) : packed(((rgb & 0x0F) << 8) | ((rgb & 0x0F) << 4) | (rgb & 0x0F)) {}
+
     constexpr ColorPack(uint8_t r, uint8_t g, uint8_t b)
         : packed(((r & 0x0F) << 8) | ((g & 0x0F) << 4) | (b & 0x0F)) {}
 

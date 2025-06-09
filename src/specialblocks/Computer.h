@@ -71,27 +71,25 @@ inline void addComputer(UsableMesh& mesh, BlockType block, IntTup position, PxU3
     constexpr float postDistFromEdge = 0.2f;
 
     // Base half-slab vertices
-    static std::vector<float> baseCompModelBrightnesses = {
-        0.6f,
-        0.5f,
-        0.7f,
-        0.8f,
-        1.0f,
-        0.5f,
+    static std::vector<ColorPack> baseCompModelBrightnesses = {
+        ColorPack((uint8_t)9u),
+        ColorPack((uint8_t)8u),
+        ColorPack((uint8_t)11u),
+        ColorPack((uint8_t)12u),
+        ColorPack((uint8_t)15u),
+        ColorPack((uint8_t)8u),
 
-        0.5f,
-        0.4f,
-        0.6f,
-        0.7f,
+        ColorPack((uint8_t)8u),
+        ColorPack((uint8_t)6u),
+        ColorPack((uint8_t)9u),
+        ColorPack((uint8_t)11u),
 
-        // 0.5f,
-
-        0.6f,
-        0.5f,
-        0.7f,
-        0.8f,
-        1.0f,
-        0.5f,
+        ColorPack((uint8_t)9u),
+        ColorPack((uint8_t)8u),
+        ColorPack((uint8_t)11u),
+        ColorPack((uint8_t)12u),
+        ColorPack((uint8_t)15u),
+        ColorPack((uint8_t)8u),
     };
 
     constexpr float baseHeight = 0.2f;

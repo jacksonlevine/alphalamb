@@ -407,7 +407,7 @@ __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideH
 
         if constexpr(doBrightness)
         {
-            float isGrass = material == GRASS ? 1.0f : 0.0f;
+            float isGrass = grasstypes.test(material) ? 1.0f : 0.0f;
 
             switch(side) {
             case Side::Top:    mesh.tbrightness.insert(mesh.tbrightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
@@ -440,7 +440,7 @@ glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),});
 
         if constexpr(doBrightness)
         {
-            float isGrass = material == GRASS ? 1.0f : 0.0f;
+            float isGrass = grasstypes.test(material) ? 1.0f : 0.0f;
 
             switch(side) {
             case Side::Top:    mesh.brightness.insert(mesh.brightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;

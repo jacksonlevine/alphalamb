@@ -1294,7 +1294,7 @@ void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, 
     //     default:           baseBrightness = 0.9f * (blockandambbright / 16.0f); break;
     // }
 
-    float isGrass = blockType == GRASS ? 1.0f : 0.0f;
+    float isGrass = grasstypes.test(blockType) ? 1.0f : 0.0f;
 
     // Calculate occlusion for each vertex of the face
     int occlusion[4];

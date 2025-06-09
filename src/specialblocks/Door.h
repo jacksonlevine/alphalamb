@@ -185,13 +185,14 @@ inline void removeDoorBits(World* world, IntTup spot)
 inline void addDoor(UsableMesh& mesh, BlockType block, IntTup position, PxU32& index, PxU32& tindex)
 {
 
-    static std::vector<float> baseDoorModelBrightnesses = {
-        0.7f,
-        0.7f,
-        0.6f,
-        0.5f,
-        0.3f,
-        1.0f
+    static std::vector<ColorPack> baseDoorModelBrightnesses = {
+        ColorPack((uint8_t)9u),
+        ColorPack((uint8_t)9u),
+        ColorPack((uint8_t)8u),
+
+        ColorPack((uint8_t)6u),
+        ColorPack((uint8_t)5u),
+        ColorPack((uint8_t)15u),
     };
 
     constexpr float doorthick = 0.15f;

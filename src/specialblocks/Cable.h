@@ -146,20 +146,23 @@ inline void addCable(UsableMesh& mesh, BlockType block, IntTup position, PxU32& 
         PxVec3(postDistFromEdge, postDistFromEdge, 1.0f - postDistFromEdge),
     };
 
-    static std::vector<float> basePostBrightnesses = {
-        0.9f,
-        0.8f,
-        0.7f,
-        0.5f,
-        1.0f,
-        0.4f
+    static std::vector<ColorPack> basePostBrightnesses = {
+
+        ColorPack((uint8_t)12u),
+        ColorPack((uint8_t)9u),
+        ColorPack((uint8_t)8u),
+        ColorPack((uint8_t)7u),
+        ColorPack((uint8_t)15u),
+        ColorPack((uint8_t)6u),
+
     };
 
-    static std::vector<float> baseConnectyBitBrightnesses = {
-        0.6f,
-        1.0f,
-        0.7f,
-        0.4f
+    static std::vector<ColorPack> baseConnectyBitBrightnesses = {
+
+        ColorPack((uint8_t)8u),
+        ColorPack((uint8_t)15u),
+        ColorPack((uint8_t)10u),
+        ColorPack((uint8_t)6u),
     };
 
     static std::vector<PxVec3> baseConnectyBit = { // Corrected clockwise ordering for each face
