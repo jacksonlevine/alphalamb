@@ -8,6 +8,7 @@
 
 
 #include "PrecompHeader.h"
+#include <PxShape.h>
 
 struct IntTup {
 public:
@@ -23,6 +24,10 @@ public:
     bool operator!=(const IntTup& other) const;
     IntTup& operator=(const IntTup& other);
     IntTup& operator+=(const IntTup& other);
+
+    operator physx::PxVec3() const {
+        return physx::PxVec3(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+    }
 
 };
 

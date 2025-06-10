@@ -368,11 +368,11 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
             modifyOrInitializeChunkIndex(static_cast<int>(buffer.chunkIndex), chunkPool.at(buffer.chunkIndex), buffer.mesh);
             if (buffer.from == std::nullopt)
             {
-                //TODO readding this bug
-                //if (!activeChunks.contains(buffer.to))
-                //{
+
+                if (!activeChunks.contains(buffer.to))
+                {
                     activeChunks.insert_or_assign(buffer.to, ReadyToDrawChunkInfo(buffer.chunkIndex, 0.f));
-               // }
+               }
 
             }
             else

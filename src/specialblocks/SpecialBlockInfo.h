@@ -14,7 +14,8 @@ using removeBitsFunc = std::function<void(World*, IntTup)>;
 
 
 
-inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<ColorPack>& brightnesses, MaterialName block, UsableMesh& outmesh, IntTup position, PxU32& index, PxU32& tindex)
+inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<ColorPack>& brightnesses, MaterialName block, UsableMesh& outmesh, const
+                                 PxVec3& position, PxU32& index, PxU32& tindex)
 {
 
     auto & tex = TEXS[(int)block];
@@ -30,13 +31,13 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<C
         glm::vec2(onePixel, -(onePixel + textureWidth)),
     };
     //If the material's transparent, add these verts to the "t____" parts of the mesh. If not, add them to the normal mesh.
-    PxVec3 offset(position.x, position.y, position.z);
+
 
     if (transparents.test(block))
     {
-        auto transformed =  cwtriangles | std::views::transform([&offset](const PxVec3& v) {
+        auto transformed =  cwtriangles | std::views::transform([&position](const PxVec3& v) {
             auto newv = v;
-            return newv + offset;
+            return newv + position;
         }) | std::ranges::to<std::vector>();
 
         outmesh.tpositions.insert(outmesh.tpositions.end(), transformed.begin(), transformed.end());
@@ -73,9 +74,9 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<C
 
     } else
     {
-        auto transformed =  cwtriangles | std::views::transform([&offset](const PxVec3& v) {
+        auto transformed =  cwtriangles | std::views::transform([&position](const PxVec3& v) {
              auto newv = v;
-             return newv + offset;
+             return newv + position;
          }) | std::ranges::to<std::vector>();
 
         outmesh.positions.insert(outmesh.positions.end(), transformed.begin(), transformed.end());

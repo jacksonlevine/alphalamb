@@ -79,7 +79,8 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
         spot.z * blockScaleInPerlin)
     - ((spot.y - 1 - yoff) * notype));
 
-    const float grassnoise = noise.GetNoise(spot.x * 15.5f, spot.z * 15.5f);
+    const float grassnoise1 = noise.GetNoise(spot.x * 50.5f, spot.z * 50.5f);
+    const float grassnoise2 = noise.GetNoise(spot.x * 15.5f, spot.z * 15.5f);
 
     const float no = distfromorigin * (getNoiseMix(
         spot.x * blockScaleInPerlin,
@@ -139,7 +140,7 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
         {
             return liquid;
         }
-        if (nobelow > THRESHOLD && grassnoise > THRESHOLD)
+        if (nobelow > THRESHOLD && grassnoise1 > THRESHOLD && grassnoise2 > THRESHOLD)
         {
             return TALL_GRASS;
         }

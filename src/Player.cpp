@@ -642,14 +642,15 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
                 alSourcePlay(jetpackSource);
             }
 
-            if(footDustTimer > 0.1)
-            {
-                particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 10, JETPACK_PARTICLE_BLOCK, 0.2f, 5.0f);
-                footDustTimer = 0.0f;
-            } else
-            {
-                footDustTimer += deltaTime;
-            }
+            //Todo: foot dust particles are fucking colliding with the player. it's fucking annoying. I'm turning them the fuck off until I can figure that shit out
+            // if(footDustTimer > 0.1)
+            // {
+            //     particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 10, JETPACK_PARTICLE_BLOCK, 0.2f, 5.0f);
+            //     footDustTimer = 0.0f;
+            // } else
+            // {
+            //     footDustTimer += deltaTime;
+            // }
         } else
         {
             if (jpSourceState == AL_PLAYING)

@@ -10,6 +10,14 @@
 
 inline void addGrassy(UsableMesh& mesh, BlockType block, IntTup position, PxU32& index, PxU32& tindex)
 {
+
+    static FastNoiseLite* perl = new FastNoiseLite();
+    static bool initted = false;
+    if (!initted)
+    {
+        initted = true;
+        perl->SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+    }
     static std::vector<PxVec3> baseGrass = {
         PxVec3(0.146f, 0.0f, 0.146f),
             PxVec3(0.854f, 0.0f, 0.854f),
@@ -40,7 +48,9 @@ inline void addGrassy(UsableMesh& mesh, BlockType block, IntTup position, PxU32&
         ColorPack((uint8_t)14u),
     };
 
-    addShapeWithMaterial(baseGrass, baseGrassBrightness, TALL_GRASS, mesh, position, index, tindex);
+    float offsetx = perl->GetNoise(position.x*50.5f, position.z*50.5f)*0.5f;
+    float offsetz = perl->GetNoise(position.x*50.5f + 100.f, position.z*50.5f)*0.5f;
+    addShapeWithMaterial(baseGrass, baseGrassBrightness, TALL_GRASS, mesh, PxVec3(position.x + offsetx, position.y, position.z + offsetz), index, tindex);
 
 }
 
