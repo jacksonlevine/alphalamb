@@ -14,7 +14,7 @@
 #include "UUIDComponent.h"
 #include "../PrecompHeader.h"
 #include "../Controls.h"
-
+#include "PlayerComp.h"
 inline void emplacePlayerParts(entt::registry &REG, entt::entity pers, ClientUID id)
 {
     REG.emplace<jl::Camera>(pers);
@@ -26,6 +26,7 @@ inline void emplacePlayerParts(entt::registry &REG, entt::entity pers, ClientUID
     REG.emplace<NetworkComponent>(pers);
     REG.emplace<MovementComponent>(pers);
     REG.emplace<UUIDComponent>(pers, id);
+    REG.emplace<PlayerComp>(pers);
 }
 
 

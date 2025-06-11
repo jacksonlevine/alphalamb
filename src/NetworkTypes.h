@@ -175,6 +175,10 @@ struct BlockSetAndDepleteSlot
     DepleteInventorySlot deplete;
 };
 
+struct HeartbeatAndCleanup
+{
+    float timeOfDay;
+};
 
 // struct EquippedItemsUpdate
 // {
@@ -182,10 +186,10 @@ struct BlockSetAndDepleteSlot
 //     std::array<InventorySlot, INVHEIGHT> equipped;
 // };
 
-using DGMessage = std::variant<RequestStackSlotsToDest, BlockSetAndDepleteSlot, DepleteInventorySlot, TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
+using DGMessage = std::variant<HeartbeatAndCleanup, RequestStackSlotsToDest, BlockSetAndDepleteSlot, DepleteInventorySlot, TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
 
 
-inline const BlockSet& getBlockSet(const auto& m) {
+ const BlockSet& getBlockSet(const auto& m) {
     if constexpr (std::is_same_v<std::decay_t<decltype(m)>, BlockSetAndDepleteSlot>) {
         return m.blockSet;
     } else {
@@ -193,7 +197,7 @@ inline const BlockSet& getBlockSet(const auto& m) {
     }
 }
 
-inline const DepleteInventorySlot& getDepleteSlot(const auto& m) {
+ const DepleteInventorySlot& getDepleteSlot(const auto& m) {
     if constexpr (std::is_same_v<std::decay_t<decltype(m)>, BlockSetAndDepleteSlot>) {
         return m.deplete;
     } else {

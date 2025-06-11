@@ -233,11 +233,14 @@ private:
         }
 
 
+
         //Now start waiting for messages
         waitForMessage();
     }
 
     void waitForMessage() {
+
+
     auto self(shared_from_this());
 
 //std::cout << "now starting \n";
@@ -826,6 +829,28 @@ public:
         }
         // now we call do_accept() where we wait for clients
 
+        boost::asio::post(localserver_thread_pool->get_executor(), [](){
+            while (localserver_running.load(std::memory_order_relaxed))
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                {
+                    std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
+                    const auto view = serverReg.view<PlayerComp, NetworkComponent>();
+                    for (auto entity : view)
+                    {
+                        auto& nwc = view.get<NetworkComponent>(entity);
+                        auto hb = HeartbeatAndCleanup{400.f};
+                        if (!nwc.socket.expired())
+                        {
+                            boost::asio::write(*nwc.socket.lock(), boost::asio::buffer(&hb, sizeof(DGMessage)));
+                        }
+                    }
+                }
+            }
+
+
+        });
+
         do_accept();
     }
 
@@ -915,11 +940,13 @@ inline void localServerThreadFun(int port)
 
     if (!localserver_io_context) {
         localserver_io_context = std::make_unique<boost::asio::io_context>();
+        localserver_thread_pool = std::make_unique<boost::asio::thread_pool>(4);
     }
     localserver_io_context->restart();
     Server s(*localserver_io_context, port);
     localserver_io_context->run();
 
+    localserver_thread_pool->join();
 }
 
 inline void launchLocalServer(int port)
@@ -930,6 +957,7 @@ inline void launchLocalServer(int port)
 
         if (!localserver_io_context) {
             localserver_io_context = std::make_unique<boost::asio::io_context>();
+            localserver_thread_pool = std::make_unique<boost::asio::thread_pool>(4);
         } else {
             localserver_io_context->restart();
         }

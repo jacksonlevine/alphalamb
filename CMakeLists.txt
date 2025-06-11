@@ -216,6 +216,8 @@ add_executable(DistantGarden
         src/EntityWithNameAdder.h
         src/FlatCposSet.h
         src/components/StormyCloud.h
+        src/components/Lifetime.h
+        src/components/PlayerComp.h
 )
 
 

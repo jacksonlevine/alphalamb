@@ -8,6 +8,8 @@
 #include "PrecompHeader.h"
 
 extern std::unique_ptr<boost::asio::io_context> localserver_io_context;
+extern std::unique_ptr<boost::asio::thread_pool> localserver_thread_pool;
+
 extern std::atomic<bool> localserver_running;
 extern std::thread localserver_thread;
 

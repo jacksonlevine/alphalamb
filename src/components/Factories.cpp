@@ -4,6 +4,7 @@
 
 #include "Factories.h"
 
+#include "Lifetime.h"
 #include "LootDrop.h"
 #include "NPPositionComponent.h"
 #include "StormyCloud.h"
@@ -16,6 +17,7 @@ entt::entity makeLootDrop(entt::registry& registry, LootDrop drop, glm::vec3 pos
 
     registry.emplace<LootDrop>(loot, drop);
     registry.emplace<NPPositionComponent>(loot, position);
+    registry.emplace<Lifetime>(loot, (uint8_t)5);
     return loot;
 }
 

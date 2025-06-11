@@ -79,7 +79,6 @@ private:
     static constexpr float tempNoiseScale = 0.01f;
     static constexpr float humidityNoiseScale = 0.15f;
     static constexpr float beachNoiseScale = 1.7f;
-    FastNoiseLite voronoiNoise = {};
 };
 
 

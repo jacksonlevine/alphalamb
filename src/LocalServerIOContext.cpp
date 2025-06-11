@@ -3,6 +3,7 @@
 //
 #include "LocalServerIOContext.h"
 std::unique_ptr<boost::asio::io_context> localserver_io_context = nullptr;
+std::unique_ptr<boost::asio::thread_pool> localserver_thread_pool = nullptr;
 
 //boost::asio::thread_pool localserver_threadpool(1);
 
