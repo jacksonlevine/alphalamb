@@ -413,10 +413,10 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             }
         }
 
-        if (key == GLFW_KEY_L && action == GLFW_PRESS)
-        {
-            saveRegistry(scene->REG, "snapshot.bin");
-        }
+        // if (key == GLFW_KEY_L && action == GLFW_PRESS)
+        // {
+        //     saveRegistry(scene->REG, "world/snapshot.bin");
+        // }
 
         if (key == GLFW_KEY_LEFT_CONTROL)
         {
@@ -678,7 +678,9 @@ void* scratchMemory = nullptr;
 
 int main()
 {
-
+    if (!std::filesystem::exists("world")) {
+        std::filesystem::create_directory("world");
+    }
     scratchMemory = _aligned_malloc(scratchMemorySize, 16);
     initialize_buffers();
 

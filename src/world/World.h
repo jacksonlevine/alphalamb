@@ -157,7 +157,7 @@ inline std::optional<std::string> saveDM(std::string filename, HashMapDataMapTem
 
 
 bool loadDM(std::string filename, World* outWorld, entt::registry& reg, BlockAreaRegistry& blockAreas, PlacedVoxModelRegistry& pvmr, InvMapKeyedByUID* im = nullptr, std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>>* existingInvs = nullptr, const
-                      char* regfilename = "snapshot.bin");
+                      char* regfilename = "world/snapshot.bin");
 
 inline std::optional<Inventory> loadInvFromFile(std::string filename, ClientUID id)
 {

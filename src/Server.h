@@ -166,11 +166,11 @@ private:
 
         //Now the players inv will exist in the world they download
 
-        auto string = saveDM("serverworld.txt", &serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "serversnap.bin");
+        auto string = saveDM("world/serverworld.txt", &serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "world/serversnap.bin");
         if (string.has_value())
         {
 
-            auto regfile = loadBinaryFile("serversnap.bin");
+            auto regfile = loadBinaryFile("world/serversnap.bin");
 
             DGMessage fileInit = FileTransferInit {
             .fileSize = string.value().size() * sizeof(char),
@@ -821,7 +821,8 @@ public:
 
     Server(boost::asio::io_context& io_context, short port) : m_acceptor(io_context, tcp::endpoint(tcp::v4(), port)) {
         serverWorld.setSeed(DGSEEDSEED);
-        loadDM("serverworld.txt", &serverWorld, serverReg, serverWorld.blockAreas, serverWorld.placedVoxModels, nullptr, nullptr, "savedReg.bin");
+
+        loadDM("world/serverworld.txt", &serverWorld, serverReg, serverWorld.blockAreas, serverWorld.placedVoxModels, nullptr, nullptr, "world/savedReg.bin");
         auto g = gcspool.get();
         if (serverReg.view<WorldState>().empty())
         {
@@ -860,7 +861,8 @@ public:
 
     ~Server()
     {
-        saveDM("serverworld.txt", &serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "savedReg.bin");
+
+        saveDM("world/serverworld.txt", &serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "world/savedReg.bin");
         serverWorld.userDataMap.clear();
         serverWorld.blockAreas.baMutex.lock();
         serverWorld.blockAreas.blockAreas.clear();

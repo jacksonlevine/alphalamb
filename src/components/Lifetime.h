@@ -9,6 +9,12 @@
 
 struct Lifetime {
     uint8_t ttl = 5;
+
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+        archive(ttl);
+    }
 };
 
 inline void updateOrDestroyLifetimeHavers(entt::registry& registry, uint8_t ttlToDeleteAt)
@@ -33,6 +39,8 @@ inline void updateOrDestroyLifetimeHavers(entt::registry& registry, uint8_t ttlT
     {
         registry.destroy(entity);
     }
+
+
 }
 
 // inline void updatingOrDestroyingLifetimeHaversSystem(float deltatime, float& timer, entt::registry& registry)

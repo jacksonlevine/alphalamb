@@ -128,7 +128,7 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                         if(!ec)
                         {
 
-                            std::ofstream file("mpworld.txt", std::ios::trunc);
+                            std::ofstream file("world/mpworld.txt", std::ios::trunc);
                             if(file.is_open())
                             {
                                 file.write(filemsg.data(), m.fileSize);
@@ -142,14 +142,14 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                                     if (!ec)
                                     {
 
-                                        std::ofstream f2("snapshot.bin", std::ios::binary | std::ios::trunc);
+                                        std::ofstream f2("world/snapshot.bin", std::ios::binary | std::ios::trunc);
 
                                         if(f2.is_open())
                                         {
                                             f2.write(rfb.data(), m.regFileSize * sizeof(char));
                                             f2.close();
 
-                                            theScene.world->load("mpworld.txt", theScene.existingInvs, theScene.REG);
+                                            theScene.world->load("world/mpworld.txt", theScene.existingInvs, theScene.REG);
 
                                             auto view = theScene.REG.view<UUIDComponent>();
                                             for(auto entity : view)
