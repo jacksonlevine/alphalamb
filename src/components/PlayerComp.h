@@ -6,6 +6,8 @@
 #define PLAYERCOMP_H
 
 
-struct PlayerComp {};
+struct PlayerComp
+{
+};
 
 #endif //PLAYERCOMP_H

@@ -11,7 +11,7 @@ struct Lifetime {
     uint8_t ttl = 5;
 };
 
-inline void updateOrDestroyLifetimeHavers(entt::registry& registry)
+inline void updateOrDestroyLifetimeHavers(entt::registry& registry, uint8_t ttlToDeleteAt)
 {
     auto view = registry.view<Lifetime>();
 
@@ -20,7 +20,7 @@ inline void updateOrDestroyLifetimeHavers(entt::registry& registry)
     for (auto entity : view)
     {
         auto& lifetime = view.get<Lifetime>(entity);
-        if (lifetime.ttl > 0)
+        if (lifetime.ttl > ttlToDeleteAt)
         {
             lifetime.ttl--;
         } else

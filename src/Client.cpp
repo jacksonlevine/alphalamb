@@ -84,7 +84,8 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                     }
                     else if constexpr(std::is_same_v<T, HeartbeatAndCleanup>)
                     {
-                        std::cout << "Yo yo yo" << std::endl;
+                        pushToNetworkToMainQueue(m);
+
                     }
                     else if constexpr (std::is_same_v<T, YawPitchUpdate>) {
                         //std::cout << "Got yawpitch update \n";

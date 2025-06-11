@@ -19,6 +19,7 @@
 #include "world/DataMap.h"
 #include "world/World.h"
 #include "FlatCposSet.h"
+#include "components/Lifetime.h"
 using tcp = boost::asio::ip::tcp;
 
 
@@ -830,7 +831,7 @@ public:
         // now we call do_accept() where we wait for clients
 
         boost::asio::post(localserver_thread_pool->get_executor(), [](){
-            while (localserver_running.load(std::memory_order_relaxed))
+            while (localserver_running.load())
             {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
                 {
@@ -839,12 +840,13 @@ public:
                     for (auto entity : view)
                     {
                         auto& nwc = view.get<NetworkComponent>(entity);
-                        auto hb = HeartbeatAndCleanup{400.f};
+                        DGMessage hb = HeartbeatAndCleanup{400.f};
                         if (!nwc.socket.expired())
                         {
                             boost::asio::write(*nwc.socket.lock(), boost::asio::buffer(&hb, sizeof(DGMessage)));
                         }
                     }
+                    updateOrDestroyLifetimeHavers(serverReg, 0);
                 }
             }
 
@@ -935,17 +937,22 @@ inline void serverThreadFun(int port)
     io_context.run();
 }
 
+
 inline void localServerThreadFun(int port)
 {
 
     if (!localserver_io_context) {
         localserver_io_context = std::make_unique<boost::asio::io_context>();
-        localserver_thread_pool = std::make_unique<boost::asio::thread_pool>(4);
+
+    }
+    if (!localserver_thread_pool)
+    {
+        localserver_thread_pool = std::make_unique<boost::asio::thread_pool>(1);
     }
     localserver_io_context->restart();
     Server s(*localserver_io_context, port);
     localserver_io_context->run();
-
+    localserver_running.store(false);
     localserver_thread_pool->join();
 }
 
@@ -954,16 +961,19 @@ inline void launchLocalServer(int port)
 
     if (!localserver_running.load()) {
 
-
+        if (!localserver_thread_pool)
+        {
+            localserver_thread_pool = std::make_unique<boost::asio::thread_pool>(1);
+        }
         if (!localserver_io_context) {
             localserver_io_context = std::make_unique<boost::asio::io_context>();
-            localserver_thread_pool = std::make_unique<boost::asio::thread_pool>(4);
+
         } else {
             localserver_io_context->restart();
         }
-
-        localserver_thread = std::thread(localServerThreadFun, port);
         localserver_running.store(true);
+        localserver_thread = std::thread(localServerThreadFun, port);
+
 
         localserver_io_context.reset(new boost::asio::io_context());
 
@@ -975,10 +985,11 @@ inline void endLocalServerIfRunning()
 {
     if (localserver_running.load())
     {
+        localserver_running.store(false);
         localserver_io_context->stop();
 
         localserver_thread.join();
-        localserver_running.store(false);
+
 
     }
 

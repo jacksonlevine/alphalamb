@@ -29,6 +29,7 @@ void saveRegistry(entt::registry & reg, const char* filename)
     .get<NPPositionComponent>(outputArchive)
     .get<WorldState>(outputArchive)
     .get<LootDrop>(outputArchive)
+    .get<PlayerComp>(outputArchive)
     ;
 }
 
@@ -59,6 +60,7 @@ void loadRegistry(entt::registry & reg, const char* filename)
         .get<NPPositionComponent>(inputArchive)
         .get<WorldState>(inputArchive)
         .get<LootDrop>(inputArchive)
+        .get<PlayerComp>(inputArchive)
         .orphans()
         ;
 

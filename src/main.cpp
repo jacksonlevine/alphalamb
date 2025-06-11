@@ -53,6 +53,7 @@
 #include "Planets.h"
 #include "SaveRegistry.h"
 #include "StepTimerProfiler.h"
+#include "components/Lifetime.h"
 #include "specialblocks/FindSpecialBlock.h"
 //Tinygltf includes stb image
 //#include <stb_image.h>
@@ -1326,6 +1327,12 @@ int main()
                             }
 
                         }
+                    }
+                    else if constexpr (std::is_same_v<T, HeartbeatAndCleanup>)
+                    {
+                        //std::cout << "Yo yo yo" << std::endl;
+                        updateOrDestroyLifetimeHavers(theScene.REG, 2);
+                        theScene.timeOfDay = m.timeOfDay;
                     }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
 
