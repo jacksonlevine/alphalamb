@@ -269,7 +269,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
             if (footDustTimer > 0.05f) // More frequent particles during slide
             {
                 footDustTimer = 0.0f;
-                particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 2, lastBlockStandingOn, 0.5f, 0.05f);
+                //particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 2, lastBlockStandingOn, 0.5f, 0.05f);
             }
             else
             {
@@ -333,7 +333,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         if (footDustTimer > 0.07f)
         {
             footDustTimer = 0.0f;
-            particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 1, lastBlockStandingOn, 0.5f, 0.05f);
+            //particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 1, lastBlockStandingOn, 0.5f, 0.05f);
         } else
         {
             footDustTimer += deltaTime;
