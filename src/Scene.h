@@ -93,7 +93,7 @@ struct Scene
     bool showingControls = false;
     std::string localServerPort = "";
     float timeOfDay = 250.0f;
-    static constexpr float dayLength = 900.0f;
+    static constexpr float dayLength = DAY_LENGTH;
     PlanetType currentPlanetType = PlanetType::Home;
     std::unordered_set<ClientUID, boost::hash<boost::uuids::uuid>> existingInvs = {};
     float worldIntroTimer = 0.0f;

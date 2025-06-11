@@ -70,6 +70,6 @@
 
 constexpr double J_PI = 3.1415926535897932384626433832;
 extern GLuint lutTexture;
-
+#define DAY_LENGTH 900.0f
 
 #endif //PRECOMPHEADER_H

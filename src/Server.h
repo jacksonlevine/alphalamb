@@ -831,6 +831,7 @@ public:
         // now we call do_accept() where we wait for clients
 
         boost::asio::post(localserver_thread_pool->get_executor(), [](){
+            thread_local float TOD = 300.0f;
             while (localserver_running.load())
             {
                 std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -840,13 +841,14 @@ public:
                     for (auto entity : view)
                     {
                         auto& nwc = view.get<NetworkComponent>(entity);
-                        DGMessage hb = HeartbeatAndCleanup{400.f};
+                        DGMessage hb = HeartbeatAndCleanup{TOD};
                         if (!nwc.socket.expired())
                         {
                             boost::asio::write(*nwc.socket.lock(), boost::asio::buffer(&hb, sizeof(DGMessage)));
                         }
                     }
                     updateOrDestroyLifetimeHavers(serverReg, 0);
+                    TOD = std::fmod(TOD + 1.0f, DAY_LENGTH);
                 }
             }
 
