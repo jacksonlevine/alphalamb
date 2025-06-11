@@ -285,6 +285,8 @@ public:
             }
         }
 
+        clearInFlightMeshUpdates();
+
         chunkPoolSize.store(0, std::memory_order_release);
         activeChunks.clear();
         mbtActiveChunks.clear();
@@ -295,7 +297,7 @@ public:
         lightmapMutex.unlock();
 
 
-        clearInFlightMeshUpdates();
+
 
 
         launchThreads(camera, world);

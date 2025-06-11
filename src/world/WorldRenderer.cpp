@@ -1251,8 +1251,15 @@ void WorldRenderer::clearInFlightMeshUpdates()
     rebuildToMainAreaNotifications.consume_all([](auto){});
     confirmedActiveChunksQueue.consume_all([](auto){});
     removeTheseFromMBTAC.consume_all([](auto){});
+    TwoIntTup out;
+
+    while (lightOverlapNotificationQueue.try_pull(out) != boost::queue_op_status::empty){};
+    lightOverlapsQueued.clear();
+
     generatedChunks.clear();
     litChunks.clear();
+    ChunkRebuildRequest req;
+    while (rebuildQueue.pop(req)) {}
 
     // for (int i = 0; i < changeBuffers.size(); i++)
     // {

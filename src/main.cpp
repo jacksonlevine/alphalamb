@@ -700,7 +700,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    theScene.window = glfwCreateWindow(800, 800, "project7", nullptr, nullptr);
+    theScene.window = glfwCreateWindow(1000, 800, "project7", nullptr, nullptr);
     GLFWwindow* window = theScene.window;
     glfwMakeContextCurrent(window);
     if (glewInit() != GLEW_OK)
@@ -710,7 +710,7 @@ int main()
 
 
     theScene.REG.on_construct<PhysicsComponent>().connect<&onPhysicsComponentAdded>();
-    entt::monostate<entt::hashed_string{"swidth"}>{} = 800;
+    entt::monostate<entt::hashed_string{"swidth"}>{} = 1000;
     entt::monostate<entt::hashed_string{"sheight"}>{} = 800;
 
     glfwSetKeyCallback(window, keyCallback);
