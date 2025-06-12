@@ -26,9 +26,9 @@ struct RecipeOutput
 
 using Recipe = std::pair<std::vector<Requirement>, RecipeOutput>;
 
-inline std::vector<Recipe> recipes = {
-    { {{BUSH_LEAVES, 1}}  ,   {LIGHT, 1} },
-    { {{makeBitset({
+inline std::array recipes = {
+    Recipe{ {{BUSH_LEAVES, 1}}  ,   {LIGHT, 1} },
+    Recipe{ {{makeBitset({
         WOOD,
         FIG_WOOD,
         PALM_WOOD,
