@@ -218,6 +218,7 @@ add_executable(DistantGarden
         src/components/StormyCloud.h
         src/components/Lifetime.h
         src/components/PlayerComp.h
+        src/Recipes.h
 )
 
 

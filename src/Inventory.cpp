@@ -137,7 +137,7 @@ void imguiInventory(Inventory& inv)
 
     ImGui::Begin("Background", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar
                                         | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar );
-
+    ImGui::BeginGroup();
         ImGui::BeginGroup();
             for (int j = 0; j < INVHEIGHT; j++)
             {
@@ -201,7 +201,7 @@ void imguiInventory(Inventory& inv)
                                 // slot = mouseslot;
                             }
                         }
-
+                        theScene.shitICanMake = getShitCanMake(theScene.our<InventoryComponent>().inventory);
                     }
 
                     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
@@ -242,7 +242,23 @@ void imguiInventory(Inventory& inv)
             draw2DBillboard(ImVec2(300, 300), 70.0f);
 
         ImGui::EndGroup();
+    ImGui::EndGroup();
 
+    ImGui::NewLine();
+    ImGui::BeginGroup();
+
+    for (auto & i : theScene.shitICanMake)
+    {
+        if (DGCustomButton(ToString(recipes.at(i).second.mat), DGButtonType::Bad2, ImVec2(200, 50)))
+        {
+            pushToMainToNetworkQueue(DoRecipeOnMyInv{
+                .myPlayerIndex = theScene.myPlayerIndex,
+                .recipeIndex = i
+            });
+        }
+    }
+
+    ImGui::EndGroup();
 
     ImGui::End();
 }

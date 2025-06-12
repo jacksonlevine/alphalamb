@@ -1,0 +1,157 @@
+//
+// Created by jack on 6/11/2025.
+//
+
+#ifndef RECIPES_H
+#define RECIPES_H
+
+
+#include "Inventory.h"
+#include "PrecompHeader.h"
+
+
+using SpecificOrNonSpecificMaterial = std::variant<MaterialName, std::bitset<BLOCK_COUNT>>;
+
+struct Requirement
+{
+    SpecificOrNonSpecificMaterial mat;
+    uint8_t count;
+};
+
+struct RecipeOutput
+{
+    MaterialName mat;
+    uint8_t count;
+};
+
+using Recipe = std::pair<std::vector<Requirement>, RecipeOutput>;
+
+inline std::vector<Recipe> recipes = {
+    { {{BUSH_LEAVES, 1}}  ,   {LIGHT, 1} },
+    { {{makeBitset({
+        WOOD,
+        FIG_WOOD,
+        PALM_WOOD,
+        PINE_WOOD,
+        BEECH_WOOD,
+        RUBBER_TREE_WOOD,
+        JOSHUA_WOOD,
+        CEDAR_WOOD,
+        WILLOW_WOOD,
+        EUCALYPTUS_WOOD,
+        PAPER_BIRCH_WOOD,
+        GREEN_ALDER_WOOD,
+        WESTERN_HEMLOCK_WOOD}), 1}}  ,   {WOOD_PLANKS, 4} },
+};
+
+
+inline bool canMakeShit(Inventory& inv, const Recipe& recipe)
+{
+    bool missingsomething = false;
+    for (const auto req : recipe.first)
+    {
+        bool reqfound = false;
+
+
+        for (const auto& r : inv.inventory)
+        {
+            if (r.count >= req.count)
+            {
+                std::visit([&r, &reqfound, &req](const auto& mat)
+                {
+                    using T = std::decay_t<decltype(mat)>;
+                    if constexpr (std::is_same_v<T, MaterialName>)
+                    {
+                        if (mat == r.block)
+                        {
+                            reqfound = true;
+                        }
+                    } else if constexpr (std::is_same_v<T, std::bitset<BLOCK_COUNT>>)
+                    {
+                        if (mat.test(r.block))
+                        {
+                            reqfound = true;
+                        }
+                    }
+                }, req.mat);
+            }
+
+            if (reqfound)
+            {
+                break;
+            }
+
+        }
+        if (!reqfound)
+        {
+            missingsomething = true;
+            break;
+        }
+    }
+    return !missingsomething;
+}
+
+inline std::vector<int> getShitCanMake(Inventory& inv)
+{
+    std::vector<int> recs;
+
+    int index = 0;
+    for (const auto& recipe : recipes)
+    {
+        bool canmake = canMakeShit(inv, recipe);
+        if (canmake)
+        {
+            recs.push_back(index);
+        }
+        index++;
+    }
+    return recs;
+}
+
+inline bool doRecipeOnInv(InventoryComponent& inv, int recipeIndex)
+{
+    auto& recipe = recipes.at(recipeIndex);
+    if (canMakeShit(inv.inventory, recipe))
+    {
+        for (auto& req : recipe.first)
+        {
+            for (auto& slot : inv.inventory.inventory)
+            {
+                if (slot.count >= req.count)
+                {
+                    std::visit([&req, &slot](const auto& mat)
+                    {
+                        using T = std::decay_t<decltype(mat)>;
+                        if constexpr (std::is_same_v<T, MaterialName>)
+                        {
+                            if (mat == slot.block)
+                            {
+                                slot.count -= req.count;
+                                if (slot.count == 0)
+                                {
+                                    slot.block = 0;
+                                }
+                            }
+                        } else if constexpr (std::is_same_v<T, std::bitset<BLOCK_COUNT>>)
+                        {
+                            if (mat.test(slot.block))
+                            {
+                                slot.count -= req.count;
+                                if (slot.count == 0)
+                                {
+                                    slot.block = 0;
+                                }
+                            }
+                        }
+                    }, req.mat);
+                }
+            }
+        }
+        inv.add(LootDrop{recipe.second.mat, recipe.second.count});
+        return true;
+    }
+    return false;
+}
+
+
+#endif //RECIPES_H

@@ -19,6 +19,7 @@
 #include "world/DataMap.h"
 #include "world/World.h"
 #include "FlatCposSet.h"
+#include "Recipes.h"
 #include "components/Lifetime.h"
 using tcp = boost::asio::ip::tcp;
 
@@ -650,6 +651,20 @@ private:
                             clientsMutex.unlock();
                         });
                         
+                        redistrib = true;
+                    }
+                    else if constexpr(std::is_same_v<T, DoRecipeOnMyInv>)
+                    {
+                        clientsMutex.lock();
+                        if (serverReg.valid(m.myPlayerIndex))
+                        {
+                            if (serverReg.all_of<InventoryComponent>(m.myPlayerIndex))
+                            {
+                                auto& inv = serverReg.get<InventoryComponent>(m.myPlayerIndex);
+                                doRecipeOnInv(inv, m.recipeIndex);
+                            }
+                        }
+                        clientsMutex.unlock();
                         redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, BulkBlockSet>) {

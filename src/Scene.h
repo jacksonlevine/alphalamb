@@ -14,6 +14,7 @@
 #include "OpenALStuff.h"
 #include "Planets.h"
 #include "PythonContext.h"
+#include "Recipes.h"
 #include "TextEditor.h"
 #include "components/PlayerEmplacer.h"
 #include "world/gizmos/BulkPlaceGizmo.h"
@@ -106,6 +107,7 @@ struct Scene
     MaterialName blockFeetIn = AIR;
     MaterialName blockHeadIn = AIR;
     GLuint worldtex = 0;
+    std::vector<int> shitICanMake;
 
     void saveSettings()
     {

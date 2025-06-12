@@ -372,6 +372,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             if (currentGuiScreen == GuiScreen::InGame)
             {
                 currentGuiScreen = GuiScreen::Inventory;
+                theScene.shitICanMake = getShitCanMake(theScene.our<InventoryComponent>().inventory);
                 uncaptureMouse(scene);
             } else if (currentGuiScreen == GuiScreen::Inventory)
             {
@@ -665,7 +666,7 @@ void enterWorld(Scene* s)
 
     s->worldRenderer->launchThreads(&s->our<jl::Camera>(), s->world);
 }
-// Define a regular function with the correct signature
+
 static void onPhysicsComponentAdded(entt::registry& reg, entt::entity entity) {
 
 }
@@ -702,7 +703,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    theScene.window = glfwCreateWindow(1000, 800, "project7", nullptr, nullptr);
+    theScene.window = glfwCreateWindow(1280, 720, "project7", nullptr, nullptr);
     GLFWwindow* window = theScene.window;
     glfwMakeContextCurrent(window);
     if (glewInit() != GLEW_OK)
@@ -712,8 +713,8 @@ int main()
 
 
     theScene.REG.on_construct<PhysicsComponent>().connect<&onPhysicsComponentAdded>();
-    entt::monostate<entt::hashed_string{"swidth"}>{} = 1000;
-    entt::monostate<entt::hashed_string{"sheight"}>{} = 800;
+    entt::monostate<entt::hashed_string{"swidth"}>{} = 1280;
+    entt::monostate<entt::hashed_string{"sheight"}>{} = 720;
 
     glfwSetKeyCallback(window, keyCallback);
     glfwSetCursorPosCallback(window, cursorPosCallback);
@@ -1179,6 +1180,17 @@ int main()
                         //
                         // //Dont do this yet, receive the file first
                         // //theScene.worldReceived = true;
+                    }
+                    else if constexpr(std::is_same_v<T, DoRecipeOnMyInv>)
+                    {
+                        if (theScene.REG.valid(m.myPlayerIndex))
+                        {
+                            if (theScene.REG.all_of<InventoryComponent>(m.myPlayerIndex))
+                            {
+                                auto& inv = theScene.REG.get<InventoryComponent>(m.myPlayerIndex);
+                                doRecipeOnInv(inv, m.recipeIndex);
+                            }
+                        }
                     }
                     else if constexpr (std::is_same_v<T, AddLootDrop>)
                     {
