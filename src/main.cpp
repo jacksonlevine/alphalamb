@@ -1189,6 +1189,10 @@ int main()
                             {
                                 auto& inv = theScene.REG.get<InventoryComponent>(m.myPlayerIndex);
                                 doRecipeOnInv(inv, m.recipeIndex);
+                                if (m.myPlayerIndex == theScene.myPlayerIndex)
+                                {
+                                    theScene.shitICanMake = getShitCanMake(inv.inventory);
+                                }
                             }
                         }
                     }
