@@ -668,7 +668,8 @@ void enterWorld(Scene* s)
 }
 
 static void onPhysicsComponentAdded(entt::registry& reg, entt::entity entity) {
-
+    auto& pc = reg.get<PhysicsComponent>(entity);
+    pc.initPhysicsBodies();
 }
 
 const PxU32 scratchMemorySize = 16 * 1024;
@@ -1208,13 +1209,15 @@ int main()
                             if (theScene.REG.all_of<LootDrop>(m.lootDrop))
                             {
                                 auto loot = theScene.REG.get<LootDrop>(m.lootDrop);
-                                InventoryComponent & playerInv = theScene.REG.get<InventoryComponent>(m.myPlayerIndex);
-
-                                if (playerInv.add(loot))
+                                if (theScene.REG.all_of<InventoryComponent>(m.myPlayerIndex))
                                 {
-                                    theScene.REG.destroy(m.lootDrop);
-                                }
+                                    InventoryComponent & playerInv = theScene.REG.get<InventoryComponent>(m.myPlayerIndex);
 
+                                    if (playerInv.add(loot))
+                                    {
+                                        theScene.REG.destroy(m.lootDrop);
+                                    }
+                                }
                             }
                         }
                     }

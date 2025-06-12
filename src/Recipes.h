@@ -42,6 +42,12 @@ inline std::array recipes = {
         PAPER_BIRCH_WOOD,
         GREEN_ALDER_WOOD,
         WESTERN_HEMLOCK_WOOD}), 1}}  ,   {WOOD_PLANKS, 4} },
+    Recipe{ {{WOOD_PLANKS, 4}}  ,   {DOOR, 1} },
+    Recipe{ {{STONE, 4}}  ,   {STONE_STAIRS, 1} },
+    Recipe{ {{COBBLESTONE, 4}}  ,   {COBBLESTONE_STAIRS, 1} },
+    Recipe{ {{WOOD_PLANKS, 4}}  ,   {WOOD_STAIRS, 1} },
+    Recipe{ {{WOOD_PLANKS, 2}}  ,   {FENCE, 4} },
+    Recipe{ {{SAND, 1}}  ,   {GLASS, 4} },
 };
 
 

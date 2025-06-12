@@ -13,7 +13,7 @@ physx::PxController* getCont();
 class PhysicsComponent {
 public:
     CollisionCage<5> collisionCage = {};
-    physx::PxController* controller = getCont();
+    physx::PxController* controller = nullptr;
     bool isGrounded = false;
     float originalStepHeight = 0.5f;
     float originalCharHeight = 0.0f;
@@ -23,6 +23,12 @@ public:
     void serialize(Archive& archive)
     {
         //deliberately empty
+    }
+
+    //only the client does this.
+    void initPhysicsBodies()
+    {
+        controller = getCont();
     }
 
     PhysicsComponent() = default;

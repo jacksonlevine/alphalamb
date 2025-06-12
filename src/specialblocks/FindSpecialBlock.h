@@ -25,6 +25,8 @@ constexpr std::optional<addBlockFunc> findSpecialBlockMeshFunc(MaterialName bt)
         return addStairs<STONE>;
     case WOOD_STAIRS:
         return addStairs<WOOD_PLANKS>;
+    case COBBLESTONE_STAIRS:
+        return addStairs<COBBLESTONE>;
     case DG_COMPUTERBLOCK:
         return addComputer;
     case CABLE:
@@ -48,6 +50,8 @@ constexpr std::optional<setBitsFunc> findSpecialSetBits(MaterialName bt)
             return setStairBits<STONE_STAIRS>;
         case WOOD_STAIRS:
             return setStairBits<WOOD_STAIRS>;
+        case COBBLESTONE_STAIRS:
+            return setStairBits<COBBLESTONE_STAIRS>;
         case DG_COMPUTERBLOCK:
             return setComputerBits;
         case CABLE:

@@ -640,12 +640,16 @@ private:
                                 if (serverReg.all_of<LootDrop>(m.lootDrop))
                                 {
                                     auto loot = serverReg.get<LootDrop>(m.lootDrop);
-                                    InventoryComponent & playerInv = serverReg.get<InventoryComponent>(m.myPlayerIndex);
-
-                                    if (playerInv.add(loot))
+                                    if (serverReg.all_of<Inventory>(m.myPlayerIndex))
                                     {
-                                        serverReg.destroy(m.lootDrop);
+                                        InventoryComponent & playerInv = serverReg.get<InventoryComponent>(m.myPlayerIndex);
+
+                                        if (playerInv.add(loot))
+                                        {
+                                            serverReg.destroy(m.lootDrop);
+                                        }
                                     }
+
                                 }
                             }
                             clientsMutex.unlock();
