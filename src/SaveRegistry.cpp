@@ -6,6 +6,7 @@
 #include "components/ComputerComponent.h"
 #include "components/Lifetime.h"
 #include "components/LootDrop.h"
+#include "components/Orange1.h"
 #include "components/PlayerEmplacer.h"
 #include "components/WorldStateComponent.h"
 
@@ -32,6 +33,7 @@ void saveRegistry(entt::registry & reg, const char* filename)
     .get<LootDrop>(outputArchive)
     .get<Lifetime>(outputArchive)
     .get<PlayerComp>(outputArchive)
+    .get<Orange1>(outputArchive)
     ;
 }
 
@@ -64,6 +66,7 @@ void loadRegistry(entt::registry & reg, const char* filename)
         .get<LootDrop>(inputArchive)
         .get<Lifetime>(inputArchive)
         .get<PlayerComp>(inputArchive)
+        .get<Orange1>(inputArchive)
         .orphans()
         ;
 

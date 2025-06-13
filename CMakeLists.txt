@@ -219,6 +219,8 @@ add_executable(DistantGarden
         src/components/Lifetime.h
         src/components/PlayerComp.h
         src/Recipes.h
+        src/components/Orange1.cpp
+        src/components/Orange1.h
 )
 
 

@@ -7,6 +7,7 @@
 #include "Lifetime.h"
 #include "LootDrop.h"
 #include "NPPositionComponent.h"
+#include "Orange1.h"
 #include "StormyCloud.h"
 #include "../EntityWithNameAdder.h"
 
@@ -29,4 +30,12 @@ entt::entity makeStormyCloud(entt::registry& reg, glm::vec3 position, entt::enti
     reg.emplace<StormyCloud>(cloud);
     reg.emplace<NPPositionComponent>(cloud, position);
     return cloud;
+}
+
+entt::entity makeOrange1Guy(entt::registry& reg, glm::vec3 position, entt::entity useThisName)
+{
+    entt::entity guy = addEntityWithEnforcedName(reg, useThisName);
+    reg.emplace<Orange1>(guy);
+    reg.emplace<NPPositionComponent>(guy, position);
+    return guy;
 }

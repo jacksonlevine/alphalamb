@@ -49,6 +49,6 @@ bool operator!=(const FlatCposSetPoolAllocator<T>& a, const FlatCposSetPoolAlloc
     return !(a == b);
 }
 
-using flatCposSet = tbb::concurrent_unordered_set<TwoIntTup, TwoIntTupHash, std::equal_to<TwoIntTup>, FlatCposSetPoolAllocator<TwoIntTup>>;
+using flatCposSet = tbb::concurrent_unordered_set<TwoIntTup, TwoIntTupHash>;
 
 #endif //FLATCPOSSET_H

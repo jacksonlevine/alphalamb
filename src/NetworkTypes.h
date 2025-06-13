@@ -186,13 +186,20 @@ struct DoRecipeOnMyInv
     int recipeIndex;
 };
 
+struct SpawnGuy
+{
+    GuyType type;
+    entt::entity newName;
+    glm::vec3 spot;
+};
+
 // struct EquippedItemsUpdate
 // {
 //     entt::entity myPlayerIndex;
 //     std::array<InventorySlot, INVHEIGHT> equipped;
 // };
 
-using DGMessage = std::variant<DoRecipeOnMyInv, HeartbeatAndCleanup, RequestStackSlotsToDest, BlockSetAndDepleteSlot, DepleteInventorySlot, TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
+using DGMessage = std::variant<SpawnGuy, DoRecipeOnMyInv, HeartbeatAndCleanup, RequestStackSlotsToDest, BlockSetAndDepleteSlot, DepleteInventorySlot, TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
 
 
  const BlockSet& getBlockSet(const auto& m) {

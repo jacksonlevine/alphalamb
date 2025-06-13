@@ -57,7 +57,7 @@
 #include "specialblocks/FindSpecialBlock.h"
 //Tinygltf includes stb image
 //#include <stb_image.h>
-
+#include "components/Orange1.h"
 
 
 boost::asio::io_context io_context;
@@ -366,6 +366,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     }
     if (scene->myPlayerIndex != entt::null)
     {
+
+        if (key == GLFW_KEY_0 && action == GLFW_PRESS)
+        {
+            pushToMainToNetworkQueue(SpawnGuy{GuyType::ORANGE1, entt::null, scene->our<jl::Camera>().transform.position - glm::vec3(0.f, 5.f, 0.f)});
+        }
 
         if (key == GLFW_KEY_E && action == GLFW_PRESS)
         {
@@ -1181,6 +1186,15 @@ int main()
                         //
                         // //Dont do this yet, receive the file first
                         // //theScene.worldReceived = true;
+                    }
+                    else if constexpr(std::is_same_v<T, SpawnGuy>)
+                    {
+                        switch (m.type)
+                        {
+                        case GuyType::ORANGE1:
+                            makeOrange1Guy(theScene.REG, m.spot, m.newName);
+                            break;
+                        }
                     }
                     else if constexpr(std::is_same_v<T, DoRecipeOnMyInv>)
                     {
@@ -2050,6 +2064,7 @@ int main()
             profiler.checkTime("Draw sun and moon and computers");
 
             renderLootDrops(theScene.REG, &theScene, deltaTime);
+            renderOrange1Guys(theScene.REG, &theScene, deltaTime);
 
             renderImGui();
 

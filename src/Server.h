@@ -21,6 +21,7 @@
 #include "FlatCposSet.h"
 #include "Recipes.h"
 #include "components/Lifetime.h"
+#include "components/Orange1.h"
 using tcp = boost::asio::ip::tcp;
 
 
@@ -47,7 +48,7 @@ extern entt::registry serverReg;
 
 
 
-constexpr int DGSEEDSEED = 987654321;
+constexpr int DGSEEDSEED = 123456789;
 
 inline void sendMessageToAllClients(const DGMessage& message, entt::entity m_playerIndex, bool excludeMe)
 {
@@ -274,23 +275,47 @@ private:
                         // }
 
                         //Generate the trees etc serverside. Turned off for now because I don't think it's worth it.
-                        // if (auto g = generatedChunks.lock(); g)
-                        // {
-                        //     auto concerningChunkPos = TwoIntTup(m.startPos.x, m.startPos.z);
-                        //     for (int x = -1; x < 2; x++)
-                        //     {
-                        //         for (int z = -1; z < 2; z++)
-                        //         {
-                        //             auto resultantspot = concerningChunkPos + TwoIntTup(x, z);
-                        //             if (!g->contains(resultantspot))
-                        //             {
-                        //                 WorldRenderer::generateChunk(&serverWorld, resultantspot);
-                        //                 g->insert(resultantspot);
-                        //             }
-                        //
-                        //         }
-                        //     }
-                        // }
+
+                        if (auto g = generatedChunks.lock(); g)
+                        {
+                            auto concerningChunkPos = worldToChunkPos(TwoIntTup(m.startPos.x, m.startPos.z));
+                            for (int x = -8; x < 8; x++)
+                            {
+                                for (int z = -8; z < 8; z++)
+                                {
+                                    auto resultantspot = concerningChunkPos + TwoIntTup(x, z);
+                                    if (!g->contains(resultantspot))
+                                    {
+                                        //Just spawns
+                                        auto spawns = WorldRenderer::generateChunk(&serverWorld, resultantspot, nullptr, true);
+                                        g->insert(resultantspot);
+
+                                        if (!spawns.value().empty())
+                                        {
+                                            std::cout << "spawns count : " << spawns.value().size() << std::endl;
+                                            for (auto& spawn : spawns.value())
+                                            {
+                                                clientsMutex.lock();
+                                                entt::entity newName = entt::null;
+                                                switch (spawn.type)
+                                                {
+                                                case GuyType::ORANGE1:
+                                                    newName = makeOrange1Guy(serverReg, spawn.spot, entt::null);
+                                                    break;
+                                                }
+                                                clientsMutex.unlock();
+                                                spawn.newName = newName;
+
+                                                sendMessageToAllClients(spawn, m_playerIndex, false);
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+
+
                         boost::asio::post(localserver_io_context->get_executor(), [m_playerIndex = m_playerIndex, m](){
                             {
                                 std::unique_lock<std::shared_mutex> clientsLock(clientsMutex);
@@ -615,6 +640,20 @@ private:
 
                         //auto & vm = voxelModels[(int)m.name];
 
+                        redistrib = true;
+                    }
+                    else if constexpr(std::is_same_v<T, SpawnGuy>)
+                    {
+                        clientsMutex.lock();
+                        entt::entity newName = entt::null;
+                        switch (m.type)
+                        {
+                        case GuyType::ORANGE1:
+                            newName = makeOrange1Guy(serverReg, m.spot, entt::null);
+                            break;
+                        }
+                        clientsMutex.unlock();
+                        m.newName = newName;
                         redistrib = true;
                     }
                     else if constexpr (std::is_same_v<T, AddLootDrop>)

@@ -13,7 +13,7 @@
 #include "RebuildQueue.h"
 #include "../Helpers.h"
 #include "../Light.h"
-
+#include "../NetworkTypes.h"
 
 
 struct DrawInstructions
@@ -252,7 +252,10 @@ public:
 
 
 
-    static void generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr);
+    static std::optional<std::vector<SpawnGuy>>
+    generateChunk(World* world, const TwoIntTup& chunkSpot,
+                  std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks = nullptr, bool
+                  doSpawns = false);
 
     WorldRenderer()
     {

@@ -101,7 +101,7 @@ DEFINE_ENUM_WITH_STRING_CONVERSIONS(MaterialName, BlockType,
     (WILLOW_PLANKS)
     (BEECH_PLANKS)
     (WESTERN_HEMLOCK_PLANKS)
-    (EUCALYPTUS_PLANKS)
+    (ORANGE1_DUMMY_BLOCK)
     (CABLE)
     (JETPACK_PARTICLE_BLOCK)
     (DG_COMPUTERBLOCK)
@@ -115,19 +115,20 @@ constexpr std::bitset<BLOCK_COUNT> makeBitset(std::initializer_list<int> ids) {
     return bits;
 }
 
-constexpr auto noHeadBlock = makeBitset({DOOR, TALL_GRASS});
+constexpr auto noHeadBlock = makeBitset({DOOR, TALL_GRASS, ORANGE1_DUMMY_BLOCK});
 
-constexpr auto noAmbOccl = makeBitset({FENCE, GLASS, DG_COMPUTERBLOCK, DOOR, CABLE, LIGHT, TALL_GRASS});
+constexpr auto noAmbOccl = makeBitset({FENCE, GLASS, DG_COMPUTERBLOCK, DOOR, CABLE, LIGHT, TALL_GRASS, ORANGE1_DUMMY_BLOCK});
 
 constexpr auto noCustCollShape = makeBitset({DG_COMPUTERBLOCK});
 
 constexpr auto liquids = makeBitset({WATER});
 
-constexpr auto noColl = makeBitset({WATER, TALL_GRASS, BAMBOO});
+constexpr auto noColl = makeBitset({WATER, TALL_GRASS, BAMBOO, ORANGE1_DUMMY_BLOCK});
 
-constexpr auto trulynothing = makeBitset({AIR});
+constexpr auto trulynothing = makeBitset({AIR, ORANGE1_DUMMY_BLOCK});
 constexpr auto grasstypes = makeBitset({TALL_GRASS, GRASS});
 constexpr auto transparents = makeBitset({
+    ORANGE1_DUMMY_BLOCK,
     AIR,
     DG_COMPUTERBLOCK,
     STONE_STAIRS,
@@ -256,7 +257,7 @@ constexpr std::array<BlockTextures, BLOCK_COUNT> TEXS = {{
     {{ {10, 12}, {10, 12}, {10, 12} }}, // 86 Willow Planks
     {{ {11, 12}, {11, 12}, {11, 12} }}, // 87 Beech Planks
     {{ {12, 12}, {12, 12}, {12, 12} }}, // 88 Western Hemlock Planks
-    {{ {13, 12}, {13, 12}, {13, 12} }}, // 89 Eucalyptus Planks
+    {{ {13, 12}, {13, 12}, {13, 12} }}, // 89 orange1 dummy block
     {{ {12, 4}, {12, 4}, {12, 4} }}, // 90 Cable
     {{ {14, 14}, {14, 14}, {14, 14} }}, // 91 Jetback Particle Block
         {{ {14,3}, {14,4}, {14,4} }} // 92 Computer

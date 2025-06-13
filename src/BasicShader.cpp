@@ -16,6 +16,12 @@ jl::Shader getBasicShader()
             uniform float grassRedChange;
             uniform float scale;
 
+float closenessToNearestMultiple(float value, float N, float radius) {
+    float remainder = mod(value, N);
+    float distance = min(remainder, N - remainder);
+    float normalized = 1.0 - (distance / (N * 0.5));
+    return clamp((normalized - (1.0 - radius)) / radius, 0.0, 1.0);
+}
             mat4 getRotationMatrix(float xrot, float yrot, float zrot) {
                 mat4 Rx = mat4(1.0, 0.0, 0.0, 0.0,
                                0.0, cos(xrot), -sin(xrot), 0.0,
@@ -57,6 +63,8 @@ jl::Shader getBasicShader()
             uniform vec3 fogCol;
             uniform float underwater;
             uniform float dewyFogAmount;
+
+out float closenessToJungleCamp;
 
 
             float mDist(float x1, float y1, float x2, float y2) {
@@ -156,11 +164,13 @@ jl::Shader getBasicShader()
                     fogColor = vec4(vec3(0.2, 0.2, 0.8) * ambientBrightness, 1.0);
                     fogFactor = smoothstep(1.0, 15.0, horizDist);
                 }
+
+closenessToJungleCamp = closenessToNearestMultiple(pos2.x +500.0, 1250.0, 0.1f) * closenessToNearestMultiple(pos2.z + 500.0, 1250.0, 0.1f);
             }
         )glsl",
         R"glsl(#version 450 core
             out vec4 FragColor;
-
+            in float closenessToJungleCamp;
             in vec2 TexCoord;
             in vec3 brightness;
             in vec3 ppos;
@@ -188,6 +198,7 @@ jl::Shader getBasicShader()
                 vec4 lutTex = texture(lut, lutCoords);
 
                 FragColor = vec4(lutTex.xyz, FragColor.a * timeRended);
+                FragColor.b += closenessToJungleCamp;
 
                 if(FragColor.a < 0.1f) {
                     discard;

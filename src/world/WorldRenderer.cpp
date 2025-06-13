@@ -11,6 +11,8 @@
 #include "../specialblocks/FindEntityCreateFunc.h"
 #include "../specialblocks/FindSpecialBlock.h"
 #include "../Light.tpp"
+#include "../components/Orange1.h"
+#include "../NetworkTypes.h"
 std::atomic<int> NUM_THREADS_RUNNING = 0;
 
 
@@ -1161,64 +1163,118 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
 }
 
-void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std::unordered_set<TwoIntTup, TwoIntTupHash>* implicatedChunks)
+std::optional<std::vector<SpawnGuy>> WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot,
+                                                                  std::unordered_set<TwoIntTup, TwoIntTupHash>*
+                                                                  implicatedChunks, bool doSpawns)
 {
-
-    srand(chunkSpot.x * 73856093 ^ chunkSpot.z * 19349663);
-    for (int o = 0; o < 3; o++)
+    std::optional<std::vector<SpawnGuy>> spawns = std::nullopt;
+    if (doSpawns)
     {
-        auto offset1 = ((float)rand() / RAND_MAX);
-        auto offset2 = ((float)rand() / RAND_MAX);
-        auto therand = rand();
-        auto thechange = std::max(0.f, world->worldGenMethod->getTemperatureNoise(IntTup(chunkSpot.x * 16, 60, chunkSpot.z * 16)) * -100000);
-        //std::cout << thechange << std::endl;
-        if (therand > 15000 + thechange)
+        spawns = std::vector<SpawnGuy>{};
+        static FastNoiseLite noise = {};
+
+        auto worldxz = TwoIntTup(chunkSpot.x*16, chunkSpot.z*16);
+        auto c = closenessToNearestJungleCamp(worldxz.x, worldxz.z);
+        // if (c != 0.f)
+        // {
+        //     std::cout << "c = " << c << std::endl;
+        // }
+        if (c > 0.7)
         {
-            int y = 50;
-            float offsetNoise = world->worldGenMethod->getHumidityNoise(IntTup(chunkSpot.x, chunkSpot.z)) * 5.0f;
-            float offsetNoise2 = world->worldGenMethod->getHumidityNoise(IntTup(chunkSpot.x, chunkSpot.z)) * 5.0f;
-            IntTup realSpot(chunkSpot.x * chunkSize + (chunkSize >> 1) + static_cast<int>(offsetNoise) + offset1 * 10.0f , chunkSpot.z * chunkSize  + (chunkSize >> 1) + static_cast<int>(offsetNoise2) + offset2 * 10.0f);
-            bool surfaceBlockFound = false;
-
-            MaterialName fb = OverworldWorldGenMethod::getFloorBlockInClimate(world->worldGenMethod->getClimate(realSpot));
-            while(y < 170 && !surfaceBlockFound)
+            auto offsets = getJungleCampOffsetsForWorldXZ(noise, worldxz);
+            for (auto offset : offsets)
             {
-                realSpot.y = y;
-                if(world->get(realSpot) == fb)
+                int y = 40;
+                IntTup realSpot(chunkSpot.x * chunkSize + (chunkSize >> 1) + offset.x, chunkSpot.z * chunkSize  + (chunkSize >> 1) + offset.z);
+                bool surfaceBlockFound = false;
+
+                MaterialName fb = OverworldWorldGenMethod::getFloorBlockInClimate(world->worldGenMethod->getClimate(realSpot));
+
+                //std::cout << "Floor block in climate: " << ToString(fb) << std::endl;
+                while(y <170 && !surfaceBlockFound)
                 {
-                    surfaceBlockFound = true;
-                }
-                y++;
-            }
-            if(surfaceBlockFound)
-            {
-                Climate climate = world->worldGenMethod->getClimate(realSpot);
-                std::vector<TerrainFeature>& possibleFeatures = getTerrainFeaturesFromClimate(climate);
-                size_t selectedIndex = static_cast<int>((static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * static_cast<float>(possibleFeatures.
-                    size()));
-                selectedIndex = std::min(selectedIndex, possibleFeatures.size() - 1);
-                TerrainFeature selectedFeature = possibleFeatures[selectedIndex];
 
-                std::vector<VoxelModelName>& possibleModels = getVoxelModelNamesFromTerrainFeatureName(selectedFeature);
-                size_t selectedModelIndex = static_cast<int>((static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * static_cast<float>(possibleModels.
-                    size()));
-                selectedModelIndex = std::min(selectedModelIndex, possibleModels.size() - 1);
-                VoxelModelName selectedModel = possibleModels[selectedModelIndex];
+                    realSpot.y = y;
 
-                IntTup& voxDim = voxelModels[selectedModel].dimensions;
-                IntTup offset = IntTup(-(voxDim.x / 2), 0, -(voxDim.z / 2));
-
-                for(auto & point : voxelModels[selectedModel].points)
-                {
-                    if(point.colorIndex != AIR)
+                    //std::cout << "Checking " << realSpot.x << " " << realSpot.y << " " << realSpot.z << std::endl;
+                    if(world->get(realSpot) == fb)
                     {
-                        auto finalspot = realSpot + point.localSpot + offset;
-                        auto chunkhere = WorldRenderer::stupidWorldRendererWorldToChunkPos(TwoIntTup(finalspot.x, finalspot.z));
-                        if (implicatedChunks && chunkhere != chunkSpot)
+                        surfaceBlockFound = true;
+                    }
+                    y++;
+                }
+                if (surfaceBlockFound)
+                {
+                    //std::cout << "guy spawn here: " << realSpot.x << " " << realSpot.z << std::endl;
+                    spawns.value().push_back(SpawnGuy{.type = GuyType::ORANGE1, .newName = entt::null, .spot = glm::vec3(realSpot.x, realSpot.y, realSpot.z)});
+                } else
+                {
+                    std::cout << "No surface block found" << std::endl;
+                }
+
+            }
+        }
+    } else
+    {
+        srand(chunkSpot.x * 73856093 ^ chunkSpot.z * 19349663);
+        for (int o = 0; o < 3; o++)
+        {
+
+
+            auto therand = rand();
+            auto thechange = std::max(0.f, world->worldGenMethod->getTemperatureNoise(IntTup(chunkSpot.x * 16, 60, chunkSpot.z * 16)) * -100000);
+            //std::cout << thechange << std::endl;
+            if (therand > 15000 + thechange)
+            {
+                auto offset1 = ((float)rand() / RAND_MAX);
+                auto offset2 = ((float)rand() / RAND_MAX);
+
+                int y = 50;
+                float offsetNoise = world->worldGenMethod->getHumidityNoise(IntTup(chunkSpot.x, chunkSpot.z)) * 5.0f;
+                float offsetNoise2 = world->worldGenMethod->getHumidityNoise(IntTup(chunkSpot.x, chunkSpot.z)) * 5.0f;
+                IntTup realSpot(chunkSpot.x * chunkSize + (chunkSize >> 1) + static_cast<int>(offsetNoise) + offset1 * 10.0f , chunkSpot.z * chunkSize  + (chunkSize >> 1) + static_cast<int>(offsetNoise2) + offset2 * 10.0f);
+                bool surfaceBlockFound = false;
+
+                MaterialName fb = OverworldWorldGenMethod::getFloorBlockInClimate(world->worldGenMethod->getClimate(realSpot));
+                while(y < 170 && !surfaceBlockFound)
+                {
+                    realSpot.y = y;
+                    if(world->get(realSpot) == fb)
+                    {
+                        surfaceBlockFound = true;
+                    }
+                    y++;
+                }
+                if(surfaceBlockFound)
+                {
+                    Climate climate = world->worldGenMethod->getClimate(realSpot);
+                    std::vector<TerrainFeature>& possibleFeatures = getTerrainFeaturesFromClimate(climate);
+                    size_t selectedIndex = static_cast<int>((static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * static_cast<float>(possibleFeatures.
+                        size()));
+                    selectedIndex = std::min(selectedIndex, possibleFeatures.size() - 1);
+                    TerrainFeature selectedFeature = possibleFeatures[selectedIndex];
+
+                    std::vector<VoxelModelName>& possibleModels = getVoxelModelNamesFromTerrainFeatureName(selectedFeature);
+                    size_t selectedModelIndex = static_cast<int>((static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * static_cast<float>(possibleModels.
+                        size()));
+                    selectedModelIndex = std::min(selectedModelIndex, possibleModels.size() - 1);
+                    VoxelModelName selectedModel = possibleModels[selectedModelIndex];
+
+                    IntTup& voxDim = voxelModels[selectedModel].dimensions;
+                    IntTup offset = IntTup(-(voxDim.x / 2), 0, -(voxDim.z / 2));
+
+                    for(auto & point : voxelModels[selectedModel].points)
+                    {
+                        if(point.colorIndex != AIR)
                         {
-                            implicatedChunks->insert(chunkhere);
+                            auto finalspot = realSpot + point.localSpot + offset;
+                            auto chunkhere = WorldRenderer::stupidWorldRendererWorldToChunkPos(TwoIntTup(finalspot.x, finalspot.z));
+                            if (implicatedChunks && chunkhere != chunkSpot)
+                            {
+                                implicatedChunks->insert(chunkhere);
+                            }
+                            world->setNUDM(finalspot, point.colorIndex);
                         }
-                        world->setNUDM(finalspot, point.colorIndex);
                     }
                 }
             }
@@ -1226,12 +1282,14 @@ void WorldRenderer::generateChunk(World* world, const TwoIntTup& chunkSpot, std:
     }
 
 
+
+
     // for (auto & chunk: implicatedChunks)
     // {
     //
     // }
 
-
+    return spawns;
 }
 
 void WorldRenderer::clearInFlightMeshUpdates()

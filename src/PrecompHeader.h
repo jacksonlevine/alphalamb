@@ -72,4 +72,24 @@ constexpr double J_PI = 3.1415926535897932384626433832;
 extern GLuint lutTexture;
 #define DAY_LENGTH 900.0f
 
+enum class GuyType
+{
+    ORANGE1
+};
+
+inline float closenessToNearestMultiple(float value, float N, float radius) {
+    float remainder = std::fmod(value, N);
+    if (remainder < 0.0f) remainder += N; // Ensure positive remainder like GLSL mod
+    float distance = std::min(remainder, N - remainder);
+    float normalized = 1.0f - (distance / (N * 0.5f));
+    return std::clamp((normalized - (1.0f - radius)) / radius, 0.0f, 1.0f);
+}
+
+inline float closenessToNearestJungleCamp(float x, float z)
+{
+    return closenessToNearestMultiple(x +500.0, 1250.0, 0.1f) * closenessToNearestMultiple(z + 500.0, 1250.0, 0.1f);
+
+}
+
+
 #endif //PRECOMPHEADER_H

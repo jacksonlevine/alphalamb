@@ -66,7 +66,7 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
 
     static const float WL = 60.0f;
 
-    const float distfromorigin = 1.0f - (glm::abs(spot.x + spot.z) / 8'000.f);
+    const float distfromorigin = std::max(0.0f, 1.0f - (glm::abs(spot.x + spot.z) / 8'000.f)) * 2.0f;
 
     const float notype = std::min(0.01f, std::max(0.003f, noise.GetNoise(
         spot.x * 0.25f,
@@ -212,7 +212,6 @@ float OverworldWorldGenMethod::getTemperatureNoise(const IntTup& spot)
 float OverworldWorldGenMethod::getNoiseMix(float x, float y, float z)
 {
     return (noise.GetNoise(x*0.1f,y-40,z*0.1f)*0.7);
-
 }
 
 int OverworldWorldGenMethod::getSeed()
