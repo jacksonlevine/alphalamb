@@ -296,6 +296,16 @@ constexpr auto neighbs = std::to_array({
     IntTup(0,0,-1), IntTup(0,0,1)
     });
 
+//adjacent-to-center + edges
+constexpr auto neighbs14 = std::to_array({
+IntTup(-1,0,0), IntTup(1,0,0),
+IntTup(0,-1,0), IntTup(0,1,0),
+IntTup(0,0,-1), IntTup(0,0,1),
+
+IntTup(-1,-1,0),IntTup(1,-1,0),IntTup(0,-1,-1),IntTup(0,-1,1),
+IntTup(-1,1,0),IntTup(1,1,0),IntTup(0,1,-1),IntTup(0,1,1),
+});
+
 
 constexpr auto neighbs4 = std::to_array({
     IntTup(-1,0,0), IntTup(1,0,0),

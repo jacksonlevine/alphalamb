@@ -186,7 +186,7 @@ void propagateAllLightsLayered(World* world,
 
                 //IF THE NEIGHBOR HAS NO NON-AIR/NON-TRULYNOTHING NEIGHBORS FUCK IT
                 bool NEIGHBORHASATLEASTONESOLIDNEIGHBOR = false;
-                for(const auto& newneigh : neighbs)
+                for(const auto& newneigh : neighbs14)
                 {
                     IntTup neighneigh = neighbor + newneigh;
                     if (!trulynothing.test(world->getLocked(neighneigh)))
