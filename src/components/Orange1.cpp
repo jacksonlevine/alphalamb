@@ -36,7 +36,6 @@ void renderOrange1Guys(entt::registry& reg, Scene* scene, float deltaTime)
     struct Orange1PhysicsBody
     {
         PxRigidStatic* body = nullptr;
-        CollisionCage<2> collisionCage = {};
         Orange1PhysicsBody() = default;
         explicit Orange1PhysicsBody(const glm::vec3& position)
         {
@@ -44,6 +43,21 @@ void renderOrange1Guys(entt::registry& reg, Scene* scene, float deltaTime)
             const PxSphereGeometry sphereGeom(0.25f);
             PxRigidStatic* sphere = gPhysics->createRigidStatic(PxTransform(PxVec3(position.x, position.y, position.z)));
             PxShape* shape = gPhysics->createShape(sphereGeom, *material);
+
+
+            //
+            // if (shape)
+            // {
+            //
+            //     // Set the collision filtering
+            //     PxFilterData filterData;
+            //     filterData.word0 = 1;  // Set to group 1
+            //     shape->setSimulationFilterData(filterData);
+            //     shape->setQueryFilterData(filterData);
+            // }
+
+
+
             sphere->attachShape(*shape);
             shape->release(); //Release our reference, actor holds it now
             //PxRigidBodyExt::updateMassAndInertia(*sphere, 1.0f);
@@ -378,7 +392,6 @@ float perlinNoise(vec3 position, uint seed) {
             }
         }
 
-        physicsbodies.at(entity).collisionCage.updateToSpot(theScene.world, pos.position, deltaTime);
         orange1DisplayInstances.emplace_back(pos.position, quat, glm::vec2(0,0));
     }
 

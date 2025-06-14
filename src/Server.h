@@ -20,6 +20,7 @@
 #include "world/World.h"
 #include "FlatCposSet.h"
 #include "Recipes.h"
+#include "components/JungleCampSpawnedInChunk.h"
 #include "components/Lifetime.h"
 #include "components/Orange1.h"
 using tcp = boost::asio::ip::tcp;
@@ -287,28 +288,50 @@ private:
                                     if (!g->contains(resultantspot))
                                     {
                                         //Just spawns
-                                        auto spawns = WorldRenderer::generateChunk(&serverWorld, resultantspot, nullptr, true);
-                                        g->insert(resultantspot);
+                                        auto cview = serverReg.view<ChunkCamps>();
 
-                                        if (!spawns.value().empty())
+                                        bool alreadyspawned = false;
+                                        for (auto chunk : cview)
                                         {
-                                            std::cout << "spawns count : " << spawns.value().size() << std::endl;
-                                            for (auto& spawn : spawns.value())
+                                            auto& chunkcamp = cview.get<ChunkCamps>(chunk);
+                                            if (chunkcamp.has_camp(resultantspot))
                                             {
-                                                clientsMutex.lock();
-                                                entt::entity newName = entt::null;
-                                                switch (spawn.type)
-                                                {
-                                                case GuyType::ORANGE1:
-                                                    newName = makeOrange1Guy(serverReg, spawn.spot, entt::null);
-                                                    break;
-                                                }
-                                                clientsMutex.unlock();
-                                                spawn.newName = newName;
-
-                                                sendMessageToAllClients(spawn, m_playerIndex, false);
+                                                alreadyspawned = true;
                                             }
                                         }
+                                        if (!alreadyspawned)
+                                        {
+                                            auto spawns = WorldRenderer::generateChunk(&serverWorld, resultantspot, nullptr, true);
+                                            g->insert(resultantspot);
+
+                                            if (!spawns.value().empty())
+                                            {
+
+                                                for (auto chunk : cview)
+                                                {
+                                                    auto& chunkcamp = cview.get<ChunkCamps>(chunk);
+                                                    chunkcamp.camps.push_back(resultantspot);
+                                                }
+
+                                                std::cout << "spawns count : " << spawns.value().size() << std::endl;
+                                                for (auto& spawn : spawns.value())
+                                                {
+                                                    clientsMutex.lock();
+                                                    entt::entity newName = entt::null;
+                                                    switch (spawn.type)
+                                                    {
+                                                    case GuyType::ORANGE1:
+                                                        newName = makeOrange1Guy(serverReg, spawn.spot, entt::null);
+                                                        break;
+                                                    }
+                                                    clientsMutex.unlock();
+                                                    spawn.newName = newName;
+
+                                                    sendMessageToAllClients(spawn, m_playerIndex, false);
+                                                }
+                                            }
+                                        }
+
                                     }
 
                                 }
@@ -881,6 +904,12 @@ public:
         serverWorld.setSeed(DGSEEDSEED);
 
         loadDM("world/serverworld.txt", &serverWorld, serverReg, serverWorld.blockAreas, serverWorld.placedVoxModels, nullptr, nullptr, "world/savedReg.bin");
+        if (serverReg.view<ChunkCamps>().empty())
+        {
+            auto we= serverReg.create();
+            serverReg.emplace<ChunkCamps>(we);
+        }
+
         auto g = gcspool.get();
         if (serverReg.view<WorldState>().empty())
         {

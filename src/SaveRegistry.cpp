@@ -4,6 +4,7 @@
 #include "SaveRegistry.h"
 #include "FileArchives.h"
 #include "components/ComputerComponent.h"
+#include "components/JungleCampSpawnedInChunk.h"
 #include "components/Lifetime.h"
 #include "components/LootDrop.h"
 #include "components/Orange1.h"
@@ -34,6 +35,7 @@ void saveRegistry(entt::registry & reg, const char* filename)
     .get<Lifetime>(outputArchive)
     .get<PlayerComp>(outputArchive)
     .get<Orange1>(outputArchive)
+    .get<ChunkCamps>(outputArchive)
     ;
 }
 
@@ -67,6 +69,7 @@ void loadRegistry(entt::registry & reg, const char* filename)
         .get<Lifetime>(inputArchive)
         .get<PlayerComp>(inputArchive)
         .get<Orange1>(inputArchive)
+        .get<ChunkCamps>(inputArchive)
         .orphans()
         ;
 

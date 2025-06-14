@@ -6,6 +6,7 @@
 
 #include "WorldRenderer.h"
 #include "../BlockType.h"
+#include "../components/JungleCampSpawnedInChunk.h"
 
 
 std::optional<std::shared_lock<std::shared_mutex>> tryToGetReadLockOnDM(HashMapDataMapTemplate<BlockType>* map)
@@ -25,6 +26,7 @@ bool loadDM(std::string filename, World* outWorld, entt::registry& reg, BlockAre
 {
 
     loadRegistry(reg, regfilename);
+
 
     const bool isClient = im == nullptr;
     if (existingInvs != nullptr)

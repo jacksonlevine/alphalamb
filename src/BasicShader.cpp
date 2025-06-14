@@ -165,7 +165,7 @@ out float closenessToJungleCamp;
                     fogFactor = smoothstep(1.0, 15.0, horizDist);
                 }
 
-closenessToJungleCamp = closenessToNearestMultiple(pos2.x +500.0, 1250.0, 0.1f) * closenessToNearestMultiple(pos2.z + 500.0, 1250.0, 0.1f);
+closenessToJungleCamp = closenessToNearestMultiple(pos2.x, 1250.0, 0.1f) * closenessToNearestMultiple(pos2.z, 1250.0, 0.1f);
             }
         )glsl",
         R"glsl(#version 450 core

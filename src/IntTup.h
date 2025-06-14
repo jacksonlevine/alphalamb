@@ -66,6 +66,11 @@ public:
     bool operator!=(const TwoIntTup& other) const;
     TwoIntTup& operator=(const TwoIntTup& other);
     TwoIntTup& operator+=(const TwoIntTup& other);
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+        archive(x,z);
+    }
 };
 
 TwoIntTup operator+(TwoIntTup first, const TwoIntTup& second);

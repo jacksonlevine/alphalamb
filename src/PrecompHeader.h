@@ -87,7 +87,7 @@ inline float closenessToNearestMultiple(float value, float N, float radius) {
 
 inline float closenessToNearestJungleCamp(float x, float z)
 {
-    return closenessToNearestMultiple(x +500.0, 1250.0, 0.1f) * closenessToNearestMultiple(z + 500.0, 1250.0, 0.1f);
+    return closenessToNearestMultiple(x, 1250.0, 0.1f) * closenessToNearestMultiple(z, 1250.0, 0.1f);
 
 }
 
