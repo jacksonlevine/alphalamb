@@ -739,9 +739,9 @@ void renderImGui()
                     ImGui::Text(std::to_string(inv.inventory.inventory[i].count).c_str());
                 }
 
-                ImGui::SetCursorPos(start);
+                ImGui::SetCursorPos(ImVec2(start.x-10, start.y-10));
 
-                DGCustomButton((std::string("##hudinvrowback") + std::to_string(i)).c_str(), DGButtonType::Good1, invTileDisplaySize, 1.f, i == highlightedSlot );
+                DGCustomButton((std::string("##hudinvrowback") + std::to_string(i)).c_str(), DGButtonType::Good1, invTileDisplaySize + ImVec2(20, 20), 1.f, i == highlightedSlot );
 
 
             }
