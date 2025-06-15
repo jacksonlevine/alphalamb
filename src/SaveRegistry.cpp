@@ -36,6 +36,7 @@ void saveRegistry(entt::registry & reg, const char* filename)
     .get<PlayerComp>(outputArchive)
     .get<Orange1>(outputArchive)
     .get<ChunkCamps>(outputArchive)
+    .get<HealthComponent>(outputArchive)
     ;
 }
 
@@ -70,6 +71,7 @@ void loadRegistry(entt::registry & reg, const char* filename)
         .get<PlayerComp>(inputArchive)
         .get<Orange1>(inputArchive)
         .get<ChunkCamps>(inputArchive)
+        .get<HealthComponent>(inputArchive)
         .orphans()
         ;
 

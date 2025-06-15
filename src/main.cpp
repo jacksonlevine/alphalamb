@@ -366,11 +366,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     }
     if (scene->myPlayerIndex != entt::null)
     {
-        //
-        // if (key == GLFW_KEY_0 && action == GLFW_PRESS)
-        // {
-        //     pushToMainToNetworkQueue(SpawnGuy{GuyType::ORANGE1, entt::null, scene->our<jl::Camera>().transform.position - glm::vec3(0.f, 5.f, 0.f)});
-        // }
+
+        if (key == GLFW_KEY_0 && action == GLFW_PRESS)
+        {
+           // pushToMainToNetworkQueue(SpawnGuy{GuyType::ORANGE1, entt::null, scene->our<jl::Camera>().transform.position - glm::vec3(0.f, 5.f, 0.f)});
+        }
 
         if (key == GLFW_KEY_E && action == GLFW_PRESS)
         {
@@ -2067,6 +2067,7 @@ int main()
             renderOrange1Guys(theScene.REG, &theScene, deltaTime);
 
             renderImGui();
+
 
             profiler.checkTime("Render imgui");
 

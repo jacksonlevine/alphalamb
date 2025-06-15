@@ -233,13 +233,62 @@ void imguiInventory(Inventory& inv)
         ImGui::SameLine(0.0f, 0.0f);
 
         ImGui::BeginGroup();
+            ImGui::BeginGroup();
             auto curspos = ImGui::GetCursorScreenPos();
             auto curspos2 = ImGui::GetCursorPos();
 
             ImGui::GetWindowDrawList()->AddRect(curspos, curspos + ImVec2(160, 300), ImColor(ImVec4(0.f, 0.f, 0.f, 1.0)), 3, ImDrawFlags_RoundCornersAll, 2);
             ImGui::Dummy(ImVec2(160, 300));
+
             ImGui::SetCursorPos(curspos2);
             draw2DBillboard(ImVec2(300, 300), 70.0f);
+
+            ImGui::EndGroup();
+
+            ImGui::NewLine();
+
+            ImGui::BeginGroup();
+                static float heartbeat_pattern[] = {
+                    0.0f, 0.1f, 0.0f, -0.1f, 0.0f, 0.2f, 0.8f, 1.0f, 0.3f, -0.2f,
+                    0.0f, 0.1f, 0.5f, 0.2f, 0.0f, -0.1f, 0.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f
+                }; // 30 samples per heartbeat
+                static const int heartbeat_length = sizeof(heartbeat_pattern) / sizeof(heartbeat_pattern[0]);
+
+                static float values[90] = {};
+                static int values_offset = 0;
+                static double refresh_time = 0.0;
+    std::cout << " AY: " << theScene.our<HealthComponent>().heartRate << " " << theScene.our<HealthComponent>().health << std::endl;
+                float tempo = theScene.our<HealthComponent>().heartRate;
+                static int pattern_index = 0;
+
+                if (refresh_time == 0.0)
+                    refresh_time = ImGui::GetTime();
+
+                while (refresh_time < ImGui::GetTime()) // Create data at fixed 60 Hz rate
+                {
+                    values[values_offset] = heartbeat_pattern[pattern_index];
+                    values_offset = (values_offset + 1) % IM_ARRAYSIZE(values);
+
+                    // Advance through the heartbeat pattern based on tempo
+                    static float pattern_position = 0.0f;
+                    pattern_position += tempo;
+                    pattern_index = ((int)pattern_position) % heartbeat_length;
+
+                    refresh_time += 1.0f / 60.0f;
+                }
+
+                // Display the plot
+                {
+                    ImGui::PlotLines("##Heartbeat", values, IM_ARRAYSIZE(values), values_offset, "", -0.5f, 1.2f, ImVec2(160.0f, 40.0f));
+                }
+                ImGui::NewLine();
+                ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+                            ImGui::ProgressBar(theScene.our<HealthComponent>().health/100.0f, ImVec2(160.0f, 40.0f), "");
+                ImGui::PopStyleColor(2);
+
+            ImGui::EndGroup();
 
         ImGui::EndGroup();
     ImGui::EndGroup();

@@ -123,19 +123,19 @@ public:
 
     void particleBurst(glm::vec3 spot, size_t amount, BlockType blockID, float width, float energy)
     {
-        static FastNoiseLite noise;
+        static FastNoiseLite* noise = new FastNoiseLite();
         static auto _ = [] {
-            noise.SetNoiseType(FastNoiseLite::NoiseType_Value);
-            noise.SetSeed(time(NULL));
+            noise->SetNoiseType(FastNoiseLite::NoiseType_Value);
+            noise->SetSeed(time(NULL));
             return 0;
         }();
 
         for(int i = 0; i < amount; i++)
         {
             glm::vec3 here(
-                noise.GetNoise(26.0f*(spot.x+i) * energy, 26.0f*(spot.z-i) * energy) * width,
-                noise.GetNoise(26.0f*(spot.x-i) * energy, 26.0f*(spot.z+i) * energy) * width,
-                noise.GetNoise(26.0f*(spot.y+i) * energy, 26.0f*(spot.x-i) * energy) * width
+                noise->GetNoise(26.0f*(spot.x+i) * energy, 26.0f*(spot.z-i) * energy) * width,
+                noise->GetNoise(26.0f*(spot.x-i) * energy, 26.0f*(spot.z+i) * energy) * width,
+                noise->GetNoise(26.0f*(spot.y+i) * energy, 26.0f*(spot.x-i) * energy) * width
                 );
             addParticle(
                 here + spot,

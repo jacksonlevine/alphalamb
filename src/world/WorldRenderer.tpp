@@ -241,6 +241,12 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
             propagateAllLightsLayered(world, newBlockSources, lightmap, spot, &implicatedChunks, true);
             unpropagateAllLightsLayered(oldAmbientSources, ambientlightmap, spot, &implicatedChunks, true);
             propagateAllLightsLayered(world, newAmbientSources, ambientlightmap, spot, &implicatedChunks, true);
+        } else
+        {
+            unpropagateAllLightsLayered(oldBlockSources, lightmap, spot, &implicatedChunks, false);
+            propagateAllLightsLayered(world, newBlockSources, lightmap, spot, &implicatedChunks, false);
+            unpropagateAllLightsLayered(oldAmbientSources, ambientlightmap, spot, &implicatedChunks, false);
+            propagateAllLightsLayered(world, newAmbientSources, ambientlightmap, spot, &implicatedChunks, false);
         }
 
 

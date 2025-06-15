@@ -95,6 +95,8 @@ std::vector<float> generateSubdividedQuad(int divisions)
     return vertices;
 }
 
+
+
 void DrawCustomButtonBackground(const ImVec2& pos, const ImVec2& size, DGButtonType type, float scaleFromCenter, bool forceHighlight)
 {
 
@@ -714,6 +716,8 @@ void renderImGui()
 
             ImVec2 prevPos = ImGui::GetCursorPos();
 
+
+
             auto & inv = theScene.our<InventoryComponent>();
 
             int highlightedSlot = (int)theScene.our<InventoryComponent>().currentHeldInvIndex;
@@ -909,6 +913,8 @@ void renderImGui()
         ImGui::End(); // End the window
     }
     // Render ImGui
+    //ImGui::ShowDemoWindow();
+
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

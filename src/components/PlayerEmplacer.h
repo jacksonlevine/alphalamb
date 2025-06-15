@@ -5,6 +5,7 @@
 #ifndef PLAYEREMPLACER_H
 #define PLAYEREMPLACER_H
 
+#include "HealthComponent.h"
 #include "InventoryComponent.h"
 #include "MovementComponent.h"
 #include "NetworkComponent.h"
@@ -27,6 +28,7 @@ inline void emplacePlayerParts(entt::registry &REG, entt::entity pers, ClientUID
     REG.emplace<MovementComponent>(pers);
     REG.emplace<UUIDComponent>(pers, id);
     REG.emplace<PlayerComp>(pers);
+    REG.emplace<HealthComponent>(pers, 100.0f, 1.0f);
 }
 
 

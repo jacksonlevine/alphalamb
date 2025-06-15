@@ -1171,27 +1171,26 @@ std::optional<std::vector<SpawnGuy>> WorldRenderer::generateChunk(World* world, 
     if (doSpawns)
     {
         spawns = std::vector<SpawnGuy>{};
-        static FastNoiseLite noise = {};
+        static FastNoiseLite* noise = new FastNoiseLite();
 
         auto worldxz = TwoIntTup(chunkSpot.x*16, chunkSpot.z*16);
-        auto c = closenessToNearestJungleCamp(worldxz.x, worldxz.z);
         // if (c != 0.f)
         // {
         //     std::cout << "c = " << c << std::endl;
         // }
-        if (c > 0.7)
+        if (auto c = closenessToNearestJungleCamp(worldxz.x, worldxz.z); c > 0.7)
         {
-            auto offsets = getJungleCampOffsetsForWorldXZ(noise, worldxz);
+            auto offsets = getJungleCampOffsetsForWorldXZ(*noise, worldxz);
             for (auto offset : offsets)
             {
-                int y = 40;
+                int y = 170;
                 IntTup realSpot(chunkSpot.x * chunkSize + (chunkSize >> 1) + offset.x, chunkSpot.z * chunkSize  + (chunkSize >> 1) + offset.z);
                 bool surfaceBlockFound = false;
 
-                MaterialName fb = OverworldWorldGenMethod::getFloorBlockInClimate(world->worldGenMethod->getClimate(realSpot));
+                const MaterialName fb = OverworldWorldGenMethod::getFloorBlockInClimate(world->worldGenMethod->getClimate(realSpot));
 
                 //std::cout << "Floor block in climate: " << ToString(fb) << std::endl;
-                while(y <170 && !surfaceBlockFound)
+                while(y > 40 && !surfaceBlockFound)
                 {
 
                     realSpot.y = y;
@@ -1201,8 +1200,11 @@ std::optional<std::vector<SpawnGuy>> WorldRenderer::generateChunk(World* world, 
                     {
                         surfaceBlockFound = true;
                     }
-                    y++;
+                    y--;
                 }
+
+
+
                 if (surfaceBlockFound)
                 {
                     //std::cout << "guy spawn here: " << realSpot.x << " " << realSpot.z << std::endl;
