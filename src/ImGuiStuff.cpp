@@ -712,7 +712,7 @@ void renderImGui()
             ImVec2 invTileDisplaySize = ImVec2(50, 50); // Size of displayed image
 
 
-            ImVec2 startInvRow = ImVec2((screenSize.x / 2.f) - ((invTileDisplaySize.x + 20.0f) * 5.f)/2.f, screenSize.y - (screenSize.y / 20.0f));
+            ImVec2 startInvRow = ImVec2(((screenSize.x / 2.f) - ((invTileDisplaySize.x + 20.0f) * 5.f)/2.f) + 20.0f, screenSize.y - invTileDisplaySize.y + 10.f);
 
             ImVec2 prevPos = ImGui::GetCursorPos();
 
@@ -721,6 +721,21 @@ void renderImGui()
             auto & inv = theScene.our<InventoryComponent>();
 
             int highlightedSlot = (int)theScene.our<InventoryComponent>().currentHeldInvIndex;
+
+            ImGui::SetCursorPos(ImVec2(10, screenSize.y - invTileDisplaySize.y));
+
+            DGCustomButton("E  ", DGButtonType::Good2, invTileDisplaySize + ImVec2(20.f, 20.f), 1, glfwGetKey(theScene.window, GLFW_KEY_E) == GLFW_PRESS);
+            static auto invAccessIcon = jl::Texture("resources/invicon.png");
+            ImGui::SetCursorPos(ImVec2(30, screenSize.y - invTileDisplaySize.y + 10.f));
+            ImGui::Image((ImTextureID)invAccessIcon.id, invTileDisplaySize);
+
+
+            ImGui::SetCursorPos(ImVec2(10, screenSize.y - invTileDisplaySize.y*2 -10.f));
+
+            DGCustomButton("Q  ", DGButtonType::Good2, invTileDisplaySize + ImVec2(20.f, 20.f), 1, glfwGetKey(theScene.window, GLFW_KEY_Q) == GLFW_PRESS);
+            static auto questAccessIcon = jl::Texture("resources/questsicon.png");
+            ImGui::SetCursorPos(ImVec2(30, screenSize.y - invTileDisplaySize.y*2 ));
+            ImGui::Image((ImTextureID)questAccessIcon.id, invTileDisplaySize);
 
             for (int i = 0; i < 5; i++) {
                 ImVec2 start = startInvRow + ImVec2(i * (invTileDisplaySize.x + 20.0f), 0);
@@ -749,6 +764,14 @@ void renderImGui()
 
 
             }
+            ImGui::SetCursorPos(ImVec2(startInvRow.x, startInvRow.y - invTileDisplaySize.y));
+
+            //Health bar
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+            ImGui::ProgressBar(theScene.our<HealthComponent>().health/100.0f, ImVec2(180.0f, 20.0f), "");
+            ImGui::PopStyleColor(2);
+
 
             ImGui::SetCursorPos(prevPos);
 
@@ -836,13 +859,13 @@ void renderImGui()
                     ImGui::Text(coordinatesString.c_str());
                 } else
                 {
-                    const char* s1 = "F3: Toggle help";
-                    ImVec2 textSize = ImGui::CalcTextSize(s1);
-
-                    // Set the cursor position to the bottom-left of the screen
-                    ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f));
-
-                    ImGui::Text(s1);
+                    // const char* s1 = "F3: Toggle help";
+                    // ImVec2 textSize = ImGui::CalcTextSize(s1);
+                    //
+                    // // Set the cursor position to the bottom-left of the screen
+                    // ImGui::SetCursorPos(ImVec2(10.0f, screenSize.y - textSize.y - 10.0f));
+                    //
+                    // ImGui::Text(s1);
                 }
 
             } else if (theScene.bulkPlaceGizmo->active)

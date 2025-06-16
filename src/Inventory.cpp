@@ -258,7 +258,7 @@ void imguiInventory(Inventory& inv)
                 static float values[90] = {};
                 static int values_offset = 0;
                 static double refresh_time = 0.0;
-    std::cout << " AY: " << theScene.our<HealthComponent>().heartRate << " " << theScene.our<HealthComponent>().health << std::endl;
+    //std::cout << " AY: " << theScene.our<HealthComponent>().heartRate << " " << theScene.our<HealthComponent>().health << std::endl;
                 float tempo = theScene.our<HealthComponent>().heartRate;
                 static int pattern_index = 0;
 
@@ -282,10 +282,12 @@ void imguiInventory(Inventory& inv)
                 {
                     ImGui::PlotLines("##Heartbeat", values, IM_ARRAYSIZE(values), values_offset, "", -0.5f, 1.2f, ImVec2(160.0f, 40.0f));
                 }
+
                 ImGui::NewLine();
+                //Health bar
                 ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
                 ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-                            ImGui::ProgressBar(theScene.our<HealthComponent>().health/100.0f, ImVec2(160.0f, 40.0f), "");
+                            ImGui::ProgressBar(theScene.our<HealthComponent>().health/100.0f, ImVec2(160.0f, 20.0f), "Health");
                 ImGui::PopStyleColor(2);
 
             ImGui::EndGroup();

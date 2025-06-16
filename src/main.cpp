@@ -371,16 +371,24 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         {
            // pushToMainToNetworkQueue(SpawnGuy{GuyType::ORANGE1, entt::null, scene->our<jl::Camera>().transform.position - glm::vec3(0.f, 5.f, 0.f)});
         }
-
-        if (key == GLFW_KEY_E && action == GLFW_PRESS)
+        static bool justClosedInv = false;
+        if (key == GLFW_KEY_E)
         {
-            if (currentGuiScreen == GuiScreen::InGame)
+            if (currentGuiScreen == GuiScreen::InGame  && action == GLFW_RELEASE)
             {
-                currentGuiScreen = GuiScreen::Inventory;
-                theScene.shitICanMake = getShitCanMake(theScene.our<InventoryComponent>().inventory);
-                uncaptureMouse(scene);
-            } else if (currentGuiScreen == GuiScreen::Inventory)
+                if (justClosedInv)
+                {
+                    justClosedInv = false;
+                } else
+                {
+                    currentGuiScreen = GuiScreen::Inventory;
+                    theScene.shitICanMake = getShitCanMake(theScene.our<InventoryComponent>().inventory);
+                    uncaptureMouse(scene);
+                }
+
+            } else if (currentGuiScreen == GuiScreen::Inventory  && action == GLFW_PRESS)
             {
+                justClosedInv = true;
                 currentGuiScreen = GuiScreen::InGame;
                 captureMouse(scene);
             }
