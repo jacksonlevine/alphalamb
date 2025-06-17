@@ -74,7 +74,8 @@ extern GLuint lutTexture;
 
 enum class GuyType
 {
-    ORANGE1
+    ORANGE1,
+    DART1
 };
 
 inline float closenessToNearestMultiple(float value, float N, float radius) {

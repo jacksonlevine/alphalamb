@@ -14,7 +14,7 @@
 #include "../Scene.h"
 #include "../PhysXStuff.h"
 #include "../TextureFace.h"
-
+#include "../world/gizmos/ParticlesGizmo.h"
 
 
 std::array<glm::vec3, 7> getJungleCampOffsetsForWorldXZ(FastNoiseLite& noise, const TwoIntTup& wxz)
@@ -459,5 +459,64 @@ float perlinNoise(vec3 position, uint seed) {
         //     }
         // }
     }
+}
+
+
+void attackPlayers(entt::registry &reg, float deltaTime, Scene* scene)
+{
+    auto orangeguysview = reg.view<Orange1, NPPositionComponent>();
+    auto playersview = reg.view<PlayerComp, jl::Camera, Controls>();
+
+    static std::unordered_map<entt::entity, float> timers = {};
+
+    for (auto orangeguyentity : orangeguysview)
+    {
+
+        if (!timers.contains(orangeguyentity))
+        {
+            timers.insert({orangeguyentity, 0.0f});
+        } else
+        {
+            auto &f = timers.at(orangeguyentity);
+            if (f < 1.0f)
+            {
+                f += deltaTime;
+            } else
+            {
+                f = 0;
+                auto & ogp = orangeguysview.get<NPPositionComponent>(orangeguyentity).position;
+                for (auto entity: playersview)
+                {
+                    //Aim for just over their head
+                    auto & cam = playersview.get<jl::Camera>(entity);
+                    auto ppos = cam.transform.position + glm::vec3(0.f, 1.f, 0.f);
+                    auto &cont = playersview.get<Controls>(entity);
+
+                    auto dist = glm::distance(ppos, ogp);
+
+                    if (cont.anyMovement() && glm::distance(ogp, ppos + cam.transform.direction) >= dist )
+                    {
+                        ppos += cam.transform.direction;
+                    }
+
+
+                    //std::cout << "Dist: " << dist << std::endl;
+                    if (dist < 10)
+                    {
+                        auto dir = glm::normalize(ppos - (ogp + glm::vec3(0.f, 5.f, 0.f)));
+                        //Spawn a Dart
+                        scene->particles->particleBurst(ogp + glm::vec3(0.f, 5.f, 0.f),
+                                                            5, (MaterialName)JETPACK_PARTICLE_BLOCK, 0.8, 8.0f);
+                        DGMessage msg = SpawnGuy{GuyType::DART1, entt::null, ogp + glm::vec3(0.f, 5.f, 0.f),  dir, 0.5f};
+                        pushToMainToNetworkQueue(msg);
+                    }
+                }
+            }
+        }
+
+    }
+
+
+
 }
 

@@ -223,6 +223,8 @@ add_executable(DistantGarden
         src/components/Orange1.h
         src/components/JungleCampSpawnedInChunk.h
         src/components/HealthComponent.h
+        src/components/Dart1.cpp
+        src/components/Dart1.h
 )
 
 

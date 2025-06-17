@@ -323,6 +323,9 @@ private:
                                                     case GuyType::ORANGE1:
                                                         newName = makeOrange1Guy(serverReg, spawn.spot, entt::null);
                                                         break;
+                                                    case GuyType::DART1:
+                                                        newName = makeDart1(serverReg, spawn.spot, spawn.direction, spawn.damage, entt::null);
+                                                        break;
                                                     }
                                                     clientsMutex.unlock();
                                                     spawn.newName = newName;
@@ -665,6 +668,28 @@ private:
 
                         redistrib = true;
                     }
+                    else if constexpr(std::is_same_v<T, DealDamage>)
+                    {
+                        clientsMutex.lock();
+                        if (serverReg.valid(m.playerIndex))
+                        {
+                            if (serverReg.all_of<HealthComponent>(m.playerIndex))
+                            {
+                                auto & hc = serverReg.get<HealthComponent>(m.playerIndex);
+                                if (hc.health > 0.0)
+                                {
+                                    redistrib = true;
+                                    hc.health = std::max(0.f, hc.health - m.amount);
+                                }
+                            }
+                        }
+                        if (serverReg.valid(m.projectileToDelete))
+                        {
+                            serverReg.destroy(m.projectileToDelete);
+                        }
+                        clientsMutex.unlock();
+
+                    }
                     else if constexpr(std::is_same_v<T, SpawnGuy>)
                     {
                         clientsMutex.lock();
@@ -673,6 +698,9 @@ private:
                         {
                         case GuyType::ORANGE1:
                             newName = makeOrange1Guy(serverReg, m.spot, entt::null);
+                            break;
+                        case GuyType::DART1:
+                            newName = makeDart1(serverReg, m.spot, m.direction, m.damage, entt::null);
                             break;
                         }
                         clientsMutex.unlock();

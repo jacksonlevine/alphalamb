@@ -19,5 +19,5 @@ struct Orange1
 struct Scene;
 std::array<glm::vec3, 7> getJungleCampOffsetsForWorldXZ(FastNoiseLite& noise, const TwoIntTup& wxz);
 void renderOrange1Guys(entt::registry& reg, Scene* scene, float deltaTime);
-
+void attackPlayers(entt::registry &reg, float deltaTime, Scene* scene);
 #endif //ORANGE1_H

@@ -107,9 +107,9 @@ inline void exitWorld(Scene* scene)
     //     glDeleteVertexArrays(1, &chunk.drawInstructions.tvao);
     // }
     // scene->worldRenderer->chunkPool.clear();
-
-    scene->world->clearWorld();
     scene->REG.clear();
+    scene->world->clearWorld();
+
     //
     // entt::entity myPlayerIndex = scene->myPlayerIndex;
     // scene->players.erase(myPlayerIndex);

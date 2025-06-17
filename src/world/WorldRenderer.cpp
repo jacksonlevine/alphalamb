@@ -1208,7 +1208,8 @@ std::optional<std::vector<SpawnGuy>> WorldRenderer::generateChunk(World* world, 
                 if (surfaceBlockFound)
                 {
                     //std::cout << "guy spawn here: " << realSpot.x << " " << realSpot.z << std::endl;
-                    spawns.value().push_back(SpawnGuy{.type = GuyType::ORANGE1, .newName = entt::null, .spot = glm::vec3(realSpot.x, realSpot.y, realSpot.z)});
+                    spawns.value().push_back(SpawnGuy{.type = GuyType::ORANGE1, .newName = entt::null, .spot = glm::vec3(realSpot.x, realSpot.y, realSpot.z),
+                    .direction = glm::vec3(0), .damage = 0.f});
                 } else
                 {
                     std::cout << "No surface block found" << std::endl;

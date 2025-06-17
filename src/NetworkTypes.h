@@ -191,6 +191,16 @@ struct SpawnGuy
     GuyType type;
     entt::entity newName;
     glm::vec3 spot;
+    glm::vec3 direction;
+    float damage;
+};
+
+struct DealDamage
+{
+    entt::entity playerIndex;
+    float amount;
+    entt::entity projectileToDelete;
+    entt::entity damager;
 };
 
 // struct EquippedItemsUpdate
@@ -199,7 +209,7 @@ struct SpawnGuy
 //     std::array<InventorySlot, INVHEIGHT> equipped;
 // };
 
-using DGMessage = std::variant<SpawnGuy, DoRecipeOnMyInv, HeartbeatAndCleanup, RequestStackSlotsToDest, BlockSetAndDepleteSlot, DepleteInventorySlot, TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
+using DGMessage = std::variant<DealDamage, SpawnGuy, DoRecipeOnMyInv, HeartbeatAndCleanup, RequestStackSlotsToDest, BlockSetAndDepleteSlot, DepleteInventorySlot, TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
 
 
  const BlockSet& getBlockSet(const auto& m) {

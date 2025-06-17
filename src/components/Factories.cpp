@@ -4,6 +4,7 @@
 
 #include "Factories.h"
 
+#include "Dart1.h"
 #include "Lifetime.h"
 #include "LootDrop.h"
 #include "NPPositionComponent.h"
@@ -38,4 +39,13 @@ entt::entity makeOrange1Guy(entt::registry& reg, glm::vec3 position, entt::entit
     reg.emplace<Orange1>(guy);
     reg.emplace<NPPositionComponent>(guy, position);
     return guy;
+}
+
+entt::entity makeDart1(entt::registry& reg, glm::vec3 position, glm::vec3 direction, float damage, entt::entity useThisName)
+{
+    entt::entity dart = addEntityWithEnforcedName(reg, useThisName);
+    reg.emplace<Dart1>(dart, direction, damage);
+    reg.emplace<NPPositionComponent>(dart, position);
+    reg.emplace<Lifetime>(dart, (uint8_t)4);
+    return dart;
 }

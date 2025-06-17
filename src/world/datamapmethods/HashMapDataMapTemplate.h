@@ -157,6 +157,7 @@ std::optional<BlockType> HashMapDataMapTemplate<ValueType>::getUnsafe(const IntT
 
 template <typename ValueType>
 void HashMapDataMapTemplate<ValueType>::clear() {
+    std::unique_lock<std::shared_mutex> lock(mapmutex);
     chunks.clear();
 }
 
@@ -198,7 +199,7 @@ bool HashMapDataMapTemplate<ValueType>::Iterator::hasNext() const {
 
 template <typename ValueType>
 std::pair<IntTup, ValueType&> HashMapDataMapTemplate<ValueType>::Iterator::next() {
-    if (!hasNext()) throw std::out_of_range("Iterator out of range");
+    if (!hasNext()) {std::cout << "advanced iterator past end" <<std::endl;}
 
     // Convert local position to world position
     IntTup worldPos = localToWorldPos(chunkIt->first, blockIt->first);

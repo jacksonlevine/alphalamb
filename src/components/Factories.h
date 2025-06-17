@@ -12,5 +12,5 @@ entt::entity makeLootDrop(entt::registry& registry, LootDrop drop, glm::vec3 pos
 entt::entity makeStormyCloud(entt::registry& reg, glm::vec3 position, entt::entity useThisName = entt::null);
 
 entt::entity makeOrange1Guy(entt::registry& reg, glm::vec3 position, entt::entity useThisName);
-
+entt::entity makeDart1(entt::registry& reg, glm::vec3 position, glm::vec3 direction, float damage, entt::entity useThisName);
 #endif //FACTORIES_H

@@ -57,8 +57,8 @@
 #include "specialblocks/FindSpecialBlock.h"
 //Tinygltf includes stb image
 //#include <stb_image.h>
+#include "components/Dart1.h"
 #include "components/Orange1.h"
-
 
 boost::asio::io_context io_context;
 boost::asio::ip::tcp::socket tsocket(io_context);
@@ -1182,7 +1182,7 @@ int main()
 
 
 
-                visit([](const auto& m) {
+                visit([deltaTime](const auto& m) {
                     using T = std::decay_t<decltype(m)>;
                     if constexpr (std::is_same_v<T, WorldInfo>) {
                         // std::cout << "Got world info " << m.seed << " \n"
@@ -1202,6 +1202,46 @@ int main()
                         case GuyType::ORANGE1:
                             makeOrange1Guy(theScene.REG, m.spot, m.newName);
                             break;
+                        case GuyType::DART1:
+                            makeDart1(theScene.REG, m.spot, m.direction, m.damage, m.newName);
+                        }
+                    }
+                    else if constexpr(std::is_same_v<T, DealDamage>)
+                    {
+                        if (theScene.REG.valid(m.playerIndex))
+                        {
+                            if (theScene.REG.all_of<HealthComponent>(m.playerIndex))
+                            {
+                                auto & hc = theScene.REG.get<HealthComponent>(m.playerIndex);
+                                if (hc.health > 0.0)
+                                {
+                                    hc.health = std::max(0.f, hc.health - m.amount);
+                                }
+                            }
+                            if (theScene.REG.all_of<jl::Camera>(m.playerIndex))
+                            {
+                                glm::vec3 knockback = {};
+                                auto & cam = theScene.REG.get<jl::Camera>(m.playerIndex);
+
+                                if (theScene.REG.all_of<jl::Camera>(m.damager))
+                                {
+                                    auto pos = theScene.REG.get<jl::Camera>(m.damager).transform.position;
+                                    auto diff = cam.transform.position - pos;
+                                    knockback = glm::normalize(diff);
+                                }
+                                if (theScene.REG.all_of<NPPositionComponent>(m.damager))
+                                {
+                                    auto pos = theScene.REG.get<NPPositionComponent>(m.damager).position;
+                                    auto diff = cam.transform.position - pos;
+                                    knockback = glm::normalize(diff);
+                                }
+                                cam.transform.velocity += glm::normalize(knockback) * 0.1f;
+                            }
+
+                        }
+                        if (theScene.REG.valid(m.projectileToDelete))
+                        {
+                            theScene.REG.destroy(m.projectileToDelete);
                         }
                     }
                     else if constexpr(std::is_same_v<T, DoRecipeOnMyInv>)
@@ -1592,7 +1632,7 @@ int main()
             profiler.checkTime("Popped a network message");
 
 
-
+            attackPlayers(theScene.REG, deltaTime, &theScene);
 
 
             if (simscene)
@@ -1778,6 +1818,7 @@ int main()
             static GLuint odffLoc = glGetUniformLocation(mainShader.shaderID, "overridingDewyFogFactor");
             static GLuint wcaLoc = glGetUniformLocation(mainShader.shaderID, "worldCurveAmount");
             static GLuint dewyFogAmountLoc = glGetUniformLocation(mainShader.shaderID, "dewyFogAmount");
+            static GLuint timeLoc = glGetUniformLocation(mainShader.shaderID, "time");
             static GLuint uwloc = glGetUniformLocation(mainShader.shaderID, "underwater");
             //static GLuint wsloc = glGetUniformLocation(mainShader.shaderID, "worldStage");
 
@@ -1815,6 +1856,7 @@ int main()
             glUniform3f(offsetLoc, 0.0f, 0.0f, 0.0f);
             glUniform1f(scaleLoc, 1.0f);
             glUniform1f( wcaLoc,0.0f );
+            glUniform1f(timeLoc, glfwGetTime());
             glUniform1f(uwloc, theScene.blockHeadIn == WATER ? 1.0f : 0.0f);
 
 
@@ -2072,6 +2114,7 @@ int main()
             profiler.checkTime("Draw sun and moon and computers");
 
             renderLootDrops(theScene.REG, &theScene, deltaTime);
+            renderDart1s(theScene.REG, &theScene, deltaTime);
             renderOrange1Guys(theScene.REG, &theScene, deltaTime);
 
             renderImGui();

@@ -672,23 +672,50 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         if (jetpackMode)
         {
             camera.transform.velocity /= (1.0f + deltaTime);
+
+            // Calculate input direction
+            glm::vec3 inputDirection = glm::vec3(0.0f);
+
             if (controls.secondary1) {
-                camera.transform.velocity += camera.transform.up * 90.0f * deltaTime;
+                inputDirection += camera.transform.up;
             }
             if (controls.forward) {
-                camera.transform.velocity += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
+                inputDirection += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction);
             }
             if (controls.backward) {
-                camera.transform.velocity -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
+                inputDirection -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction);
             }
             if (controls.right) {
-                camera.transform.velocity += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult;
+                inputDirection += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right);
             }
             if (controls.left) {
-                camera.transform.velocity -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult;
+                inputDirection -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right);
             }
-            camera.transform.velocity.x = glm::clamp(camera.transform.velocity.x, -8000.0f * deltaTime, 8000.0f * deltaTime);
-            camera.transform.velocity.z = glm::clamp(camera.transform.velocity.z, -8000.0f * deltaTime, 8000.0f * deltaTime);
+
+            // Calculate target velocities
+            glm::vec3 targetVelocity = glm::vec3(0.0f);
+            if (glm::length(inputDirection) > 0.0f) {
+                targetVelocity = glm::normalize(inputDirection) * walkmult;
+            }
+
+            // Apply acceleration limiting
+            const float maxAcceleration = 8000.0f;
+            const float maxVelocityChange = maxAcceleration * deltaTime;
+
+            camera.transform.velocity.x = glm::clamp(targetVelocity.x,
+                camera.transform.velocity.x - maxVelocityChange,
+                camera.transform.velocity.x + maxVelocityChange);
+
+            camera.transform.velocity.z = glm::clamp(targetVelocity.z,
+                camera.transform.velocity.z - maxVelocityChange,
+                camera.transform.velocity.z + maxVelocityChange);
+
+            // Handle Y separately if needed
+            if (controls.secondary1) {
+                camera.transform.velocity.y = glm::clamp(targetVelocity.y,
+                    camera.transform.velocity.y - maxVelocityChange,
+                    camera.transform.velocity.y + maxVelocityChange);
+            }
         } else
         {
             if (isSliding)
