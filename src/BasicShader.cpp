@@ -281,7 +281,7 @@ float perlinNoise(vec3 position, uint seed) {
                 fogColor = vec4(fogCol.xyz  * ambientBrightness, 1.0);
                 if(underwater > 0.5f) {
                     fogColor = vec4(vec3(0.2, 0.2, 0.8) * ambientBrightness, 1.0);
-                    fogFactor = smoothstep(1.0, 15.0, horizDist);
+                    fogFactor = smoothstep(1.0, 15.0, horizDist) + (perlinNoise(vec3(abs(pos2.x*0.1 + time),abs(pos2.y*0.1 +  time),abs(pos2.z*0.1 +  time)), 0) + 0.5) * 0.07;
                 }
 
     closenessToJungleCamp = closenessToNearestMultiple(pos2.x, 1250.0, 0.1f) * closenessToNearestMultiple(pos2.z, 1250.0, 0.1f) * (perlinNoise(vec3(abs(pos2.x*0.1 + time),abs(pos2.y*0.1 +  time),abs(pos2.z*0.1 +  time)), 0) + 0.5);

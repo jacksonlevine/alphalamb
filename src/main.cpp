@@ -1235,7 +1235,7 @@ int main()
                                     auto diff = cam.transform.position - pos;
                                     knockback = glm::normalize(diff);
                                 }
-                                cam.transform.velocity += glm::normalize(knockback) * 0.1f;
+                                cam.transform.velocity += glm::normalize(knockback) * 0.5f;
                             }
 
                         }

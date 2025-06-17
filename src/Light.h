@@ -60,6 +60,14 @@ public:
         );
     }
 
+    ColorPack operator*(const float other) const {
+        return ColorPack(
+            static_cast<uint16_t>(static_cast<float>(r()) * other),
+            static_cast<uint16_t>(static_cast<float>(g()) * other),
+            static_cast<uint16_t>(static_cast<float>(b()) * other)
+        );
+    }
+
     constexpr ColorPack& operator+=(const ColorPack& other) {
         *this = *this + other;
         return *this;
@@ -397,5 +405,15 @@ inline float getBlockAmbientLightVal(uint16_t value1, uint16_t value2)
     return packedFloat;
 }
 
+inline std::pair<uint16_t, uint16_t> getBlockAmbientLightVals(float packedFloat)
+{
+    uint32_t packed;
+    memcpy(&packed, &packedFloat, sizeof(float));
+
+    uint16_t value1 = (packed >> 16) & 0xFFFF;
+    uint16_t value2 = packed & 0xFFFF;
+
+    return std::make_pair(value1, value2);
+}
 
 #endif //LIGHT_H

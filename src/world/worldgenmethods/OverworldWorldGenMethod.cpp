@@ -47,10 +47,6 @@ OverworldWorldGenMethod::OverworldWorldGenMethod()
     srand(time(NULL));
     noise.SetSeed(rand());
 
-    noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-    noise.SetFractalOctaves(2);
-    noise.SetFractalLacunarity(4.0f);
-    noise.SetFractalGain(0.5f);
 }
 
 BlockType OverworldWorldGenMethod::get(IntTup spot)
@@ -69,6 +65,14 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
     const float distfromoriginfactor = std::max(0.0f, 1.0f - ((glm::abs(spot.x) + glm::abs(spot.z)) / 8000.f)) * 1.0f;
 
 
+    const float grassnoise1 = noise.GetNoise(spot.x * 50.5f, spot.z * 50.5f);
+    const float grassnoise2 = noise.GetNoise(spot.x * 15.5f, spot.z * 15.5f);
+
+
+    const float lowerlevelfactor = (1.f - glm::clamp(glm::abs(spot.y - 30) / 7.f, 0.f, 1.f) )* (0.25f + grassnoise2 * 0.35f);
+    const float lowerlevelfactorbelow = (1.f - glm::clamp(glm::abs((spot.y - 1) - 30) / 7.f, 0.f, 1.f)) * (0.25f + grassnoise2 * 0.35f);
+
+
     const float notype = std::min(0.01f, std::max(0.003f, noise.GetNoise(
         spot.x * 0.25f,
         spot.z * 0.25f) * 0.2f));
@@ -85,8 +89,7 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
         spot.z * blockScaleInPerlin)
     - ((spot.y - 1 - yoff) * notype));
 
-    const float grassnoise1 = noise.GetNoise(spot.x * 50.5f, spot.z * 50.5f);
-    const float grassnoise2 = noise.GetNoise(spot.x * 15.5f, spot.z * 15.5f);
+
 
     const float no = dfof*distfromoriginfactor + distfromoriginfactor * (getNoiseMix(
         spot.x * blockScaleInPerlin,
@@ -118,6 +121,14 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
     {
         if (no10up > THRESHOLD)
         {
+            if (no - lowerlevelfactor < THRESHOLD)
+            {
+                if (nobelow - lowerlevelfactorbelow > THRESHOLD && grassnoise1 > THRESHOLD*15.f && grassnoise2 > THRESHOLD*15.f)
+                {
+                    return LIGHT;
+                }
+                return AIR;
+            }
             return underDirt;
         } else
         {
@@ -214,7 +225,7 @@ float OverworldWorldGenMethod::getTemperatureNoise(const IntTup& spot)
 
 float OverworldWorldGenMethod::getNoiseMix(float x, float y, float z)
 {
-    return (noise.GetNoise(x*0.1f,y*0.1f-40,z*0.1f)*0.7);
+    return (noise.GetNoise(x*0.1f,y*0.1f-40,z*0.1f)*0.6) + (noise.GetNoise(x*2.5f,y*2.5f-40,z*2.5f)*0.3) + (noise.GetNoise(x*12.5f,y*12.5f-40,z*12.5f)*0.1);
 }
 
 int OverworldWorldGenMethod::getSeed()

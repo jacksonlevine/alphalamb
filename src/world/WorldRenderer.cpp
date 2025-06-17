@@ -1353,14 +1353,18 @@ UsableMesh fromChunkLocked(const TwoIntTup& spot, World* world, bool light)
 void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, bool locked, BlockType blockType, UsableMesh& mesh, float
                                blockandambbright)
 {
-    // float baseBrightness;
-    // switch(side) {
-    //     case Side::Top:    baseBrightness = 1.0f * (blockandambbright / 16.0f); break;
-    //     case Side::Left:   baseBrightness = 0.7f * (blockandambbright / 16.0f); break;
-    //     case Side::Bottom: baseBrightness = 0.4f * (blockandambbright / 16.0f); break;
-    //     case Side::Right:  baseBrightness = 0.8f * (blockandambbright / 16.0f); break;
-    //     default:           baseBrightness = 0.9f * (blockandambbright / 16.0f); break;
-    // }
+
+
+    auto vals = getBlockAmbientLightVals(blockandambbright);
+    float baseBrightness;
+    switch(side) {
+        case Side::Top:    baseBrightness = 1.0f; break;
+        case Side::Left:   baseBrightness = 0.7f; break;
+        case Side::Bottom: baseBrightness = 0.4f; break;
+        case Side::Right:  baseBrightness = 0.8f; break;
+        default:           baseBrightness = 0.9f; break;
+    }
+    auto newbaab = getBlockAmbientLightVal(ColorPack(vals.first) * baseBrightness, ColorPack(vals.second) * baseBrightness);
 
     float isGrass = grasstypes.test(blockType) ? 1.0f : 0.0f;
 
@@ -1412,13 +1416,13 @@ void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, 
     bool isTransparent = transparents.test(blockType);
     if (isTransparent) {
         mesh.tbrightness.insert(mesh.tbrightness.end(), {
-            packonocclbits(occlusion[0], blockandambbright), isGrass, packonocclbits(occlusion[1], blockandambbright), isGrass,
-            packonocclbits(occlusion[2], blockandambbright), isGrass, packonocclbits(occlusion[3], blockandambbright), isGrass
+            packonocclbits(occlusion[0], newbaab), isGrass, packonocclbits(occlusion[1], newbaab), isGrass,
+            packonocclbits(occlusion[2], newbaab), isGrass, packonocclbits(occlusion[3], newbaab), isGrass
         });
     } else {
         mesh.brightness.insert(mesh.brightness.end(), {
-            packonocclbits(occlusion[0], blockandambbright), isGrass, packonocclbits(occlusion[1], blockandambbright), isGrass,
-            packonocclbits(occlusion[2], blockandambbright), isGrass, packonocclbits(occlusion[3], blockandambbright), isGrass
+            packonocclbits(occlusion[0], newbaab), isGrass, packonocclbits(occlusion[1], newbaab), isGrass,
+            packonocclbits(occlusion[2], newbaab), isGrass, packonocclbits(occlusion[3], newbaab), isGrass
         });
     }
 }
