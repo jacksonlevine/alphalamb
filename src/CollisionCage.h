@@ -95,6 +95,9 @@ void CollisionCage<radius>::updateToSpot(World* world, glm::vec3 spot, float del
                             {
                                 const IntTup offsetHere = IntTup(x, y, z);
                                 const IntTup spotHere = blockSpot + offsetHere;
+
+                                if(spotHere == blockSpot) continue;
+
                                 const auto rawhere = world->getRawLocked(spotHere);
                                 const auto idhere = (MaterialName)(rawhere & BLOCK_ID_BITS);
                                 if (rawhere != AIR && !noColl.test(idhere))
@@ -106,8 +109,8 @@ void CollisionCage<radius>::updateToSpot(World* world, glm::vec3 spot, float del
                                     else
                                     {
                                         //const auto normdirtoplayer = glm::normalize(glm::vec3(offsetHere.x, offsetHere.y, offsetHere.z));
-                                       // const auto inttupdirtoplayer = IntTup(normdirtoplayer.x, normdirtoplayer.y, normdirtoplayer.z);
-                                       // std::cout << "The shitty output from this: " << inttupdirtoplayer.x << " " << inttupdirtoplayer.y << " " << inttupdirtoplayer.z << std::endl;
+                                        // const auto inttupdirtoplayer = IntTup(normdirtoplayer.x, normdirtoplayer.y, normdirtoplayer.z);
+                                        // std::cout << "The shitty output from this: " << inttupdirtoplayer.x << " " << inttupdirtoplayer.y << " " << inttupdirtoplayer.z << std::endl;
                                         for (int i = 0; i < 6; i++)
                                         {
                                             addFace(PxVec3(spotHere.x, spotHere.y, spotHere.z), (Side)i, GRASS, 1, mesh, index, tindex);
@@ -119,6 +122,7 @@ void CollisionCage<radius>::updateToSpot(World* world, glm::vec3 spot, float del
                                     }
 
                                 }
+
                             }
                         }
                     }

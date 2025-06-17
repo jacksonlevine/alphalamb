@@ -123,7 +123,7 @@ BlockType OverworldWorldGenMethod::get(IntTup spot)
         {
             if (no - lowerlevelfactor < THRESHOLD)
             {
-                if (nobelow - lowerlevelfactorbelow > THRESHOLD && grassnoise1 > THRESHOLD*15.f && grassnoise2 > THRESHOLD*15.f)
+                if (nobelow - lowerlevelfactorbelow > THRESHOLD && grassnoise1 > 0.6 && grassnoise2 > 0.3)
                 {
                     return LIGHT;
                 }

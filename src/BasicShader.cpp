@@ -215,9 +215,9 @@ float perlinNoise(vec3 position, uint seed) {
 
                 brightness =
                 vec3(
-                max(0.2, min(1.0, (float(blockr)/12.0) + ((float(ambientr)/12.0) * ambientBrightness)) + occlvalues[occlusion]),
-                max(0.2, min(1.0, (float(blockg)/12.0) + ((float(ambientg)/12.0) * ambientBrightness)) + occlvalues[occlusion]),
-                max(0.2, min(1.0, (float(blockb)/12.0) + ((float(ambientb)/12.0) * ambientBrightness)) + occlvalues[occlusion])
+                max(0.01, min(1.0, (float(blockr)/12.0) + ((float(ambientr)/12.0) * ambientBrightness)) + occlvalues[occlusion]),
+                max(0.01, min(1.0, (float(blockg)/12.0) + ((float(ambientg)/12.0) * ambientBrightness)) + occlvalues[occlusion]),
+                max(0.01, min(1.0, (float(blockb)/12.0) + ((float(ambientb)/12.0) * ambientBrightness)) + occlvalues[occlusion])
                 );
 
                 TexCoord = inTexCoord;
