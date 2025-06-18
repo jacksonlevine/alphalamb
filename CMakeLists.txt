@@ -225,6 +225,7 @@ add_executable(DistantGarden
         src/components/HealthComponent.h
         src/components/Dart1.cpp
         src/components/Dart1.h
+        src/components/SoundSource.h
 )
 
 

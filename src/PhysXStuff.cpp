@@ -83,6 +83,9 @@ void _initializePhysX() {
     sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
     sceneDesc.cpuDispatcher = gDispatcher;
     sceneDesc.filterShader = FilterShaderExample;
+
+    sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
+
     gScene = gPhysics->createScene(sceneDesc);
 
     gControllerManager = PxCreateControllerManager(*gScene);

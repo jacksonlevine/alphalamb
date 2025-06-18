@@ -21,12 +21,15 @@ public:
     // Iterator class that returns world positions
     class Iterator {
     public:
+        std::shared_lock<std::shared_mutex> lock;
         explicit Iterator(HashMapDataMapTemplate<ValueType>& dataMap);
+
         bool hasNext() const;
         std::pair<IntTup, ValueType&> next();
 
     private:
         HashMapDataMapTemplate<ValueType>& dataMap;
+
 
         using BlockMap = boost::unordered_map<jl484_vec3, ValueType, jl484_vec3_hash>;
         using ChunkMap = boost::unordered_map<TwoIntTup, BlockMap, TwoIntTupHash>;
@@ -182,9 +185,9 @@ void HashMapDataMapTemplate<ValueType>::setUnsafe(const IntTup& spot, BlockType 
 
 template <typename ValueType>
 HashMapDataMapTemplate<ValueType>::Iterator::Iterator(HashMapDataMapTemplate<ValueType>& dataMap)
-    : dataMap(dataMap),
-      chunkIt(dataMap.chunks.begin()),
-      chunkEnd(dataMap.chunks.end()) {
+    : dataMap(dataMap), lock(dataMap.mapmutex) {
+    chunkIt = dataMap.chunks.begin();
+    chunkEnd = dataMap.chunks.end();
     if (chunkIt != chunkEnd) {
         blockIt = chunkIt->second.begin();
         blockEnd = chunkIt->second.end();
@@ -196,27 +199,25 @@ template <typename ValueType>
 bool HashMapDataMapTemplate<ValueType>::Iterator::hasNext() const {
     return chunkIt != chunkEnd;
 }
-
 template <typename ValueType>
 std::pair<IntTup, ValueType&> HashMapDataMapTemplate<ValueType>::Iterator::next() {
-    if (!hasNext()) {std::cout << "advanced iterator past end" <<std::endl;}
+    if (chunkIt == chunkEnd) {
+        std::cout << "advanced iterator past end" << std::endl;
+        // Return something safe instead of crashing
+        static ValueType dummy{};
+        return std::make_pair(IntTup{ 0,0,0 }, std::ref(dummy));
+    }
 
-    // Convert local position to world position
     IntTup worldPos = localToWorldPos(chunkIt->first, blockIt->first);
-
-    // Create pair with world position and block value
     auto result = std::make_pair(worldPos, std::ref(blockIt->second));
 
-    // Move to next element
     ++blockIt;
     advanceToNext();
-
     return result;
 }
 
 template <typename ValueType>
 void HashMapDataMapTemplate<ValueType>::Iterator::advanceToNext() {
-    // If we've reached the end of blocks in the current chunk
     while (chunkIt != chunkEnd && blockIt == blockEnd) {
         ++chunkIt;
         if (chunkIt != chunkEnd) {

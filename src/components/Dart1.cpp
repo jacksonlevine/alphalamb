@@ -309,7 +309,7 @@ void renderDart1s(entt::registry& reg, Scene* scene, float deltaTime)
                 {
                     scene->particles->particleBurst(thepos,
                                                             10, (MaterialName)JETPACK_PARTICLE_BLOCK, 0.8, 4.0f);
-                    pushToMainToNetworkQueue(DealDamage{scene->myPlayerIndex, 0.5f, ent, ent});
+                    pushToMainToNetworkQueue(DealDamage{.playerIndex = scene->myPlayerIndex, .amount = 1.75f, .projectileToDelete = ent, .damager =  ent});
                 }
 
 

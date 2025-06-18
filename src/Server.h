@@ -288,6 +288,7 @@ private:
                                     if (!g->contains(resultantspot))
                                     {
                                         //Just spawns
+                                        clientsMutex.lock();
                                         auto cview = serverReg.view<ChunkCamps>();
 
                                         bool alreadyspawned = false;
@@ -299,6 +300,7 @@ private:
                                                 alreadyspawned = true;
                                             }
                                         }
+                                        clientsMutex.unlock();
                                         if (!alreadyspawned)
                                         {
                                             auto spawns = WorldRenderer::generateChunk(&serverWorld, resultantspot, nullptr, true);
@@ -306,17 +308,18 @@ private:
 
                                             if (!spawns.value().empty())
                                             {
-
+                                                clientsMutex.lock();
                                                 for (auto chunk : cview)
                                                 {
                                                     auto& chunkcamp = cview.get<ChunkCamps>(chunk);
-                                                    chunkcamp.camps.push_back(resultantspot);
+                                                    //chunkcamp.camps.push_back(resultantspot);
                                                 }
+
 
                                                 std::cout << "spawns count : " << spawns.value().size() << std::endl;
                                                 for (auto& spawn : spawns.value())
                                                 {
-                                                    clientsMutex.lock();
+
                                                     entt::entity newName = entt::null;
                                                     switch (spawn.type)
                                                     {
@@ -327,11 +330,14 @@ private:
                                                         newName = makeDart1(serverReg, spawn.spot, spawn.direction, spawn.damage, entt::null);
                                                         break;
                                                     }
-                                                    clientsMutex.unlock();
-                                                    spawn.newName = newName;
 
+                                                    spawn.newName = newName;
+                                                    clientsMutex.unlock();
                                                     sendMessageToAllClients(spawn, m_playerIndex, false);
+                                                    clientsMutex.lock();
                                                 }
+                                                clientsMutex.unlock();
+
                                             }
                                         }
 

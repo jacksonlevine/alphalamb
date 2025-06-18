@@ -59,6 +59,7 @@
 //#include <stb_image.h>
 #include "components/Dart1.h"
 #include "components/Orange1.h"
+#include "components/SoundSource.h"
 
 boost::asio::io_context io_context;
 boost::asio::ip::tcp::socket tsocket(io_context);
@@ -685,6 +686,31 @@ static void onPhysicsComponentAdded(entt::registry& reg, entt::entity entity) {
     pc.initPhysicsBodies();
 }
 
+
+
+static void onOrangeGuyAdded(entt::registry& reg, entt::entity entity) {
+    reg.emplace<SoundSource<Orange1Hisser>>(entity);
+    auto& ss = reg.get<SoundSource<Orange1Hisser>>(entity);
+    auto pos = reg.get<NPPositionComponent>(entity).position;
+    ss.setPos(pos);
+}
+
+
+static void onPlayerAdded(entt::registry& reg, entt::entity entity) {
+    reg.emplace<SoundSource<PlayerSounds>>(entity);
+    auto& ss = reg.get<SoundSource<PlayerSounds>>(entity);
+    auto pos = reg.get<jl::Camera>(entity).transform.position;
+    ss.setPos(pos);
+}
+
+static void onHeathComponentUpdated(entt::registry& reg, entt::entity entity) {
+    if (reg.all_of<SoundSource<PlayerSounds>>(entity))
+    {
+        auto& ss = reg.get<SoundSource<PlayerSounds>>(entity);
+        ss.play(sounds.at((int)SoundBuffers::HURT));
+    }
+}
+
 const PxU32 scratchMemorySize = 16 * 1024;
 
 void* scratchMemory = nullptr;
@@ -727,6 +753,10 @@ int main()
 
 
     theScene.REG.on_construct<PhysicsComponent>().connect<&onPhysicsComponentAdded>();
+    theScene.REG.on_construct<Orange1>().connect<&onOrangeGuyAdded>();
+    theScene.REG.on_update<HealthComponent>().connect<&onHeathComponentUpdated>();
+    theScene.REG.on_construct<PlayerComp>().connect<&onPlayerAdded>();
+
     entt::monostate<entt::hashed_string{"swidth"}>{} = 1280;
     entt::monostate<entt::hashed_string{"sheight"}>{} = 720;
 
@@ -1138,6 +1168,11 @@ int main()
                     profiler.checkTime("pushback billboards");
 
                     PlayerUpdate(deltaTime, &world, particles, renderComponent, physicsComponent, movementComponent, controls, camera, particleComponent, inventory);
+                    if (theScene.REG.all_of<SoundSource<PlayerSounds>>(entity))
+                    {
+                        auto & ss = theScene.REG.get<SoundSource<PlayerSounds>>(entity);
+                        ss.setPos(camera.transform.position);
+                    }
                     profiler.checkTime("PlayerUpdate for a player");
                 }
                 profiler.checkTime("For entity playerview 1");
@@ -1212,10 +1247,14 @@ int main()
                         {
                             if (theScene.REG.all_of<HealthComponent>(m.playerIndex))
                             {
-                                auto & hc = theScene.REG.get<HealthComponent>(m.playerIndex);
+                                auto hc = theScene.REG.get<HealthComponent>(m.playerIndex);
                                 if (hc.health > 0.0)
                                 {
-                                    hc.health = std::max(0.f, hc.health - m.amount);
+                                    theScene.REG.patch<HealthComponent>(m.playerIndex, [&m](auto& thc)
+                                    {
+                                       thc.health = std::max(0.f, thc.health - m.amount);
+                                    });
+
                                 }
                             }
                             if (theScene.REG.all_of<jl::Camera>(m.playerIndex))

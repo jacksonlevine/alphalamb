@@ -96,12 +96,16 @@ inline ALuint makeSource(glm::vec3 position)
     alSource3f(source, AL_POSITION, position.x, position.y, position.z);
     alSource3f(source, AL_VELOCITY, 0.0f, 0.0f, 0.0f); // No movement
     alSourcei(source, AL_LOOPING, AL_FALSE); // Disable looping
-
     alSourcef(source, AL_REFERENCE_DISTANCE, 10.0f);
     alSourcef(source, AL_MAX_DISTANCE, 100.0f);
     alSourcef(source, AL_ROLLOFF_FACTOR, 0.5f);
 
     return source;
+}
+
+inline void deleteSource(ALuint source)
+{
+    alDeleteSources(1, &source);
 }
 
 inline void setSourcePosVel(ALuint source, const glm::vec3& position, const glm::vec3& velocity)
@@ -167,7 +171,9 @@ enum class SoundBuffers
     WOODSTEP3,
     WOODSTEP4,
     WOODSTEP5,
-    SONG1
+    SONG1,
+    DARTSHOOT,
+    HURT
 };
 
 enum class SoundBufferSeries
@@ -223,6 +229,8 @@ sounds.push_back(bufferFromFile("resources/sfx/dirtstep1.mp3"));
     sounds.push_back(bufferFromFile("resources/sfx/woodstep4.mp3"));
     sounds.push_back(bufferFromFile("resources/sfx/woodstep5.mp3"));
     sounds.push_back(bufferFromFile("resources/song1.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/shootdart.mp3"));
+    sounds.push_back(bufferFromFile("resources/sfx/hurt.mp3"));
 }
 
 #endif //OPENALSTUFF_H

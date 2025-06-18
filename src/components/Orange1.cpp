@@ -8,6 +8,7 @@
 #include <complex.h>
 
 #include "NPPositionComponent.h"
+#include "SoundSource.h"
 #include "../Client.h"
 #include "../ModelLoader.h"
 #include "../Shader.h"
@@ -464,7 +465,7 @@ float perlinNoise(vec3 position, uint seed) {
 
 void attackPlayers(entt::registry &reg, float deltaTime, Scene* scene)
 {
-    auto orangeguysview = reg.view<Orange1, NPPositionComponent>();
+    auto orangeguysview = reg.view<Orange1, NPPositionComponent, SoundSource<Orange1Hisser>>();
     auto playersview = reg.view<PlayerComp, jl::Camera, Controls>();
 
     static std::unordered_map<entt::entity, float> timers = {};
@@ -485,6 +486,9 @@ void attackPlayers(entt::registry &reg, float deltaTime, Scene* scene)
             {
                 f = 0;
                 auto & ogp = orangeguysview.get<NPPositionComponent>(orangeguyentity).position;
+                auto & ss = orangeguysview.get<SoundSource<Orange1Hisser>>(orangeguyentity);
+
+
                 for (auto entity: playersview)
                 {
                     //Aim for just over their head
@@ -505,6 +509,7 @@ void attackPlayers(entt::registry &reg, float deltaTime, Scene* scene)
                     {
                         auto dir = glm::normalize(ppos - (ogp + glm::vec3(0.f, 5.f, 0.f)));
                         //Spawn a Dart
+                        ss.play(sounds.at((int)SoundBuffers::DARTSHOOT));
                         scene->particles->particleBurst(ogp + glm::vec3(0.f, 5.f, 0.f),
                                                             5, (MaterialName)JETPACK_PARTICLE_BLOCK, 0.8, 8.0f);
                         DGMessage msg = SpawnGuy{GuyType::DART1, entt::null, ogp + glm::vec3(0.f, 5.f, 0.f),  dir, 0.5f};
