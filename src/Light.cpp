@@ -142,6 +142,14 @@ void propagateAllLightsLayered(World* world,
     // Layers indexed by max(R,G,B)
     std::vector<std::vector<std::tuple<IntTup, IntTup, ColorPack>>> layers(maxLightLevel + 1);
 
+    std::shared_lock<std::shared_mutex> url;
+    std::shared_lock<std::shared_mutex> nrl;
+    std::unique_lock<std::shared_mutex> lock3;
+    if (!locked) {
+        url = std::shared_lock<std::shared_mutex>(world->userDataMap.mutex());
+        nrl = std::shared_lock<std::shared_mutex>(world->nonUserDataMap.mutex());
+        lock3 = std::unique_lock<std::shared_mutex>(lightmapMutex);
+    }
 
     // Initialize light sources
     for (const auto& [pos, color] : lightSources) {
@@ -163,14 +171,7 @@ void propagateAllLightsLayered(World* world,
         }
     }
 
-    std::shared_lock<std::shared_mutex> url;
-    std::shared_lock<std::shared_mutex> nrl;
-    std::unique_lock<std::shared_mutex> lock3;
-    if (!locked) {
-        url = std::shared_lock<std::shared_mutex>(world->userDataMap.mutex());
-        nrl = std::shared_lock<std::shared_mutex>(world->nonUserDataMap.mutex());
-        lock3 = std::unique_lock<std::shared_mutex>(lightmapMutex);
-    }
+
 
     // Propagate lights layer by layer
     for (int level = maxLightLevel; level > 0; --level) {

@@ -119,24 +119,26 @@ private:
         m_clientUID = playerInit.id;
 
         {
-            std::shared_lock<std::shared_mutex> clientslock(clientsMutex);
-
-
-            auto view = serverReg.view<UUIDComponent>();
-            for (auto entity : view)
             {
-                auto comp = view.get<UUIDComponent>(entity);
-                if (m_clientUID == comp.uuid)
+                std::shared_lock<std::shared_mutex> clientslock(clientsMutex);
+
+
+                auto view = serverReg.view<UUIDComponent>();
+                for (auto entity : view)
                 {
+                    auto comp = view.get<UUIDComponent>(entity);
+                    if (m_clientUID == comp.uuid)
+                    {
 
-                    m_playerIndex = entity;
-                    break;
+                        m_playerIndex = entity;
+                        break;
+                    }
+
                 }
-
             }
             if (m_playerIndex == entt::null)
             {
-
+                std::unique_lock<std::shared_mutex> clientslock(clientsMutex);
                 m_playerIndex = serverReg.create();
                 emplacePlayerParts(serverReg, m_playerIndex, m_clientUID);
 
@@ -169,8 +171,7 @@ private:
 
         //Now the players inv will exist in the world they download
 
-        auto string = saveDM("world/serverworld.txt", &serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "world/serversnap.bin");
-        if (string.has_value())
+        if (auto string = saveDM("world/serverworld.txt", &serverWorld.userDataMap, serverWorld.blockAreas, serverWorld.placedVoxModels, invMapKeyedByUID, serverReg, "world/serversnap.bin"); string.has_value())
         {
 
             auto regfile = loadBinaryFile("world/serversnap.bin");

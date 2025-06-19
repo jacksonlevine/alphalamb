@@ -50,8 +50,8 @@ public:
 
 private:
     // Map of chunks: key is chunk position (x,z), value is a map of positions (with full x,y,z) to values
-    boost::unordered_map<TwoIntTup, boost::unordered_map<jl484_vec3, ValueType, jl484_vec3_hash>, TwoIntTupHash> chunks;
-    mutable std::shared_mutex mapmutex;
+    boost::unordered_map<TwoIntTup, boost::unordered_map<jl484_vec3, ValueType, jl484_vec3_hash>, TwoIntTupHash> chunks = {};
+    mutable std::shared_mutex mapmutex = {};
 
 #ifdef MEASURE_LOOKUP
     mutable size_t lookup_count = 0;

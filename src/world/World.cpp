@@ -16,7 +16,6 @@ std::optional<std::shared_lock<std::shared_mutex>> tryToGetReadLockOnDM(HashMapD
         return std::nullopt;
     }
 
-
     return std::move(lock1);
 }
 

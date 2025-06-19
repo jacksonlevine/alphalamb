@@ -73,7 +73,7 @@ void _initializePhysX() {
     gPvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
 
     // Step 3: Create physics instance
-    gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
+    gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), false, gPvd);
 
     // Step 4: Create the dispatcher for multithreaded simulation
     gDispatcher = PxDefaultCpuDispatcherCreate(2); // 2 threads for physics calculations
