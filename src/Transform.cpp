@@ -27,9 +27,9 @@ namespace jl
         direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
         direction.y = sin(glm::radians(pitch));
         direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-        direction = glm::normalize(direction);
-        right = -1.0f * glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), direction));
-        up = -1.0f * glm::normalize(glm::cross(direction, right));
+        direction = betterNormalize(direction);
+        right = -1.0f * betterNormalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), direction));
+        up = -1.0f * betterNormalize(glm::cross(direction, right));
 
     }
 

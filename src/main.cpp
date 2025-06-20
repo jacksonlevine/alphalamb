@@ -11,7 +11,7 @@
 #include "Texture.h"
 
 #include "PrecompHeader.h"
-
+#include <cfloat>
 
 
 #include "Client.h"
@@ -719,6 +719,13 @@ void* scratchMemory = nullptr;
 
 int main()
 {
+
+    _clearfp(); // Clear existing FPU status
+    unsigned int fp_control = _controlfp(0, 0); // Get current state
+    fp_control &= ~(_EM_INVALID | _EM_ZERODIVIDE | _EM_OVERFLOW); // Enable exceptions
+    _controlfp(fp_control, _MCW_EM); // Apply new state
+
+
     if (!std::filesystem::exists("world")) {
         std::filesystem::create_directory("world");
     }
@@ -1212,7 +1219,7 @@ int main()
 
             DGMessage msg = {};
 
-            if (networkToMainBlockChangeQueue.pop(&msg))
+            if (networkToMainBlockChangeQueue.pop(msg))
             {
 
 
@@ -1266,15 +1273,15 @@ int main()
                                 {
                                     auto pos = theScene.REG.get<jl::Camera>(m.damager).transform.position;
                                     auto diff = cam.transform.position - pos;
-                                    knockback = glm::normalize(diff);
+                                    knockback = betterNormalize(diff);
                                 }
                                 if (theScene.REG.all_of<NPPositionComponent>(m.damager))
                                 {
                                     auto pos = theScene.REG.get<NPPositionComponent>(m.damager).position;
                                     auto diff = cam.transform.position - pos;
-                                    knockback = glm::normalize(diff);
+                                    knockback = betterNormalize(diff);
                                 }
-                                cam.transform.velocity += glm::normalize(knockback) * 0.5f;
+                                cam.transform.velocity += betterNormalize(knockback) * 0.5f;
                             }
 
                         }
@@ -1699,7 +1706,7 @@ int main()
 
             BlockArea m = {};
 
-            if (theScene.worldRenderer->rebuildToMainAreaNotifications.pop(&m))
+            if (theScene.worldRenderer->rebuildToMainAreaNotifications.pop(m))
             {
                 int minX = std::min(m.corner1.x, m.corner2.x);
                 int maxX = std::max(m.corner1.x, m.corner2.x);
@@ -2023,7 +2030,7 @@ int main()
 
                         auto camdir = camera.transform.direction;
                         camdir.y = 0;
-                        camdir = glm::normalize(camdir);
+                        camdir = betterNormalize(camdir);
 
                         glm::vec3 posToRenderAt = camera.transform.position - (camdir * 0.3f);
                         posToRenderAt.y = camera.transform.position.y - 0.5f;

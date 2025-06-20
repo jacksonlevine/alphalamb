@@ -125,7 +125,7 @@ inline static boost::unordered_map<IntTup, Side, IntTupHash> neigh2Side = {
 
 
 template<bool doBrightness = true>
-__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex, float offsety = 0.0f);
+__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex, float offsety = 0.f, float pushIn = 0.f);
 
 void genCGLBuffers();
 constexpr float onePixel = 0.00183823529411764705882352941176f;     //  1/544      Padding

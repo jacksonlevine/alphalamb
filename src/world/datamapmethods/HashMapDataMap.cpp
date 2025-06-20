@@ -50,9 +50,9 @@ void HashMapDataMap::erase(const IntTup& spot, bool locked)
     {
         std::unique_lock<std::shared_mutex> lock(mapmutex);
         if (chunks.find(chunkPos) != chunks.end()) {
-            chunks[chunkPos].erase(spot);
+            chunks.at(chunkPos).erase(spot);
             // Remove empty chunks
-            if (chunks[chunkPos].empty()) {
+            if (chunks.at(chunkPos).empty()) {
                 chunks.erase(chunkPos);
             }
         }
@@ -60,9 +60,9 @@ void HashMapDataMap::erase(const IntTup& spot, bool locked)
     else
     {
         if (chunks.find(chunkPos) != chunks.end()) {
-            chunks[chunkPos].erase(spot);
+            chunks.at(chunkPos).erase(spot);
             // Remove empty chunks
-            if (chunks[chunkPos].empty()) {
+            if (chunks.at(chunkPos).empty()) {
                 chunks.erase(chunkPos);
             }
         }
@@ -159,11 +159,11 @@ void HashMapDataMap::set(const IntTup& spot, BlockType block)
     std::unique_lock<std::shared_mutex> lock(mapmutex);
 
     auto chunkPos = getChunkPos(spot);
-    chunks[chunkPos][spot] = block;
+    chunks.at(chunkPos)[spot] = block;
 }
 
 void HashMapDataMap::setUnsafe(const IntTup& spot, BlockType block)
 {
     auto chunkPos = getChunkPos(spot);
-    chunks[chunkPos][spot] = block;
+    chunks.at(chunkPos)[spot] = block;
 }

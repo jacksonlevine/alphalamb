@@ -376,7 +376,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
 }
 ///Call this with an external index and UsableMesh to mutate them
 template<bool doBrightness>
-__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, PxU32& index, PxU32& tindex, float offsety)
+__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, PxU32& index, PxU32& tindex, float offsety, float pushIn)
 {
     auto & tex = TEXS[material];
     auto faceindex = (side == Side::Top) ? 2 : (side == Side::Bottom) ? 1 : 0;
@@ -394,8 +394,8 @@ __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideH
     //If the material's transparent, add these verts to the "t____" parts of the mesh. If not, add them to the normal mesh.
     if (transparents.test(material))
     {
-        std::ranges::transform(cubefaces[static_cast<int>(side)], std::back_inserter(mesh.tpositions), [offset, sideHeight, offsety](const auto& v) {
-            auto newv = v;
+        std::ranges::transform(cubefaces[static_cast<int>(side)], std::back_inserter(mesh.tpositions), [offset, sideHeight, offsety, pushIn](const auto& v) {
+            auto newv = PxVec3(pushIn, pushIn, pushIn) + v*(1.f- pushIn);
             newv.y *= sideHeight;
             return newv + offset + PxVec3(0.f, offsety, 0.f);
         });

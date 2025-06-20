@@ -67,10 +67,33 @@ namespace jl
     {
       //std::cout << "Cam being update wit yaw: " << nyaw << " Pitch: " << npitch << std::endl;
         transform.updateWithYawPitch(nyaw, npitch);
-        view = glm::lookAt(transform.position,
-            transform.position + transform.direction,
-            transform.up);
+        if (glm::dot<3, float, glm::qualifier::highp>(transform.direction, transform.up) == 0.f) {
+            if (std::abs(transform.direction.x) > std::abs(transform.direction.z)) {
+                if (transform.direction.x > 0) {
+                    transform.up = glm::vec3(1, 0, 0);
+                }
+                else {
+                    transform.up = glm::vec3(-1, 0, 0);
+                }
+            }
+            else {
+                if (transform.direction.z > 0) {
+                    transform.up = glm::vec3(0, 0, 1);
+                }
+                else {
+                    transform.up = glm::vec3(0, 0, -1);
+                }
+            }
+        }
+        else {
+            transform.up = glm::vec3(0.f, 1.f, 0.f);
+            view = glm::lookAt(transform.position,
+                transform.position + transform.direction,
+                transform.up);
 
-        mvp = projection * view * model;
+            mvp = projection * view * model;
+        }
+
+     
     }
 }

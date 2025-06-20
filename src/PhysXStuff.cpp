@@ -104,9 +104,9 @@ void _initializePhysX() {
 
 PxController* createPlayerController(const PxVec3& position, float radius, float height) {
     // 1. Configure the capsule controller descriptor
-    PxCapsuleControllerDesc desc;
-    desc.height = height; // The height of the capsule
-    desc.radius = radius; // The radius of the capsule
+    PxBoxControllerDesc desc;
+    desc.halfHeight = height/2;
+
     desc.position = PxExtendedVec3(position.x, position.y, position.z); // Start position
     desc.slopeLimit = 0.707f; // Limit slope climbing
     desc.contactOffset = 0.1f; // Distance to detect collisions
@@ -129,6 +129,7 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
 
     playerController->setUserData(myHitReport);
     if (!playerController) {
+        std::cerr<< "Failed to create controller" << std::endl;
         throw std::runtime_error("Failed to create player controller");
     }
 

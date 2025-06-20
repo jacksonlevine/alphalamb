@@ -272,8 +272,8 @@ bool isChunkInFrustum(const TwoIntTup& chunkSpot, const glm::vec3& cameraPositio
 
     glm::vec3 toChunk = chunkBottomPos - cameraPosition;
 
-    glm::vec3 normalizedToChunk = glm::normalize(toChunk);
-    glm::vec3 normalizedDirection = glm::normalize(cameraDirection);
+    glm::vec3 normalizedToChunk = betterNormalize(toChunk);
+    glm::vec3 normalizedDirection = betterNormalize(cameraDirection);
 
 
     float dotProduct1 = glm::dot(normalizedToChunk, normalizedDirection);
@@ -591,7 +591,7 @@ void WorldRenderer::meshBuildCoroutine(jl::Camera* playerCamera, World* world)
 
 
             TwoIntTup toRemove = {};
-            while (removeTheseFromMBTAC.pop(&toRemove) && meshBuildingThreadRunning)
+            while (removeTheseFromMBTAC.pop(toRemove) && meshBuildingThreadRunning)
             {
                 mbtActiveChunks.erase(toRemove);
             }

@@ -132,7 +132,7 @@ void propagateAllLightsLayered(World* world,
     constexpr size_t width = chunkWidth + 2 * pad;
     constexpr size_t height = chunkHeight + 2 * pad;
     constexpr size_t depth = chunkDepth + 2 * pad;
-    constexpr size_t volume = width * height * depth;
+    constexpr size_t volume = width * height * depth + 8; //extra 8 for no reason just to be safe i guess
 
     int minX = chunkOrigin.x * chunkWidth - pad;
     int minY = 0 - pad;

@@ -180,7 +180,7 @@ inline void draw2DBillboard(ImVec2 size, float xCropping = 0.0f)
     glUniform1f(startTimeUniform, animation_state.timestarted);
     glUniform1f(timeScaleUniform, animation_state.timescale);
     auto normd = glm::vec3(0.f, 0.f, 1.f);
-    normd = glm::normalize(normd);
+    normd = betterNormalize(normd);
     glUniform3f(instanceDirectionUniform, normd.x, normd.y, normd.z);
 
     auto fakecampos = glm::vec3(billboard.position.x, billboard.position.y, billboard.position.z);

@@ -507,7 +507,7 @@ void attackPlayers(entt::registry &reg, float deltaTime, Scene* scene)
                     //std::cout << "Dist: " << dist << std::endl;
                     if (dist < 10)
                     {
-                        auto dir = glm::normalize(ppos - (ogp + glm::vec3(0.f, 5.f, 0.f)));
+                        auto dir = betterNormalize(ppos - (ogp + glm::vec3(0.f, 5.f, 0.f)));
                         //Spawn a Dart
                         ss.play(sounds.at((int)SoundBuffers::DARTSHOOT));
                         scene->particles->particleBurst(ogp + glm::vec3(0.f, 5.f, 0.f),

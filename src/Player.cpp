@@ -200,13 +200,14 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
     if (crouchOverride)
     {
-        PxCapsuleController* capsuleController = static_cast<PxCapsuleController*>(controller);
-        originalCharHeight = capsuleController->getHeight();
-        capsuleController->resize(0.001f);
+        controller->resize(0.001f);
+        PxBoxController* boxCont = static_cast<PxBoxController*>(controller);
+        originalCharHeight = boxCont->getHalfHeight();
+        boxCont->resize(0.001f);
     } else if(!controls.crouch)
     {
-        PxCapsuleController* capsuleController = static_cast<PxCapsuleController*>(controller);
-        capsuleController->resize(originalCharHeight);
+        PxBoxController* boxcont = static_cast<PxBoxController*>(controller);
+        boxcont->resize(originalCharHeight);
     }
 
     if (controls.sprint && !dashing)
@@ -680,22 +681,22 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
                 inputDirection += camera.transform.up;
             }
             if (controls.forward) {
-                inputDirection += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction);
+                inputDirection += betterNormalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction);
             }
             if (controls.backward) {
-                inputDirection -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction);
+                inputDirection -= betterNormalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction);
             }
             if (controls.right) {
-                inputDirection += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right);
+                inputDirection += betterNormalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right);
             }
             if (controls.left) {
-                inputDirection -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right);
+                inputDirection -= betterNormalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right);
             }
 
             // Calculate target velocities
             glm::vec3 targetVelocity = glm::vec3(0.0f);
             if (glm::length(inputDirection) > 0.0f) {
-                targetVelocity = glm::normalize(inputDirection) * walkmult;
+                targetVelocity = betterNormalize(inputDirection) * walkmult;
             }
 
             // Apply acceleration limiting
@@ -723,17 +724,17 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
                 // During sliding, prioritize forward momentum and limit turning
                 if (controls.forward)
                 {
-                    displacement += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
+                    displacement += betterNormalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
                 }
 
                 // Allow slight steering during slide (reduced effect)
                 if (controls.right)
                 {
-                    displacement += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult * 0.3f;
+                    displacement += betterNormalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult * 0.3f;
                 }
                 if (controls.left)
                 {
-                    displacement -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult * 0.3f;
+                    displacement -= betterNormalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult * 0.3f;
                 }
 
                 // Ignore backward input during slide
@@ -743,16 +744,16 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
             {
                 // Normal movement when not sliding
                 if (controls.forward) {
-                    displacement += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
+                    displacement += betterNormalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
                 }
                 if (controls.backward) {
-                    displacement -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
+                    displacement -= betterNormalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.direction) * deltaTime * walkmult;
                 }
                 if (controls.right) {
-                    displacement += glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult;
+                    displacement += betterNormalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult;
                 }
                 if (controls.left) {
-                    displacement -= glm::normalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult;
+                    displacement -= betterNormalize(glm::vec3(1.0f, 0.0f, 1.0f) * camera.transform.right) * deltaTime * walkmult;
                 }
             }
         }
@@ -773,11 +774,11 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
             jetpackMode = false;
             if (controls.sprint)
             {
-                displacement -= glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f)) * deltaTime * walkmult * 15.0f;
+                displacement -= betterNormalize(glm::vec3(0.0f, 1.0f, 0.0f)) * deltaTime * walkmult * 15.0f;
             }
             if (controls.jump)
             {
-                displacement += glm::normalize(glm::vec3(0.0f, 1.0f, 0.0f)) * deltaTime * walkmult * 15.0f;
+                displacement += betterNormalize(glm::vec3(0.0f, 1.0f, 0.0f)) * deltaTime * walkmult * 15.0f;
             }
             displacement.x *= 15.0f;
             displacement.z *= 15.0f;
@@ -813,6 +814,8 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         if (isSliding) {
             controller->setStepOffset(1.5f);
         }
+
+        //std::cout << "VEL:" << camera.transform.velocity.x << " " << camera.transform.velocity.y << " " << camera.transform.velocity.z << " DISP:" << displacement.x << " " << displacement.y << " " << displacement.z << std::endl;
 
         PxControllerCollisionFlags collisionFlags = controller->move(
             PxVec3(displacement.x, displacement.y, displacement.z),

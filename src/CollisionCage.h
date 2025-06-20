@@ -108,12 +108,12 @@ void CollisionCage<radius>::updateToSpot(World* world, glm::vec3 spot, float del
                                     }
                                     else
                                     {
-                                        //const auto normdirtoplayer = glm::normalize(glm::vec3(offsetHere.x, offsetHere.y, offsetHere.z));
+                                        //const auto normdirtoplayer = betterNormalize(glm::vec3(offsetHere.x, offsetHere.y, offsetHere.z));
                                         // const auto inttupdirtoplayer = IntTup(normdirtoplayer.x, normdirtoplayer.y, normdirtoplayer.z);
                                         // std::cout << "The shitty output from this: " << inttupdirtoplayer.x << " " << inttupdirtoplayer.y << " " << inttupdirtoplayer.z << std::endl;
                                         for (int i = 0; i < 6; i++)
                                         {
-                                            addFace(PxVec3(spotHere.x, spotHere.y, spotHere.z), (Side)i, GRASS, 1, mesh, index, tindex);
+                                            addFace(PxVec3(spotHere.x, spotHere.y, spotHere.z), (Side)i, GRASS, 1, mesh, index, tindex, 0.f, 0.1f);
 
                                         }
 

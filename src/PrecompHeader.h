@@ -72,7 +72,7 @@ constexpr double J_PI = 3.1415926535897932384626433832;
 extern GLuint lutTexture;
 #define DAY_LENGTH 900.0f
 
-enum class GuyType
+enum class GuyType : uint8_t
 {
     ORANGE1,
     DART1
@@ -92,5 +92,11 @@ inline float closenessToNearestJungleCamp(float x, float z)
 
 }
 
+
+inline glm::vec3 betterNormalize(const glm::vec3& p)
+{
+    if (glm::length(p) < 0.0001f) return glm::vec3(0.0f);
+    return glm::normalize(p);
+}
 
 #endif //PRECOMPHEADER_H

@@ -54,8 +54,10 @@ inline void setListenerToCameraPos(jl::Camera* camera)
 }
 
 inline ALuint bufferFromFile(const char* filename) {
+
+    std::cout << "Trying to open: " << filename << std::endl;
     // Open the sound file
-    SF_INFO sfInfo;
+    SF_INFO sfInfo = {};
     SNDFILE* sndFile = sf_open(filename, SFM_READ, &sfInfo);
     if (!sndFile) {
         std::cerr << "Failed to open sound file: " << filename << std::endl;

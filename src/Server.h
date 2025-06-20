@@ -313,7 +313,7 @@ private:
                                                 for (auto chunk : cview)
                                                 {
                                                     auto& chunkcamp = cview.get<ChunkCamps>(chunk);
-                                                    //chunkcamp.camps.push_back(resultantspot);
+                                                    chunkcamp.camps.push_back(resultantspot);
                                                 }
 
 
@@ -334,7 +334,8 @@ private:
 
                                                     spawn.newName = newName;
                                                     clientsMutex.unlock();
-                                                    sendMessageToAllClients(spawn, m_playerIndex, false);
+                                                    DGMessage realMessage = DGMessage{spawn};
+                                                    sendMessageToAllClients(realMessage, m_playerIndex, false);
                                                     clientsMutex.lock();
                                                 }
                                                 clientsMutex.unlock();
