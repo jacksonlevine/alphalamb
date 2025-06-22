@@ -122,19 +122,6 @@ inline void setSourceBuffer(ALuint buffer, ALuint source)
 }
 
 
-inline void playBufferFromSource(ALuint buffer, ALuint source)
-{
-    alSourcei(source, AL_BUFFER, buffer);
-    alSourcePlay(source);
-}
-
-
-
-
-
-
-
-
 enum class SoundBuffers
 {
     DIRTSTEP1,

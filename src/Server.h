@@ -691,10 +691,11 @@ private:
                                 }
                             }
                         }
-                        if (serverReg.valid(m.projectileToDelete))
-                        {
-                            serverReg.destroy(m.projectileToDelete);
-                        }
+                        //tHEORY: Dont destroy it here, leave it up to the lifetime thing
+                        // if (serverReg.valid(m.projectileToDelete))
+                        // {
+                        //     serverReg.destroy(m.projectileToDelete);
+                        // }
                         clientsMutex.unlock();
 
                     }

@@ -54,7 +54,6 @@ struct Scene
     {
         alSourcei(musicSource, AL_LOOPING, loop ? AL_TRUE : AL_FALSE);
         alSourcef(musicSource, AL_PITCH, 1.0f + ((float)rand() / (float) RAND_MAX) * 0.08f );
-        playBufferFromSource(song, musicSource);
     }
 
 

@@ -63,7 +63,6 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
                     if(movementComponent.soundSeriesIndexer < stepSounds.size() && movementComponent.soundSeriesIndexer >= 0)
                     {
                         alSourceStop(movementComponent.footstepSource);
-                        playBufferFromSource(sounds.at((int)stepSounds[movementComponent.soundSeriesIndexer]), movementComponent.footstepSource);
                     }
                     movementComponent.soundSeriesIndexer  = (movementComponent.soundSeriesIndexer + 1) % stepSounds.size();
                 }
@@ -203,7 +202,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         controller->resize(0.001f);
         PxBoxController* boxCont = static_cast<PxBoxController*>(controller);
         originalCharHeight = boxCont->getHalfHeight();
-        boxCont->resize(0.001f);
+        boxCont->resize(0.5f);
     } else if(!controls.crouch)
     {
         PxBoxController* boxcont = static_cast<PxBoxController*>(controller);

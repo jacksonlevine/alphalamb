@@ -105,7 +105,7 @@ void _initializePhysX() {
 PxController* createPlayerController(const PxVec3& position, float radius, float height) {
     // 1. Configure the capsule controller descriptor
     PxBoxControllerDesc desc;
-    desc.halfHeight = height/2;
+    desc.halfHeight = height;
 
     desc.position = PxExtendedVec3(position.x, position.y, position.z); // Start position
     desc.slopeLimit = 0.707f; // Limit slope climbing

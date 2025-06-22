@@ -26,11 +26,21 @@ struct SoundSource
         alSource3f(source, AL_POSITION, pos.x, pos.y, pos.z);
         alSource3f(source, AL_VELOCITY, vel.x, vel.y, vel.z);
     }
+    void stop()
+    {
+        ALint val;
+        alGetSourcei(source, AL_PLAYING, &val);
+        if (val == AL_FALSE) return;
+        alSourceStop(source);
+    }
     void play(ALuint buffer)
     {
+        stop();
         alSourcef(source, AL_PITCH, 1.0f + ((float)rand() / (float) RAND_MAX) * 0.5f);
-        playBufferFromSource(buffer, source);
+        alSourcei(source, AL_BUFFER, buffer);
+        alSourcePlay(source);
     }
+
     ~SoundSource()
     {
         deleteSource(source);
