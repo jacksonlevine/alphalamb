@@ -10,17 +10,18 @@
 #include "PrecompHeader.h"
 
 
-using SpecificOrNonSpecificMaterial = std::variant<MaterialName, std::bitset<BLOCK_COUNT>>;
+using SpecificOrNonSpecificMaterial = std::variant<MaterialName, ItemName, std::bitset<BLOCK_COUNT>>;
 
 struct Requirement
 {
     SpecificOrNonSpecificMaterial mat;
     uint8_t count;
+    bool isItem : 1 = false;
 };
 
 struct RecipeOutput
 {
-    MaterialName mat;
+    int mat;
     uint8_t count;
 };
 
@@ -68,13 +69,13 @@ inline bool canMakeShit(Inventory& inv, const Recipe& recipe)
                     using T = std::decay_t<decltype(mat)>;
                     if constexpr (std::is_same_v<T, MaterialName>)
                     {
-                        if (mat == r.block)
+                        if (mat == r.block && r.isItem == req.isItem)
                         {
                             reqfound = true;
                         }
                     } else if constexpr (std::is_same_v<T, std::bitset<BLOCK_COUNT>>)
                     {
-                        if (mat.test(r.block))
+                        if (mat.test(r.block) && r.isItem == req.isItem)
                         {
                             reqfound = true;
                         }
