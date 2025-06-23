@@ -8,12 +8,13 @@
 
 struct LootDrop
 {
-    BlockType block = STONE;
+    int block = STONE;
     int count = 0;
+    bool isItem = false;
     template<class Archive>
     void serialize(Archive& archive)
     {
-        archive(block, count);
+        archive(block, count, isItem);
     }
 };
 

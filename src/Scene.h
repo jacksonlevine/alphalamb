@@ -107,6 +107,7 @@ struct Scene
     MaterialName blockHeadIn = AIR;
     GLuint worldtex = 0;
     std::vector<int> shitICanMake;
+    GLuint itemstex = 0;
 
     void saveSettings()
     {

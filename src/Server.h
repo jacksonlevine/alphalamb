@@ -533,7 +533,7 @@ private:
 
                                 if (source && destination)
                                 {
-                                    if (source->block == destination->block)
+                                    if (source->block == destination->block && source->isItem == destination->isItem)
                                     {
                                         auto amtDestCanTake = std::min((int)source->count, 99 - destination->count);
 

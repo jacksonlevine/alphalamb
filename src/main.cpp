@@ -826,6 +826,9 @@ int main()
     static jl::Shader mainShader = getBasicShader();
     static jl::Shader gltfShader = getBasicGLTFShader();
     static jl::Texture worldTex("resources/world.png");
+    static jl::Texture itemtexs("resources/itemtexs.png");
+
+    theScene.itemstex = itemtexs.id;
 
     ParticlesGizmo* particles = new ParticlesGizmo();
     theScene.particles = particles;
@@ -1048,7 +1051,8 @@ int main()
 
                             //std::cout << "This happens" << std::endl;
                             auto ald = AddLootDrop{};
-                            ald.lootDrop = LootDrop{theScene.lastBlockAtCursor, 1};
+                            //TODO ADD CUSTOMDROPS OTHER THAN JUST HTE BLOCK
+                            ald.lootDrop = LootDrop{(int)theScene.lastBlockAtCursor, 1, false};
                             ald.spot = glm::vec3(spot.x,spot.y,spot.z) + glm::vec3(0.5, 0.5, 0.5);
                             ald.newEntityName = entt::null; //The server fucking decides
                             bls.addLootDrop = ald;
@@ -1436,7 +1440,7 @@ int main()
 
                         if (source && destination)
                         {
-                            if (source->block == destination->block)
+                            if (source->block == destination->block && source->isItem == destination->isItem)
                             {
                                 auto amtDestCanTake = std::min((int)source->count, 99 - destination->count);
 

@@ -155,10 +155,22 @@ void imguiInventory(Inventory& inv)
 
                     ImGui::SetCursorPos(cursorspot);
 
-                    const auto tex = TEXS.at(inv.inventory[index].block).at(0);
-                    TextureFace face(tex.first, tex.second);
+                    if (slot.isItem)
+                    {
+                        const auto tex = ITEMTEXS.at(inv.inventory[index].block).at(0);
+                        TextureFace face(tex.first, tex.second);
 
-                    ImGui::Image((ImTextureID)theScene.worldtex, invTileDisplaySize, ImVec2(face.bl.x, face.bl.y), ImVec2(face.tr.x, face.tr.y));
+                        ImGui::Image((ImTextureID)theScene.itemstex, invTileDisplaySize, ImVec2(face.bl.x, face.bl.y), ImVec2(face.tr.x, face.tr.y));
+
+                    } else
+                    {
+                        const auto tex = TEXS.at(inv.inventory[index].block).at(0);
+                        TextureFace face(tex.first, tex.second);
+
+                        ImGui::Image((ImTextureID)theScene.worldtex, invTileDisplaySize, ImVec2(face.bl.x, face.bl.y), ImVec2(face.tr.x, face.tr.y));
+
+                    }
+
 
                     ImGui::SetCursorPos(cursorspot);
 
@@ -300,13 +312,27 @@ void imguiInventory(Inventory& inv)
 
     for (auto & i : theScene.shitICanMake)
     {
-        if (DGCustomButton(ToString(recipes.at(i).second.mat), DGButtonType::Bad2, ImVec2(200, 50)))
+
+        if (recipes.at(i).second.isItem)
         {
-            pushToMainToNetworkQueue(DoRecipeOnMyInv{
-                .myPlayerIndex = theScene.myPlayerIndex,
-                .recipeIndex = i
-            });
+            if (DGCustomButton(ToString((ItemName)recipes.at(i).second.mat), DGButtonType::Bad2, ImVec2(200, 50)))
+            {
+                pushToMainToNetworkQueue(DoRecipeOnMyInv{
+                    .myPlayerIndex = theScene.myPlayerIndex,
+                    .recipeIndex = i
+                });
+            }
+        } else
+        {
+            if (DGCustomButton(ToString((MaterialName)recipes.at(i).second.mat), DGButtonType::Bad2, ImVec2(200, 50)))
+            {
+                pushToMainToNetworkQueue(DoRecipeOnMyInv{
+                    .myPlayerIndex = theScene.myPlayerIndex,
+                    .recipeIndex = i
+                });
+            }
         }
+
     }
 
     ImGui::EndGroup();

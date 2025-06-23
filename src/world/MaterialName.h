@@ -264,6 +264,11 @@ constexpr std::array<BlockTextures, BLOCK_COUNT> TEXS = {{
 }};
 
 
+constexpr std::array<BlockTextures, 2> ITEMTEXS = {{
+    // sides      // bot       // top
+    {{ {0, 0}, {0, 0}, {0, 0} }},  // 0
+    {{ {1, 0}, {1, 0}, {1, 0} }},  // 1 jetpack
 
+}};
 
 #endif //MATERIALNAME_H

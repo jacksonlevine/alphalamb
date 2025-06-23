@@ -23,6 +23,7 @@ struct RecipeOutput
 {
     int mat;
     uint8_t count;
+    bool isItem: 1 = false;
 };
 
 using Recipe = std::pair<std::vector<Requirement>, RecipeOutput>;
@@ -154,7 +155,7 @@ inline bool doRecipeOnInv(InventoryComponent& inv, int recipeIndex)
                 }
             }
         }
-        inv.add(LootDrop{recipe.second.mat, recipe.second.count});
+        inv.add(LootDrop{recipe.second.mat, recipe.second.count, recipe.second.isItem});
         return true;
     }
     return false;
