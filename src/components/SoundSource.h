@@ -29,8 +29,8 @@ struct SoundSource
     void stop()
     {
         ALint val;
-        alGetSourcei(source, AL_PLAYING, &val);
-        if (val == AL_FALSE) return;
+        alGetSourcei(source, AL_SOURCE_STATE, &val);
+        if (val == AL_STOPPED) return;
         alSourceStop(source);
     }
     void play(ALuint buffer)

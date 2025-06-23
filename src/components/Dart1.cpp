@@ -285,7 +285,7 @@ void renderDart1s(entt::registry& reg, Scene* scene, float deltaTime)
 
 
         std::erase_if(physicsbodies, [&reg](const auto& pair) {
-            return !reg.valid(pair.first);
+            return !(reg.valid(pair.first) && reg.all_of<Dart1>(pair.first));
         });
 
 
@@ -296,22 +296,23 @@ void renderDart1s(entt::registry& reg, Scene* scene, float deltaTime)
         auto & bp = dartsatspots.at(blockspot);
         std::erase_if(bp, [&reg](entt::entity ent)
         {
-            return !reg.valid(ent);
+                return !(reg.valid(ent) && reg.all_of<Dart1>(ent));
         });
 
         for(auto ent : bp)
         {
-            auto & dart = reg.get<Dart1>(ent);
+            if (reg.valid(ent) && reg.all_of<Dart1>(ent)) {
+                auto& dart = reg.get<Dart1>(ent);
 
                 auto thepos = reg.get<NPPositionComponent>(ent).position;
 
-                if(glm::distance(thepos, campos) < 1.5f)
+                if (glm::distance(thepos, campos) < 1.5f)
                 {
                     scene->particles->particleBurst(thepos,
-                                                            10, (MaterialName)JETPACK_PARTICLE_BLOCK, 0.8, 4.0f);
-                    pushToMainToNetworkQueue(DealDamage{.playerIndex = scene->myPlayerIndex, .amount = 1.75f, .projectileToDelete = ent, .damager =  ent});
+                        10, (MaterialName)JETPACK_PARTICLE_BLOCK, 0.8, 4.0f);
+                    pushToMainToNetworkQueue(DealDamage{ .playerIndex = scene->myPlayerIndex, .amount = 1.75f, .projectileToDelete = ent, .damager = ent });
                 }
-
+            }
 
         }
     }

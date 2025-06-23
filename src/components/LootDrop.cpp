@@ -275,7 +275,7 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
 
 
         std::erase_if(physicsbodies, [&reg](const auto& pair) {
-            return !reg.valid(pair.first);
+            return !(reg.valid(pair.first) && reg.all_of<LootDrop>(pair.first));
         });
 
 
@@ -287,7 +287,7 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
         auto & bp = dropsatspots.at(blockspot);
         std::erase_if(bp, [&reg](entt::entity ent)
         {
-            return !reg.valid(ent);
+            return !(reg.valid(ent) && reg.all_of<LootDrop>(ent));
         });
 
         for(auto ent : bp)
