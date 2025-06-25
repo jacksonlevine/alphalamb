@@ -11,6 +11,7 @@ endif()
 
 if (MSVC)
     add_compile_options(/fsanitize=address)
+    add_link_options(/INFERASANLIBS)
     add_link_options(/INCREMENTAL:NO)
 endif()
 
@@ -19,7 +20,7 @@ project(DistantGarden)
 add_compile_definitions(_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -38,7 +39,7 @@ find_package(EnTT CONFIG REQUIRED)
 find_package(rapidcheck CONFIG REQUIRED)
 
 
-find_package(Boost REQUIRED COMPONENTS asio uuid lockfree container variant2 thread)
+find_package(Boost REQUIRED COMPONENTS system asio uuid lockfree container variant2 thread exception)
 message(STATUS "Boost version: ${Boost_VERSION}")
 find_package(imgui CONFIG REQUIRED)
 
@@ -292,7 +293,7 @@ function(add_common_libraries target)
     target_link_directories(${target} PUBLIC ${CMAKE_SOURCE_DIR}/lib)
     target_include_directories(${target} PRIVATE ${TINYGLTF_INCLUDE_DIRS})
     target_link_libraries(${target} PRIVATE imgui::imgui)
-    target_link_libraries(${target} PRIVATE Boost::asio Boost::uuid Boost::thread)
+    target_link_libraries(${target} PRIVATE Boost::asio Boost::uuid Boost::thread Boost::system Boost::exception)
     target_link_libraries(${target} PRIVATE Boost::lockfree)
     
     

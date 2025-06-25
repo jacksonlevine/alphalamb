@@ -720,10 +720,10 @@ void* scratchMemory = nullptr;
 int main()
 {
 
-    _clearfp(); // Clear existing FPU status
-    unsigned int fp_control = _controlfp(0, 0); // Get current state
-    fp_control &= ~(_EM_INVALID | _EM_ZERODIVIDE | _EM_OVERFLOW); // Enable exceptions
-    _controlfp(fp_control, _MCW_EM); // Apply new state
+    //_clearfp();
+    //unsigned int fp_control = _controlfp(0, 0);
+    //fp_control &= ~(_EM_INVALID | _EM_ZERODIVIDE | _EM_OVERFLOW);
+    //_controlfp(fp_control, _MCW_EM);
 
 
     if (!std::filesystem::exists("world")) {

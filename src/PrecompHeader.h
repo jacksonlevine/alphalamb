@@ -4,8 +4,17 @@
 
 #ifndef PRECOMPHEADER_H
 #define PRECOMPHEADER_H
+#include <boost/throw_exception.hpp>
+inline void boost::throw_exception(std::exception const& e){
+    throw e;
+}
 
+inline void boost::throw_exception(std::exception const& e, boost::source_location const & s)
+{
+    throw e;
+}
 #include <stdio.h>
+#include <cmath>
 #include "GLHeaders.h"
 #include <iostream>
 #include <vector>
