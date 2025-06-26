@@ -13,6 +13,7 @@ inline void boost::throw_exception(std::exception const& e, boost::source_locati
 {
     throw e;
 }
+
 #include <stdio.h>
 #include <cmath>
 #include "GLHeaders.h"
@@ -76,6 +77,21 @@ inline void boost::throw_exception(std::exception const& e, boost::source_locati
 #include <boost/container/pmr/monotonic_buffer_resource.hpp>
 #include <boost/container/pmr/unsynchronized_pool_resource.hpp>
 #include <boost/container/pmr/polymorphic_allocator.hpp>
+
+//these functions are by ducky
+constexpr bool any_nan(auto ... f) { return (std::isnan(f) or ...); }
+constexpr bool any_inf(auto ... f) { return (std::isinf(f) or ...); }
+
+constexpr void assertNoNanOrInf(auto ... f)
+{
+    bool all_valid = ((!std::isnan(f) and !std::isinf(f)) and ...);
+    assert(all_valid and "That shit is nan or inf");
+}
+
+constexpr bool any_nan_or_inf(auto ... f)
+{
+    return ((!std::isnan(f) and !std::isinf(f)) and ...);
+}
 
 constexpr double J_PI = 3.1415926535897932384626433832;
 extern GLuint lutTexture;

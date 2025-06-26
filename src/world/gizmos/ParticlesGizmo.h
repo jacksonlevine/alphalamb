@@ -17,15 +17,47 @@ struct ParticleInstance
     PxRigidDynamic* body = nullptr;
     float timeExisted = 0.0f;
 
-    ParticleInstance(glm::vec3 position, float scale, float blockID, PxShape* shape)
-        : position(position), scale(scale), blockID(blockID), timeExisted(0.0f)
+    ParticleInstance(glm::vec3 position, float scale, float blockID)
+        : position(position), scale(scale), blockID(blockID), timeExisted(0.0f), body(nullptr)
     {
+
+        if (!gPhysics || !gScene) {
+            std::cerr << "gPhysics or gScene or gScene is null" <<std::endl;
+            throw std::runtime_error("gPhysics or gScene or gScene is null");
+        }
+
+
+        PxBoxGeometry boxGeometry(0.1f, 0.1f, 0.1f);
+
+        static PxMaterial* sharedMaterial = nullptr;
+        static PxShape* sharedShape = nullptr;
+        if (!sharedMaterial) {
+            sharedMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
+            PxBoxGeometry boxGeometry(0.1f, 0.1f, 0.1f);
+            sharedShape = gPhysics->createShape(boxGeometry, *sharedMaterial);
+            // Set filter data once
+            PxFilterData filterData = {};
+            filterData.word0 = 3;
+            sharedShape->setSimulationFilterData(filterData);
+            sharedShape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
+        }
+
+        body = PxCreateDynamic(*gPhysics, PxTransform(PxVec3(position.x, position.y, position.z)), *sharedShape, 1.0f);
+
+
         body = PxCreateDynamic(
             *gPhysics,
             PxTransform(PxVec3(position.x, position.y, position.z)),
-            *shape,  // Pass the shape here
-            1.0f    // Density
+            *sharedShape,
+            1.0f
         );
+
+        if (!body) {
+            std::cerr << "PxCreateDynamic failed to create body" << std::endl;
+            throw std::runtime_error("PxCreateDynamic failed");
+        }
+
+
         gScene->addActor(*body);
     }
     ParticleInstance() = default;
@@ -40,8 +72,10 @@ struct ParticleInstance
         other.body = nullptr;
     }
     ParticleInstance& operator=(const ParticleInstance& other) = delete;
-    ParticleInstance& operator=(ParticleInstance&& other)
+    ParticleInstance& operator=(ParticleInstance&& other) noexcept
     {
+        if (this == &other) return *this;
+
         position = other.position;
         scale = other.scale;
         blockID = other.blockID;
@@ -65,6 +99,7 @@ struct ParticleInstance
         // Release the actor
         body->release();
         body = nullptr;
+
     }
 };
 
@@ -76,26 +111,15 @@ public:
 
     void addParticle(glm::vec3 position, BlockType blockID, float scale, PxVec3 velocity)
     {
-        PxBoxGeometry boxGeometry(0.1f, 0.1f, 0.1f);
 
-        //Static shape and material (could probably just have some global shape and material but we will see we will have them here for now)
-        static PxMaterial* gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
-        static PxShape* shape = gPhysics->createShape(boxGeometry, *gMaterial);
 
-        static bool filterdataset = false;
 
-        if (!filterdataset)
-        if (!filterdataset)
-        {
-            PxFilterData filterData;
-            filterData.word0 = 3;
-            shape->setSimulationFilterData(filterData);
-            shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
-            shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
-            filterdataset = true;
-        }
 
-        instances.emplace_back(position, scale, (float)blockID, shape);
+        ParticleInstance instance(position, scale, (float)blockID);
+
+
+        instances.push_back(std::move(instance));
+
 
         instances.back().body->setLinearVelocity(velocity, true);
         //instances.back().body->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, false);
@@ -160,20 +184,36 @@ public:
         }
     }
 
-    void sendUpdatedInstancesList()
-    {
+    size_t maxParticles = 10000;
+    bool bufferInitialized = false;
+
+    void sendUpdatedInstancesList() {
         if (instances.empty()) return;
+
         glBindBuffer(GL_ARRAY_BUFFER, instancesvbo);
-        glBufferData(GL_ARRAY_BUFFER, instances.size() * sizeof(ParticleInstance), instances.data(), GL_STATIC_DRAW);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)0);
-        glEnableVertexAttribArray(3);
-        glVertexAttribDivisor(3, 1);
 
-        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)sizeof(glm::vec4));
-        glEnableVertexAttribArray(2);
-        glVertexAttribDivisor(2, 1);
+        if (!bufferInitialized) {
+            glBufferData(GL_ARRAY_BUFFER, maxParticles * sizeof(ParticleInstance), nullptr, GL_DYNAMIC_DRAW);
+            bufferInitialized = true;
+
+            glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)0);
+            glEnableVertexAttribArray(3);
+            glVertexAttribDivisor(3, 1);
+
+            glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(ParticleInstance), (void*)sizeof(glm::vec4));
+            glEnableVertexAttribArray(2);
+            glVertexAttribDivisor(2, 1);
+        }
+
+        if (instances.size() > maxParticles)
+        {
+            glBufferData(GL_ARRAY_BUFFER, instances.size() * sizeof(ParticleInstance), instances.data(), GL_DYNAMIC_DRAW);
+        } else [[likely]]
+        {
+            glBufferSubData(GL_ARRAY_BUFFER, 0, instances.size() * sizeof(ParticleInstance), instances.data());
+        }
+
     }
-
 private:
     GLuint vao = 0;
     GLuint mainvbo = 0;

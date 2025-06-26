@@ -5,6 +5,7 @@
 #ifndef DART1_H
 #define DART1_H
 
+#include "../InstancedThingyTemplate.h"
 #include "../PrecompHeader.h"
 
 struct Dart1 {
