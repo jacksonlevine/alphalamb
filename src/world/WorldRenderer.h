@@ -425,17 +425,28 @@ public:
     }
 
 
-    void requestChunkSpotRebuildFromMainThread(const TwoIntTup& chunkspot, bool priority = true)
+    void requestChunkSpotRebuildFromMainThread(const TwoIntTup& chunkspot, bool priority = true, bool light = false)
     {
         if (activeChunks.contains(chunkspot))
         {
             //std::cout << "Requesting rebuild for spot: " << chunkspot.x << " " << chunkspot.z << std::endl;
-
-            rebuildQueue.push(ChunkRebuildRequest(
+            if (light)
+            {
+                rebuildQueue.push(ChunkRebuildRequest(
+                    chunkspot,
+                    activeChunks.at(chunkspot).chunkIndex,
+                    priority,
+                    true
+                ));
+            } else
+            {
+                rebuildQueue.push(ChunkRebuildRequest(
                 chunkspot,
                 activeChunks.at(chunkspot).chunkIndex,
                 priority
             ));
+            }
+
 
 
         } else

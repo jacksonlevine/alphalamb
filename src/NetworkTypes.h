@@ -203,13 +203,21 @@ struct DealDamage
     entt::entity damager;
 };
 
+struct DoExplosion
+{
+    IntTup spot;
+    entt::entity projectileToDelete;
+    entt::entity damager;
+    uint8_t radius;
+};
+
 // struct EquippedItemsUpdate
 // {
 //     entt::entity myPlayerIndex;
 //     std::array<InventorySlot, INVHEIGHT> equipped;
 // };
 
-using DGMessage = std::variant<DealDamage, SpawnGuy, DoRecipeOnMyInv, HeartbeatAndCleanup, RequestStackSlotsToDest, BlockSetAndDepleteSlot, DepleteInventorySlot, TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
+using DGMessage = std::variant<DoExplosion, DealDamage, SpawnGuy, DoRecipeOnMyInv, HeartbeatAndCleanup, RequestStackSlotsToDest, BlockSetAndDepleteSlot, DepleteInventorySlot, TextChunkHeader, TextChunk, RequestTextChunkResend, RequestInventorySwap, RequestInventoryTransfer, WorldInfo, ControlsUpdate, FileTransferInit, BlockSet, PlayerPresent, YawPitchUpdate, PlayerLeave, PlayerSelectBlockChange, BulkBlockSet, VoxModelStamp, ClientToServerGreeting, AddLootDrop, PickUpLootDrop>;
 
 
  const BlockSet& getBlockSet(const auto& m) {

@@ -370,7 +370,10 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
         if (key == GLFW_KEY_0 && action == GLFW_PRESS)
         {
-           // pushToMainToNetworkQueue(SpawnGuy{GuyType::ORANGE1, entt::null, scene->our<jl::Camera>().transform.position - glm::vec3(0.f, 5.f, 0.f)});
+            auto pos = theScene.our<jl::Camera>().transform.position;
+            DGMessage msg = DoExplosion{
+            .spot = IntTup(pos.x, pos.y, pos.z), .projectileToDelete = entt::null, .damager = theScene.myPlayerIndex, .radius = 5};
+            pushToMainToNetworkQueue(msg);
         }
         static bool justClosedInv = false;
         if (key == GLFW_KEY_E)
@@ -1467,6 +1470,36 @@ int main()
                         updateOrDestroyLifetimeHavers(theScene.REG, 2);
                         theScene.timeOfDay = m.timeOfDay;
                     }
+                    else if constexpr (std::is_same_v<T, DoExplosion>)
+                    {
+                        std::unordered_set<TwoIntTup, TwoIntTupHash> implic;
+                        for (int x = -m.radius; x <= m.radius; x++)
+                        {
+                            for (int y = -m.radius; y <= m.radius; y++)
+                            {
+                                for (int z = -m.radius; z <= m.radius; z++)
+                                {
+
+                                    auto spot = m.spot + IntTup(x,y,z);
+                                    auto dist = std::abs(m.spot.x - spot.x) + std::abs(m.spot.y - spot.y) + std::abs(m.spot.z - spot.z);
+                                    if (dist < m.radius)
+                                    {
+                                        auto cpos = world3ToChunkPos(spot);
+                                        implic.insert(cpos);
+                                        {
+                                            theScene.world->set(spot, AIR);
+                                        }
+                                    }
+
+                                }
+                            }
+                        }
+                        theScene.particles->particleBurst(glm::vec3(m.spot.x, m.spot.y, m.spot.z), 500, JETPACK_PARTICLE_BLOCK, m.radius*2.f, 10.f);
+                        for (auto c : implic)
+                        {
+                            theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(c, true, true);
+                        }
+                    }
                     else if constexpr (std::is_same_v<T, PlayerPresent>) {
 
                         bool isInReg = false;
@@ -1486,7 +1519,7 @@ int main()
 
                         theScene.REG.get<PhysicsComponent>(m.index).controller->setPosition(PxExtendedVec3(
                         m.position.x,
-                        m.position.y - CAMERA_OFFSET,
+                        m.position.y,
                         m.position.z)
                             );
                         // if (theScene.existingInvs.contains(m.id))

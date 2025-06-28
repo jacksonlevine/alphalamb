@@ -21,6 +21,17 @@
 #include "ModelLoader.h"
 #include "Scene.h"
 
+template<typename T>
+concept HasStartingDirection = requires(T t) {
+    { t.startingDirection } -> std::same_as<glm::vec3>;
+};
+
+template<typename T>
+concept HasBlockTexture = requires(T t)
+{
+    { t.block } -> std::convertible_to<BlockType>;
+};
+
 using BehaviorFunction = std::function<void(Scene*, float, entt::registry&, std::unordered_map<TwoIntTup, std::vector<entt::entity>, TwoIntTupHash>&)>;
 
 template <typename ThingyComponent, const char* vertshad, const char* fragshad, const char* modelpath>
@@ -32,11 +43,19 @@ void renderAndBehaveInstancedThingy(entt::registry& reg, Scene* scene, float del
         PxRigidDynamic* body = nullptr;
         CollisionCage<2> collisionCage = {};
         ThingyPhysicsBody() = default;
-        explicit ThingyPhysicsBody(const glm::vec3& position, const glm::vec3& direction)
+        explicit ThingyPhysicsBody(const glm::vec3& position, std::optional<const glm::vec3> direction)
         {
 
             assertNoNanOrInf(position.x, position.y, position.z);
-            assertNoNanOrInf(direction.x, direction.y, direction.z);
+            PxVec3 forward = PxVec3(1,0,0);
+
+            if (direction.has_value())
+            {
+                auto dir = direction.value();
+                assertNoNanOrInf(dir.x, dir.y, dir.z);
+                forward = PxVec3(dir.x, dir.y, dir.z);
+            }
+
 
             static PxMaterial* material = nullptr;
             static PxShape* shape = nullptr;
@@ -48,7 +67,7 @@ void renderAndBehaveInstancedThingy(entt::registry& reg, Scene* scene, float del
                 shape = gPhysics->createShape(sphereGeom, *material);
             }
 
-            PxVec3 forward = PxVec3(direction.x, direction.y, direction.z);
+
             PxVec3 worldUp = PxVec3(0, 1, 0);
 
             // Compute right and adjusted up vectors
@@ -75,8 +94,12 @@ void renderAndBehaveInstancedThingy(entt::registry& reg, Scene* scene, float del
             PxRigidDynamic* sphere = gPhysics->createRigidDynamic(transf);
 
             sphere->attachShape(*shape);
+            if (direction.has_value())
+            {
+                auto dir = direction.value();
+                sphere->setLinearVelocity(PxVec3(dir.x, dir.y, dir.z) * 20.0f);
+            }
 
-            sphere->setLinearVelocity(PxVec3(direction.x, direction.y, direction.z) * 20.0f);
             sphere->setMass(5.f);
             gScene->addActor(*sphere);
             body = sphere;
@@ -191,9 +214,14 @@ void renderAndBehaveInstancedThingy(entt::registry& reg, Scene* scene, float del
 
         } else
         {
-            physicsbodies.insert_or_assign(entity, ThingyPhysicsBody(pos.position, thingy.startingDirection));
-        }
+            if constexpr (HasStartingDirection<ThingyComponent>) {
+                physicsbodies.insert_or_assign(entity, ThingyPhysicsBody(pos.position, thingy.startingDirection));
+                // use dir...
+            } else {
+                physicsbodies.insert_or_assign(entity, ThingyPhysicsBody(pos.position, std::nullopt));
+            }
 
+        }
 
         //Re-add to dropsatspots
         const auto newblockspot = TwoIntTup(glm::floor(pos.position.x), glm::floor(pos.position.z));
@@ -209,9 +237,16 @@ void renderAndBehaveInstancedThingy(entt::registry& reg, Scene* scene, float del
                 bp.push_back(entity);
             }
         }
+        glm::vec2 uvoffset = glm::vec2(0.0f);
+
+        if constexpr(HasBlockTexture<ThingyComponent>)
+        {
+            const auto & tex = TEXS[(int)thingy.block].at(0);
+            uvoffset = glm::vec2((float)tex.first * texSlotWidth, (float)tex.second * -texSlotWidth);
+        }
 
         physicsbodies.at(entity).collisionCage.updateToSpot(theScene.world, pos.position, deltaTime);
-        lootDisplayInstances.emplace_back(pos.position, quat, glm::vec2(0.0f));
+        lootDisplayInstances.emplace_back(pos.position, quat, uvoffset);
     }
 
     static GLuint instancevbo = 0;

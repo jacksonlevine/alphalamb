@@ -37,6 +37,10 @@ struct ChunkRebuildRequest {
     ChunkRebuildRequest(TwoIntTup pos, size_t index, bool priority)
         : chunkPos(pos), chunkIndex(index), isHighPriority(priority),
           timestamp(std::chrono::steady_clock::now()) {}
+
+    ChunkRebuildRequest(TwoIntTup pos, size_t index, bool priority, bool dofuckinglight)
+        : chunkPos(pos), chunkIndex(index), isHighPriority(priority),
+          timestamp(std::chrono::steady_clock::now()), doLightPass(dofuckinglight) {}
     ChunkRebuildRequest(BlockArea area)
         : chunkPos(TwoIntTup(0,0)), isHighPriority(true), isArea(true), area(area),
           timestamp(std::chrono::steady_clock::now()) {}

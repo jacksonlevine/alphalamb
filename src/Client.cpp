@@ -62,6 +62,10 @@ void read_from_server(tcp::socket* socket, std::atomic<bool>* shouldRun)
                         //std::cout << "Got select block change update \n";
                         pushToNetworkToMainQueue(m);
                     }
+                    else if constexpr (std::is_same_v<T, DoExplosion>) {
+                       //std::cout << "Got select block change update \n";
+                       pushToNetworkToMainQueue(m);
+                   }
                     else if constexpr(std::is_same_v<T, DealDamage>)
                     {
                         pushToNetworkToMainQueue(m);

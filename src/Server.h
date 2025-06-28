@@ -492,6 +492,30 @@ private:
 
                     }
 
+                    else if constexpr(std::is_same_v<T, DoExplosion>)
+                    {
+
+                        for (int x = -m.radius; x <= m.radius; x++)
+                        {
+                            for (int y = -m.radius; y <= m.radius; y++)
+                            {
+                                for (int z = -m.radius; z <= m.radius; z++)
+                                {
+                                    auto spot = m.spot + IntTup(x,y,z);
+                                    auto dist = std::abs(m.spot.x - spot.x) + std::abs(m.spot.y - spot.y) + std::abs(m.spot.z - spot.z);
+                                    if (dist < m.radius)
+                                    {
+                                        {
+                                            serverWorld.set(spot, AIR);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        redistrib = true;
+
+                    }
+
                     else if constexpr (std::is_same_v<T, RequestStackSlotsToDest>)
                     {
 
