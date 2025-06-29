@@ -69,8 +69,8 @@ void _initializePhysX() {
 
     // Step 2: Create PVD (Optional for debugging, visualization)
     gPvd = PxCreatePvd(*gFoundation);
-    PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
-    gPvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
+    PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 30000);
+    gPvd->connect(*transport, PxPvdInstrumentationFlag::eDEBUG);
 
     // Step 3: Create physics instance
     gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), false, gPvd);
@@ -82,11 +82,14 @@ void _initializePhysX() {
     PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
     sceneDesc.cpuDispatcher = gDispatcher;
-    sceneDesc.filterShader = FilterShaderExample;
+    sceneDesc.filterShader = PxDefaultSimulationFilterShader;
 
     sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 
     gScene = gPhysics->createScene(sceneDesc);
+
+    gScene->getScenePvdClient()->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
+    gScene->getScenePvdClient()->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
 
     gControllerManager = PxCreateControllerManager(*gScene);
 
@@ -106,6 +109,7 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
     // 1. Configure the capsule controller descriptor
     PxBoxControllerDesc desc;
     desc.halfHeight = height;
+    desc.halfSideExtent = radius;
 
     desc.position = PxExtendedVec3(position.x, position.y, position.z); // Start position
     desc.slopeLimit = 0.707f; // Limit slope climbing
@@ -163,27 +167,7 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
 
     return playerController;
 }
-PxRigidDynamic* createPlayerKinematic(const PxVec3& position, float radius, float halfHeight) {
-    // Create capsule geometry
-    PxCapsuleGeometry capsuleGeometry(radius, halfHeight);
 
-    // Create kinematic dynamic actor (note: use PxRigidDynamic, not PxRigidStatic)
-    PxRigidDynamic* player = gPhysics->createRigidDynamic(PxTransform(position));
-
-    // 1. Create the shape using the PxPhysics object
-    PxShape* shape = gPhysics->createShape(capsuleGeometry, *gPhysics->createMaterial(0.5f, 0.5f, 0.1f));
-
-    // 2. Attach the shape to the player (PxRigidDynamic)
-    player->attachShape(*shape);
-
-    // Set the kinematic flag
-    player->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-
-    // Add to the PhysX scene
-    gScene->addActor(*player);
-
-    return player;
-}
 PxRigidStatic* _createStaticMeshCollider(const PxVec3& position, const std::vector<PxVec3>& vertices, const std::vector<PxU32>& indices, bool climbable);
 PxRigidStatic* createStaticMeshCollider(const PxVec3& position, const std::vector<PxVec3>& vertices, const std::vector<PxU32>& indices)
 {
@@ -215,7 +199,7 @@ PxRigidStatic* _createStaticMeshCollider(const PxVec3& position,
         // Cook the mesh
         PxTolerancesScale scale;
         PxCookingParams cookingParams(scale);
-        cookingParams.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
+        //cookingParams.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
         //cookingParams.meshWeldTolerance = 0.0f;
         PxDefaultMemoryOutputStream writeBuffer;
         PxTriangleMeshCookingResult::Enum result;
@@ -304,7 +288,7 @@ PxRigidStatic* editStaticMeshCollider(PxRigidStatic* existing, const PxVec3& pos
 
     PxTolerancesScale scale;
     PxCookingParams cookingParams(scale);
-    cookingParams.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
+    //cookingParams.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
     //cookingParams.meshWeldTolerance = 0.0f;
     PxDefaultMemoryOutputStream writeBuffer;
     PxTriangleMeshCookingResult::Enum result;

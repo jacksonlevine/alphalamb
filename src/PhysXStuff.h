@@ -62,7 +62,6 @@ public:
 void _initializePhysX();
 PxRigidStatic* _createStaticMeshCollider(const PxVec3& position, const std::vector<PxVec3>& vertices, const std::vector<PxU32>& indices, bool climbable);
 PxController* createPlayerController(const PxVec3& position, float radius, float height);
-PxRigidDynamic* createPlayerKinematic(const PxVec3& position, float radius, float halfHeight);
 
 
 PxRigidStatic* createStaticMeshCollider(const PxVec3& position, const std::vector<PxVec3>& vertices, const std::vector<PxU32>& indices);

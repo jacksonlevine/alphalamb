@@ -17,53 +17,12 @@ struct ParticleInstance
     PxRigidDynamic* body = nullptr;
     float timeExisted = 0.0f;
 
-    ParticleInstance(glm::vec3 position, float scale, float blockID)
-        : position(position), scale(scale), blockID(blockID), timeExisted(0.0f), body(nullptr)
-    {
-
-        if (!gPhysics || !gScene) {
-            std::cerr << "gPhysics or gScene or gScene is null" <<std::endl;
-            throw std::runtime_error("gPhysics or gScene or gScene is null");
-        }
-
-
-        PxBoxGeometry boxGeometry(0.1f, 0.1f, 0.1f);
-
-        static PxMaterial* sharedMaterial = nullptr;
-        static PxShape* sharedShape = nullptr;
-        if (!sharedMaterial) {
-            sharedMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
-            PxBoxGeometry boxGeometry(0.1f, 0.1f, 0.1f);
-            sharedShape = gPhysics->createShape(boxGeometry, *sharedMaterial);
-            // Set filter data once
-            PxFilterData filterData = {};
-            filterData.word0 = 3;
-            sharedShape->setSimulationFilterData(filterData);
-            sharedShape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
-        }
-
-        body = PxCreateDynamic(*gPhysics, PxTransform(PxVec3(position.x, position.y, position.z)), *sharedShape, 1.0f);
-
-
-        body = PxCreateDynamic(
-            *gPhysics,
-            PxTransform(PxVec3(position.x, position.y, position.z)),
-            *sharedShape,
-            1.0f
-        );
-
-        if (!body) {
-            std::cerr << "PxCreateDynamic failed to create body" << std::endl;
-            throw std::runtime_error("PxCreateDynamic failed");
-        }
-
-
-        gScene->addActor(*body);
-    }
+    ParticleInstance(glm::vec3 position, float scale, float blockID);
     ParticleInstance() = default;
     ParticleInstance(const ParticleInstance& other) = delete;
     ParticleInstance(ParticleInstance&& other)
     {
+        if (this == &other) return;
         position = other.position;
         scale = other.scale;
         blockID = other.blockID;
@@ -157,10 +116,11 @@ public:
         for(int i = 0; i < amount; i++)
         {
             glm::vec3 here(
-                noise->GetNoise(26.0f*(spot.x+i) * energy, 26.0f*(spot.z-i) * energy) * width,
-                noise->GetNoise(26.0f*(spot.x-i) * energy, 26.0f*(spot.z+i) * energy) * width,
-                noise->GetNoise(26.0f*(spot.y+i) * energy, 26.0f*(spot.x-i) * energy) * width
+                noise->GetNoise(26.0f*(i) * energy, 26.0f*(i) * energy) * width,
+                noise->GetNoise(26.0f*(i) * energy, 26.0f*(i) * energy) * width,
+                noise->GetNoise(26.0f*(i) * energy, 26.0f*(i) * energy) * width
                 );
+            //std::cout << here.x << " " << here.y << " " << here.z << std::endl;
             addParticle(
                 here + spot,
                 blockID,

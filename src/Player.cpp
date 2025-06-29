@@ -199,7 +199,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
     if (crouchOverride)
     {
-        controller->resize(0.001f);
+
         PxBoxController* boxCont = static_cast<PxBoxController*>(controller);
         originalCharHeight = boxCont->getHalfHeight();
         boxCont->resize(0.5f);
