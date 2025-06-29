@@ -88,8 +88,10 @@ void _initializePhysX() {
 
     gScene = gPhysics->createScene(sceneDesc);
 
+#ifndef NDEBUG
     gScene->getScenePvdClient()->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
     gScene->getScenePvdClient()->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
+#endif
 
     gControllerManager = PxCreateControllerManager(*gScene);
 
@@ -329,7 +331,6 @@ PxRigidStatic* editStaticMeshCollider(PxRigidStatic* existing, const PxVec3& pos
 
     if (!newShape)
     {
-
         triangleMesh->release();  // Clean up the mesh if shape creation failed
         return existing;
     }
