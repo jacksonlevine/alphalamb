@@ -127,6 +127,8 @@ constexpr auto noColl = makeBitset({WATER, TALL_GRASS, BAMBOO, ORANGE1_DUMMY_BLO
 
 constexpr auto trulynothing = makeBitset({AIR, ORANGE1_DUMMY_BLOCK});
 constexpr auto grasstypes = makeBitset({TALL_GRASS, GRASS});
+
+constexpr auto marchers = makeBitset({GRASS, DIRT, SAND});
 constexpr auto transparents = makeBitset({
     ORANGE1_DUMMY_BLOCK,
     AIR,

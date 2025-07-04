@@ -70,7 +70,7 @@ void _initializePhysX() {
     // Step 2: Create PVD (Optional for debugging, visualization)
     gPvd = PxCreatePvd(*gFoundation);
     PxPvdTransport* transport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 30000);
-    gPvd->connect(*transport, PxPvdInstrumentationFlag::eDEBUG);
+    gPvd->connect(*transport, PxPvdInstrumentationFlag::eALL);
 
     // Step 3: Create physics instance
     gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), false, gPvd);
@@ -201,8 +201,8 @@ PxRigidStatic* _createStaticMeshCollider(const PxVec3& position,
         // Cook the mesh
         PxTolerancesScale scale;
         PxCookingParams cookingParams(scale);
-        //cookingParams.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
-        //cookingParams.meshWeldTolerance = 0.0f;
+        cookingParams.meshPreprocessParams |= PxMeshPreprocessingFlag::eWELD_VERTICES;
+        cookingParams.meshWeldTolerance = 0.1f;
         PxDefaultMemoryOutputStream writeBuffer;
         PxTriangleMeshCookingResult::Enum result;
         bool status = PxCookTriangleMesh(cookingParams, meshDesc, writeBuffer, &result);
@@ -290,8 +290,8 @@ PxRigidStatic* editStaticMeshCollider(PxRigidStatic* existing, const PxVec3& pos
 
     PxTolerancesScale scale;
     PxCookingParams cookingParams(scale);
-    //cookingParams.meshPreprocessParams |= PxMeshPreprocessingFlag::eDISABLE_CLEAN_MESH;
-    //cookingParams.meshWeldTolerance = 0.0f;
+    cookingParams.meshPreprocessParams |= PxMeshPreprocessingFlag::eWELD_VERTICES;
+    cookingParams.meshWeldTolerance = 0.1f;
     PxDefaultMemoryOutputStream writeBuffer;
     PxTriangleMeshCookingResult::Enum result;
     bool status = PxCookTriangleMesh(cookingParams, meshDesc, writeBuffer, &result);

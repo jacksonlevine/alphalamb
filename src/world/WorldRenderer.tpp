@@ -7,6 +7,7 @@
 #include "../specialblocks/FindEntityCreateFunc.h"
 #include "../specialblocks/FindSpecialBlock.h"
 #include "../Light.h"
+#include "../MarchingCubesLookups.h"
 
 
 
@@ -56,6 +57,18 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
             doLight = true;
         }
     }
+
+
+
+    static std::array mcoversamplingspots = {
+        IntTup(0,0,-1),
+        IntTup(-1, 0, -1),
+        IntTup(-1, 0, 0),
+        IntTup(0,-1,-1),
+        IntTup(-1, -1, -1),
+        IntTup(-1, -1, 0),
+        IntTup(0, -1, 0)
+    };
 
     // SCollect block data, light sources (if doLight), and blocks to mesh
     if (!locked) {
@@ -141,6 +154,26 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                     // Mark non-air blocks for meshing
                     if ((chunkData[idx] & BLOCK_ID_BITS) != AIR) {
                         blocksToMesh.emplace_back(x, y, z);
+                       // std::cout << "Pushed " << x << " " << y << " " << z << std::endl;
+                        if (marchers.test(static_cast<MaterialName>(chunkData[idx] & BLOCK_ID_BITS)))
+                        {
+
+                           // std::cout << "Marchers test passed" << std::endl;
+
+
+
+                            //blocksToMesh.emplace_back(x, y+1, z);
+                            for (auto e : mcoversamplingspots)
+                            {
+                               // std::cout << "Pushed additional from thesespots: " << x+e.x << " " << y+e.y << " " << z+e.z << std::endl;
+                                blocksToMesh.emplace_back(x+e.x, y+e.y, z+e.z);
+                            }
+                            // for (auto e : neighborSpots)
+                            // {
+                            //     blocksToMesh.emplace_back(x+e.x, y+e.y, z+e.z);
+                            // }
+                        }
+
                     }
                 }
             }
@@ -222,6 +255,26 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                     // Mark non-air blocks for meshing
                     if ((chunkData[idx] & BLOCK_ID_BITS) != AIR) {
                         blocksToMesh.emplace_back(x, y, z);
+                       // std::cout << "Pushed " << x << " " << y << " " << z << std::endl;
+                        if (marchers.test(static_cast<MaterialName>(chunkData[idx] & BLOCK_ID_BITS)))
+                        {
+
+                         //   std::cout << "Marchers test passed" << std::endl;
+
+
+
+                            //blocksToMesh.emplace_back(x, y+1, z);
+                            for (auto e : mcoversamplingspots)
+                            {
+                               // std::cout << "Pushed additional from thesespots: " << x+e.x << " " << y+e.y << " " << z+e.z << std::endl;
+                                blocksToMesh.emplace_back(x+e.x, y+e.y, z+e.z);
+                            }
+                            // for (auto e : neighborSpots)
+                            // {
+                            //     blocksToMesh.emplace_back(x+e.x, y+e.y, z+e.z);
+                            // }
+                        }
+
                     }
                 }
             }
@@ -273,76 +326,141 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
     };
 
     for (const auto& [x, y, z] : blocksToMesh) {
-        int idx = (x * chunkSize * chunkHeight) + (z * chunkHeight) + y;
-        BlockType rawBlockHere = chunkData[idx];
+        //int idx = (x * chunkSize * chunkHeight) + (z * chunkHeight) + y;
+        BlockType rawBlockHere = getBlock(x,y,z);
         uint32_t blockID = (rawBlockHere & BLOCK_ID_BITS);
         MaterialName mat = static_cast<MaterialName>(blockID);
 
         IntTup here = start + IntTup(x, y, z);
 
-        if (auto specialFunc = findSpecialBlockMeshFunc(mat); specialFunc != std::nullopt) {
-            specialFunc.value()(mesh, rawBlockHere, here, index, tindex);
-        } else {
-            bool blockHereTransparent = isTransparent[idx];
+       // std::cout << "Processing " << here.x << " " << here.y << " " << here.z << std::endl;
 
-            for (int i = 0; i < std::size(neighborSpots); i++) {
-                auto neigh = neighborSpots[i];
-                int nx = x + neigh.x;
-                int ny = y + neigh.y;
-                int nz = z + neigh.z;
+            uint8_t configindex = 0;
 
-                BlockType neighBlock = (getBlock(nx, ny, nz) & BLOCK_ID_BITS);
-                bool neighTransparent = isBlockTransparent(nx, ny, nz);
-                bool neighborAir = neighBlock == AIR;
-                bool solidNeighboringTransparent = (neighTransparent && !blockHereTransparent);
+            bool hasaircorns = false;
+            bool hassolidcorns = false;
 
-                if (neighborAir || solidNeighboringTransparent || (blockHereTransparent && (neighBlock != blockID) && neighTransparent)) {
-                    Side side = static_cast<Side>(i);
-                    IntTup ns = here + neighborSpots[(int)side];
+            MaterialName marchermathit = STONE;
 
-                    ColorPack blockBright = {};
-                    ColorPack ambientBright = {};
+                for (int i = 0; i < std::size(cornerPositions); i++) {
+                    auto neigh = cornerPositions[i];
+                    int nx = x + neigh.x;
+                    int ny = y + neigh.y;
+                    int nz = z + neigh.z;
+
+                    BlockType neighBlock = (getBlock(nx, ny, nz) & BLOCK_ID_BITS);
+
+                    if (transparents.test(neighBlock))
                     {
-                        std::shared_lock<std::shared_mutex> lightLock;
-                        if(!locked) {
-                            lightLock = std::shared_lock<std::shared_mutex>(lightmapMutex);
+                        hasaircorns = true;
+                    } else
+                    {
+                        if (marchers.test(neighBlock))
+                        {
+                            hassolidcorns = true;
+                            configindex |= (1 << i);
+                            marchermathit = (MaterialName)neighBlock;
                         }
-                        if (lightmap.get(ns) != std::nullopt) {
-                            blockBright = lightmap.get(ns).value()->sum();
-                        }
-                        if (ambientlightmap.get(ns) != std::nullopt) {
-                            ambientBright = ambientlightmap.get(ns).value()->sum();
-                        }
-                    }
-                    auto blockAndAmbBright = getBlockAmbientLightVal(blockBright, ambientBright);
 
-                    if (blockID == WATER && side == Side::Top) {
-                        if (!ambOccl) {
-                            addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                         side, mat, 1, mesh, index, tindex, -0.2f);
-                            addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y) + 1, static_cast<float>(here.z)),
-                                         Side::Bottom, mat, 1, mesh, index, tindex, -0.2f);
-                        } else {
-                            addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                          side, mat, 1, mesh, index, tindex, -0.2f);
-                            calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
-                            addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y) + 1, static_cast<float>(here.z)),
-                                          Side::Bottom, mat, 1, mesh, index, tindex, -0.2f);
-                            calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
-                        }
-                    } else {
-                        if (!ambOccl) {
-                            addFace<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                         side, mat, 1, mesh, index, tindex);
-                        } else {
-                            addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                          side, mat, 1, mesh, index, tindex);
-                            calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
+                    }
+
+
+
+                }
+
+              //  std::cout << "Hasaircorns: " << hasaircorns << " hassolidcorns: " << hassolidcorns << std::endl;
+                if (hasaircorns && hassolidcorns)
+                {
+                        // IntTup ns = here + neighborSpots[(int)side];
+                        //
+                        // ColorPack blockBright = {};
+                        // ColorPack ambientBright = {};
+                        // {
+                        //     std::shared_lock<std::shared_mutex> lightLock;
+                        //     if(!locked) {
+                        //         lightLock = std::shared_lock<std::shared_mutex>(lightmapMutex);
+                        //     }
+                        //     if (lightmap.get(ns) != std::nullopt) {
+                        //         blockBright = lightmap.get(ns).value()->sum();
+                        //     }
+                        //     if (ambientlightmap.get(ns) != std::nullopt) {
+                        //         ambientBright = ambientlightmap.get(ns).value()->sum();
+                        //     }
+                        // }
+                       // auto blockAndAmbBright = static_cast<float>(0b11111111'11111111'11111111'11111111);//getBlockAmbientLightVal(blockBright, ambientBright);
+                   //     std::cout << "configindex: " << (int)configindex << std::endl;
+                        addMarcher<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
+                                      configindex, marchermathit, 1, mesh, index, tindex);
+
+                }
+
+
+        if (!marchers.test(mat) && mat != AIR)
+        {
+            {
+                if (auto specialFunc = findSpecialBlockMeshFunc(mat); specialFunc != std::nullopt) {
+                    specialFunc.value()(mesh, rawBlockHere, here, index, tindex);
+                } else {
+                    bool blockHereTransparent = isBlockTransparent(x,y,z);
+                    //
+                    // for (int i = 0; i < std::size(cornerPositions); i++)
+                    // {
+                    //
+                    // }
+                    for (int i = 0; i < std::size(neighborSpots); i++) {
+                        auto neigh = neighborSpots[i];
+                        int nx = x + neigh.x;
+                        int ny = y + neigh.y;
+                        int nz = z + neigh.z;
+
+                        BlockType neighBlock = (getBlock(nx, ny, nz) & BLOCK_ID_BITS);
+                        bool neighTransparent = isBlockTransparent(nx, ny, nz);
+                        bool neighborAir = neighBlock == AIR;
+                        bool solidNeighboringTransparent = (neighTransparent && !blockHereTransparent);
+
+                        if (neighborAir || solidNeighboringTransparent || (blockHereTransparent && (neighBlock != blockID) && neighTransparent)) {
+                            Side side = static_cast<Side>(i);
+                            IntTup ns = here + neighborSpots[(int)side];
+
+                            ColorPack blockBright = {};
+                            ColorPack ambientBright = {};
+                            {
+                                std::shared_lock<std::shared_mutex> lightLock;
+                                if(!locked) {
+                                    lightLock = std::shared_lock<std::shared_mutex>(lightmapMutex);
+                                }
+                                if (lightmap.get(ns) != std::nullopt) {
+                                    blockBright = lightmap.get(ns).value()->sum();
+                                }
+                                if (ambientlightmap.get(ns) != std::nullopt) {
+                                    ambientBright = ambientlightmap.get(ns).value()->sum();
+                                }
+                            }
+                            auto blockAndAmbBright = getBlockAmbientLightVal(blockBright, ambientBright);
+
+                            if (blockID == WATER && side == Side::Top) {
+
+                                addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
+                                              side, mat, 1, mesh, index, tindex, -0.2f);
+                                calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
+                                addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y) + 1, static_cast<float>(here.z)),
+                                              Side::Bottom, mat, 1, mesh, index, tindex, -0.2f);
+                                calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
+
+                            } else {
+
+                                addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
+                                              side, mat, 1, mesh, index, tindex);
+                                calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
+
+                            }
                         }
                     }
                 }
             }
         }
+
+
     }
 
     // Queue implicated chunks (if lighting was performed)
@@ -374,91 +492,5 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
 
     return mesh;
 }
-///Call this with an external index and UsableMesh to mutate them
-template<bool doBrightness>
-__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, PxU32& index, PxU32& tindex, float offsety, float pushIn)
-{
-    auto & tex = TEXS[material];
-    auto faceindex = (side == Side::Top) ? 2 : (side == Side::Bottom) ? 1 : 0;
-    auto & face = tex[faceindex];
-
-    float uvoffsetx = static_cast<float>(face.first) * texSlotWidth;
-    float uvoffsety = 1.0f - (static_cast<float>(face.second) * texSlotWidth);
-
-    static glm::vec2 texOffsets[] = {
-        glm::vec2(onePixel, -onePixel),
-        glm::vec2(onePixel + textureWidth, -onePixel),
-        glm::vec2(onePixel + textureWidth, -(onePixel + textureWidth)),
-        glm::vec2(onePixel, -(onePixel + textureWidth)),
-    };
-    //If the material's transparent, add these verts to the "t____" parts of the mesh. If not, add them to the normal mesh.
-    if (transparents.test(material))
-    {
-        std::ranges::transform(cubefaces[static_cast<int>(side)], std::back_inserter(mesh.tpositions), [offset, sideHeight, offsety, pushIn](const auto& v) {
-            auto newv = PxVec3(pushIn, pushIn, pushIn) + v*(1.f- pushIn);
-            newv.y *= sideHeight;
-            return newv + offset + PxVec3(0.f, offsety, 0.f);
-        });
-
-        std::ranges::transform(cwindices, std::back_inserter(mesh.tindices), [&tindex](const auto& i) {
-            return tindex + i;
-        });
-
-        mesh.ttexcoords.insert(mesh.ttexcoords.end(),{
-                glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
-            glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
-            glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
-            glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),
-            });
-
-        if constexpr(doBrightness)
-        {
-            float isGrass = grasstypes.test(material) ? 1.0f : 0.0f;
-
-            switch(side) {
-            case Side::Top:    mesh.tbrightness.insert(mesh.tbrightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
-            case Side::Left:   mesh.tbrightness.insert(mesh.tbrightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
-            case Side::Bottom: mesh.tbrightness.insert(mesh.tbrightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
-            case Side::Right:  mesh.tbrightness.insert(mesh.tbrightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
-            default:          mesh.tbrightness.insert(mesh.tbrightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
-            }
-        }
 
 
-        tindex += 4;
-    } else
-    {
-        std::ranges::transform(cubefaces[static_cast<int>(side)], std::back_inserter(mesh.positions), [offset, sideHeight, offsety](const auto& v) {
-            auto newv = v;
-            newv.y *= sideHeight;
-            return newv + offset + PxVec3(0.f, offsety, 0.f);
-        });
-
-        std::ranges::transform(cwindices, std::back_inserter(mesh.indices), [&index](const auto& i) {
-            return index + i;
-        });
-
-        mesh.texcoords.insert(mesh.texcoords.end(),
-{glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
-glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
-glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
-glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),});
-
-        if constexpr(doBrightness)
-        {
-            float isGrass = grasstypes.test(material) ? 1.0f : 0.0f;
-
-            switch(side) {
-            case Side::Top:    mesh.brightness.insert(mesh.brightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
-            case Side::Left:   mesh.brightness.insert(mesh.brightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
-            case Side::Bottom: mesh.brightness.insert(mesh.brightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
-            case Side::Right:  mesh.brightness.insert(mesh.brightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
-            default:          mesh.brightness.insert(mesh.brightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
-            }
-        }
-        index += 4;
-    }
-
-
-
-}

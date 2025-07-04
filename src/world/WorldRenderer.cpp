@@ -22,6 +22,7 @@ std::shared_mutex lightmapMutex = {};
 tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare> litChunks;
 
 #include "WorldRenderer.tpp"
+
 void genCGLBuffers()
 {
 
@@ -422,6 +423,7 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
                 glUniform1f(timeRenderedLoc, chunkinfo.timeBeenRendered);
                 if (actuallyDraw)
                 {
+                    glDisable(GL_CULL_FACE);
                     drawFromChunkIndex(static_cast<int>(chunkinfo.chunkIndex), glInfo);
                 }
 

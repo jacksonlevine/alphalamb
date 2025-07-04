@@ -14,6 +14,25 @@
 #include "../Helpers.h"
 #include "../Light.h"
 #include "../NetworkTypes.h"
+#include "../MarchingCubesLookups.h"
+constexpr float onePixel = 0.00183823529411764705882352941176f;     //  1/544      Padding
+constexpr float textureWidth = 0.02941176470588235294117647058824f; // 16/544      16 pixel texture width
+constexpr float texSlotWidth = 0.03308823529411764705882352941176f;
+inline static PxVec3 cubefaces[6][4] = {
+    {//front
+        PxVec3(0.0, 0.0, 0.0),PxVec3(1.0, 0.0, 0.0),PxVec3(1.0, 1.0, 0.0),PxVec3(0.0, 1.0, 0.0)},
+    {//right
+        PxVec3(1.0, 0.0, 0.0),PxVec3(1.0, 0.0, 1.0),PxVec3(1.0, 1.0, 1.0),PxVec3(1.0, 1.0, 0.0)},
+    {//back
+        PxVec3(1.0, 0.0, 1.0),PxVec3(0.0, 0.0, 1.0),PxVec3(0.0, 1.0, 1.0),PxVec3(1.0, 1.0, 1.0)},
+    {//left
+        PxVec3(0.0, 0.0, 1.0),PxVec3(0.0, 0.0, 0.0),PxVec3(0.0, 1.0, 0.0),PxVec3(0.0, 1.0, 1.0)},
+    {//top
+        PxVec3(0.0, 1.0, 0.0),PxVec3(1.0, 1.0, 0.0),PxVec3(1.0, 1.0, 1.0),PxVec3(0.0, 1.0, 1.0)},
+    {//bottom
+        PxVec3(0.0, 0.0, 1.0),PxVec3(1.0, 0.0, 1.0),PxVec3(1.0, 0.0, 0.0),PxVec3(0.0, 0.0, 0.0)}
+};
+
 
 
 struct DrawInstructions
@@ -113,6 +132,54 @@ inline static IntTup neighborSpots[6] = {
     IntTup(0,1,0),
     IntTup(0,-1,0)
 };
+inline static IntTup neighsAndCorns[8+6] = {
+    IntTup(0, 0, 0),   // Corner 0: BottomFrontLeft
+    IntTup(1, 0, 0),   // Corner 1: BottomFrontRight
+    IntTup(0, 0, 1),   // Corner 2: BottomBackLeft
+    IntTup(1, 0, 1),   // Corner 3: BottomBackRight
+    IntTup(0, 1, 0),   // Corner 4: TopFrontLeft
+    IntTup(1, 1, 0),   // Corner 5: TopFrontRight
+    IntTup(0, 1, 1),   // Corner 6: TopBackLeft
+    IntTup(1, 1, 1),    // Corner 7: TopBackRight
+    IntTup(0,0,-1),
+    IntTup(1, 0,0),
+    IntTup(0,0,1),
+    IntTup(-1,0,0),
+    IntTup(0,1,0),
+    IntTup(0,-1,0)
+};
+
+enum class Corner
+{
+    BottomFrontLeft = 0,   // (0,0,0) - bit 0
+    BottomFrontRight,      // (1,0,0) - bit 1
+    BottomBackLeft,        // (0,0,1) - bit 2
+    BottomBackRight,       // (1,0,1) - bit 3
+    TopFrontLeft,          // (0,1,0) - bit 4
+    TopFrontRight,         // (1,1,0) - bit 5
+    TopBackLeft,           // (0,1,1) - bit 6
+    TopBackRight           // (1,1,1) - bit 7
+};
+
+inline static IntTup cornerPositions[8] = {
+    IntTup(0, 0, 0),   // Corner 0: BottomFrontLeft
+    IntTup(1, 0, 0),   // Corner 1: BottomFrontRight
+    IntTup(0, 0, 1),   // Corner 2: BottomBackLeft
+    IntTup(1, 0, 1),   // Corner 3: BottomBackRight
+    IntTup(0, 1, 0),   // Corner 4: TopFrontLeft
+    IntTup(1, 1, 0),   // Corner 5: TopFrontRight
+    IntTup(0, 1, 1),   // Corner 6: TopBackLeft
+    IntTup(1, 1, 1)    // Corner 7: TopBackRight
+};
+
+inline static PxU32 cwindices[6] = {
+    0, 3, 2, 2, 1, 0
+};
+
+
+inline static PxU32 ccwindices[6] = {
+    0, 1, 2, 2, 3, 0
+};
 
 inline static boost::unordered_map<IntTup, Side, IntTupHash> neigh2Side = {
     {neighborSpots[0], (Side)0},
@@ -125,37 +192,168 @@ inline static boost::unordered_map<IntTup, Side, IntTupHash> neigh2Side = {
 
 
 template<bool doBrightness = true>
-__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex, float offsety = 0.f, float pushIn = 0.f);
+__inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex, float offsety = 0.f, float pushIn = 0.f)
+{
+    auto & tex = TEXS[material];
+    auto faceindex = (side == Side::Top) ? 2 : (side == Side::Bottom) ? 1 : 0;
+    auto & face = tex[faceindex];
+
+    float uvoffsetx = static_cast<float>(face.first) * texSlotWidth;
+    float uvoffsety = 1.0f - (static_cast<float>(face.second) * texSlotWidth);
+
+    static glm::vec2 texOffsets[] = {
+        glm::vec2(onePixel, -onePixel),
+        glm::vec2(onePixel + textureWidth, -onePixel),
+        glm::vec2(onePixel + textureWidth, -(onePixel + textureWidth)),
+        glm::vec2(onePixel, -(onePixel + textureWidth)),
+    };
+    //If the material's transparent, add these verts to the "t____" parts of the mesh. If not, add them to the normal mesh.
+    if (transparents.test(material))
+    {
+        std::ranges::transform(cubefaces[static_cast<int>(side)], std::back_inserter(mesh.tpositions), [offset, sideHeight, offsety, pushIn](const auto& v) {
+            auto newv = PxVec3(pushIn, pushIn, pushIn) + v*(1.f- pushIn);
+            newv.y *= sideHeight;
+            return newv + offset + PxVec3(0.f, offsety, 0.f);
+        });
+
+        std::ranges::transform(cwindices, std::back_inserter(mesh.tindices), [&tindex](const auto& i) {
+            return tindex + i;
+        });
+
+        mesh.ttexcoords.insert(mesh.ttexcoords.end(),{
+                glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
+            glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
+            glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
+            glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),
+            });
+
+        if constexpr(doBrightness)
+        {
+            float isGrass = grasstypes.test(material) ? 1.0f : 0.0f;
+
+            switch(side) {
+            case Side::Top:    mesh.tbrightness.insert(mesh.tbrightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
+            case Side::Left:   mesh.tbrightness.insert(mesh.tbrightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
+            case Side::Bottom: mesh.tbrightness.insert(mesh.tbrightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
+            case Side::Right:  mesh.tbrightness.insert(mesh.tbrightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
+            default:          mesh.tbrightness.insert(mesh.tbrightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
+            }
+        }
+
+
+        tindex += 4;
+    } else
+    {
+        std::ranges::transform(cubefaces[static_cast<int>(side)], std::back_inserter(mesh.positions), [pushIn, offset, sideHeight, offsety](const auto& v) {
+            auto newv = PxVec3(pushIn, pushIn, pushIn) + v*(1.f- pushIn);
+            newv.y *= sideHeight;
+            return newv + offset + PxVec3(0.f, offsety, 0.f);
+        });
+
+        std::ranges::transform(cwindices, std::back_inserter(mesh.indices), [&index](const auto& i) {
+            return index + i;
+        });
+
+        mesh.texcoords.insert(mesh.texcoords.end(),
+{glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
+glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
+glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
+glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),});
+
+        if constexpr(doBrightness)
+        {
+            float isGrass = grasstypes.test(material) ? 1.0f : 0.0f;
+
+            switch(side) {
+            case Side::Top:    mesh.brightness.insert(mesh.brightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
+            case Side::Left:   mesh.brightness.insert(mesh.brightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
+            case Side::Bottom: mesh.brightness.insert(mesh.brightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
+            case Side::Right:  mesh.brightness.insert(mesh.brightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
+            default:          mesh.brightness.insert(mesh.brightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
+            }
+        }
+        index += 4;
+    }
+
+
+
+}
+
+
+
+
+
+template<bool doBrightness = true>
+__inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex, float offsety = 0.f, float pushIn = 0.f)
+{
+    auto & tex = TEXS[material];
+    auto faceindex = 0;
+    auto & face = tex[faceindex];
+
+    float uvoffsetx = static_cast<float>(face.first) * texSlotWidth;
+    float uvoffsety = 1.0f - (static_cast<float>(face.second) * texSlotWidth);
+
+    static glm::vec2 texOffsets[] = {
+        glm::vec2(onePixel, -onePixel),
+        glm::vec2(onePixel + textureWidth, -onePixel),
+        glm::vec2(onePixel + textureWidth, -(onePixel + textureWidth)),
+        glm::vec2(onePixel, -(onePixel + textureWidth))
+    };
+
+    {
+        std::ranges::transform(marchingCubeVertices[configindex], std::back_inserter(mesh.positions), [offset, sideHeight, offsety, pushIn](const auto& v) {
+            auto newv = PxVec3(pushIn, pushIn, pushIn) + v*(1.f- pushIn);
+            newv.y *= sideHeight;
+            return newv + offset + PxVec3(0.5f, offsety+0.5f, 0.5f);
+        });
+
+        std::ranges::transform(marchingCubeIndices[configindex], std::back_inserter(mesh.indices), [&index](const auto& i) {
+            return index + i;
+        });
+
+        index += marchingCubeVertices[configindex].size();
+
+        float isGrass = grasstypes.test(material) ? 1.0f : 0.0f;
+
+
+        for (int l = 0; l < marchingCubeVertices[configindex].size(); l++)
+        {
+            mesh.texcoords.insert(mesh.texcoords.end(),{
+                glm::vec2(uvoffsetx + texOffsets[l%3].x, uvoffsety + texOffsets[l%3].y)
+            });
+            if constexpr(doBrightness)
+            {
+                mesh.brightness.insert(mesh.brightness.end(), {0.9f, isGrass});
+            }
+        }
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void genCGLBuffers();
-constexpr float onePixel = 0.00183823529411764705882352941176f;     //  1/544      Padding
-constexpr float textureWidth = 0.02941176470588235294117647058824f; // 16/544      16 pixel texture width
-constexpr float texSlotWidth = 0.03308823529411764705882352941176f;
+
 std::array<IntTup, 3> getAdjacentOffsets(Side side, int vertexIndex);
 void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, bool locked, BlockType blockType, UsableMesh& mesh, float
                                blockandambbright);
-inline static PxVec3 cubefaces[6][4] = {
-    {//front
-        PxVec3(0.0, 0.0, 0.0),PxVec3(1.0, 0.0, 0.0),PxVec3(1.0, 1.0, 0.0),PxVec3(0.0, 1.0, 0.0)},
-    {//right
-        PxVec3(1.0, 0.0, 0.0),PxVec3(1.0, 0.0, 1.0),PxVec3(1.0, 1.0, 1.0),PxVec3(1.0, 1.0, 0.0)},
-    {//back
-        PxVec3(1.0, 0.0, 1.0),PxVec3(0.0, 0.0, 1.0),PxVec3(0.0, 1.0, 1.0),PxVec3(1.0, 1.0, 1.0)},
-    {//left
-        PxVec3(0.0, 0.0, 1.0),PxVec3(0.0, 0.0, 0.0),PxVec3(0.0, 1.0, 0.0),PxVec3(0.0, 1.0, 1.0)},
-    {//top
-        PxVec3(0.0, 1.0, 0.0),PxVec3(1.0, 1.0, 0.0),PxVec3(1.0, 1.0, 1.0),PxVec3(0.0, 1.0, 1.0)},
-    {//bottom
-        PxVec3(0.0, 0.0, 1.0),PxVec3(1.0, 0.0, 1.0),PxVec3(1.0, 0.0, 0.0),PxVec3(0.0, 0.0, 0.0)}
-};
 
-inline static PxU32 ccwindices[6] = {
-    0, 1, 2, 2, 3, 0
-};
-
-inline static PxU32 cwindices[6] = {
-    0, 3, 2, 2, 1, 0
-};
 
 
 template<bool queueimplics = true>

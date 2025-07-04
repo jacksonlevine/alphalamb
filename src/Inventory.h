@@ -37,6 +37,7 @@ struct InventorySlot
 
 
 constexpr std::array<InventorySlot, INVWIDTH * INVHEIGHT> DEFAULT_INVENTORY = {
+    InventorySlot{ .block = DIRT, .count = 99, .isItem = false},
     InventorySlot{ .block = ItemName::JETPACK, .count = 1, .isItem = true},
 };
 

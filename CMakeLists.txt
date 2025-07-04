@@ -228,6 +228,7 @@ add_executable(DistantGarden
         src/components/Dart1.h
         src/components/SoundSource.h
         src/InstancedThingyTemplate.h
+        src/MarchingCubesLookups.h
 )
 
 
