@@ -342,57 +342,38 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
 
             MaterialName marchermathit = STONE;
 
-                for (int i = 0; i < std::size(cornerPositions); i++) {
-                    auto neigh = cornerPositions[i];
-                    int nx = x + neigh.x;
-                    int ny = y + neigh.y;
-                    int nz = z + neigh.z;
+            for (int i = 0; i < std::size(cornerPositions); i++) {
+                auto neigh = cornerPositions[i];
+                int nx = x + neigh.x;
+                int ny = y + neigh.y;
+                int nz = z + neigh.z;
 
-                    BlockType neighBlock = (getBlock(nx, ny, nz) & BLOCK_ID_BITS);
+                BlockType neighBlock = (getBlock(nx, ny, nz) & BLOCK_ID_BITS);
 
-                    if (transparents.test(neighBlock))
+                if (transparents.test(neighBlock))
+                {
+                    hasaircorns = true;
+                } else
+                {
+                    if (marchers.test(neighBlock))
                     {
-                        hasaircorns = true;
-                    } else
-                    {
-                        if (marchers.test(neighBlock))
-                        {
-                            hassolidcorns = true;
-                            configindex |= (1 << i);
-                            marchermathit = (MaterialName)neighBlock;
-                        }
-
+                        hassolidcorns = true;
+                        configindex |= (1 << i);
+                        marchermathit = (MaterialName)neighBlock;
                     }
-
-
-
                 }
+            }
+
+            if (hasaircorns && hassolidcorns)
+            {
+                addMarcher<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
+                              configindex, marchermathit, 1, mesh, index, tindex);
+            }
+
+
 
               //  std::cout << "Hasaircorns: " << hasaircorns << " hassolidcorns: " << hassolidcorns << std::endl;
-                if (hasaircorns && hassolidcorns)
-                {
-                        // IntTup ns = here + neighborSpots[(int)side];
-                        //
-                        // ColorPack blockBright = {};
-                        // ColorPack ambientBright = {};
-                        // {
-                        //     std::shared_lock<std::shared_mutex> lightLock;
-                        //     if(!locked) {
-                        //         lightLock = std::shared_lock<std::shared_mutex>(lightmapMutex);
-                        //     }
-                        //     if (lightmap.get(ns) != std::nullopt) {
-                        //         blockBright = lightmap.get(ns).value()->sum();
-                        //     }
-                        //     if (ambientlightmap.get(ns) != std::nullopt) {
-                        //         ambientBright = ambientlightmap.get(ns).value()->sum();
-                        //     }
-                        // }
-                       // auto blockAndAmbBright = static_cast<float>(0b11111111'11111111'11111111'11111111);//getBlockAmbientLightVal(blockBright, ambientBright);
-                   //     std::cout << "configindex: " << (int)configindex << std::endl;
-                        addMarcher<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                      configindex, marchermathit, 1, mesh, index, tindex);
 
-                }
 
 
         if (!marchers.test(mat) && mat != AIR)
