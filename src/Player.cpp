@@ -126,11 +126,11 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         camera.transform.position.y = static_cast<float>(newPos.y + CAMERA_OFFSET - movementComponent.crouchDegree);
         camera.transform.position.z = static_cast<float>(newPos.z);
 
-        // particleComponent.footDustTimer += deltaTime;
-        // if (particleComponent.footDustTimer > 0.3f) {
-        //     particles->particleBurst(camera.transform.position, 3, WATER, 0.8f, 0.1f);
-        //     particleComponent.footDustTimer = 0.0f;
-        // }
+        particleComponent.footDustTimer += deltaTime;
+        if (particleComponent.footDustTimer > 0.3f) {
+            particles->particleBurst(camera.transform.position, 3, WATER, 0.8f, 0.1f);
+            particleComponent.footDustTimer = 0.0f;
+        }
 
         return; // Skip the rest of the normal movement logic
     }
@@ -275,7 +275,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
             if (footDustTimer > 0.05f) // More frequent particles during slide
             {
                 footDustTimer = 0.0f;
-                //particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 2, lastBlockStandingOn, 0.5f, 0.05f);
+                particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 2, lastBlockStandingOn, 0.5f, 0.05f);
             }
             else
             {
@@ -339,7 +339,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         if (footDustTimer > 0.07f)
         {
             footDustTimer = 0.0f;
-            //particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 1, lastBlockStandingOn, 0.5f, 0.05f);
+            particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 1, lastBlockStandingOn, 0.5f, 0.05f);
         } else
         {
             footDustTimer += deltaTime;
@@ -652,15 +652,14 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
                 alSourcePlay(jetpackSource);
             }
 
-            //Todo: foot dust particles are fucking colliding with the player. it's fucking annoying. I'm turning them the fuck off until I can figure that shit out
-            // if(footDustTimer > 0.1)
-            // {
-            //     particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 10, JETPACK_PARTICLE_BLOCK, 0.2f, 5.0f);
-            //     footDustTimer = 0.0f;
-            // } else
-            // {
-            //     footDustTimer += deltaTime;
-            // }
+             if(footDustTimer > 0.1)
+             {
+                 particles->particleBurst(camera.transform.position - glm::vec3(0.0, 0.9, 0.0), 10, JETPACK_PARTICLE_BLOCK, 0.2f, 5.0f);
+                 footDustTimer = 0.0f;
+             } else
+             {
+                 footDustTimer += deltaTime;
+             }
         } else
         {
             if (jpSourceState == AL_PLAYING)
