@@ -128,7 +128,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                         // Ambient light source detection
                         if (h != AIR) {
                             if (!foundGround) {
-                                newAmbientSources.push_back(std::make_pair(here + IntTup(0, 1, 0), SKYLIGHTVAL));
+                                newAmbientSources.emplace_back(here + IntTup(0, 1, 0), SKYLIGHTVAL);
                                 foundGround = true;
                             }
                             hitSolid = true;
@@ -147,7 +147,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                                     neighBlock = world->getLocked(neighbPos);
                                 }
                                 if (neighBlock != AIR) {
-                                    newAmbientSources.push_back(std::make_pair(here, SKYLIGHTVAL));
+                                    newAmbientSources.emplace_back(here, SKYLIGHTVAL);
                                     break;
                                 }
                             }
@@ -202,7 +202,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                         BlockType h = chunkData[idx];
                         auto originhash = IntTupHash{}(here, true);
                         if (h == LIGHT) {
-                            newBlockSources.push_back(std::make_pair(here, TORCHLIGHTVAL));
+                            newBlockSources.emplace_back(here, TORCHLIGHTVAL);
                         }
 
                         // Check ambient lightmap
@@ -229,7 +229,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                         // Ambient light source detection
                         if (h != AIR) {
                             if (!foundGround) {
-                                newAmbientSources.push_back(std::make_pair(here + IntTup(0, 1, 0), SKYLIGHTVAL));
+                                newAmbientSources.emplace_back(here + IntTup(0, 1, 0), SKYLIGHTVAL);
                                 foundGround = true;
                             }
                             hitSolid = true;
@@ -248,7 +248,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                                     neighBlock = world->getLocked(neighbPos);
                                 }
                                 if (neighBlock != AIR) {
-                                    newAmbientSources.push_back(std::make_pair(here, SKYLIGHTVAL));
+                                    newAmbientSources.emplace_back(here, SKYLIGHTVAL);
                                     break;
                                 }
                             }
