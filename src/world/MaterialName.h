@@ -115,7 +115,7 @@ constexpr std::bitset<BLOCK_COUNT> makeBitset(std::initializer_list<int> ids) {
     return bits;
 }
 
-constexpr auto noHeadBlock = makeBitset({DOOR, TALL_GRASS, ORANGE1_DUMMY_BLOCK});
+constexpr auto noHeadBlock = makeBitset({DOOR, TALL_GRASS, ORANGE1_DUMMY_BLOCK, WATER});
 
 constexpr auto noAmbOccl = makeBitset({FENCE, GLASS, DG_COMPUTERBLOCK, DOOR, CABLE, LIGHT, TALL_GRASS, ORANGE1_DUMMY_BLOCK});
 

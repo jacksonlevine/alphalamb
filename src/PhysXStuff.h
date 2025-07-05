@@ -22,6 +22,59 @@ extern PxScene* gScene;
 extern PxPvd* gPvd;
 extern PxControllerManager* gControllerManager;
 
+enum CollisionGroup
+{
+    GROUP_PLAYER   = 1 << 0,
+    GROUP_WORLD    = 1 << 1,
+    GROUP_PARTICLE = 1 << 2,
+    GROUP_ANIMAL   = 1 << 3,
+    GROUP_LOOT     = 1 << 4,
+};
+inline void setCollisionFilter(PxShape* shape, uint32_t group, uint32_t whaticollidewith)
+{
+    PxFilterData fd;
+    fd.word0 = group;
+    fd.word1 = whaticollidewith;
+    shape->setSimulationFilterData(fd);
+    shape->setQueryFilterData(fd);
+}
+
+
+
+class MyContFiltCallback : public PxQueryFilterCallback
+{
+public:
+    PxQueryHitType::Enum preFilter(
+        const PxFilterData& filterData,
+        const PxShape* shape,
+        const PxRigidActor* actor,
+        PxHitFlags& queryFlags) override
+    {
+        // Get the shape's filter data
+        PxFilterData shapeFilter = shape->getSimulationFilterData();
+
+        // Apply the same logic as your CustomFilterShader
+        // filterData here is the CCT's filter data passed via PxControllerFilters
+        if ((filterData.word0 & shapeFilter.word1) == 0 &&
+            (shapeFilter.word0 & filterData.word1) == 0)
+        {
+            return PxQueryHitType::eNONE; // No collision - filter out
+        }
+
+        return PxQueryHitType::eBLOCK; // Allow collision
+    }
+
+    PxQueryHitType::Enum postFilter(
+        const PxFilterData& filterData,
+        const PxQueryHit& hit,
+        const PxShape* shape,
+        const PxRigidActor* actor) override
+    {
+        return PxQueryHitType::eBLOCK; // Keep the hit
+    }
+};
+
+
 class SurfaceData
 {
 public:
@@ -35,24 +88,24 @@ public:
     bool jetpackMode = false;
 
     void onShapeHit(const PxControllerShapeHit& hit) override {
-        // Get the shape we hit
-        PxShape* hitShape = hit.shape;
-
-        if (hit.worldNormal.y > 0.7f) {  // Adjust threshold as needed
-            isGrounded = true;
-           // printf("Ground hit detected!\n");
-        }
-
-        // Check if the shape has userData
-        if (hitShape->userData != nullptr) {
-            // Cast userData back to your custom struct
-            SurfaceData* surfaceData = static_cast<SurfaceData*>(hitShape->userData);
-
-            if (surfaceData->climbable) {
-                printf("Touching a climbable surface!\n");
-                // You are touching a climbable surface, do whatever logic you need here
-            }
-        }
+        // // Get the shape we hit
+        // PxShape* hitShape = hit.shape;
+        //
+        // if (hit.worldNormal.y > 0.7f) {  // Adjust threshold as needed
+        //     isGrounded = true;
+        //    // printf("Ground hit detected!\n");
+        // }
+        //
+        // // Check if the shape has userData
+        // if (hitShape->userData != nullptr) {
+        //     // Cast userData back to your custom struct
+        //     SurfaceData* surfaceData = static_cast<SurfaceData*>(hitShape->userData);
+        //
+        //     if (surfaceData->climbable) {
+        //         printf("Touching a climbable surface!\n");
+        //         // You are touching a climbable surface, do whatever logic you need here
+        //     }
+        // }
     }
 
     void onControllerHit(const PxControllersHit& hit) override {}

@@ -11,13 +11,13 @@ namespace jl
 
         pitch = npitch;
         yaw = nyaw;
-        if(pitch > 89.999f)
+        if(pitch > 89.0f)
         {
-            pitch = 89.999f;
+            pitch = 89.0f;
         }
-        if(pitch < -89.999f)
+        if(pitch < -89.0f)
         {
-            pitch = -89.999f;
+            pitch = -89.0f;
         }
         yaw = fmod(yaw, 360.0f);
         if (yaw < 0.0f)

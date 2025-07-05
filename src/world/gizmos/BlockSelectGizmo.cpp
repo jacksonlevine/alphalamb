@@ -39,17 +39,17 @@ void BlockSelectGizmo::draw(World* world, entt::entity playerIndex, entt::regist
     glLineWidth(1.0);
 
     PxRaycastBuffer hit;
-    PxQueryFilterData fd;
-    fd.flags |= PxQueryFlag::eSTATIC; // Ensure it checks both static & dynamic objects
 
-    // Exclude objects with word0 = 2
-    fd.data.word0 = ~2;  // This ensures that objects with word0 = 2 are ignored
+
+    PxQueryFilterData filterData;
+    filterData.data.word0 = GROUP_WORLD;
+
 
     static IntTup lastpos = IntTup(0, 0, 0);
 
     bool isHit = gScene->raycast(PxVec3(position.x, position.y, position.z),
                                  PxVec3(direction.x, direction.y, direction.z),
-                                 DISTANCE, hit, PxHitFlag::eDEFAULT, fd);
+                                 DISTANCE, hit, PxHitFlag::eDEFAULT, filterData);
 
     isDrawing = false;
     if(isHit)

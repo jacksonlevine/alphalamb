@@ -22,46 +22,35 @@ SurfaceData::SurfaceData()
 }
 
 
-// PxFilterFlags CustomFilterShader(
-//     PxFilterObjectAttributes attributes0, PxFilterData filterData0,
-//     PxFilterObjectAttributes attributes1, PxFilterData filterData1,
-//     PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize) {
-//
-//     printf("Collision Check: filterData0.word0 = %d, filterData1.word0 = %d\n",
-//             filterData0.word0, filterData1.word0);
-//
-//     if (filterData0.word0 == 2 || filterData1.word0 == 2) {
-//         if (filterData0.word0 == 1 || filterData1.word0 == 1) {
-//             printf("Allowing collision: Controller <-> Static Body\n");
-//             pairFlags = PxPairFlag::eCONTACT_DEFAULT;
-//             return PxFilterFlag::eDEFAULT;
-//         } else {
-//             printf("Suppressing collision: Controller <-> Non-static body\n");
-//             pairFlags = PxPairFlag::eTRIGGER_DEFAULT; // Make sure it's only a trigger, not a physical collision
-//             return PxFilterFlag::eSUPPRESS;
-//         }
-//     }
-//
-//
-//     // Default behavior for other collisions
-//     pairFlags = PxPairFlag::eCONTACT_DEFAULT;
-//     return PxFilterFlag::eDEFAULT;
-// }
-//
 
-
-PxFilterFlags FilterShaderExample(
-    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
-    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
-    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
+//simple filtershader for doing collision groups
+physx::PxFilterFlags CustomFilterShader(
+    physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
+    physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
+    physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize)
 {
-    pairFlags = PxPairFlag::eCONTACT_DEFAULT;
-    if(((filterData0.word0 == 2) && (filterData1.word0 == 3))
-        || ((filterData1.word0 == 2) && (filterData0.word0 == 3)))
-        return PxFilterFlag::eKILL;
 
-    return PxFilterFlag::eDEFAULT;
+    if ((attributes0 & physx::PxFilterObjectFlag::eTRIGGER) != 0 ||
+        (attributes1 & physx::PxFilterObjectFlag::eTRIGGER) != 0)
+    {
+        pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
+        return physx::PxFilterFlag::eDEFAULT;
+    }
+
+
+    if ((filterData0.word0 & filterData1.word1) == 0 &&
+        (filterData1.word0 & filterData0.word1) == 0)
+    {
+        return physx::PxFilterFlag::eKILL; //No collision
+    }
+
+    //otherwise default
+    pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
+
+    return physx::PxFilterFlag::eDEFAULT;
 }
+
+
 
 void _initializePhysX() {
     // Step 1: Create the foundation
@@ -82,7 +71,7 @@ void _initializePhysX() {
     PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
     sceneDesc.cpuDispatcher = gDispatcher;
-    sceneDesc.filterShader = PxDefaultSimulationFilterShader;
+    sceneDesc.filterShader = CustomFilterShader;
 
     sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 
@@ -127,8 +116,8 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
 
 
     PxFilterData controllerFilterData;
-    controllerFilterData.word0 = 2;
-    controllerFilterData.word1 = 1; //Collides with 1
+    controllerFilterData.word0 = GROUP_PLAYER;
+    controllerFilterData.word1 = GROUP_WORLD;
 
     // 2. Create the controller using the controller manager
     PxController* playerController = gControllerManager->createController(desc);
@@ -150,7 +139,7 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
         // 5. Set the filter data for each shape
         for (PxU32 i = 0; i < shapeCount; i++) {
 
-            shapes[i]->setSimulationFilterData(controllerFilterData);
+            setCollisionFilter(shapes[i], GROUP_PLAYER, GROUP_WORLD | GROUP_ANIMAL);
         }
     }
 
@@ -226,16 +215,7 @@ PxRigidStatic* _createStaticMeshCollider(const PxVec3& position,
                     {
 
                         // Set the collision filtering
-                        PxFilterData filterData;
-                        filterData.word0 = 1;  // Set to group 1
-                        shape->setSimulationFilterData(filterData);
-                        shape->setQueryFilterData(filterData);
-
-                        if (climbable)
-                        {
-                            shape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, true);
-                        }
-
+                        setCollisionFilter(shape, GROUP_WORLD, 0xFFFFFFFF);
                         staticActor->attachShape(*shape);
                         shape->release();
                         gScene->addActor(*staticActor);
@@ -335,11 +315,7 @@ PxRigidStatic* editStaticMeshCollider(PxRigidStatic* existing, const PxVec3& pos
         return existing;
     }
 
-    // Set the collision filtering
-    PxFilterData filterData;
-    filterData.word0 = 1;  // Set to group 1
-    newShape->setSimulationFilterData(filterData);
-    newShape->setQueryFilterData(filterData);
+    setCollisionFilter(newShape, GROUP_WORLD, 0xFFFFFFFF);
 
 
     if(existing)

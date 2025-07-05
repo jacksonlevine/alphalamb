@@ -34,7 +34,7 @@ concept HasBlockTexture = requires(T t)
 
 using BehaviorFunction = std::function<void(Scene*, float, entt::registry&, std::unordered_map<TwoIntTup, std::vector<entt::entity>, TwoIntTupHash>&)>;
 
-template <typename ThingyComponent, const char* vertshad, const char* fragshad, const char* modelpath>
+template <typename ThingyComponent, const char* vertshad, const char* fragshad, const char* modelpath, uint32_t mycollgroup, uint32_t icollidewith>
 void renderAndBehaveInstancedThingy(entt::registry& reg, Scene* scene, float deltaTime, BehaviorFunction& bf)
 {
 
@@ -65,6 +65,7 @@ void renderAndBehaveInstancedThingy(entt::registry& reg, Scene* scene, float del
                 material = gPhysics->createMaterial(0.5f, 0.5f, 0.6f);
                 const PxSphereGeometry sphereGeom(0.25f);
                 shape = gPhysics->createShape(sphereGeom, *material);
+                setCollisionFilter(shape, mycollgroup, icollidewith);
             }
 
 

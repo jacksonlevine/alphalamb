@@ -12,9 +12,9 @@
 #include "../world/gizmos/ParticlesGizmo.h"
 #include "../InstancedThingyTemplate.h"
 
-constexpr const char LOOTDROPMODELPATH[] = "resources/models/dart1.glb";
+constexpr const char DART1MODELPATH[] = "resources/models/dart1.glb";
 
-constexpr const char LOOTDROPVERTSHAD[] = R"glsl(
+constexpr const char DART1VERTSHAD[] = R"glsl(
             #version 330 core
             layout(location = 0) in vec3 inPosition;
             layout(location = 1) in vec2 inTexCoord;
@@ -65,7 +65,7 @@ constexpr const char LOOTDROPVERTSHAD[] = R"glsl(
                 vertPos = worldPosition.xyz;
             }
         )glsl";
-constexpr const char LOOTDROPFRAGSHAD[] = R"glsl(
+constexpr const char DART1FRAGSHAD[] = R"glsl(
             #version 330 core
             out vec4 FragColor;
 
@@ -129,5 +129,5 @@ void renderDart1s(entt::registry& reg, Scene* scene, float deltaTime)
         }
     };
 
-    renderAndBehaveInstancedThingy<Dart1, LOOTDROPVERTSHAD, LOOTDROPFRAGSHAD, LOOTDROPMODELPATH>(reg, scene, deltaTime, func);
+    renderAndBehaveInstancedThingy<Dart1, DART1VERTSHAD, DART1FRAGSHAD, DART1MODELPATH, GROUP_PARTICLE, GROUP_WORLD>(reg, scene, deltaTime, func);
 }

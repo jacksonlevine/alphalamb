@@ -25,10 +25,7 @@ ParticleInstance::ParticleInstance(glm::vec3 position, float scale, float blockI
         PxBoxGeometry boxGeometry(0.1f, 0.1f, 0.1f);
         sharedShape = gPhysics->createShape(boxGeometry, *sharedMaterial);
 
-        PxFilterData filterData = {};
-        filterData.word0 = 3;
-        sharedShape->setSimulationFilterData(filterData);
-        sharedShape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
+        setCollisionFilter(sharedShape, GROUP_PARTICLE, GROUP_WORLD);
     }
 
     body = PxCreateDynamic(*gPhysics, PxTransform(PxVec3(position.x, position.y, position.z)), *sharedShape, 1.0f);

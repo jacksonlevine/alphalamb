@@ -25,6 +25,9 @@
 void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, RenderComponent& renderComponent,
     PhysicsComponent& physicsComponent, MovementComponent& movementComponent, Controls& controls, jl::Camera & camera, ParticleEffectComponent & particleComponent, InventoryComponent& inventory)
 {
+
+    static auto contFiltCB = MyContFiltCallback();
+
     auto & lastBlockStandingOn = particleComponent.lastBlockStandingOn;
 
     if(movementComponent.crouchOverride)
@@ -105,8 +108,11 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         glm::vec3 displacement = camera.transform.velocity * deltaTime;
 
         // Move controller with swim physics
-        PxControllerFilters filters;
-        filters.mFilterFlags = PxQueryFlag::eSTATIC;
+        PxFilterData filterData = PxFilterData();
+        filterData.word0 = GROUP_PLAYER;
+        filterData.word1 = GROUP_WORLD;
+
+        PxControllerFilters filters = PxControllerFilters(&filterData, &contFiltCB);
         physicsComponent.controller->move(
             PxVec3(displacement.x, displacement.y, displacement.z),
             0.001f,
@@ -314,7 +320,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         auto locked = world->tryToGetReadLockOnDMsOnly();
         if (locked != std::nullopt)
         {
-            lastBlockStandingOn = (MaterialName)world->getLocked(IntTup(camera.transform.position.x, camera.transform.position.y-2, camera.transform.position.z));
+            lastBlockStandingOn = (MaterialName)world->getLocked(IntTup(std::floor(camera.transform.position.x), std::floor(camera.transform.position.y)-2, std::floor(camera.transform.position.z)));
             auto blockInHead = world->getLocked(IntTup(std::floor(camera.transform.position.x), std::floor(camera.transform.position.y), std::floor(camera.transform.position.z)));
             auto blockOverHead = world->getLocked(IntTup(std::floor(camera.transform.position.x), std::floor(camera.transform.position.y + 1), std::floor(camera.transform.position.z)));
             if (blockInHead != AIR && !noHeadBlock.test(blockInHead))
@@ -340,7 +346,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         }
     }
 
-    static const float climbUpDuration = 0.5f; // Time to climb up in seconds
+    static constexpr float climbUpDuration = 0.5f; // Time to climb up in seconds
 
     // Update cooldown
     if (ledgeGrabCooldown > 0.0f) {
@@ -348,124 +354,128 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
     }
 
     // Ledge detection and handling
-    if (!isLedgeGrabbing && !isClimbingUp && !camera.transform.grounded && !jetpackMode && !hoverMode && ledgeGrabCooldown <= 0.0f && slideTimer <= 0.0f && !isSliding && !controls.crouch)
+    if (controls.sprint)
     {
-        // Check if we're falling
-        if (camera.transform.velocity.y < 0)
+
+
+        if (!isLedgeGrabbing && !isClimbingUp && !camera.transform.grounded && !jetpackMode && !hoverMode && ledgeGrabCooldown <= 0.0f && slideTimer <= 0.0f && !isSliding && !controls.crouch)
         {
-            // Cast a ray forward to detect a ledge
-            PxRaycastBuffer raycastResult;
-            PxVec3 rayOrigin(camera.transform.position.x, camera.transform.position.y, camera.transform.position.z);
-            PxVec3 rayDir(camera.transform.direction.x, 0, camera.transform.direction.z);
-            rayDir.normalize();
-
-            // Setup query filter data - only hit static objects (word0 = 1), not controllers (word0 = 2)
-            PxQueryFilterData filterData;
-            filterData.flags = PxQueryFlag::eSTATIC; // Only hit static geometry
-            filterData.data.word0 = 1; // Only hit objects with this filter bit
-
-            // Cast ray forward to detect a wall with filter
-            if (gScene->raycast(rayOrigin, rayDir, 1.2f, raycastResult, PxHitFlag::eDEFAULT, filterData))
+            // Check if we're falling
+            if (camera.transform.velocity.y < 0)
             {
-                // Save normal for proper positioning
-                PxVec3 normal = raycastResult.block.normal;
+                // Cast a ray forward to detect a ledge
+                PxRaycastBuffer raycastResult;
+                PxVec3 rayOrigin(camera.transform.position.x, camera.transform.position.y, camera.transform.position.z);
+                PxVec3 rayDir(camera.transform.direction.x, 0, camera.transform.direction.z);
+                rayDir.normalize();
 
-                // Now check if there's a ledge by casting a ray from above the hit point
-                PxRaycastBuffer ledgeRayResult;
 
-                // Position the ledge ray at the block face we hit, offset back a bit along normal
-                PxVec3 hitPos = raycastResult.block.position;
+                PxQueryFilterData filterData;
+                filterData.data.word0 = GROUP_WORLD; // Only hit objects with this filter bit
 
-                // Start ray above where we hit the wall
-                PxVec3 ledgeRayOrigin = hitPos + PxVec3(0, 1.5f, 0) + rayDir * 0.3;
-                PxVec3 ledgeRayDir(0, -1, 0);
-
-                // Debug rays if needed
-                // std::cout << "Ray origin: " << ledgeRayOrigin.x << ", " << ledgeRayOrigin.y << ", " << ledgeRayOrigin.z << std::endl;
-
-                if (gScene->raycast(ledgeRayOrigin, ledgeRayDir, 2.0f, ledgeRayResult))
+                // Cast ray forward to detect a wall with filter
+                if (gScene->raycast(rayOrigin, rayDir, 1.2f, raycastResult, PxHitFlag::eDEFAULT, filterData))
                 {
-                    // Found a ledge, check if it's within grab range (height)
-                    float ledgeHeight = ledgeRayResult.block.position.y;
+                    // Save normal for proper positioning
+                    PxVec3 normal = raycastResult.block.normal;
 
-                    // Ensure the ledge is at a valid height for grabbing
-                    if (ledgeHeight > camera.transform.position.y &&
-                        ledgeHeight < camera.transform.position.y + 1.0f)
+                    // Now check if there's a ledge by casting a ray from above the hit point
+                    PxRaycastBuffer ledgeRayResult;
+
+                    // Position the ledge ray at the block face we hit, offset back a bit along normal
+                    PxVec3 hitPos = raycastResult.block.position;
+
+                    // Start ray above where we hit the wall
+                    PxVec3 ledgeRayOrigin = hitPos + PxVec3(0, 1.5f, 0) + rayDir * 0.3;
+                    PxVec3 ledgeRayDir(0, -1, 0);
+
+                    // Debug rays if needed
+                    // std::cout << "Ray origin: " << ledgeRayOrigin.x << ", " << ledgeRayOrigin.y << ", " << ledgeRayOrigin.z << std::endl;
+
+                    if (gScene->raycast(ledgeRayOrigin, ledgeRayDir, 2.0f, ledgeRayResult, PxHitFlag::eDEFAULT, filterData))
                     {
-                        // Check if the space above the ledge is clear (not a block)
-                        // We need to make sure there's room to climb up
-                        IntTup ledgeBlockPos(
-                            floor(ledgeRayResult.block.position.x),
-                            floor(ledgeRayResult.block.position.y) + 1, // Check block above ledge
-                            floor(ledgeRayResult.block.position.z)
-                        );
-                        IntTup ledgeBlockPos2(
-                            floor(ledgeRayResult.block.position.x),
-                            floor(ledgeRayResult.block.position.y) + 2, // Check block above ledge2
-                            floor(ledgeRayResult.block.position.z)
-                        );
+                        // Found a ledge, check if it's within grab range (height)
+                        float ledgeHeight = ledgeRayResult.block.position.y;
 
-                        bool isSpaceClear = true;
+                        // Ensure the ledge is at a valid height for grabbing
+                        if (ledgeHeight > camera.transform.position.y &&
+                            ledgeHeight < camera.transform.position.y + 1.0f)
                         {
-                            auto locked = world->tryToGetReadLockOnDMsOnly();
-                            if (locked != std::nullopt)
-                            {
-                                int blockType = world->getLocked(ledgeBlockPos);
-                                int blockType2 = world->getLocked(ledgeBlockPos2);
-                                isSpaceClear = ((blockType == AIR) && (blockType2 == AIR));
-                            }
-                        }
+                            // Check if the space above the ledge is clear (not a block)
+                            // We need to make sure there's room to climb up
+                            IntTup ledgeBlockPos(
+                                floor(ledgeRayResult.block.position.x),
+                                floor(ledgeRayResult.block.position.y) + 1, // Check block above ledge
+                                floor(ledgeRayResult.block.position.z)
+                            );
+                            IntTup ledgeBlockPos2(
+                                floor(ledgeRayResult.block.position.x),
+                                floor(ledgeRayResult.block.position.y) + 2, // Check block above ledge2
+                                floor(ledgeRayResult.block.position.z)
+                            );
 
-                        if (isSpaceClear)
-                        {
-                            // We can grab this ledge!
-                            isLedgeGrabbing = true;
-                            ledgePosition = glm::vec3(ledgeRayResult.block.position.x,
-                                                    ledgeHeight,
-                                                    ledgeRayResult.block.position.z);
-
-                            // Store normal for better positioning
-                            ledgeNormal = glm::vec3(normal.x, normal.y, normal.z);
-
-                            // Position the player at the ledge - careful with voxel coordinates
-                            // Position slightly away from the ledge along the normal
-                            glm::vec3 grabPosition = ledgePosition + (ledgeNormal * 0.45f);
-                            grabPosition.y = ledgeHeight - 0.6f; // Position hands at ledge height
-
-                            // Snap to grid to prevent getting stuck in blocks
-                            // Move slightly away from any block boundaries
-                            grabPosition.x = floor(grabPosition.x) + 0.5f + (ledgeNormal.x * 0.2f);
-                            grabPosition.z = floor(grabPosition.z) + 0.5f + (ledgeNormal.z * 0.2f);
-
-
-                            bool spotclear = true;
+                            bool isSpaceClear = true;
                             {
                                 auto locked = world->tryToGetReadLockOnDMsOnly();
                                 if (locked != std::nullopt)
                                 {
-                                    int blockType = world->getLocked(IntTup(
-                                        std::floor(grabPosition.x),
-                                        std::floor(grabPosition.y-CAMERA_OFFSET + (movementComponent.crouchDegree)),
-                                        std::floor(grabPosition.z)));
-                                    int blockType2 = world->getLocked(IntTup(
-                                        std::floor(grabPosition.x),
-                                        std::floor(grabPosition.y-CAMERA_OFFSET + (movementComponent.crouchDegree))+1,
-                                        std::floor(grabPosition.z)));
-                                    spotclear = ((blockType == AIR) && (blockType2 == AIR));
+                                    int blockType = world->getLocked(ledgeBlockPos);
+                                    int blockType2 = world->getLocked(ledgeBlockPos2);
+                                    isSpaceClear = ((blockType == AIR) && (blockType2 == AIR));
                                 }
                             }
 
-                            if (spotclear)
+                            if (isSpaceClear)
                             {
-                                // Update controller position
-                                controller->setPosition(PxExtendedVec3(grabPosition.x, grabPosition.y - CAMERA_OFFSET + ( movementComponent.crouchDegree), grabPosition.z));
+                                // We can grab this ledge!
+                                isLedgeGrabbing = true;
+                                ledgePosition = glm::vec3(ledgeRayResult.block.position.x,
+                                                        ledgeHeight,
+                                                        ledgeRayResult.block.position.z);
 
-                                // Zero out velocity
-                                camera.transform.velocity = glm::vec3(0.0f);
+                                // Store normal for better positioning
+                                ledgeNormal = glm::vec3(normal.x, normal.y, normal.z);
 
-                                // playSound(sounds.at((int)SoundBuffers::LEDGE_GRAB));
+                                // Position the player at the ledge - careful with voxel coordinates
+                                // Position slightly away from the ledge along the normal
+                                glm::vec3 grabPosition = ledgePosition + (ledgeNormal * 0.45f);
+                                grabPosition.y = ledgeHeight - 0.6f; // Position hands at ledge height
+
+                                // Snap to grid to prevent getting stuck in blocks
+                                // Move slightly away from any block boundaries
+                                grabPosition.x = floor(grabPosition.x) + 0.5f + (ledgeNormal.x * 0.2f);
+                                grabPosition.z = floor(grabPosition.z) + 0.5f + (ledgeNormal.z * 0.2f);
+
+
+                                bool spotclear = true;
+                                {
+                                    auto locked = world->tryToGetReadLockOnDMsOnly();
+                                    if (locked != std::nullopt)
+                                    {
+                                        int blockType = world->getLocked(IntTup(
+                                            std::floor(grabPosition.x),
+                                            std::floor(grabPosition.y-CAMERA_OFFSET + (movementComponent.crouchDegree)),
+                                            std::floor(grabPosition.z)));
+                                        int blockType2 = world->getLocked(IntTup(
+                                            std::floor(grabPosition.x),
+                                            std::floor(grabPosition.y-CAMERA_OFFSET + (movementComponent.crouchDegree))+1,
+                                            std::floor(grabPosition.z)));
+                                        spotclear = ((blockType == AIR) && (blockType2 == AIR));
+                                    }
+                                }
+
+                                if (spotclear)
+                                {
+                                    // Update controller position
+                                    controller->setPosition(PxExtendedVec3(grabPosition.x, grabPosition.y - CAMERA_OFFSET + ( movementComponent.crouchDegree), grabPosition.z));
+
+                                    // Zero out velocity
+                                    camera.transform.velocity = glm::vec3(0.0f);
+
+                                    // playSound(sounds.at((int)SoundBuffers::LEDGE_GRAB));
+                                }
+
                             }
-
                         }
                     }
                 }
@@ -801,14 +811,20 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         }
     }
 
+
+
     if (!isClimbingUp)
     {
         displacement.y += camera.transform.velocity.y * deltaTime;
         displacement.x += camera.transform.velocity.x * deltaTime;
         displacement.z += camera.transform.velocity.z * deltaTime;
 
-        PxControllerFilters filters;
-        filters.mFilterFlags = PxQueryFlag::eSTATIC;
+        PxFilterData filterData = PxFilterData();
+        filterData.word0 = GROUP_PLAYER;
+        filterData.word1 = GROUP_WORLD;
+
+        PxControllerFilters filters = PxControllerFilters(&filterData, &contFiltCB);
+
 
         if (isSliding) {
             controller->setStepOffset(1.5f);
