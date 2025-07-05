@@ -74,10 +74,16 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
     };
 
     // SCollect block data, light sources (if doLight), and blocks to mesh
-    if (!locked) {
-        std::shared_lock<std::shared_mutex> url(world->userDataMap.mutex());
-        std::shared_lock<std::shared_mutex> nrl(world->nonUserDataMap.mutex());
+    {
+        std::shared_lock<std::shared_mutex> url;
+        std::shared_lock<std::shared_mutex> nrl;
         std::shared_lock<std::shared_mutex> lightLock;
+
+        if (!locked)
+        {
+            url = std::shared_lock<std::shared_mutex>(world->userDataMap.mutex());
+            nrl = std::shared_lock<std::shared_mutex>(world->nonUserDataMap.mutex());
+        }
         if(doLight) {
             lightLock = std::shared_lock<std::shared_mutex>(lightmapMutex);
         }
@@ -182,107 +188,6 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
             }
         }
         // Locks released here (url, nrl, lightLock)
-    } else {
-        // Locked mode: No locks needed, access world directly
-        for (int x = 0; x < chunkSize; x++) {
-            for (int z = 0; z < chunkSize; z++) {
-                bool foundGround = false;
-                bool hitSolid = false;
-                for (int y = chunkHeight - 1; y >= 0; y--) {
-                    IntTup here = start + IntTup(x, y, z);
-                    int idx = (x * chunkSize * chunkHeight) + (z * chunkHeight) + y;
-
-                    // Cache block data
-                    chunkData[idx] = world->getRawLocked(here);
-                    isTransparent[idx] = (chunkData[idx] == AIR) ||
-                                        (transparents.test(chunkData[idx] & BLOCK_ID_BITS));
-
-                    // Light source collection (if doLight)
-                    if (doLight) {
-                        BlockType h = chunkData[idx];
-                        auto originhash = IntTupHash{}(here, true);
-                        if (h == LIGHT) {
-                            newBlockSources.emplace_back(here, TORCHLIGHTVAL);
-                        }
-
-                        // Check ambient lightmap
-                        auto ambientSpot = ambientlightmap.get(here);
-                        if (ambientSpot != std::nullopt) {
-                            auto& val = ambientSpot.value();
-                            for (int i = 0; i < val->count; i++) {
-                                if (originhash == val->originhashes[i]) {
-                                    oldAmbientSources.emplace_back(here, SKYLIGHTVAL);
-                                }
-                            }
-                        }
-
-                        // Check block lightmap
-                        auto blockSpot = lightmap.get(here);
-                        if (blockSpot != std::nullopt) {
-                            auto& val = blockSpot.value();
-                            for (int i = 0; i < val->count; i++) {
-                                if (originhash == val->originhashes[i]) {
-                                    oldBlockSources.emplace_back(here, TORCHLIGHTVAL);
-                                }
-                            }
-                        }
-                        // Ambient light source detection
-                        if (h != AIR) {
-                            if (!foundGround) {
-                                newAmbientSources.emplace_back(here + IntTup(0, 1, 0), SKYLIGHTVAL);
-                                foundGround = true;
-                            }
-                            hitSolid = true;
-                        } else if (!hitSolid) {
-                            for (const auto& neighb : neighbs4) {
-                                IntTup neighbPos = here + neighb;
-                                // Use cache if neighbor is in-bounds
-                                int nx = x + neighb.x;
-                                int nz = z + neighb.z;
-                                int ny = y + neighb.y;
-                                BlockType neighBlock;
-                                if (nx >= 0 && nx < chunkSize && ny >= 0 && ny < chunkHeight && nz >= 0 && nz < chunkSize) {
-                                    int nidx = (nx * chunkSize * chunkHeight) + (nz * chunkHeight) + ny;
-                                    neighBlock = chunkData[nidx];
-                                } else {
-                                    neighBlock = world->getLocked(neighbPos);
-                                }
-                                if (neighBlock != AIR) {
-                                    newAmbientSources.emplace_back(here, SKYLIGHTVAL);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    // Mark non-air blocks for meshing
-                    if ((chunkData[idx] & BLOCK_ID_BITS) != AIR) {
-                        blocksToMesh.emplace_back(x, y, z);
-                       // std::cout << "Pushed " << x << " " << y << " " << z << std::endl;
-                        if (marchers.test(static_cast<MaterialName>(chunkData[idx] & BLOCK_ID_BITS)))
-                        {
-
-                         //   std::cout << "Marchers test passed" << std::endl;
-
-
-
-                            //blocksToMesh.emplace_back(x, y+1, z);
-                            for (auto e : mcoversamplingspots)
-                            {
-                               // std::cout << "Pushed additional from thesespots: " << x+e.x << " " << y+e.y << " " << z+e.z << std::endl;
-                                blocksToMesh.emplace_back(x+e.x, y+e.y, z+e.z);
-                            }
-                            // for (auto e : neighborSpots)
-                            // {
-                            //     blocksToMesh.emplace_back(x+e.x, y+e.y, z+e.z);
-                            // }
-                        }
-
-                    }
-                }
-            }
-        }
-        // lightLock released here (if doLight)
     }
 
     // Perform light propagation before meshing (if doLight)
