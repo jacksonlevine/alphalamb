@@ -38,6 +38,9 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
     std::vector<BlockType> chunkData(chunkSize * chunkSize * chunkHeight, AIR);
     std::vector<bool> isTransparent(chunkSize * chunkSize * chunkHeight, true);
 
+    std::vector<bool> marchedOrigs(chunkSize * chunkSize * chunkHeight, false);
+
+
     // Light source collections (only used if light = true)
     std::vector<std::pair<IntTup, ColorPack>> oldBlockSources;
     std::vector<std::pair<IntTup, ColorPack>> newBlockSources;
@@ -155,9 +158,9 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                     if ((chunkData[idx] & BLOCK_ID_BITS) != AIR) {
                         blocksToMesh.emplace_back(x, y, z);
                        // std::cout << "Pushed " << x << " " << y << " " << z << std::endl;
-                        if (marchers.test(static_cast<MaterialName>(chunkData[idx] & BLOCK_ID_BITS)))
+                        if (marchers.test(static_cast<MaterialName>(chunkData[idx] & BLOCK_ID_BITS)) && !marchedOrigs[idx])
                         {
-
+                            marchedOrigs[idx] = true;
                            // std::cout << "Marchers test passed" << std::endl;
 
 
