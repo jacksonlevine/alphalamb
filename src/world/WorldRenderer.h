@@ -2,6 +2,8 @@
 // Created by jack on 1/27/2025.
 //
 
+#define MARCHERS
+
 #ifndef WORLDRENDERER_H
 #define WORLDRENDERER_H
 
@@ -15,6 +17,7 @@
 #include "../Light.h"
 #include "../NetworkTypes.h"
 #include "../MarchingCubesLookups.h"
+using namespace physx;
 constexpr float onePixel = 0.00183823529411764705882352941176f;     //  1/544      Padding
 constexpr float textureWidth = 0.02941176470588235294117647058824f; // 16/544      16 pixel texture width
 constexpr float texSlotWidth = 0.03308823529411764705882352941176f;
@@ -161,16 +164,20 @@ enum class Corner
     TopBackRight           // (1,1,1) - bit 7
 };
 
+#ifdef MARCHERS
+
 inline static IntTup cornerPositions[8] = {
     IntTup(0, 0, 0),   // Corner 0: BottomFrontLeft
-    IntTup(2, 0, 0),   // Corner 1: BottomFrontRight
-    IntTup(0, 0, 2),   // Corner 2: BottomBackLeft
-    IntTup(2, 0, 2),   // Corner 3: BottomBackRight
-    IntTup(0, 2, 0),   // Corner 4: TopFrontLeft
-    IntTup(2, 2, 0),   // Corner 5: TopFrontRight
-    IntTup(0, 2, 2),   // Corner 6: TopBackLeft
-    IntTup(2, 2, 2)    // Corner 7: TopBackRight
+    IntTup(1, 0, 0),   // Corner 1: BottomFrontRight
+    IntTup(0, 0, 1),   // Corner 2: BottomBackLeft
+    IntTup(1, 0, 1),   // Corner 3: BottomBackRight
+    IntTup(0, 1, 0),   // Corner 4: TopFrontLeft
+    IntTup(1, 1, 0),   // Corner 5: TopFrontRight
+    IntTup(0, 1, 1),   // Corner 6: TopBackLeft
+    IntTup(1, 1, 1)    // Corner 7: TopBackRight
 };
+
+#endif
 
 inline static PxU32 cwindices[6] = {
     0, 3, 2, 2, 1, 0
@@ -281,7 +288,7 @@ glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),});
 
 
 
-
+#ifdef MARCHERS
 
 template<bool doBrightness = true>
 __inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex, float offsety = 0.f, float pushIn = 0.f, float
@@ -427,7 +434,7 @@ __inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName materi
 
 }
 
-
+#endif
 
 
 

@@ -7,6 +7,8 @@
 #include "../specialblocks/FindEntityCreateFunc.h"
 #include "../specialblocks/FindSpecialBlock.h"
 #include "../Light.h"
+
+
 #include "../MarchingCubesLookups.h"
 
 
@@ -38,7 +40,6 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
     std::vector<BlockType> chunkData(chunkSize * chunkSize * chunkHeight, AIR);
     std::vector<bool> isTransparent(chunkSize * chunkSize * chunkHeight, true);
 
-    std::vector<bool> marchedOrigs(chunkSize * chunkSize * chunkHeight, false);
 
     static auto idxfn = [](int x, int y, int z) -> int { return (x * chunkSize * chunkHeight) + (z * chunkHeight) + y; };
 
@@ -167,9 +168,9 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                     if ((chunkData[idx] & BLOCK_ID_BITS) != AIR) {
                         blocksToMesh.emplace_back(x, y, z);
                        // std::cout << "Pushed " << x << " " << y << " " << z << std::endl;
-                        if (marchers.test(static_cast<MaterialName>(chunkData[idx] & BLOCK_ID_BITS)) && !marchedOrigs[idx])
+#ifdef MARCHERS
+                        if (marchers.test(static_cast<MaterialName>(chunkData[idx] & BLOCK_ID_BITS)))
                         {
-                            marchedOrigs[idx] = true;
                            // std::cout << "Marchers test passed" << std::endl;
 
 
@@ -185,6 +186,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                             //     blocksToMesh.emplace_back(x+e.x, y+e.y, z+e.z);
                             // }
                         }
+#endif
 
                     }
                 }
@@ -241,7 +243,9 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
         }
     };
 
+#ifdef MARCHERS
     std::unordered_set<std::pair<int,int>, PairHash> hitMarchVantagePoints;
+#endif
 
     for (const auto& [x, y, z] : blocksToMesh) {
         //int idx = (x * chunkSize * chunkHeight) + (z * chunkHeight) + y;
@@ -255,6 +259,8 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
         IntTup here = start + IntTup(x, y, z);
 
        // std::cout << "Processing " << here.x << " " << here.y << " " << here.z << std::endl;
+
+#ifdef MARCHERS
 
             uint8_t configindex = 0;
 
@@ -307,23 +313,19 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
 
                 } else
                 {
-                    if(marchers.test(neighBlock))
-                    {
-                        amarcherhit = true;
-                    }
-                    if (marchers.test(neighBlock) || (atleastconnectmarch.test(neighBlock) && amarcherhit))
+                    if (marchers.test(neighBlock) )
                     {
 
                         //vantage point second
                         auto entry = std::make_pair(idxfn(nx,ny,nz), idxfn(x,y,z));
 
-                        //if (!hitMarchVantagePoints.contains(entry))
-                       // {
-                           // hitMarchVantagePoints.emplace(entry);
+                        if (!hitMarchVantagePoints.contains(entry))
+                        {
+                            hitMarchVantagePoints.emplace(entry);
                             hassolidcorns = true;
                             configindex |= (1 << i);
                             marchermathit = (MaterialName)neighBlock;
-                       // }
+                        }
                     }
                 }
             }
@@ -335,12 +337,17 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                               configindex, marchermathit, 1, mesh, index, tindex, 0.f, 0.f, blockAndAmbBright);
             }
 
-
+#endif
 
               //  std::cout << "Hasaircorns: " << hasaircorns << " hassolidcorns: " << hassolidcorns << std::endl;
 
 
-        if ( mat != AIR)
+        if (
+#ifdef MARCHERS
+        !marchers.test(mat)
+        &&
+#endif
+        mat != AIR)
         {
             {
                 if (auto specialFunc = findSpecialBlockMeshFunc(mat); specialFunc != std::nullopt) {
@@ -362,9 +369,13 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                         bool neighTransparent = isBlockTransparent(nx, ny, nz);
                         bool neighborAir = neighBlock == AIR;
                         bool solidNeighboringTransparent = (neighTransparent && !blockHereTransparent);
-                        bool solidNeighboringMarcher = (!blockHereTransparent && marchers.test(neighBlock));
 
-                        if (solidNeighboringMarcher || neighborAir || solidNeighboringTransparent || (blockHereTransparent && (neighBlock != blockID) && neighTransparent)) {
+#ifdef MARCHERS
+                        bool neighboringMarcher = marchers.test(neighBlock);
+#else
+                        bool neighboringMarcher = true;
+                        #endif
+                        if (neighboringMarcher || neighborAir || solidNeighboringTransparent || (blockHereTransparent && (neighBlock != blockID) && neighTransparent)) {
                             Side side = static_cast<Side>(i);
                             IntTup ns = here + neighborSpots[(int)side];
 
@@ -383,7 +394,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                                 }
                             }
                             auto blockAndAmbBright = getBlockAmbientLightVal(blockBright, ambientBright);
-                            auto pushin = marchers.test(mat) ? 0.2f : 0.0f;
+                            auto pushin = 0.0f;
 
                             if (liquids.test(blockID) && side == Side::Top) {
 
