@@ -42,7 +42,7 @@ void BlockSelectGizmo::draw(World* world, entt::entity playerIndex, entt::regist
 
 
     PxQueryFilterData filterData;
-    filterData.data.word0 = GROUP_WORLD;
+    filterData.data.word0 = static_cast<unsigned int>(CollisionGroup::GROUP_WORLD);
 
 
     static IntTup lastpos = IntTup(0, 0, 0);

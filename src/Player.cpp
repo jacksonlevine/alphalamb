@@ -109,8 +109,9 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
         // Move controller with swim physics
         PxFilterData filterData = PxFilterData();
-        filterData.word0 = GROUP_PLAYER;
-        filterData.word1 = GROUP_WORLD;
+        filterData.word0 = static_cast<unsigned int>(CollisionGroup::GROUP_PLAYER);
+        filterData.word1 = static_cast<unsigned int>(CollisionGroup::GROUP_WORLD);
+
 
         PxControllerFilters filters = PxControllerFilters(&filterData, &contFiltCB);
         physicsComponent.controller->move(
@@ -371,7 +372,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
 
                 PxQueryFilterData filterData;
-                filterData.data.word0 = GROUP_WORLD; // Only hit objects with this filter bit
+                filterData.data.word0 = static_cast<unsigned int>(CollisionGroup::GROUP_WORLD); // Only hit objects with this filter bit
 
                 // Cast ray forward to detect a wall with filter
                 if (gScene->raycast(rayOrigin, rayDir, 1.2f, raycastResult, PxHitFlag::eDEFAULT, filterData))
@@ -819,8 +820,8 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         displacement.z += camera.transform.velocity.z * deltaTime;
 
         PxFilterData filterData = PxFilterData();
-        filterData.word0 = GROUP_PLAYER;
-        filterData.word1 = GROUP_WORLD;
+        filterData.word0 = static_cast<unsigned int>(CollisionGroup::GROUP_PLAYER);
+        filterData.word1 = static_cast<unsigned int>(CollisionGroup::GROUP_WORLD);
 
         PxControllerFilters filters = PxControllerFilters(&filterData, &contFiltCB);
 

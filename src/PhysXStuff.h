@@ -22,7 +22,7 @@ extern PxScene* gScene;
 extern PxPvd* gPvd;
 extern PxControllerManager* gControllerManager;
 
-enum CollisionGroup
+enum class CollisionGroup
 {
     GROUP_PLAYER   = 1 << 0,
     GROUP_WORLD    = 1 << 1,
@@ -35,10 +35,37 @@ inline void setCollisionFilter(PxShape* shape, uint32_t group, uint32_t whaticol
     PxFilterData fd;
     fd.word0 = group;
     fd.word1 = whaticollidewith;
+
     shape->setSimulationFilterData(fd);
     shape->setQueryFilterData(fd);
 }
 
+//simple filtershader for doing collision groups
+inline physx::PxFilterFlags CustomFilterShader(
+    physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
+    physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
+    physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize)
+{
+
+    if ((attributes0 & physx::PxFilterObjectFlag::eTRIGGER) != 0 ||
+        (attributes1 & physx::PxFilterObjectFlag::eTRIGGER) != 0)
+    {
+        pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
+        return physx::PxFilterFlag::eDEFAULT;
+    }
+
+
+    if ((filterData0.word0 & filterData1.word1) == 0 &&
+        (filterData1.word0 & filterData0.word1) == 0)
+    {
+        return physx::PxFilterFlag::eKILL; //No collision
+    }
+
+    //otherwise default
+    pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
+
+    return physx::PxFilterFlag::eDEFAULT;
+}
 
 
 class MyContFiltCallback : public PxQueryFilterCallback
@@ -82,6 +109,34 @@ public:
         }
 
         return PxQueryHitType::eBLOCK; // Allow collision
+    }
+};
+class MyBehaviorCallback : public PxControllerBehaviorCallback
+{
+public:
+    PxFilterData playerFilterData;
+
+    PxControllerBehaviorFlags getBehaviorFlags(const PxShape& shape, const PxActor& actor) override
+    {
+        PxFilterData shapeFilter = shape.getSimulationFilterData();
+
+        if ((playerFilterData.word0 & shapeFilter.word1) == 0 &&
+            (shapeFilter.word0 & playerFilterData.word1) == 0)
+        {
+            return PxControllerBehaviorFlags(0); // Don't allow stepping onto it
+        }
+
+        return PxControllerBehaviorFlag::eCCT_CAN_RIDE_ON_OBJECT; // Allow stepping
+    }
+
+    PxControllerBehaviorFlags getBehaviorFlags(const PxController& controller) override
+    {
+        return PxControllerBehaviorFlags(0); // No special behavior
+    }
+
+    PxControllerBehaviorFlags getBehaviorFlags(const PxObstacle& obstacle) override
+    {
+        return PxControllerBehaviorFlags(0);
     }
 };
 

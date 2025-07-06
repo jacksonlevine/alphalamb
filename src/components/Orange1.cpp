@@ -45,7 +45,7 @@ void renderOrange1Guys(entt::registry& reg, Scene* scene, float deltaTime)
             PxRigidStatic* sphere = gPhysics->createRigidStatic(PxTransform(PxVec3(position.x, position.y, position.z)));
             PxShape* shape = gPhysics->createShape(sphereGeom, *material);
 
-            setCollisionFilter(shape, GROUP_ANIMAL, GROUP_WORLD);
+            setCollisionFilter(shape, static_cast<uint32_t>(CollisionGroup::GROUP_ANIMAL), static_cast<uint32_t>(CollisionGroup::GROUP_WORLD));
             //
             // if (shape)
             // {

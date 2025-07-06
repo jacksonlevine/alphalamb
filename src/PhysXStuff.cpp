@@ -23,32 +23,6 @@ SurfaceData::SurfaceData()
 
 
 
-//simple filtershader for doing collision groups
-physx::PxFilterFlags CustomFilterShader(
-    physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
-    physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
-    physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize)
-{
-
-    if ((attributes0 & physx::PxFilterObjectFlag::eTRIGGER) != 0 ||
-        (attributes1 & physx::PxFilterObjectFlag::eTRIGGER) != 0)
-    {
-        pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
-        return physx::PxFilterFlag::eDEFAULT;
-    }
-
-
-    if ((filterData0.word0 & filterData1.word1) == 0 &&
-        (filterData1.word0 & filterData0.word1) == 0)
-    {
-        return physx::PxFilterFlag::eKILL; //No collision
-    }
-
-    //otherwise default
-    pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
-
-    return physx::PxFilterFlag::eDEFAULT;
-}
 
 
 
@@ -97,7 +71,15 @@ void _initializePhysX() {
 
 
 PxController* createPlayerController(const PxVec3& position, float radius, float height) {
-    // 1. Configure the capsule controller descriptor
+    static auto mbc = MyBehaviorCallback();
+
+    PxFilterData controllerFilterData;
+    controllerFilterData.word0 = static_cast<unsigned int>(CollisionGroup::GROUP_PLAYER);
+    controllerFilterData.word1 = static_cast<unsigned int>(CollisionGroup::GROUP_WORLD);
+
+
+    mbc.playerFilterData = controllerFilterData;
+
     PxBoxControllerDesc desc;
     desc.halfHeight = height;
     desc.halfSideExtent = radius;
@@ -109,20 +91,16 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
     desc.upDirection = PxVec3(0.0f, 1.0f, 0.0f); // Gravity direction (Y-up)
     desc.material = gPhysics->createMaterial(0.2f, 0.2f, 0.1f); // Friction material
     desc.nonWalkableMode = PxControllerNonWalkableMode::ePREVENT_CLIMBING; // Prevent climbing steep slopes
+    desc.behaviorCallback = &mbc;
+    //auto* myHitReport = new MyControllerHitReport();
+    //desc.reportCallback = myHitReport;
 
-    MyControllerHitReport* myHitReport = new MyControllerHitReport();
-    desc.reportCallback = myHitReport;
 
-
-
-    PxFilterData controllerFilterData;
-    controllerFilterData.word0 = GROUP_PLAYER;
-    controllerFilterData.word1 = GROUP_WORLD;
 
     // 2. Create the controller using the controller manager
     PxController* playerController = gControllerManager->createController(desc);
 
-    playerController->setUserData(myHitReport);
+    //playerController->setUserData(myHitReport);
     if (!playerController) {
         std::cerr<< "Failed to create controller" << std::endl;
         throw std::runtime_error("Failed to create player controller");
@@ -130,6 +108,7 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
 
     // 3. Retrieve the actor and set its name
     PxRigidDynamic* playerActor = playerController->getActor();
+
     if (playerActor) {
         playerActor->setName("Player");
         // 4. Retrieve the shape(s) and set the collision filter
@@ -139,22 +118,9 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
         // 5. Set the filter data for each shape
         for (PxU32 i = 0; i < shapeCount; i++) {
 
-            setCollisionFilter(shapes[i], GROUP_PLAYER, GROUP_WORLD | GROUP_ANIMAL);
+            setCollisionFilter(shapes[i], static_cast<uint32_t>(CollisionGroup::GROUP_PLAYER), static_cast<int>(CollisionGroup::GROUP_WORLD) | static_cast<int>(CollisionGroup::GROUP_ANIMAL));
         }
     }
-
-    // // 4. Set the collision filter for the actor's shape(s)
-    // physx::PxRigidDynamic* playerActor = playerController->getActor(); // Get underlying actor
-    // physx::PxShape* shapes[16]; // Buffer to store shapes (assuming 16 or fewer)
-    // physx::PxU32 shapeCount = playerActor->getShapes(shapes, 16); // Get all shapes
-    //
-    // // 5. Set the filter for each shape of the player
-    // for (physx::PxU32 i = 0; i < shapeCount; i++) {
-    //     PxFilterData filterData;
-    //     filterData.word0 = 1 << 0; // Assign to a specific group (e.g., "particles")
-    //     filterData.word1 = 1 << 0; // Should not collide with itself
-    //     shapes[i]->setSimulationFilterData(filterData);
-    // }
 
     return playerController;
 }
@@ -215,7 +181,7 @@ PxRigidStatic* _createStaticMeshCollider(const PxVec3& position,
                     {
 
                         // Set the collision filtering
-                        setCollisionFilter(shape, GROUP_WORLD, 0xFFFFFFFF);
+                        setCollisionFilter(shape, static_cast<uint32_t>(CollisionGroup::GROUP_WORLD), 0xFFFFFFFF);
                         staticActor->attachShape(*shape);
                         shape->release();
                         gScene->addActor(*staticActor);
@@ -315,7 +281,7 @@ PxRigidStatic* editStaticMeshCollider(PxRigidStatic* existing, const PxVec3& pos
         return existing;
     }
 
-    setCollisionFilter(newShape, GROUP_WORLD, 0xFFFFFFFF);
+    setCollisionFilter(newShape, static_cast<uint32_t>(CollisionGroup::GROUP_WORLD), 0xFFFFFFFF);
 
 
     if(existing)

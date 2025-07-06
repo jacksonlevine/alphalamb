@@ -129,5 +129,5 @@ void renderDart1s(entt::registry& reg, Scene* scene, float deltaTime)
         }
     };
 
-    renderAndBehaveInstancedThingy<Dart1, DART1VERTSHAD, DART1FRAGSHAD, DART1MODELPATH, GROUP_PARTICLE, GROUP_WORLD>(reg, scene, deltaTime, func);
+    renderAndBehaveInstancedThingy<Dart1, DART1VERTSHAD, DART1FRAGSHAD, DART1MODELPATH, static_cast<unsigned>(CollisionGroup::GROUP_PARTICLE), static_cast<unsigned>(CollisionGroup::GROUP_WORLD)>(reg, scene, deltaTime, func);
 }

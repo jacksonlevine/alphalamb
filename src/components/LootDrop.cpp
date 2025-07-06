@@ -125,5 +125,5 @@ void renderLootDrops(entt::registry& reg, Scene* scene, float deltaTime)
         }
     };
 
-    renderAndBehaveInstancedThingy<LootDrop, LOOTDROPVERTSHAD, LOOTDROPFRAGSHAD, LOOTDROPMODELPATH, GROUP_LOOT, GROUP_WORLD>(reg, scene, deltaTime, func);
+    renderAndBehaveInstancedThingy<LootDrop, LOOTDROPVERTSHAD, LOOTDROPFRAGSHAD, LOOTDROPMODELPATH, static_cast<unsigned>(CollisionGroup::GROUP_LOOT), static_cast<unsigned>(CollisionGroup::GROUP_WORLD)>(reg, scene, deltaTime, func);
 }

@@ -431,7 +431,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                 lightOverlapsQueued.insert({spot2, true});
                 lightOverlapNotificationQueue.push(spot2);
             }
-            
+
         }
     }
 
