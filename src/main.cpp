@@ -61,6 +61,16 @@
 #include "components/Orange1.h"
 #include "components/SoundSource.h"
 
+//Hey Computer! Don't Make A Terrible Choice Of GPU Like Putting Us On Integrated :D
+#ifdef WIN32
+#include <windows.h>
+extern "C"
+{
+    __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif //def WIN32
+
 boost::asio::io_context io_context;
 boost::asio::ip::tcp::socket tsocket(io_context);
 boost::asio::ip::tcp::resolver resolver(io_context);
@@ -374,6 +384,12 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             DGMessage msg = DoExplosion{
             .spot = IntTup(pos.x, pos.y, pos.z), .projectileToDelete = entt::null, .damager = theScene.myPlayerIndex, .radius = 5};
             pushToMainToNetworkQueue(msg);
+        }
+        if(key == GLFW_KEY_COMMA && action == GLFW_PRESS)
+        {
+            auto & camera = theScene.our<jl::Camera>();
+              std::cout << "camera: " << camera.transform.position.x << " " << camera.transform.position.y << " " << camera.transform.position.z << std::endl;
+
         }
         static bool justClosedInv = false;
         if (key == GLFW_KEY_E)

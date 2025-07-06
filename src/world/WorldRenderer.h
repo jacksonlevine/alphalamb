@@ -163,13 +163,13 @@ enum class Corner
 
 inline static IntTup cornerPositions[8] = {
     IntTup(0, 0, 0),   // Corner 0: BottomFrontLeft
-    IntTup(1, 0, 0),   // Corner 1: BottomFrontRight
-    IntTup(0, 0, 1),   // Corner 2: BottomBackLeft
-    IntTup(1, 0, 1),   // Corner 3: BottomBackRight
-    IntTup(0, 1, 0),   // Corner 4: TopFrontLeft
-    IntTup(1, 1, 0),   // Corner 5: TopFrontRight
-    IntTup(0, 1, 1),   // Corner 6: TopBackLeft
-    IntTup(1, 1, 1)    // Corner 7: TopBackRight
+    IntTup(2, 0, 0),   // Corner 1: BottomFrontRight
+    IntTup(0, 0, 2),   // Corner 2: BottomBackLeft
+    IntTup(2, 0, 2),   // Corner 3: BottomBackRight
+    IntTup(0, 2, 0),   // Corner 4: TopFrontLeft
+    IntTup(2, 2, 0),   // Corner 5: TopFrontRight
+    IntTup(0, 2, 2),   // Corner 6: TopBackLeft
+    IntTup(2, 2, 2)    // Corner 7: TopBackRight
 };
 
 inline static PxU32 cwindices[6] = {

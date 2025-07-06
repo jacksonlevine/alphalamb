@@ -74,15 +74,6 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
         IntTup(-1, -1, -1),
         IntTup(-1, -1, 0),
         IntTup(0, -1, 0),
-
-        // Additional spots to cover positive corners
-        IntTup(1, 0, 0),     // covers corner (x+1,y,z)
-        IntTup(0, 1, 0),     // covers corner (x,y+1,z)
-        IntTup(0, 0, 1),     // covers corner (x,y,z+1)
-        IntTup(1, 1, 0),     // covers corner (x+1,y+1,z)
-        IntTup(1, 0, 1),     // covers corner (x+1,y,z+1)
-        IntTup(0, 1, 1),     // covers corner (x,y+1,z+1)
-        IntTup(1, 1, 1)      // covers corner (x+1,y+1,z+1)
     };
 
     // SCollect block data, light sources (if doLight), and blocks to mesh
@@ -272,6 +263,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
 
             MaterialName marchermathit = STONE;
 
+            bool amarcherhit = false;
 
             float blockAndAmbBright = 0.0f;
             for (int i = 0; i < std::size(cornerPositions); i++) {
@@ -315,19 +307,23 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
 
                 } else
                 {
-                    if (marchers.test(neighBlock))
+                    if(marchers.test(neighBlock))
+                    {
+                        amarcherhit = true;
+                    }
+                    if (marchers.test(neighBlock) || (atleastconnectmarch.test(neighBlock) && amarcherhit))
                     {
 
                         //vantage point second
                         auto entry = std::make_pair(idxfn(nx,ny,nz), idxfn(x,y,z));
 
-                        if (!hitMarchVantagePoints.contains(entry))
-                        {
-                            hitMarchVantagePoints.emplace(entry);
+                        //if (!hitMarchVantagePoints.contains(entry))
+                       // {
+                           // hitMarchVantagePoints.emplace(entry);
                             hassolidcorns = true;
                             configindex |= (1 << i);
                             marchermathit = (MaterialName)neighBlock;
-                        }
+                       // }
                     }
                 }
             }
@@ -344,7 +340,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
               //  std::cout << "Hasaircorns: " << hasaircorns << " hassolidcorns: " << hassolidcorns << std::endl;
 
 
-        if (!marchers.test(mat) && mat != AIR)
+        if ( mat != AIR)
         {
             {
                 if (auto specialFunc = findSpecialBlockMeshFunc(mat); specialFunc != std::nullopt) {
@@ -387,14 +383,15 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                                 }
                             }
                             auto blockAndAmbBright = getBlockAmbientLightVal(blockBright, ambientBright);
+                            auto pushin = marchers.test(mat) ? 0.2f : 0.0f;
 
                             if (liquids.test(blockID) && side == Side::Top) {
 
                                 addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                              side, mat, 1, mesh, index, tindex, -0.2f);
+                                              side, mat, 1, mesh, index, tindex, -0.2f, pushin);
                                 calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
                                 addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y) + 1, static_cast<float>(here.z)),
-                                              Side::Bottom, mat, 1, mesh, index, tindex, -0.2f);
+                                              Side::Bottom, mat, 1, mesh, index, tindex, -0.2f, pushin);
                                 calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
 
                             } else {
