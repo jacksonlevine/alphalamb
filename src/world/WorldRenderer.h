@@ -2,6 +2,8 @@
 // Created by jack on 1/27/2025.
 //
 
+#define MARCHERS
+
 #ifndef WORLDRENDERER_H
 #define WORLDRENDERER_H
 
@@ -15,6 +17,7 @@
 #include "../Light.h"
 #include "../NetworkTypes.h"
 #include "../MarchingCubesLookups.h"
+using namespace physx;
 constexpr float onePixel = 0.00183823529411764705882352941176f;     //  1/544      Padding
 constexpr float textureWidth = 0.02941176470588235294117647058824f; // 16/544      16 pixel texture width
 constexpr float texSlotWidth = 0.03308823529411764705882352941176f;
@@ -281,7 +284,7 @@ glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),});
 
 
 
-
+#ifdef MARCHERS
 
 template<bool doBrightness = true>
 __inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex, float offsety = 0.f, float pushIn = 0.f, float
@@ -427,7 +430,7 @@ __inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName materi
 
 }
 
-
+#endif
 
 
 

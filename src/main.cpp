@@ -3,8 +3,6 @@
 //
 
 
-
-
 #include "BasicShader.h"
 #include "Player.h"
 #include "Shader.h"

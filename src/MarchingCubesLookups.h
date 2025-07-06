@@ -1,7 +1,7 @@
 //
 // Created by jack on 7/2/2025.
 //
-
+#ifdef MARCHERS
 #ifndef MARCHINGCUBESLOOKUPS_H
 #define MARCHINGCUBESLOOKUPS_H
 #include "PrecompHeader.h"
@@ -525,3 +525,4 @@ inline static std::vector<PxU32> marchingCubeIndices[256] = {
     {}, // config 255
 };
 #endif //MARCHINGCUBESLOOKUPS_H
+#endif
