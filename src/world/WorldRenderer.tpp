@@ -40,6 +40,8 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
 
     std::vector<bool> marchedOrigs(chunkSize * chunkSize * chunkHeight, false);
 
+    static auto idxfn = [](int x, int y, int z) -> int { return (x * chunkSize * chunkHeight) + (z * chunkHeight) + y; };
+
 
     // Light source collections (only used if light = true)
     std::vector<std::pair<IntTup, ColorPack>> oldBlockSources;
@@ -64,13 +66,23 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
 
 
     static std::array mcoversamplingspots = {
+        // Your current spots
         IntTup(0,0,-1),
         IntTup(-1, 0, -1),
         IntTup(-1, 0, 0),
         IntTup(0,-1,-1),
         IntTup(-1, -1, -1),
         IntTup(-1, -1, 0),
-        IntTup(0, -1, 0)
+        IntTup(0, -1, 0),
+
+        // Additional spots to cover positive corners
+        IntTup(1, 0, 0),     // covers corner (x+1,y,z)
+        IntTup(0, 1, 0),     // covers corner (x,y+1,z)
+        IntTup(0, 0, 1),     // covers corner (x,y,z+1)
+        IntTup(1, 1, 0),     // covers corner (x+1,y+1,z)
+        IntTup(1, 0, 1),     // covers corner (x+1,y,z+1)
+        IntTup(0, 1, 1),     // covers corner (x,y+1,z+1)
+        IntTup(1, 1, 1)      // covers corner (x+1,y+1,z+1)
     };
 
     // SCollect block data, light sources (if doLight), and blocks to mesh
@@ -94,7 +106,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                 bool hitSolid = false;
                 for (int y = chunkHeight - 1; y >= 0; y--) {
                     IntTup here = start + IntTup(x, y, z);
-                    int idx = (x * chunkSize * chunkHeight) + (z * chunkHeight) + y;
+                    int idx = idxfn(x,y,z);
 
                     // Cache block data
                     chunkData[idx] = world->getRawLocked(here);
@@ -147,7 +159,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                                 int ny = y + neighb.y;
                                 BlockType neighBlock;
                                 if (nx >= 0 && nx < chunkSize && ny >= 0 && ny < chunkHeight && nz >= 0 && nz < chunkSize) {
-                                    int nidx = (nx * chunkSize * chunkHeight) + (nz * chunkHeight) + ny;
+                                    int nidx = idxfn(nx,ny,nz);
                                     neighBlock = chunkData[nidx];
                                 } else {
                                     neighBlock = world->getLocked(neighbPos);
@@ -219,7 +231,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
             IntTup pos = start + IntTup(x, y, z);
             return !locked ? world->getRaw(pos) : world->getRawLocked(pos);
         }
-        int idx = (x * chunkSize * chunkHeight) + (z * chunkHeight) + y;
+        int idx = idxfn(x,y,z);
         return chunkData[idx];
     };
 
@@ -229,14 +241,24 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
             BlockType block = !locked ? world->getRaw(pos) : world->getRawLocked(pos);
             return (block == AIR) || (transparents.test(block & BLOCK_ID_BITS));
         }
-        int idx = (x * chunkSize * chunkHeight) + (z * chunkHeight) + y;
+        int idx = idxfn(x,y,z);
         return isTransparent[idx];
     };
+    struct PairHash {
+        std::size_t operator()(const std::pair<int, int>& p) const noexcept {
+            return std::hash<int>{}(p.first) ^ (std::hash<int>{}(p.second) << 1);
+        }
+    };
+
+    std::unordered_set<std::pair<int,int>, PairHash> hitMarchVantagePoints;
 
     for (const auto& [x, y, z] : blocksToMesh) {
         //int idx = (x * chunkSize * chunkHeight) + (z * chunkHeight) + y;
         BlockType rawBlockHere = getBlock(x,y,z);
         uint32_t blockID = (rawBlockHere & BLOCK_ID_BITS);
+
+        BlockType rawBlockAbove = getBlock(x,y+1,z);
+        uint32_t blockidabove = (rawBlockAbove & BLOCK_ID_BITS);
         MaterialName mat = static_cast<MaterialName>(blockID);
 
         IntTup here = start + IntTup(x, y, z);
@@ -250,38 +272,76 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
 
             MaterialName marchermathit = STONE;
 
+
+            float blockAndAmbBright = 0.0f;
             for (int i = 0; i < std::size(cornerPositions); i++) {
                 auto neigh = cornerPositions[i];
                 int nx = x + neigh.x;
                 int ny = y + neigh.y;
                 int nz = z + neigh.z;
 
+                IntTup nhere = start + IntTup(nx, ny, nz);
                 BlockType neighBlock = (getBlock(nx, ny, nz) & BLOCK_ID_BITS);
+
+                ColorPack blockBright = {};
+                ColorPack ambientBright = {};
 
                 if (transparents.test(neighBlock))
                 {
                     hasaircorns = true;
+
+
+                    {
+                        std::shared_lock<std::shared_mutex> lightLock;
+                        if(!locked) {
+                            lightLock = std::shared_lock<std::shared_mutex>(lightmapMutex);
+                        }
+                        if (lightmap.get(nhere) != std::nullopt) {
+                            auto tn = lightmap.get(nhere).value()->sum();
+                            if (tn.r() > blockBright.r() || tn.g() > blockBright.g() || tn.b() > blockBright.b())
+                            {
+                                blockBright = tn;
+                            }
+                        }
+                        if (ambientlightmap.get(nhere) != std::nullopt) {
+                            auto tn = ambientlightmap.get(nhere).value()->sum();
+                            if (tn.r() > ambientBright.r() || tn.g() > ambientBright.g() || tn.b() > ambientBright.b())
+                            {
+                                ambientBright = tn;
+                            }
+                        }
+                    }
+                    blockAndAmbBright = getBlockAmbientLightVal(blockBright, ambientBright);
+
                 } else
                 {
                     if (marchers.test(neighBlock))
                     {
-                        hassolidcorns = true;
-                        configindex |= (1 << i);
-                        marchermathit = (MaterialName)neighBlock;
+
+                        //vantage point second
+                        auto entry = std::make_pair(idxfn(nx,ny,nz), idxfn(x,y,z));
+
+                        if (!hitMarchVantagePoints.contains(entry))
+                        {
+                            hitMarchVantagePoints.emplace(entry);
+                            hassolidcorns = true;
+                            configindex |= (1 << i);
+                            marchermathit = (MaterialName)neighBlock;
+                        }
                     }
                 }
             }
 
             if (hasaircorns && hassolidcorns)
             {
-                addMarcher<true>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                              configindex, marchermathit, 1, mesh, index, tindex);
+                auto thepos = PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z));
+                addMarcher<false>(thepos,
+                              configindex, marchermathit, 1, mesh, index, tindex, 0.f, 0.f, blockAndAmbBright);
             }
 
 
 
               //  std::cout << "Hasaircorns: " << hasaircorns << " hassolidcorns: " << hassolidcorns << std::endl;
-
 
 
         if (!marchers.test(mat) && mat != AIR)
@@ -306,8 +366,9 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                         bool neighTransparent = isBlockTransparent(nx, ny, nz);
                         bool neighborAir = neighBlock == AIR;
                         bool solidNeighboringTransparent = (neighTransparent && !blockHereTransparent);
+                        bool solidNeighboringMarcher = (!blockHereTransparent && marchers.test(neighBlock));
 
-                        if (neighborAir || solidNeighboringTransparent || (blockHereTransparent && (neighBlock != blockID) && neighTransparent)) {
+                        if (solidNeighboringMarcher || neighborAir || solidNeighboringTransparent || (blockHereTransparent && (neighBlock != blockID) && neighTransparent)) {
                             Side side = static_cast<Side>(i);
                             IntTup ns = here + neighborSpots[(int)side];
 
@@ -327,7 +388,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                             }
                             auto blockAndAmbBright = getBlockAmbientLightVal(blockBright, ambientBright);
 
-                            if (blockID == WATER && side == Side::Top) {
+                            if (liquids.test(blockID) && side == Side::Top) {
 
                                 addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
                                               side, mat, 1, mesh, index, tindex, -0.2f);
@@ -338,9 +399,19 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
 
                             } else {
 
-                                addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
-                                              side, mat, 1, mesh, index, tindex);
-                                calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
+                                if (liquids.test(blockID) && blockidabove == AIR)
+                                {
+                                    addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
+                                             side, mat, 1, mesh, index, tindex, -0.2f);
+                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
+
+                                } else
+                                {
+                                    addFace<false>(PxVec3(static_cast<float>(here.x), static_cast<float>(here.y), static_cast<float>(here.z)),
+                                             side, mat, 1, mesh, index, tindex);
+                                    calculateAmbientOcclusion(here, side, world, locked, blockID, mesh, blockAndAmbBright);
+
+                                }
 
                             }
                         }

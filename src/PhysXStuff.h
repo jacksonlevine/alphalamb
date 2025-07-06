@@ -70,7 +70,18 @@ public:
         const PxShape* shape,
         const PxRigidActor* actor) override
     {
-        return PxQueryHitType::eBLOCK; // Keep the hit
+        // Get the shape's filter data
+        PxFilterData shapeFilter = shape->getSimulationFilterData();
+
+        // Apply the same logic as your CustomFilterShader
+        // filterData here is the CCT's filter data passed via PxControllerFilters
+        if ((filterData.word0 & shapeFilter.word1) == 0 &&
+            (shapeFilter.word0 & filterData.word1) == 0)
+        {
+            return PxQueryHitType::eNONE; // No collision - filter out
+        }
+
+        return PxQueryHitType::eBLOCK; // Allow collision
     }
 };
 

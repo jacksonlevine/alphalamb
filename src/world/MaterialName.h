@@ -117,7 +117,7 @@ constexpr std::bitset<BLOCK_COUNT> makeBitset(std::initializer_list<int> ids) {
 
 constexpr auto noHeadBlock = makeBitset({DOOR, TALL_GRASS, ORANGE1_DUMMY_BLOCK, WATER});
 
-constexpr auto noAmbOccl = makeBitset({FENCE, GLASS, DG_COMPUTERBLOCK, DOOR, CABLE, LIGHT, TALL_GRASS, ORANGE1_DUMMY_BLOCK});
+constexpr auto noAmbOccl = makeBitset({FENCE, GLASS, DG_COMPUTERBLOCK, DOOR, CABLE, LIGHT, TALL_GRASS, ORANGE1_DUMMY_BLOCK, AIR});
 
 constexpr auto noCustCollShape = makeBitset({DG_COMPUTERBLOCK});
 
@@ -129,6 +129,24 @@ constexpr auto trulynothing = makeBitset({AIR, ORANGE1_DUMMY_BLOCK});
 constexpr auto grasstypes = makeBitset({TALL_GRASS, GRASS});
 
 constexpr auto marchers = makeBitset({GRASS, DIRT, SAND});
+
+constexpr auto TRUNKSTUFF = makeBitset({
+        WOOD,
+        FIG_WOOD,
+        PALM_WOOD,
+        PINE_WOOD,
+        BEECH_WOOD,
+        RUBBER_TREE_WOOD,
+        JOSHUA_WOOD,
+        CEDAR_WOOD,
+        WILLOW_WOOD,
+        EUCALYPTUS_WOOD,
+        PAPER_BIRCH_WOOD,
+        GREEN_ALDER_WOOD,
+        WESTERN_HEMLOCK_WOOD});
+
+constexpr auto atleastconnectmarch = makeBitset({COBBLESTONE, STONE}) | TRUNKSTUFF;
+
 constexpr auto transparents = makeBitset({
     ORANGE1_DUMMY_BLOCK,
     AIR,

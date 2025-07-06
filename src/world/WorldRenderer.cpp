@@ -423,7 +423,7 @@ void WorldRenderer::mainThreadDraw(const jl::Camera* playerCamera, GLuint shader
                 glUniform1f(timeRenderedLoc, chunkinfo.timeBeenRendered);
                 if (actuallyDraw)
                 {
-                    glDisable(GL_CULL_FACE);
+                    //glDisable(GL_CULL_FACE);
                     drawFromChunkIndex(static_cast<int>(chunkinfo.chunkIndex), glInfo);
                 }
 
@@ -1428,6 +1428,31 @@ void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, 
         });
     }
 }
+
+
+
+
+
+
+glm::vec3 calculateTriangleNormal(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c) {
+    glm::vec3 ab = b - a;
+    glm::vec3 ac = c - a;
+    glm::vec3 normal = glm::cross(ab, ac);
+    return glm::normalize(normal);
+}
+
+// This function calculates and adds ambient occlusion brightness values for a marcher
+void calculateMarcherAmbientOcclusion(const IntTup& blockPos, uint8_t configindex, BlockType blockType, UsableMesh& mesh, float
+                               blockandambbright)
+{
+
+
+    //}
+}
+
+
+
+
 
 // This function returns the 3 adjacent block offsets for a specific vertex of a face
 std::array<IntTup, 3> getAdjacentOffsets(Side side, int vertexIndex)

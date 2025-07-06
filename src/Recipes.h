@@ -30,20 +30,7 @@ using Recipe = std::pair<std::vector<Requirement>, RecipeOutput>;
 
 inline std::array recipes = {
     Recipe{ {{BUSH_LEAVES, 1}}  ,   {LIGHT, 1} },
-    Recipe{ {{makeBitset({
-        WOOD,
-        FIG_WOOD,
-        PALM_WOOD,
-        PINE_WOOD,
-        BEECH_WOOD,
-        RUBBER_TREE_WOOD,
-        JOSHUA_WOOD,
-        CEDAR_WOOD,
-        WILLOW_WOOD,
-        EUCALYPTUS_WOOD,
-        PAPER_BIRCH_WOOD,
-        GREEN_ALDER_WOOD,
-        WESTERN_HEMLOCK_WOOD}), 1}}  ,   {WOOD_PLANKS, 4} },
+    Recipe{ {{TRUNKSTUFF, 1}}  ,   {WOOD_PLANKS, 4} },
     Recipe{ {{WOOD_PLANKS, 4}}  ,   {DOOR, 1} },
     Recipe{ {{STONE, 4}}  ,   {STONE_STAIRS, 1} },
     Recipe{ {{COBBLESTONE, 4}}  ,   {COBBLESTONE_STAIRS, 1} },

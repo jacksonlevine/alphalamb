@@ -290,7 +290,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
             slideTimer = 0.0f;
 
             // Restore original step height
-            controller->setStepOffset(originalStepHeight);
+            controller->setStepOffset(1.2f);
             PxCapsuleController* capsuleController = static_cast<PxCapsuleController*>(controller);
             capsuleController->resize(originalCharHeight);
         }
@@ -300,7 +300,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         {
             isSliding = false;
             slideTimer = 0.0f;
-            controller->setStepOffset(originalStepHeight);
+            controller->setStepOffset(1.2f);
             PxCapsuleController* capsuleController = static_cast<PxCapsuleController*>(controller);
             capsuleController->resize(originalCharHeight);
         }

@@ -284,7 +284,8 @@ glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),});
 
 
 template<bool doBrightness = true>
-__inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex, float offsety = 0.f, float pushIn = 0.f)
+__inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName material, int sideHeight, UsableMesh& mesh, uint32_t& index, uint32_t& tindex, float offsety = 0.f, float pushIn = 0.f, float
+                         blockAndAmbBright = 0)
 {
     auto & tex = TEXS[material];
     auto faceindex = 0;
@@ -298,6 +299,10 @@ __inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName materi
         glm::vec2(onePixel + textureWidth, -onePixel),
         glm::vec2(onePixel + textureWidth, -(onePixel + textureWidth)),
         glm::vec2(onePixel, -(onePixel + textureWidth))
+    };
+
+    auto positiveMod = [](float a, float b) {
+        return std::fmod(std::fmod(a, b) + b, b);
     };
 
     {
@@ -316,16 +321,107 @@ __inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName materi
         float isGrass = grasstypes.test(material) ? 1.0f : 0.0f;
 
 
-        for (int l = 0; l < marchingCubeVertices[configindex].size(); l++)
-        {
-            mesh.texcoords.insert(mesh.texcoords.end(),{
-                glm::vec2(uvoffsetx + texOffsets[l%3].x, uvoffsety + texOffsets[l%3].y)
-            });
-            if constexpr(doBrightness)
-            {
-                mesh.brightness.insert(mesh.brightness.end(), {0.9f, isGrass});
-            }
-        }
+
+    auto vals = getBlockAmbientLightVals(blockAndAmbBright);
+
+
+
+    // Calculate occlusion for each vertex of the face
+    int occlusion[4] = {0,0,0,0};
+    static auto packonocclbits = [](int occlusion, float blockandambbright)
+    {
+        uint32_t packed;
+        memcpy(&packed, &blockandambbright, sizeof(float));
+
+        // Step 2: Set the occlusion bits (let's use bits 14-15)
+        // First clear those bits
+        packed &= ~(0x3 << 14);  // Clear bits 14-15
+        packed |= (uint32_t(occlusion) << 14);  // Set occlusion in bits 14-15
+
+        // Step 3: Convert back to float
+        float result;
+        memcpy(&result, &packed, sizeof(float));
+        return result;
+    };
+
+    // Add brightness data to the appropriate arrays based on transparency
+    // bool isTransparent = transparents.test(blockType);
+    // if (isTransparent) {
+    //     mesh.tbrightness.insert(mesh.tbrightness.end(), {
+    //         packonocclbits(occlusion[0], newbaab), isGrass,
+    //     });
+    // } else {
+
+    static auto getDirectionFactor = [](glm::vec3 direction) {
+        return 1.0 - ( glm::dot(glm::normalize(direction), glm::vec3(0.0, -1.0, 0.0)) * 0.5 + 0.5);
+    };
+
+    std::vector<float> brightnesses(marchingCubeVertices[configindex].size() * 2);
+    std::vector<glm::vec2> texcoordsfr(marchingCubeVertices[configindex].size());
+
+    static auto calculateTriangleNormal = [](const glm::vec3& a, const glm::vec3& b, const glm::vec3& c) {
+        glm::vec3 ab = b - a;
+        glm::vec3 ac = c - a;
+        glm::vec3 normal = glm::cross(ab, ac);
+        return glm::normalize(normal);
+    };
+
+        auto uvoffset = glm::vec2(uvoffsetx, uvoffsety);
+
+    for (int i = 0; i < marchingCubeIndices[configindex].size(); i+=3)
+    {
+        auto idx1 = marchingCubeIndices[configindex][i];
+        auto idx2 = marchingCubeIndices[configindex][i+1];
+        auto idx3 = marchingCubeIndices[configindex][i+2];
+
+        auto tri1 = marchingCubeVertices[configindex][idx1];
+        auto tri2 = marchingCubeVertices[configindex][idx2];
+        auto tri3 = marchingCubeVertices[configindex][idx3];
+
+        auto normal = calculateTriangleNormal(glm::vec3(tri1.x, tri1.y, tri1.z),
+            glm::vec3(tri2.x, tri2.y, tri2.z), glm::vec3(tri3.x, tri3.y, tri3.z));
+
+        auto factor = (float)getDirectionFactor(normal);
+
+        brightnesses[idx1*2 + 0] = packonocclbits(occlusion[0], getBlockAmbientLightVal(ColorPack(vals.first) * factor, ColorPack(vals.second) * factor)
+);
+        brightnesses[idx1*2 + 1] = isGrass;
+
+        brightnesses[idx2*2 + 0] = packonocclbits(occlusion[0], getBlockAmbientLightVal(ColorPack(vals.first) * factor, ColorPack(vals.second) * factor)
+);
+        brightnesses[idx2*2 + 1] = isGrass;
+
+
+        brightnesses[idx3*2 + 0] = packonocclbits(occlusion[0], getBlockAmbientLightVal(ColorPack(vals.first) * factor, ColorPack(vals.second) * factor)
+);
+        brightnesses[idx3*2 + 1] = isGrass;
+
+        auto absNormal = glm::abs(normal);
+
+        // Project triangle to 2D and use its bounding box
+        auto minX = std::min({tri1.x, tri2.x, tri3.x});
+        auto maxX = std::max({tri1.x, tri2.x, tri3.x});
+        auto minZ = std::min({tri1.z, tri2.z, tri3.z});
+        auto maxZ = std::max({tri1.z, tri2.z, tri3.z});
+
+        // Handle degenerate cases where triangle is a line
+        float rangeX = maxX - minX;
+        float rangeZ = maxZ - minZ;
+        if (rangeX == 0) rangeX = 1.0f;
+        if (rangeZ == 0) rangeZ = 1.0f;
+
+        auto tw = textureWidth - (onePixel*2.f);
+
+        texcoordsfr[idx1] = uvoffset + glm::vec2(onePixel, -onePixel) + glm::vec2((tri1.x - minX)/rangeX * tw, -(tri1.z - minZ)/rangeZ * tw);
+        texcoordsfr[idx2] = uvoffset  + glm::vec2(onePixel, -onePixel)+ glm::vec2((tri2.x - minX)/rangeX * tw, -(tri2.z - minZ)/rangeZ * tw);
+        texcoordsfr[idx3] = uvoffset + glm::vec2(onePixel, -onePixel) + glm::vec2((tri3.x - minX)/rangeX * tw, -(tri3.z - minZ)/rangeZ * tw);
+
+    }
+    mesh.brightness.insert(mesh.brightness.end(), brightnesses.begin(), brightnesses.end());
+        mesh.texcoords.insert(mesh.texcoords.end(), texcoordsfr.begin(), texcoordsfr.end());
+
+
+
     }
 
 
@@ -342,9 +438,11 @@ __inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName materi
 
 
 
+glm::vec3 calculateTriangleNormal(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c);
 
-
-
+// This function calculates and adds ambient occlusion brightness values for a marcher
+void calculateMarcherAmbientOcclusion(const IntTup& blockPos, uint8_t configindex, BlockType blockType, UsableMesh& mesh, float
+                               blockandambbright);
 
 
 

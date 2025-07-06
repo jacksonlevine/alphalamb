@@ -308,7 +308,7 @@ float perlinNoise(vec3 position, uint seed) {
 
             }
         )glsl",
-        "orange1DropGltfInstanceShader"
+        "orange1GltfInstanceShader"
 
     );
 
