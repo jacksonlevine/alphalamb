@@ -32,7 +32,7 @@ struct ParticleInstance
             sharedMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
             PxBoxGeometry boxGeometry(0.1f, 0.1f, 0.1f);
             sharedShape = gPhysics->createShape(boxGeometry, *sharedMaterial);
-
+            sharedShape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
             setCollisionFilter(sharedShape, static_cast<uint32_t>(CollisionGroup::GROUP_PARTICLE), static_cast<uint32_t>(CollisionGroup::GROUP_WORLD));
         }
 
@@ -223,12 +223,13 @@ private:
             for (auto & particle : instances)
             {
                 IntTup spot = IntTup(std::floor(particle.position.x), std::floor(particle.position.y + 0.5f), std::floor(particle.position.z));
-                while (world->getLocked(spot) == AIR && spot.y > 0)
+                BlockType bt = 0;
+                while (noColl.test(bt = world->getLocked(spot)) && spot.y > 0)
                 {
                     spot.y -= 1;
                 }
                 auto wl = (MaterialName)(world->getLocked(spot));
-                if (wl != AIR && noColl.test(wl))
+                if (!noColl.test(wl))
                 {
                     addFace(PxVec3(spot.x, spot.y, spot.z), Side::Top, GRASS, 1, mesh, index, tindex);
                 }

@@ -123,7 +123,7 @@ constexpr auto noCustCollShape = makeBitset({DG_COMPUTERBLOCK});
 
 constexpr auto liquids = makeBitset({WATER});
 
-constexpr auto noColl = makeBitset({WATER, TALL_GRASS, BAMBOO, ORANGE1_DUMMY_BLOCK});
+constexpr auto noColl = makeBitset({WATER, TALL_GRASS, BAMBOO, ORANGE1_DUMMY_BLOCK, AIR});
 
 constexpr auto trulynothing = makeBitset({AIR, ORANGE1_DUMMY_BLOCK});
 constexpr auto grasstypes = makeBitset({TALL_GRASS, GRASS});

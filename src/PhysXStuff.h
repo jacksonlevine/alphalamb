@@ -40,32 +40,6 @@ inline void setCollisionFilter(PxShape* shape, uint32_t group, uint32_t whaticol
     shape->setQueryFilterData(fd);
 }
 
-//simple filtershader for doing collision groups
-inline physx::PxFilterFlags CustomFilterShader(
-    physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
-    physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
-    physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize)
-{
-
-    if ((attributes0 & physx::PxFilterObjectFlag::eTRIGGER) != 0 ||
-        (attributes1 & physx::PxFilterObjectFlag::eTRIGGER) != 0)
-    {
-        pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
-        return physx::PxFilterFlag::eDEFAULT;
-    }
-
-
-    if ((filterData0.word0 & filterData1.word1) == 0 &&
-        (filterData1.word0 & filterData0.word1) == 0)
-    {
-        return physx::PxFilterFlag::eKILL; //No collision
-    }
-
-    //otherwise default
-    pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
-
-    return physx::PxFilterFlag::eDEFAULT;
-}
 
 
 class MyContFiltCallback : public PxQueryFilterCallback
@@ -80,8 +54,6 @@ public:
         // Get the shape's filter data
         PxFilterData shapeFilter = shape->getSimulationFilterData();
 
-        // Apply the same logic as your CustomFilterShader
-        // filterData here is the CCT's filter data passed via PxControllerFilters
         if ((filterData.word0 & shapeFilter.word1) == 0 &&
             (shapeFilter.word0 & filterData.word1) == 0)
         {
@@ -100,8 +72,6 @@ public:
         // Get the shape's filter data
         PxFilterData shapeFilter = shape->getSimulationFilterData();
 
-        // Apply the same logic as your CustomFilterShader
-        // filterData here is the CCT's filter data passed via PxControllerFilters
         if ((filterData.word0 & shapeFilter.word1) == 0 &&
             (shapeFilter.word0 & filterData.word1) == 0)
         {
@@ -123,7 +93,7 @@ public:
         if ((playerFilterData.word0 & shapeFilter.word1) == 0 &&
             (shapeFilter.word0 & playerFilterData.word1) == 0)
         {
-            return PxControllerBehaviorFlags(0); // Don't allow stepping onto it
+            return PxControllerBehaviorFlag::eCCT_USER_DEFINED_RIDE;
         }
 
         return PxControllerBehaviorFlag::eCCT_CAN_RIDE_ON_OBJECT; // Allow stepping

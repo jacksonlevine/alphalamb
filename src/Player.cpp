@@ -165,12 +165,12 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
     auto & climbStartPosition = movementComponent.climbStartPosition;
 
 
-
-    controller->setPosition(PxExtendedVec3(
-        camera.transform.position.x,
-        camera.transform.position.y - CAMERA_OFFSET + (movementComponent.crouchDegree),
-        camera.transform.position.z
-        ));
+    //
+    // controller->setPosition(PxExtendedVec3(
+    //     camera.transform.position.x,
+    //     camera.transform.position.y - CAMERA_OFFSET + (movementComponent.crouchDegree),
+    //     camera.transform.position.z
+    //     ));
 
 
 
@@ -194,7 +194,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
     if (stamCount < 3)
     {
-        if (dashrebuild < 3.0f)
+        if (dashrebuild < 0.5f)
         {
             dashrebuild += deltaTime;
         } else
@@ -256,7 +256,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         slidThisDash = true;
         // Store original step height and set to lower height while sliding
         originalStepHeight = controller->getStepOffset();
-        controller->setStepOffset(1.5f); //Slide up blocks
+        controller->setStepOffset(1.2f); //Slide up blocks
         isClimbingUp = false;
         isLedgeGrabbing = false;
 
@@ -291,7 +291,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
             slideTimer = 0.0f;
 
             // Restore original step height
-            controller->setStepOffset(1.2f);
+            controller->setStepOffset(originalStepHeight);
             PxCapsuleController* capsuleController = static_cast<PxCapsuleController*>(controller);
             capsuleController->resize(originalCharHeight);
         }
@@ -301,7 +301,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
         {
             isSliding = false;
             slideTimer = 0.0f;
-            controller->setStepOffset(1.2f);
+            controller->setStepOffset(originalStepHeight);
             PxCapsuleController* capsuleController = static_cast<PxCapsuleController*>(controller);
             capsuleController->resize(originalCharHeight);
         }
@@ -422,7 +422,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
                                 {
                                     int blockType = world->getLocked(ledgeBlockPos);
                                     int blockType2 = world->getLocked(ledgeBlockPos2);
-                                    isSpaceClear = ((blockType == AIR) && (blockType2 == AIR));
+                                    isSpaceClear = ((noColl.test(blockType)) && (noColl.test(blockType2)));
                                 }
                             }
 
@@ -827,7 +827,7 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
 
         if (isSliding) {
-            controller->setStepOffset(1.5f);
+            controller->setStepOffset(1.2f);
         }
 
         //std::cout << "VEL:" << camera.transform.velocity.x << " " << camera.transform.velocity.y << " " << camera.transform.velocity.z << " DISP:" << displacement.x << " " << displacement.y << " " << displacement.z << std::endl;

@@ -45,8 +45,7 @@ void _initializePhysX() {
     PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
     sceneDesc.cpuDispatcher = gDispatcher;
-    sceneDesc.filterShader = CustomFilterShader;
-
+    sceneDesc.filterShader = PxDefaultSimulationFilterShader;
     sceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
 
     gScene = gPhysics->createScene(sceneDesc);
@@ -99,7 +98,9 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
 
     // 2. Create the controller using the controller manager
     PxController* playerController = gControllerManager->createController(desc);
-
+    //gControllerManager->setOverlapRecoveryModule(false);
+    gControllerManager->setPreciseSweeps(false);
+    gControllerManager->setTessellation(false, 10.f);
     //playerController->setUserData(myHitReport);
     if (!playerController) {
         std::cerr<< "Failed to create controller" << std::endl;

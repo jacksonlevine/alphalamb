@@ -373,9 +373,14 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
 #ifdef MARCHERS
                         bool neighboringMarcher = marchers.test(neighBlock);
 #else
-                        bool neighboringMarcher = true;
+
+
                         #endif
-                        if (neighboringMarcher || neighborAir || solidNeighboringTransparent || (blockHereTransparent && (neighBlock != blockID) && neighTransparent)) {
+                        if (
+#ifdef MARCHERS
+                            neighboringMarcher ||
+#endif
+                            neighborAir || solidNeighboringTransparent || (blockHereTransparent && (neighBlock != blockID) && neighTransparent)) {
                             Side side = static_cast<Side>(i);
                             IntTup ns = here + neighborSpots[(int)side];
 
