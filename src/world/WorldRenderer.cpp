@@ -175,21 +175,16 @@ void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, Usable
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
     glEnableVertexAttribArray(1);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    auto size4 = static_cast<GLsizeiptr>(std::size(usable_mesh.indices) * sizeof(PxU32));
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size4, NULL, GL_STREAM_DRAW);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, size4, usable_mesh.indices.data());
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+    // auto size4 = static_cast<GLsizeiptr>(std::size(usable_mesh.indices) * sizeof(PxU32));
+    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, size4, NULL, GL_STREAM_DRAW);
+    // glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, size4, usable_mesh.indices.data());
 
     info.vertexCount = static_cast<int>(std::size(usable_mesh.positions));
 
     glBindVertexArray(tvao);
 
-    glBindBuffer(GL_ARRAY_BUFFER, tvvbo);
-    auto size5 = static_cast<GLsizeiptr>(std::size(usable_mesh.tpositions) * sizeof(PxVec3));
-    glBufferData(GL_ARRAY_BUFFER, size5, NULL, GL_STREAM_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, size5, usable_mesh.tpositions.data());
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), nullptr);
-    glEnableVertexAttribArray(0);
+
 
     glBindBuffer(GL_ARRAY_BUFFER, tbvbo);
     auto size6 =  static_cast<GLsizeiptr>(std::size(usable_mesh.tbrightness) * sizeof(float));
@@ -209,10 +204,17 @@ void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, Usable
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), nullptr);
     glEnableVertexAttribArray(1);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tebo);
-    auto size8 = static_cast<GLsizeiptr>(std::size(usable_mesh.tindices) * sizeof(PxU32));
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size8, NULL, GL_STREAM_DRAW);
-    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0 , size8, usable_mesh.tindices.data());
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tebo);
+    // auto size8 = static_cast<GLsizeiptr>(std::size(usable_mesh.tindices) * sizeof(PxU32));
+    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, size8, NULL, GL_STREAM_DRAW);
+    // glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0 , size8, usable_mesh.tindices.data());
+
+    glBindBuffer(GL_ARRAY_BUFFER, tvvbo);
+    auto size5 = static_cast<GLsizeiptr>(std::size(usable_mesh.tpositions) * sizeof(PxVec3));
+    glBufferData(GL_ARRAY_BUFFER, size5, NULL, GL_STREAM_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, size5, usable_mesh.tpositions.data());
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(PxVec3), nullptr);
+    glEnableVertexAttribArray(0);
 
     info.tvertexCount = static_cast<int>(std::size(usable_mesh.tpositions));
 }
