@@ -99,7 +99,7 @@ void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.indices) * sizeof(PxU32)), usable_mesh.indices.data(), GL_STATIC_DRAW);
 
-    drawInstructions.indiceCount = static_cast<int>(std::size(usable_mesh.indices));
+    drawInstructions.vertexCount = static_cast<int>(std::size(usable_mesh.positions));
 
     glBindVertexArray(drawInstructions.tvao);
 
@@ -124,7 +124,7 @@ void modifyOrInitializeDrawInstructions(GLuint& vvbo, GLuint& uvvbo, GLuint& ebo
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(std::size(usable_mesh.tindices) * sizeof(PxU32)), usable_mesh.tindices.data(), GL_STATIC_DRAW);
 
-    drawInstructions.tindiceCount = static_cast<int>(std::size(usable_mesh.tindices));
+    drawInstructions.tvertexCount = static_cast<int>(std::size(usable_mesh.tpositions));
 }
 
 
@@ -145,23 +145,6 @@ void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, Usable
     GLuint tuvvbo = bufferNameOfChunkIndex(chunkIndex, IndexOptimization::Buffer::TUVVBO);
     GLuint tbvbo = bufferNameOfChunkIndex(chunkIndex, IndexOptimization::Buffer::TBVBO);
     GLuint tebo = bufferNameOfChunkIndex(chunkIndex, IndexOptimization::Buffer::TEBO);
-
-    //This never happens because this is for the ones that we pregen
-    // if(vao == 0)
-    // {
-    //     glGenVertexArrays(1, &vao);
-    //     glBindVertexArray(vao);
-    //     glGenBuffers(1, &vvbo);
-    //     glGenBuffers(1, &uvvbo);
-    //     glGenBuffers(1, &ebo);
-    //     glGenBuffers(1, &bvbo);
-    //     glGenVertexArrays(1, &tvao);
-    //     glBindVertexArray(tvao);
-    //     glGenBuffers(1, &tvvbo);
-    //     glGenBuffers(1, &tuvvbo);
-    //     glGenBuffers(1, &tebo);
-    //     glGenBuffers(1, &tbvbo);
-    // }
 
     glBindVertexArray(vao);
 
@@ -197,7 +180,7 @@ void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, Usable
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, size4, NULL, GL_STREAM_DRAW);
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, size4, usable_mesh.indices.data());
 
-    info.indiceCount = static_cast<int>(std::size(usable_mesh.indices));
+    info.vertexCount = static_cast<int>(std::size(usable_mesh.positions));
 
     glBindVertexArray(tvao);
 
@@ -231,28 +214,28 @@ void modifyOrInitializeChunkIndex(int chunkIndex, SmallChunkGLInfo& info, Usable
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, size8, NULL, GL_STREAM_DRAW);
     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0 , size8, usable_mesh.tindices.data());
 
-    info.tindiceCount = static_cast<int>(std::size(usable_mesh.tindices));
+    info.tvertexCount = static_cast<int>(std::size(usable_mesh.tpositions));
 }
 
 ///This assumes shader is set up and uniforms are given values
 void drawFromDrawInstructions(const DrawInstructions& drawInstructions)
 {
     glBindVertexArray(drawInstructions.vao);
-    glDrawElements(GL_TRIANGLES, drawInstructions.indiceCount, GL_UNSIGNED_INT, nullptr);
+    glDrawArrays(GL_TRIANGLES, 0, drawInstructions.vertexCount);
 }
 
 void drawFromChunkIndex(int chunkIndex, const SmallChunkGLInfo& cgl)
 {
     GLuint vao = vaoNameOfChunkIndex(chunkIndex, IndexOptimization::Vao::VAO);
     glBindVertexArray(vao);
-    glDrawElements(GL_TRIANGLES, cgl.indiceCount, GL_UNSIGNED_INT, nullptr);
+    glDrawArrays(GL_TRIANGLES, 0, cgl.vertexCount);
 }
 
 void drawTransparentsFromChunkIndex(int chunkIndex, const SmallChunkGLInfo& cgl)
 {
     GLuint tvao = vaoNameOfChunkIndex(chunkIndex, IndexOptimization::Vao::TVAO);
     glBindVertexArray(tvao);
-    glDrawElements(GL_TRIANGLES, cgl.tindiceCount, GL_UNSIGNED_INT, nullptr);
+    glDrawArrays(GL_TRIANGLES, 0, cgl.tvertexCount);
 }
 
 
@@ -260,7 +243,7 @@ void drawTransparentsFromChunkIndex(int chunkIndex, const SmallChunkGLInfo& cgl)
 void drawTransparentsFromDrawInstructions(const DrawInstructions& drawInstructions)
 {
     glBindVertexArray(drawInstructions.tvao);
-    glDrawElements(GL_TRIANGLES, drawInstructions.tindiceCount, GL_UNSIGNED_INT, nullptr);
+    glDrawElements(GL_TRIANGLES, drawInstructions.tvertexCount, GL_UNSIGNED_INT, nullptr);
 }
 
 bool isChunkInFrustum(const TwoIntTup& chunkSpot, const glm::vec3& cameraPosition, const glm::vec3& cameraDirection) {

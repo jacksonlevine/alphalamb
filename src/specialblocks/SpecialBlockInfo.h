@@ -39,8 +39,8 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<C
             auto newv = v;
             return newv + position;
         }) | std::ranges::to<std::vector>();
-
-        outmesh.tpositions.insert(outmesh.tpositions.end(), transformed.begin(), transformed.end());
+        //
+        // outmesh.tpositions.insert(outmesh.tpositions.end(), transformed.begin(), transformed.end());
 
         for (int i = 0; i < cwtriangles.size()/4; i++)
         {
@@ -48,16 +48,8 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<C
                 return tindex + i;
             });
             tindex += 4;
-        }
 
-        for (int i = 0; i < cwtriangles.size()/4; i++)
-        {
-            outmesh.ttexcoords.insert(outmesh.ttexcoords.end(),{
-                glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
-            glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
-            glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
-            glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),
-            });
+
         }
 
 
@@ -65,8 +57,22 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<C
 
         for (int i = 0; i < cwtriangles.size()/4; i++)
         {
+            outmesh.ttexcoords.insert(outmesh.ttexcoords.end(),{
+                glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
+                glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),
+                glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
+                glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
+            glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
+                glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
+
+            });
+            outmesh.tpositions.insert(outmesh.tpositions.end(),{
+                transformed[i], transformed[i+1], transformed[i+2], transformed[i+2], transformed[i+3], transformed[i],
+            });
             outmesh.tbrightness.insert(outmesh.tbrightness.end(), {getBlockAmbientLightVal( ColorPack((uint8_t)0), brightnesses[i]) , isGrass,
                                                                              getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass,
+                                                                            getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass,
+                                                                            getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass,
                                                                             getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass,
                                                                             getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass});
         }
@@ -78,8 +84,8 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<C
              auto newv = v;
              return newv + position;
          }) | std::ranges::to<std::vector>();
-
-        outmesh.positions.insert(outmesh.positions.end(), transformed.begin(), transformed.end());
+        //
+        // outmesh.positions.insert(outmesh.positions.end(), transformed.begin(), transformed.end());
 
         for (int i = 0; i < cwtriangles.size()/4; i++)
         {
@@ -89,23 +95,26 @@ inline void addShapeWithMaterial(std::vector<PxVec3> &cwtriangles, std::vector<C
             index += 4;
         }
 
-        for (int i = 0; i < cwtriangles.size()/4; i++)
-        {
-            outmesh.texcoords.insert(outmesh.texcoords.end(),{
-                glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
-            glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
-            glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
-            glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),
-            });
-        }
-
 
         float isGrass = grasstypes.test(block) ? 1.0f : 0.0f;
 
         for (int i = 0; i < cwtriangles.size()/4; i++)
         {
+            outmesh.positions.insert(outmesh.positions.end(),{
+                transformed[i], transformed[i+1], transformed[i+2], transformed[i+2], transformed[i+3], transformed[i],
+            });
+            outmesh.texcoords.insert(outmesh.texcoords.end(),{
+                glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
+                glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),
+                glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
+                glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
+            glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
+                glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
+            });
             outmesh.brightness.insert(outmesh.brightness.end(), {getBlockAmbientLightVal( ColorPack((uint8_t)0), brightnesses[i]) , isGrass,
                                                                              getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass,
+                                                                            getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass,
+                                                                            getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass,
                                                                             getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass,
                                                                             getBlockAmbientLightVal(ColorPack((uint8_t)0), brightnesses[i]), isGrass});
         }

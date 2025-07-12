@@ -21,19 +21,31 @@ using namespace physx;
 constexpr float onePixel = 0.00183823529411764705882352941176f;     //  1/544      Padding
 constexpr float textureWidth = 0.02941176470588235294117647058824f; // 16/544      16 pixel texture width
 constexpr float texSlotWidth = 0.03308823529411764705882352941176f;
-inline static PxVec3 cubefaces[6][4] = {
-    {//front
-        PxVec3(0.0, 0.0, 0.0),PxVec3(1.0, 0.0, 0.0),PxVec3(1.0, 1.0, 0.0),PxVec3(0.0, 1.0, 0.0)},
-    {//right
-        PxVec3(1.0, 0.0, 0.0),PxVec3(1.0, 0.0, 1.0),PxVec3(1.0, 1.0, 1.0),PxVec3(1.0, 1.0, 0.0)},
-    {//back
-        PxVec3(1.0, 0.0, 1.0),PxVec3(0.0, 0.0, 1.0),PxVec3(0.0, 1.0, 1.0),PxVec3(1.0, 1.0, 1.0)},
-    {//left
-        PxVec3(0.0, 0.0, 1.0),PxVec3(0.0, 0.0, 0.0),PxVec3(0.0, 1.0, 0.0),PxVec3(0.0, 1.0, 1.0)},
-    {//top
-        PxVec3(0.0, 1.0, 0.0),PxVec3(1.0, 1.0, 0.0),PxVec3(1.0, 1.0, 1.0),PxVec3(0.0, 1.0, 1.0)},
-    {//bottom
-        PxVec3(0.0, 0.0, 1.0),PxVec3(1.0, 0.0, 1.0),PxVec3(1.0, 0.0, 0.0),PxVec3(0.0, 0.0, 0.0)}
+inline static PxVec3 cubefaces[6][6] = {
+    {// front
+        PxVec3(0.0, 0.0, 0.0), PxVec3(0.0, 1.0, 0.0), PxVec3(1.0, 1.0, 0.0),
+        PxVec3(1.0, 1.0, 0.0), PxVec3(1.0, 0.0, 0.0), PxVec3(0.0, 0.0, 0.0)
+    },
+    {// right
+        PxVec3(1.0, 0.0, 0.0), PxVec3(1.0, 1.0, 0.0), PxVec3(1.0, 1.0, 1.0),
+        PxVec3(1.0, 1.0, 1.0), PxVec3(1.0, 0.0, 1.0), PxVec3(1.0, 0.0, 0.0)
+    },
+    {// back
+        PxVec3(1.0, 0.0, 1.0), PxVec3(1.0, 1.0, 1.0), PxVec3(0.0, 1.0, 1.0),
+        PxVec3(0.0, 1.0, 1.0), PxVec3(0.0, 0.0, 1.0), PxVec3(1.0, 0.0, 1.0)
+    },
+    {// left
+        PxVec3(0.0, 0.0, 1.0), PxVec3(0.0, 1.0, 1.0), PxVec3(0.0, 1.0, 0.0),
+        PxVec3(0.0, 1.0, 0.0), PxVec3(0.0, 0.0, 0.0), PxVec3(0.0, 0.0, 1.0)
+    },
+    {// top
+        PxVec3(0.0, 1.0, 0.0), PxVec3(0.0, 1.0, 1.0), PxVec3(1.0, 1.0, 1.0),
+        PxVec3(1.0, 1.0, 1.0), PxVec3(1.0, 1.0, 0.0), PxVec3(0.0, 1.0, 0.0)
+    },
+    {// bottom
+        PxVec3(0.0, 0.0, 1.0), PxVec3(0.0, 0.0, 0.0), PxVec3(1.0, 0.0, 0.0),
+        PxVec3(1.0, 0.0, 0.0), PxVec3(1.0, 0.0, 1.0), PxVec3(0.0, 0.0, 1.0)
+    }
 };
 
 
@@ -41,9 +53,9 @@ inline static PxVec3 cubefaces[6][4] = {
 struct DrawInstructions
 {
     GLuint vao = 0;
-    int indiceCount = 0;
+    int vertexCount = 0;
     GLuint tvao = 0;
-    int tindiceCount = 0;
+    int tvertexCount = 0;
 };
 
 using namespace physx;
@@ -92,8 +104,8 @@ struct ChunkGLInfo
 
 struct SmallChunkGLInfo
 {
-    int indiceCount = 0;
-    int tindiceCount = 0;
+    int vertexCount = 0;
+    int tvertexCount = 0;
 };
 
 struct ChangeBuffer
@@ -128,22 +140,6 @@ enum class Side
 
 
 inline static IntTup neighborSpots[6] = {
-    IntTup(0,0,-1),
-    IntTup(1, 0,0),
-    IntTup(0,0,1),
-    IntTup(-1,0,0),
-    IntTup(0,1,0),
-    IntTup(0,-1,0)
-};
-inline static IntTup neighsAndCorns[8+6] = {
-    IntTup(0, 0, 0),   // Corner 0: BottomFrontLeft
-    IntTup(1, 0, 0),   // Corner 1: BottomFrontRight
-    IntTup(0, 0, 1),   // Corner 2: BottomBackLeft
-    IntTup(1, 0, 1),   // Corner 3: BottomBackRight
-    IntTup(0, 1, 0),   // Corner 4: TopFrontLeft
-    IntTup(1, 1, 0),   // Corner 5: TopFrontRight
-    IntTup(0, 1, 1),   // Corner 6: TopBackLeft
-    IntTup(1, 1, 1),    // Corner 7: TopBackRight
     IntTup(0,0,-1),
     IntTup(1, 0,0),
     IntTup(0,0,1),
@@ -228,22 +224,23 @@ __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideH
         });
 
         mesh.ttexcoords.insert(mesh.ttexcoords.end(),{
-                glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
-            glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
-            glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
-            glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),
-            });
+            glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
+glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),
+glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
+glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
+glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
+glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),});
 
         if constexpr(doBrightness)
         {
             float isGrass = grasstypes.test(material) ? 1.0f : 0.0f;
 
             switch(side) {
-            case Side::Top:    mesh.tbrightness.insert(mesh.tbrightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
-            case Side::Left:   mesh.tbrightness.insert(mesh.tbrightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
-            case Side::Bottom: mesh.tbrightness.insert(mesh.tbrightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
-            case Side::Right:  mesh.tbrightness.insert(mesh.tbrightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
-            default:          mesh.tbrightness.insert(mesh.tbrightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
+            case Side::Top:    mesh.tbrightness.insert(mesh.tbrightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
+            case Side::Left:   mesh.tbrightness.insert(mesh.tbrightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
+            case Side::Bottom: mesh.tbrightness.insert(mesh.tbrightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
+            case Side::Right:  mesh.tbrightness.insert(mesh.tbrightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
+            default:          mesh.tbrightness.insert(mesh.tbrightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
             }
         }
 
@@ -261,22 +258,25 @@ __inline void addFace(PxVec3 offset, Side side, MaterialName material, int sideH
             return index + i;
         });
 
+        //6 uvs per face now (how it fuckin should be)
         mesh.texcoords.insert(mesh.texcoords.end(),
 {glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),
+    glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),
+    glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
+    glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
 glm::vec2(uvoffsetx + texOffsets[1].x, uvoffsety + texOffsets[1].y),
-glm::vec2(uvoffsetx + texOffsets[2].x, uvoffsety + texOffsets[2].y),
-glm::vec2(uvoffsetx + texOffsets[3].x, uvoffsety + texOffsets[3].y),});
+glm::vec2(uvoffsetx + texOffsets[0].x, uvoffsety + texOffsets[0].y),});
 
         if constexpr(doBrightness)
         {
             float isGrass = grasstypes.test(material) ? 1.0f : 0.0f;
 
             switch(side) {
-            case Side::Top:    mesh.brightness.insert(mesh.brightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
-            case Side::Left:   mesh.brightness.insert(mesh.brightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
-            case Side::Bottom: mesh.brightness.insert(mesh.brightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
-            case Side::Right:  mesh.brightness.insert(mesh.brightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
-            default:          mesh.brightness.insert(mesh.brightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
+            case Side::Top:    mesh.brightness.insert(mesh.brightness.end(), {1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass, 1.0f, isGrass}); break;
+            case Side::Left:   mesh.brightness.insert(mesh.brightness.end(), {0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass, 0.7f, isGrass}); break;
+            case Side::Bottom: mesh.brightness.insert(mesh.brightness.end(), {0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass, 0.4f, isGrass}); break;
+            case Side::Right:  mesh.brightness.insert(mesh.brightness.end(), {0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass, 0.8f, isGrass}); break;
+            default:          mesh.brightness.insert(mesh.brightness.end(), {0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass, 0.9f, isGrass});
             }
         }
         index += 4;
@@ -319,9 +319,9 @@ __inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName materi
             return newv + offset + PxVec3(0.5f, offsety+0.5f, 0.5f);
         });
 
-        std::ranges::transform(marchingCubeIndices[configindex], std::back_inserter(mesh.indices), [&index](const auto& i) {
-            return index + i;
-        });
+        // std::ranges::transform(marchingCubeIndices[configindex], std::back_inserter(mesh.indices), [&index](const auto& i) {
+        //     return index + i;
+        // });
 
         index += marchingCubeVertices[configindex].size();
 
@@ -375,11 +375,11 @@ __inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName materi
 
         auto uvoffset = glm::vec2(uvoffsetx, uvoffsety);
 
-    for (int i = 0; i < marchingCubeIndices[configindex].size(); i+=3)
+    for (int i = 0; i < marchingCubeVertices[configindex].size(); i+=3)
     {
-        auto idx1 = marchingCubeIndices[configindex][i];
-        auto idx2 = marchingCubeIndices[configindex][i+1];
-        auto idx3 = marchingCubeIndices[configindex][i+2];
+        auto idx1 = i;
+        auto idx2 = i+1;
+        auto idx3 = i+2;
 
         auto tri1 = marchingCubeVertices[configindex][idx1];
         auto tri2 = marchingCubeVertices[configindex][idx2];
@@ -390,17 +390,13 @@ __inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName materi
 
         auto factor = (float)getDirectionFactor(normal);
 
-        brightnesses[idx1*2 + 0] = packonocclbits(occlusion[0], getBlockAmbientLightVal(ColorPack(vals.first) * factor, ColorPack(vals.second) * factor)
-);
+        brightnesses[idx1*2 + 0] = packonocclbits(occlusion[0], getBlockAmbientLightVal(ColorPack(vals.first) * factor, ColorPack(vals.second) * factor));
         brightnesses[idx1*2 + 1] = isGrass;
 
-        brightnesses[idx2*2 + 0] = packonocclbits(occlusion[0], getBlockAmbientLightVal(ColorPack(vals.first) * factor, ColorPack(vals.second) * factor)
-);
+        brightnesses[idx2*2 + 0] = packonocclbits(occlusion[0], getBlockAmbientLightVal(ColorPack(vals.first) * factor, ColorPack(vals.second) * factor));
         brightnesses[idx2*2 + 1] = isGrass;
 
-
-        brightnesses[idx3*2 + 0] = packonocclbits(occlusion[0], getBlockAmbientLightVal(ColorPack(vals.first) * factor, ColorPack(vals.second) * factor)
-);
+        brightnesses[idx3*2 + 0] = packonocclbits(occlusion[0], getBlockAmbientLightVal(ColorPack(vals.first) * factor, ColorPack(vals.second) * factor));
         brightnesses[idx3*2 + 1] = isGrass;
 
         auto absNormal = glm::abs(normal);
@@ -419,9 +415,9 @@ __inline void addMarcher(PxVec3 offset, uint8_t configindex, MaterialName materi
 
         auto tw = textureWidth - (onePixel*2.f);
 
-        texcoordsfr[idx1] = uvoffset + glm::vec2(onePixel, -onePixel) + glm::vec2((tri1.x - minX)/rangeX * tw, -(tri1.z - minZ)/rangeZ * tw);
-        texcoordsfr[idx2] = uvoffset  + glm::vec2(onePixel, -onePixel)+ glm::vec2((tri2.x - minX)/rangeX * tw, -(tri2.z - minZ)/rangeZ * tw);
-        texcoordsfr[idx3] = uvoffset + glm::vec2(onePixel, -onePixel) + glm::vec2((tri3.x - minX)/rangeX * tw, -(tri3.z - minZ)/rangeZ * tw);
+        texcoordsfr[i] = uvoffset + glm::vec2(onePixel, -onePixel) + glm::vec2((tri1.x - minX)/rangeX * tw, -(tri1.z - minZ)/rangeZ * tw);
+        texcoordsfr[i+1] = uvoffset  + glm::vec2(onePixel, -onePixel)+ glm::vec2((tri2.x - minX)/rangeX * tw, -(tri2.z - minZ)/rangeZ * tw);
+        texcoordsfr[i+2] = uvoffset + glm::vec2(onePixel, -onePixel) + glm::vec2((tri3.x - minX)/rangeX * tw, -(tri3.z - minZ)/rangeZ * tw);
 
     }
     mesh.brightness.insert(mesh.brightness.end(), brightnesses.begin(), brightnesses.end());
