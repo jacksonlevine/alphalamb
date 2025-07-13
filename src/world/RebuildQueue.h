@@ -33,6 +33,7 @@ struct ChunkRebuildRequest {
     bool isVoxelModel : 1  = false;
     bool doLightPass : 1  = false;
     bool queueLightpassImplicated : 1  = true;
+    bool useraskedfor : 1 = false;
 
     ChunkRebuildRequest(TwoIntTup pos, size_t index, bool priority)
         : chunkPos(pos), chunkIndex(index), isHighPriority(priority),

@@ -10,9 +10,14 @@
 #include "PrecompHeader.h"
 #include "world/World.h"
 
+struct LightOverlapQueueEntryInfo
+{
+    bool userMade = false;
+};
+
 //struct Light
 extern boost::sync_queue<TwoIntTup> lightOverlapNotificationQueue;
-extern tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare> lightOverlapsQueued;
+extern tbb::concurrent_hash_map<TwoIntTup, LightOverlapQueueEntryInfo, TwoIntTupHashCompare> lightOverlapsQueued;
 
 
 class ColorPack {

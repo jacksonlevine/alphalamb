@@ -5,8 +5,11 @@
 #include "Light.h"
 
 #include "world/WorldRenderer.h"
+
+
+
 boost::sync_queue<TwoIntTup> lightOverlapNotificationQueue = {};
-tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare> lightOverlapsQueued = {};
+tbb::concurrent_hash_map<TwoIntTup, LightOverlapQueueEntryInfo, TwoIntTupHashCompare> lightOverlapsQueued = {};
 
 
 std::unique_ptr<std::vector<std::byte>> lmbuffer;

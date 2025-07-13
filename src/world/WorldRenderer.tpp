@@ -18,7 +18,7 @@
 ///This gets called in the mesh building coroutine and rebuild coroutine
 ///Queueimplics = default true, whether to queue chunks implicated by light pass for rebuild
 
-template<bool queueimplics>
+template<bool queueimplics, bool useraskedfor>
 UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool light)
 {
 #ifdef MEASURE_CHUNKREB
@@ -56,11 +56,10 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
     std::unordered_set<TwoIntTup, TwoIntTupHash> implicatedChunks;
 
     // Check if lighting is needed
-    bool doLight = light;
-    if (!doLight) {
+    if (!light) {
         tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor acc;
         if (!litChunks.find(acc, spot)) {
-            doLight = true;
+            light = true;
         }
     }
 
@@ -88,7 +87,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
             url = std::shared_lock<std::shared_mutex>(world->userDataMap.mutex());
             nrl = std::shared_lock<std::shared_mutex>(world->nonUserDataMap.mutex());
         }
-        if(doLight) {
+        if(light) {
             lightLock = std::shared_lock<std::shared_mutex>(lightmapMutex);
         }
 
@@ -106,7 +105,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
                                         (transparents.test(chunkData[idx] & BLOCK_ID_BITS));
 
                     // Light source collection (if doLight)
-                    if (doLight) {
+                    if (light) {
                         BlockType h = chunkData[idx];
                         auto originhash = IntTupHash{}(here, true);
                         if (h == LIGHT) {
@@ -196,7 +195,7 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
     }
 
     // Perform light propagation before meshing (if doLight)
-    if (doLight) {
+    if (light) {
         if(!locked)
         {
             std::shared_lock<std::shared_mutex> url(world->userDataMap.mutex());
@@ -437,14 +436,14 @@ UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool ligh
     }
 
     // Queue implicated chunks (if lighting was performed)
-    if (doLight && queueimplics) {
+    if (light && queueimplics) {
         for (const auto& spot2 : implicatedChunks) {
             //only push if its not already queued! (this may save lots of work)
-            auto acc = tbb::concurrent_hash_map<TwoIntTup, bool, TwoIntTupHashCompare>::const_accessor();
+            auto acc = tbb::concurrent_hash_map<TwoIntTup, LightOverlapQueueEntryInfo, TwoIntTupHashCompare>::const_accessor();
 
             if(!lightOverlapsQueued.find(acc, spot2))
             {
-                lightOverlapsQueued.insert({spot2, true});
+                lightOverlapsQueued.insert({spot2, LightOverlapQueueEntryInfo{useraskedfor}});
                 lightOverlapNotificationQueue.push(spot2);
             }
 

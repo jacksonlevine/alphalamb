@@ -461,7 +461,7 @@ void calculateAmbientOcclusion(const IntTup& blockPos, Side side, World* world, 
 
 
 
-template<bool queueimplics = true>
+template<bool queueimplics = true, bool useraskedfor = false>
 UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool locked, bool light);
 
 UsableMesh fromChunk(const TwoIntTup& spot, World* world, bool light = false);
@@ -708,6 +708,7 @@ public:
                 );
                 req.doLightPass = lightpass;
                 req.queueLightpassImplicated = queuelightimplic;
+                req.useraskedfor = true;
                 rebuildQueue.push(req);
             } else
             {
@@ -718,6 +719,7 @@ public:
                 );
                 req.doLightPass = lightpass;
                 req.queueLightpassImplicated = queuelightimplic;
+                req.useraskedfor = true;
                 rebuildQueue.push(req);
             }
 
@@ -735,19 +737,23 @@ public:
             //std::cout << "Requesting rebuild for spot: " << chunkspot.x << " " << chunkspot.z << std::endl;
             if (light)
             {
-                rebuildQueue.push(ChunkRebuildRequest(
+                auto cbr = ChunkRebuildRequest(
                     chunkspot,
                     activeChunks.at(chunkspot).chunkIndex,
                     priority,
                     true
-                ));
+                );
+                cbr.useraskedfor = priority;
+                rebuildQueue.push(cbr);
             } else
             {
-                rebuildQueue.push(ChunkRebuildRequest(
-                chunkspot,
-                activeChunks.at(chunkspot).chunkIndex,
-                priority
-            ));
+                auto cbr = ChunkRebuildRequest(
+                    chunkspot,
+                    activeChunks.at(chunkspot).chunkIndex,
+                    priority
+                );
+                cbr.useraskedfor = priority;
+                rebuildQueue.push(cbr);
             }
 
 

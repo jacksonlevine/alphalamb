@@ -1104,9 +1104,18 @@ void WorldRenderer::rebuildThreadFunction(World* world)
 
                             if (request.queueLightpassImplicated)
                             {
-                                mesh = fromChunk(request.chunkPos, world, lightpass);
+                                if (request.useraskedfor)
+                                {
+                                    std::cout << "Path1 " << std::endl;
+                                    mesh = fromChunk<true, true>(request.chunkPos, world, false, lightpass);
+                                } else
+                                {
+                                    std::cout << "Path 2" << std::endl;
+                                    mesh = fromChunk<true, false>(request.chunkPos, world, false, lightpass);
+                                }
                             } else
                             {
+                                std::cout <<"Path 3" << std::endl;
                                 mesh = fromChunk<false>(request.chunkPos, world, false, lightpass);
                             }
 
