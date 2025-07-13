@@ -1634,11 +1634,11 @@ int main()
                                 scene->worldRenderer->requestChunkRebuildFromMainThread(
                                     spot, std::nullopt, true, glm::vec3(0.f), true, true
                                     );
-                                std::cout << "Blockset path 2" << std::endl;
+                               // std::cout << "Blockset path 2" << std::endl;
 
                             } else
                             {
-                                std::cout << "Blockset path 1" << std::endl;
+                                //std::cout << "Blockset path 1" << std::endl;
                                 scene->worldRenderer->requestChunkRebuildFromMainThread(
                                     spot, msg.block, true, glm::vec3(0.f), true, true
                                     );
@@ -1807,10 +1807,10 @@ int main()
                         if (std::abs(chunkpos.x - popped.x) + std::abs(chunkpos.z - popped.z) < theScene.worldRenderer->currentRenderDistance * 1.27)
                         {
                             theScene.worldRenderer->requestChunkSpotRebuildFromMainThread(popped,value.userMade);
-                            if (value.userMade)
-                            {
-                                std::cout << "Got a usermade light overlap" << std::endl;
-                            }
+                            // if (value.userMade)
+                            // {
+                            //     std::cout << "Got a usermade light overlap" << std::endl;
+                            // }
                         }
                     }
 

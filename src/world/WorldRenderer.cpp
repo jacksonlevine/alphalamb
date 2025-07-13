@@ -1106,16 +1106,16 @@ void WorldRenderer::rebuildThreadFunction(World* world)
                             {
                                 if (request.useraskedfor)
                                 {
-                                    std::cout << "Path1 " << std::endl;
+                                   // std::cout << "Path1 " << std::endl;
                                     mesh = fromChunk<true, true>(request.chunkPos, world, false, lightpass);
                                 } else
                                 {
-                                    std::cout << "Path 2" << std::endl;
+                                   // std::cout << "Path 2" << std::endl;
                                     mesh = fromChunk<true, false>(request.chunkPos, world, false, lightpass);
                                 }
                             } else
                             {
-                                std::cout <<"Path 3" << std::endl;
+                               // std::cout <<"Path 3" << std::endl;
                                 mesh = fromChunk<false>(request.chunkPos, world, false, lightpass);
                             }
 
@@ -1221,10 +1221,12 @@ std::optional<std::vector<SpawnGuy>> WorldRenderer::generateChunk(World* world, 
                     //std::cout << "guy spawn here: " << realSpot.x << " " << realSpot.z << std::endl;
                     spawns.value().push_back(SpawnGuy{.type = GuyType::ORANGE1, .newName = entt::null, .spot = glm::vec3(realSpot.x, realSpot.y, realSpot.z),
                     .direction = glm::vec3(0), .damage = 0.f});
-                } else
-                {
-                    std::cout << "No surface block found" << std::endl;
                 }
+                // else
+                //
+                // {
+                //     std::cout << "No surface block found" << std::endl;
+                // }
 
             }
         }
