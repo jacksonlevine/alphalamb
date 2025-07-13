@@ -375,6 +375,45 @@ int ResizeStringCallback(ImGuiInputTextCallbackData* data)
     }
     return 0;
 }
+enum ValueBarFlags_ {
+    ValueBarFlags_None = 0,
+    ValueBarFlags_Vertical = 1 << 0,
+};
+using ValueBarFlags = int;
+
+// Similar to `ImGui::ProgressBar`, but with a horizontal/vertical switch.
+// The value text doesn't follow the value like `ImGui::ProgressBar`.
+// Here it's simply displayed in the middle of the bar.
+// Horizontal labels are placed to the right of the rect.
+// Vertical labels are placed below the rect.
+void ValueBar(const char *label, const float value, const ImVec2 &size, const float min_value = 0, const float max_value = 1, const ValueBarFlags flags = ValueBarFlags_None) {
+    const bool is_h = !(flags & ValueBarFlags_Vertical);
+    using namespace ImGui;
+    const auto &style = GetStyle();
+    const auto &draw_list = GetWindowDrawList();
+    const auto &cursor_pos = GetCursorScreenPos();
+    const float fraction = (value - min_value) / max_value;
+    const float frame_height = GetFrameHeight();
+    const auto &label_size = strlen(label) > 0 ? ImVec2{CalcTextSize(label).x, frame_height} : ImVec2{0, 0};
+    const auto &rect_size = is_h ? ImVec2{CalcItemWidth(), frame_height} : ImVec2{size.x, size.y};
+    const auto &rect_start = cursor_pos + ImVec2{is_h ? 0 : std::max(0.0f, (label_size.x - rect_size.x) / 2), 0};
+
+    draw_list->AddRectFilled(rect_start, rect_start + rect_size, GetColorU32(ImGuiCol_FrameBg), style.FrameRounding);
+    draw_list->AddRectFilled(
+        rect_start + ImVec2{0, is_h ? 0 : (1 - fraction) * rect_size.y},
+        rect_start + rect_size * ImVec2{is_h ? fraction : 1, 1},
+        GetColorU32(ImGuiCol_PlotHistogram),
+        style.FrameRounding, is_h ? ImDrawFlags_RoundCornersLeft : ImDrawFlags_RoundCornersBottom
+    );
+    //const std::string value_text = is_h ? std::format("{:.2f}", value) : std::format("{:.1f}", value);
+    //draw_list->AddText(rect_start + (rect_size - CalcTextSize(value_text.c_str())) / 2, GetColorU32(ImGuiCol_Text), value_text.c_str());
+    // if (label) {
+    //     draw_list->AddText(
+    //         rect_start + ImVec2{is_h ? rect_size.x + style.ItemInnerSpacing.x : (rect_size.x - label_size.x) / 2, style.FramePadding.y + (is_h ? 0 : rect_size.y)},
+    //         GetColorU32(ImGuiCol_Text), label);
+    // }
+}
+
 
 void renderImGui()
 {
@@ -701,10 +740,7 @@ void renderImGui()
 
             ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "dg UNIX team 7.5");
 
-            for (int i = 0; i < theScene.our<MovementComponent>().stamCount; i++)
-            {
-                DGCustomButton((std::string("##stam") + std::to_string(i)).c_str(), DGButtonType::Stam1, ImVec2(15, 40));
-            }
+
 
 
             ImVec2 screenSize = ImGui::GetIO().DisplaySize;
@@ -712,7 +748,12 @@ void renderImGui()
             ImVec2 invTileDisplaySize = ImVec2(50, 50); // Size of displayed image
 
 
-            ImVec2 startInvRow = ImVec2(((screenSize.x / 2.f) - ((invTileDisplaySize.x + 20.0f) * 5.f)/2.f) + 20.0f, screenSize.y - invTileDisplaySize.y + 10.f);
+           // ImVec2 startInvRow = ImVec2(((screenSize.x / 2.f) - ((invTileDisplaySize.x + 20.0f) * 5.f)/2.f) + 20.0f, screenSize.y - invTileDisplaySize.y + 10.f);
+
+
+
+            ImVec2 startInvRow = ImVec2(screenSize.x - ((invTileDisplaySize.x + 20.f) + (/*additional for health bars*/ (70.f))), screenSize.y - ((invTileDisplaySize.y + 20.f) * 5.f ));
+
 
             ImVec2 prevPos = ImGui::GetCursorPos();
 
@@ -738,7 +779,7 @@ void renderImGui()
             ImGui::Image((ImTextureID)questAccessIcon.id, invTileDisplaySize);
 
             for (int i = 0; i < 5; i++) {
-                ImVec2 start = startInvRow + ImVec2(i * (invTileDisplaySize.x + 20.0f), 0);
+                ImVec2 start = startInvRow + ImVec2(0.f, i * (invTileDisplaySize.x + 20.0f));
                 ImGui::SetCursorPos(start);
 
                 // if(i == highlightedSlot) {
@@ -764,14 +805,23 @@ void renderImGui()
 
 
             }
-            ImGui::SetCursorPos(ImVec2(startInvRow.x, startInvRow.y - invTileDisplaySize.y));
+            ImGui::SetCursorPos(ImVec2(startInvRow.x + (invTileDisplaySize.x+20.f), startInvRow.y));
 
             //Health bar
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
             ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-            ImGui::ProgressBar(theScene.our<HealthComponent>().health/100.0f, ImVec2(180.0f, 20.0f), "");
+            //ImGui::ProgressBar(theScene.our<HealthComponent>().health/100.0f, ImVec2(180.0f, 20.0f), "");
+            ValueBar("", theScene.our<HealthComponent>().health/100.0f, ImVec2(10.0f, ((invTileDisplaySize.y + 20.f) * 5) - 10.f), 0, 1, ValueBarFlags_Vertical);
             ImGui::PopStyleColor(2);
 
+
+            //Stam barz
+            for (int i = 0; i < theScene.our<MovementComponent>().stamCount; i++)
+            {
+                ImGui::SetCursorPos(ImVec2(startInvRow.x + (invTileDisplaySize.x+20.f)+ (20.f), startInvRow.y + (i * 40.f)));
+
+                DGCustomButton((std::string("##stam") + std::to_string(i)).c_str(), DGButtonType::Stam1, ImVec2(15, 40));
+            }
 
             ImGui::SetCursorPos(prevPos);
 

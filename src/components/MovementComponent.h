@@ -16,7 +16,7 @@ struct MovementComponent {
     ALuint footstepSource = 0;
 
     // Dash related
-    int stamCount = 3;
+    int stamCount = 5;
     bool dashing = false;
     float dashtimer = 0.0f;
     float dashrebuild = 0.0f;

@@ -194,13 +194,17 @@ void PlayerUpdate(float deltaTime, World* world, ParticlesGizmo* particles, Rend
 
     if (stamCount < 3)
     {
-        if (dashrebuild < 0.5f)
+        //stam rebuild
+        if (!dashing && !controls.sprint)
         {
-            dashrebuild += deltaTime;
-        } else
-        {
-            dashrebuild = 0.0f;
-            stamCount++;
+            if (dashrebuild < 0.5f)
+            {
+                dashrebuild += deltaTime;
+            } else
+            {
+                dashrebuild = 0.0f;
+                stamCount++;
+            }
         }
     }
 
