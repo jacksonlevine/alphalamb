@@ -82,12 +82,14 @@ PxController* createPlayerController(const PxVec3& position, float radius, float
     PxBoxControllerDesc desc;
     desc.halfHeight = height;
     desc.halfSideExtent = radius;
+    desc.halfForwardExtent = radius;
 
     desc.position = PxExtendedVec3(position.x, position.y, position.z); // Start position
     desc.slopeLimit = 0.707f; // Limit slope climbing
     desc.contactOffset = 0.1f; // Distance to detect collisions
     desc.stepOffset = 0.5f; // Max step height the player can walk up
     desc.upDirection = PxVec3(0.0f, 1.0f, 0.0f); // Gravity direction (Y-up)
+
     desc.material = gPhysics->createMaterial(0.2f, 0.2f, 0.1f); // Friction material
     desc.nonWalkableMode = PxControllerNonWalkableMode::ePREVENT_CLIMBING; // Prevent climbing steep slopes
     desc.behaviorCallback = &mbc;

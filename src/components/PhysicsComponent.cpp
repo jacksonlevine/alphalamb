@@ -25,7 +25,7 @@ physx::PxController* getCont()
 {
     return createPlayerController(
         PxVec3(DEFAULT_PLAYERPOS.x, DEFAULT_PLAYERPOS.y, DEFAULT_PLAYERPOS.z),
-        0.4,
+        0.2,
         0.7
     );
 }
